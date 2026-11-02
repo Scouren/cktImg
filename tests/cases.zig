@@ -1113,3 +1113,7 @@ test {
 test {
     _ = @import("skeleton.zig");
 }
+
+test {
+    _ = @import("sketch.zig");
+}

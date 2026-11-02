@@ -1736,7 +1736,7 @@ fn inside(p: [2]f32, u: [2]f32, v: [2]f32) bool {
 
 /// A dot wherever a net's wires leave a point in three or more directions
 /// (a device lead counts as one). Overlapping wires of one net count once.
-fn findDots(gpa: Allocator, s: *Schematic) !void {
+pub fn findDots(gpa: Allocator, s: *Schematic) !void {
     const a = s.arena.allocator();
     s.dots.clearRetainingCapacity();
     const Cand = struct { p: [2]f32, net: u32 };

@@ -3,6 +3,7 @@
 //!   zig build gallery -- --svgs dir                 every textbook circuit as dir/<name>.svg (and .cir), the golden set as dir/golden_<name>.svg
 //!   zig build gallery -- --score                     the golden set scored against its figures (tests/golden.zig)
 //!   zig build gallery -- --cells [deck]              the skeleton's cells of the golden set, as grids
+//!   zig build gallery -- --sketch dir [deck]         the golden and textbook circuits drawn by issue #8's stages, and their scores
 //!   zig build gallery -- --gallery out.html         every textbook circuit in one page
 //!   zig build gallery -- [--config lint.zon] in.cir out.svg
 //!
@@ -106,6 +107,21 @@ pub fn main(init: std.process.Init) !void {
             var name_buf: [64]u8 = undefined;
             try dir.writeFile(io, .{ .sub_path = try std.fmt.bufPrint(&name_buf, "golden_{s}.svg", .{c.name}), .data = d.svg });
         }
+        return;
+    }
+    if (args.len >= 3 and std.mem.eql(u8, args[1], "--sketch")) {
+        var dir = try cwd.createDirPathOpen(io, args[2], .{});
+        defer dir.close(io);
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const only: ?[]const u8 = if (args.len >= 4) args[3] else null;
+        for (golden.decks) |d| {
+            if (only != null and !std.mem.eql(u8, only.?, d.name)) continue;
+            const s = try golden.scoreWith(arena.allocator(), lib, d.spice, .sketch);
+            std.debug.print("{s}\n", .{try golden.formatScore(arena.allocator(), d.name, s)});
+        }
+        for (golden.decks) |c| if (only == null or std.mem.eql(u8, only.?, c.name)) try sketchFile(gpa, lib, io, dir, c.name, c.spice);
+        for (textbook.all ++ textbook.beyond) |c| if (only == null or std.mem.eql(u8, only.?, c.name)) try sketchFile(gpa, lib, io, dir, c.name, c.spice);
         return;
     }
     if (args.len >= 2 and std.mem.eql(u8, args[1], "--cells")) {
@@ -220,4 +236,18 @@ fn section(gpa: std.mem.Allocator, lib: *np.Library, w: *std.Io.Writer, c: textb
     const t = d.stats;
     try w.print("<section><h3>{s}</h3><p class=\"book\"><b>Book:</b> {s}</p>", .{ c.spice[0 .. std.mem.indexOfScalar(u8, c.spice, '\n') orelse c.spice.len], c.book });
     try w.print("<figure><div class=\"scroll\">{s}</div><figcaption>labelled nets {d} · bent edges {d} · crossings {d} · overlaps {d}</figcaption></figure></section>\n", .{ d.svg, t.labeled_nets, t.bent, t.crossings, t.overlaps });
+}
+
+/// One deck drawn by issue #8's stages, as `dir/<name>.svg`.
+fn sketchFile(gpa: std.mem.Allocator, lib: *np.Library, io: std.Io, dir: std.Io.Dir, name: []const u8, spice: []const u8) !void {
+    var arena: std.heap.ArenaAllocator = .init(gpa);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var nl = try np.netlist.parse(a, &.{spice}, null);
+    const roles = try np.guessRoles(a, &nl);
+    const s = try np.schematic.sketch.lay(a, &nl, roles, lib);
+    const p = try np.Placed.init(a, &s, &nl);
+    const text = try svg.alloc(a, &p, lib, .{ .caption = nl.title });
+    var name_buf: [64]u8 = undefined;
+    try dir.writeFile(io, .{ .sub_path = try std.fmt.bufPrint(&name_buf, "{s}.svg", .{name}), .data = text });
 }

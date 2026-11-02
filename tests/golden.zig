@@ -18,7 +18,9 @@
 //! - `pub const Ratio = struct { agree: u16, of: u16 }`
 //! - `pub const Overlap = struct { both: u16, drawing_only: u16, figure_only: u16 }`
 //! - `pub const Score = struct`
+//! - `pub const Engine = enum { layout, sketch }`
 //! - `pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score`
+//! - `pub fn scoreWith(arena: Allocator, lib: *np.Library, spice: []const u8, engine: Engine) !Score`
 //! - `pub fn scoreCells(arena: Allocator, spice: []const u8, nl: *const np.netlist.Netlist, x: []const i32, y: []const i32, gate_right: []const bool) !Score`
 //! - `pub fn formatScore(arena: Allocator, name: []const u8, s: Score) ![]const u8`
 //! - `pub const Shuffle = enum { reversed, rotated }`
@@ -78,6 +80,9 @@ pub const Score = struct {
     extra_labels: []const []const u8 = &.{},
     missing_labels: []const []const u8 = &.{},
 };
+
+/// Which layout draws a deck: today's, or issue #8's stages.
+pub const Engine = enum { layout, sketch };
 
 /// How `shuffled` reorders a deck's cards.
 pub const Shuffle = enum { reversed, rotated };
@@ -156,14 +161,26 @@ const order_dependent = [_][]const u8{
     "golden/diff_pair_resistive",
 };
 
-/// Lays `spice` out with the default settings and scores the drawing
-/// against the figure in its `*%` lines. Everything lives in `arena`.
+/// Lays `spice` out with today's layout and the default settings and
+/// scores the drawing against the figure in its `*%` lines. Everything
+/// lives in `arena`.
 pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score {
+    return scoreWith(arena, lib, spice, .layout);
+}
+
+/// `score`, drawn by `engine`.
+pub fn scoreWith(arena: Allocator, lib: *np.Library, spice: []const u8, engine: Engine) !Score {
     const fig = try readFigure(arena, spice);
     var nl = try np.netlist.parse(arena, &.{spice}, null);
     const roles = try np.guessRoles(arena, &nl);
-    var s = try np.Schematic.build(arena, &nl, roles, lib);
-    try np.layout(arena, &s, &.default);
+    const s = switch (engine) {
+        .layout => blk: {
+            var s = try np.Schematic.build(arena, &nl, roles, lib);
+            try np.layout(arena, &s, &.default);
+            break :blk s;
+        },
+        .sketch => try np.schematic.sketch.lay(arena, &nl, roles, lib),
+    };
     const p = try np.Placed.init(arena, &s, &nl);
     const drawn = try locate(arena, &p, fig.names);
     var out = try compare(arena, fig, drawn);

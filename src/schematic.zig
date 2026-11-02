@@ -17,6 +17,8 @@ const library = @import("library.zig");
 pub const structure = @import("structure.zig");
 /// Stage 3 (issue #8): devices on a lattice of rows and columns.
 pub const skeleton = @import("skeleton.zig");
+/// Stage 4 (issue #8): a drawing from the skeleton.
+pub const sketch = @import("sketch.zig");
 
 pub const Circuit = netlist.Circuit;
 pub const DeviceKind = netlist.DeviceKind;
@@ -449,6 +451,21 @@ fn isSignalSource(nl: *const netlist.Netlist, d: u32) bool {
 /// `lib`). `layout.layout` assigns coordinates afterwards.
 pub fn build(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role, lib: *Library) !Schematic {
     const circuit = &nl.graph;
+    var s = try initDevices(gpa, nl, roles, lib);
+    errdefer s.arena.deinit();
+    try orient(gpa, &s, circuit);
+    try wire(gpa, &s, circuit);
+    try splitSupernodes(gpa, &s);
+    for (0..s.labeled.len) |n| {
+        if (s.labeled[n]) try nameNet(gpa, &s, @intCast(n));
+    }
+    return s;
+}
+
+/// A schematic with its devices' classes and nothing else: no orientation,
+/// node, pin or wire. `build` goes on from here; so does `sketch.zig`.
+pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role, lib: *Library) !Schematic {
+    const circuit = &nl.graph;
     std.debug.assert(roles.len == circuit.vertexCount());
     const classes = try gpa.alloc(ClassId, circuit.edgeCount());
     defer gpa.free(classes);
@@ -475,14 +492,15 @@ pub fn build(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role, li
     @memset(s.labeled, false);
     try s.devices.resize(a, circuit.edgeCount());
     @memcpy(s.devices.items(.class), classes);
-
-    try orient(gpa, &s, circuit);
-    try wire(gpa, &s, circuit);
-    try splitSupernodes(gpa, &s);
-    for (0..s.labeled.len) |n| {
-        if (s.labeled[n]) try nameNet(gpa, &s, @intCast(n));
-    }
+    std.debug.assert(s.devices.len == circuit.edgeCount());
     return s;
+}
+
+/// Each device's placement from its orientation and flips: its `orient`,
+/// where its row and column lines cross (`grid`), and how far its pins
+/// reach from there per side.
+pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void {
+    settle(s, circuit);
 }
 
 // ===========================================================================
@@ -1050,7 +1068,7 @@ fn leafKeys(s: *Schematic) void {
 
 /// O0: a controlled source's out- on the sink is the op-amp's reference;
 /// like a MOS bulk it counts for paths but is not drawn.
-fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool {
+pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool {
     const c = s.lib.at(s.devices.items(.class)[d]);
     return pin < c.terminals.len and c.terminals[pin].ground_ref and s.roles[net] == .sink;
 }

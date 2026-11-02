@@ -63,6 +63,8 @@ pub const Skeleton = struct {
     /// Its cell: even for vertical devices, the smallest of each axis 0.
     x: []const i32,
     y: []const i32,
+    /// Twice the x of the axis mated devices mirror about, if any.
+    axis2: ?i32,
 };
 
 /// Each device's neighbours in its column, or `none`.
@@ -136,9 +138,14 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     }
     try bridges(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y);
     gates(nl, roles, st, drawn, form, x, gate_right);
-    normalize(drawn, x, y);
+    // The core stands about x = 0 until the cells shift to start at 0.
+    var mated = false;
+    for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
+    const shift = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
-    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y };
+    const axis2: ?i32 = if (mated) -2 * shift else null;
+    if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
+    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .axis2 = axis2 };
 }
 
 // ---- private ----
@@ -574,14 +581,15 @@ fn expectDistinctCells(gpa: Allocator, drawn: []const bool, x: []const i32, y: [
     };
 }
 
-fn normalize(drawn: []const bool, x: []i32, y: []i32) void {
+/// Shifts every cell so the smallest x and y are 0; returns the x shift.
+fn normalize(drawn: []const bool, x: []i32, y: []i32) i32 {
     var mx: i32 = std.math.maxInt(i32);
     var my: i32 = std.math.maxInt(i32);
     for (drawn, x, y) |dr, px, py| if (dr) {
         mx = @min(mx, px);
         my = @min(my, py);
     };
-    if (mx == std.math.maxInt(i32)) return;
+    if (mx == std.math.maxInt(i32)) return 0;
     for (x, y) |*px, *py| {
         px.* -= mx;
         py.* -= my;
@@ -590,4 +598,5 @@ fn normalize(drawn: []const bool, x: []i32, y: []i32) void {
         assert(px >= 0);
         assert(py >= 0);
     };
+    return mx;
 }
