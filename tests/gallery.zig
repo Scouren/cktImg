@@ -1,6 +1,7 @@
 //! The development gallery, on the public API and the tests' symbol set:
 //!
-//!   zig build gallery -- --svgs dir                 every textbook circuit as dir/<name>.svg (and .cir)
+//!   zig build gallery -- --svgs dir                 every textbook circuit as dir/<name>.svg (and .cir), the golden set as dir/golden_<name>.svg
+//!   zig build gallery -- --score                     the golden set scored against its figures (tests/golden.zig)
 //!   zig build gallery -- --gallery out.html         every textbook circuit in one page
 //!   zig build gallery -- [--config lint.zon] in.cir out.svg
 
@@ -9,6 +10,7 @@ const np = @import("NetlistParser");
 const textbook = @import("textbook.zig");
 const support = @import("support.zig");
 const svg = @import("svg.zig");
+const golden = @import("golden.zig");
 
 const Drawn = struct { svg: []u8, stats: np.schematic.Stats };
 
@@ -49,6 +51,15 @@ pub fn main(init: std.process.Init) !void {
         std.debug.print("wrote {s}\n", .{out});
         return;
     }
+    if (args.len >= 2 and std.mem.eql(u8, args[1], "--score")) {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        for (golden.decks) |d| {
+            const s = try golden.score(arena.allocator(), lib, d.spice);
+            std.debug.print("{s}\n", .{try golden.formatScore(arena.allocator(), d.name, s)});
+        }
+        return;
+    }
     if (args.len >= 3 and std.mem.eql(u8, args[1], "--svgs")) {
         var dir = try cwd.createDirPathOpen(io, args[2], .{});
         defer dir.close(io);
@@ -61,6 +72,13 @@ pub fn main(init: std.process.Init) !void {
             try dir.writeFile(io, .{ .sub_path = try std.fmt.bufPrint(&name_buf, "{s}.cir", .{c.name}), .data = c.spice });
             const t = d.stats;
             std.debug.print("{s:<22} labels {d} bent {d} conflicts {d} crossings {d} overlaps {d}\n", .{ c.name, t.labeled_nets, t.bent, t.conflicts, t.crossings, t.overlaps });
+        }
+        // The golden set, to compare with its figures in the owner's notes.
+        for (golden.decks) |c| {
+            const d = try draw(gpa, lib, &.default, &.{c.spice}, null, true);
+            defer gpa.free(d.svg);
+            var name_buf: [64]u8 = undefined;
+            try dir.writeFile(io, .{ .sub_path = try std.fmt.bufPrint(&name_buf, "golden_{s}.svg", .{c.name}), .data = d.svg });
         }
         return;
     }

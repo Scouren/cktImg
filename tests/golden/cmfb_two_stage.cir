@@ -1,0 +1,34 @@
+Fully differential two-stage op amp, a resistive CMFB loop per stage
+* Golden figure: notes Amplifiers/Operational Amplifiers.md:681, after Razavi Fig. 9.62.
+.model nch nmos level=1
+.model pch pmos level=1
+Vdd vdd 0 1.8
+Vin1 vin1 0 dc 0.9 ac 1
+Vin2 vin2 0 dc 0.9
+M1 x vin1 p 0 nch
+M2 y vin2 p 0 nch
+M3 x m vdd vdd pch
+M4 y m vdd vdd pch
+R1 x m 10k
+R2 m y 10k
+M5 vout1 x vdd vdd pch
+M6 vout2 y vdd vdd pch
+M7 vout1 q 0 0 nch
+M8 vout2 q 0 0 nch
+R3 vout1 q 10k
+R4 q vout2 10k
+Iss p 0 200u
+*% M1 2 0 L
+*% M2 6 0 R
+*% M3 2 2.2 R
+*% M4 6 2.2 L
+*% R1 3 1.5 -
+*% R2 5 1.5 -
+*% Iss 4 -1.435 -
+*% M5 -1 2.2 R
+*% M6 9 2.2 L
+*% M7 -1 0 R
+*% M8 9 0 L
+*% R3 1 -3.4 -
+*% R4 7 -3.4 -
+*% labels

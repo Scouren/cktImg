@@ -1,0 +1,18 @@
+Telescopic cascode stage with a cascode PMOS load
+* Golden figure: notes Amplifiers/Single-Stage.md:605, after Razavi Figs. 3.61 and 3.70.
+.model nch nmos level=1
+.model pch pmos level=1
+Vdd vdd 0 1.8
+Vin vin 0 dc 0.7 ac 1
+Vb1 vb1 0 1.0
+Vb2 vb2 0 1.0
+Vb3 vb3 0 1.2
+M1 x vin 0 0 nch
+M2 vout vb1 x 0 nch
+M3 vout vb2 p vdd pch
+M4 p vb3 vdd vdd pch
+*% M1 0 0 L
+*% M2 0 1.84 L
+*% M3 0 4.18 L
+*% M4 0 6.02 L
+*% labels

@@ -1,0 +1,24 @@
+Bandgap reference: PTAT generator and a third branch
+* Golden figure: notes Bandgap References/Bandgap References.md:560, after Razavi Figs. 12.18 and 12.20 (its op amp A1 is EA1 here).
+.model pch pmos level=1
+.model qp pnp
+Vdd vdd 0 2.0
+M3 x g vdd vdd pch
+M4 y g vdd vdd pch
+M5 vref g vdd vdd pch
+EA1 g 0 y x 1e4
+R1 y z 1k
+R2 vref w 10k
+Q1 0 0 x qp
+Q2 0 0 z qp
+Q3 0 0 w qp
+*% M3 0 4.2 L
+*% M4 3 4.2 L
+*% M5 6 4.2 L
+*% EA1 1.5 2.9 -
+*% R1 3 1.45 -
+*% R2 6 1.45 -
+*% Q1 0 0.23 L
+*% Q2 3 0.23 L
+*% Q3 6 0.23 L
+*% labels

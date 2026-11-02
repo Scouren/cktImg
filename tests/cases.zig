@@ -1101,3 +1101,7 @@ test "L6 wire separations batched: an irregular mesh keeps its cells distinct an
         try expectNetsRealised(&b.s);
     }
 }
+
+test {
+    _ = @import("golden.zig");
+}

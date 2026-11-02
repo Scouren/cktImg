@@ -1,0 +1,34 @@
+Folded cascode op amp, PMOS input pair
+* Golden figure: notes Amplifiers/Operational Amplifiers.md:234, after Razavi Figs. 9.14(b) and 9.15.
+.model nch nmos level=1
+.model pch pmos level=1
+Vdd vdd 0 1.8
+Vin1 vin1 0 dc 0.6 ac 1
+Vin2 vin2 0 dc 0.6
+Vb1 vb1 0 0.9
+Vb2 vb2 0 1.0
+Vb3 vb3 0 1.0
+Vb4 vb4 0 0.6
+Iss vdd p 200u
+M1 x vin1 p vdd pch
+M2 y vin2 p vdd pch
+M9 a vb3 vdd vdd pch
+M10 b vb3 vdd vdd pch
+M7 vout1 vb2 a vdd pch
+M8 vout2 vb2 b vdd pch
+M3 vout1 vb1 x 0 nch
+M4 vout2 vb1 y 0 nch
+M5 x vb4 0 0 nch
+M6 y vb4 0 0 nch
+*% M5 0 0 L
+*% M6 8 0 R
+*% M3 0 1.8 L
+*% M4 8 1.8 R
+*% M7 0 3.6 L
+*% M8 8 3.6 R
+*% M9 0 5.4 L
+*% M10 8 5.4 R
+*% M1 3 2.9 L
+*% M2 5 2.9 R
+*% Iss 4 4.92 -
+*% labels vb1 vb2 vb3 vb4
