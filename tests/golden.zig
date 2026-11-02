@@ -19,6 +19,7 @@
 //! - `pub const Overlap = struct { both: u16, drawing_only: u16, figure_only: u16 }`
 //! - `pub const Score = struct`
 //! - `pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score`
+//! - `pub fn scoreCells(arena: Allocator, spice: []const u8, nl: *const np.netlist.Netlist, x: []const i32, y: []const i32, gate_right: []const bool) !Score`
 //! - `pub fn formatScore(arena: Allocator, name: []const u8, s: Score) ![]const u8`
 //! - `pub const Shuffle = enum { reversed, rotated }`
 //! - `pub fn shuffled(arena: Allocator, spice: []const u8, how: Shuffle) ![]const u8`
@@ -165,20 +166,33 @@ pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score {
     try np.layout(arena, &s, &.default);
     const p = try np.Placed.init(arena, &s, &nl);
     const drawn = try locate(arena, &p, fig.names);
-
-    // The mirror image of the drawing may match the figure better: more
-    // left/right orders, then more gates. The score is the same for a
-    // mirrored figure.
-    const as_is = relate(fig, drawn, 1);
-    const mirrored = relate(fig, drawn, -1);
-    const better = mirrored.x_order.agree > as_is.x_order.agree or
-        (mirrored.x_order.agree == as_is.x_order.agree and mirrored.gates.agree > as_is.gates.agree);
-    var out = if (better) mirrored else as_is;
-    out.symmetric = try symmetric(arena, fig, drawn);
+    var out = try compare(arena, fig, drawn);
     const shown = try labelled(arena, &p, &nl, roles, drawn.device);
     out.extra_labels = try minus(arena, shown, fig.labels);
     out.missing_labels = try minus(arena, fig.labels, shown);
     return out;
+}
+
+/// Scores a placement before any wire against the deck's figure: each
+/// netlist device's cell (`x`, `y` down) and gate side. Labels are not
+/// scored.
+pub fn scoreCells(arena: Allocator, spice: []const u8, nl: *const np.netlist.Netlist, x: []const i32, y: []const i32, gate_right: []const bool) !Score {
+    const fig = try readFigure(arena, spice);
+    const n = fig.names.len;
+    const device = try arena.alloc(usize, n);
+    const xs = try arena.alloc(f64, n);
+    const ys = try arena.alloc(f64, n);
+    const gs = try arena.alloc(Gate, n);
+    for (fig.names, device, xs, ys, gs) |name, *dv, *px, *py, *g| {
+        const d = (nl.device(name) orelse return error.UnknownDevice).index();
+        dv.* = d;
+        // Ten drawing units a cell, so neighbouring cells are apart and one
+        // cell is within the drawing's tolerance of itself.
+        px.* = 10 * @as(f64, @floatFromInt(x[d]));
+        py.* = -10 * @as(f64, @floatFromInt(y[d]));
+        g.* = if (gate_right[d]) .right else .left;
+    }
+    return compare(arena, fig, .{ .device = device, .x = xs, .y = ys, .gate = gs });
 }
 
 /// One line: the deck's name and every count of its score. The tests record
@@ -239,6 +253,19 @@ pub fn shuffled(arena: Allocator, spice: []const u8, how: Shuffle) ![]const u8 {
 }
 
 // ---- private ----
+
+/// Orders, rows, columns, gates and symmetry: the drawing or its mirror
+/// image, whichever matches more left/right orders, then more gates, so
+/// the score is the same for a mirrored figure.
+fn compare(arena: Allocator, fig: Figure, drawn: Drawn) !Score {
+    const as_is = relate(fig, drawn, 1);
+    const mirrored = relate(fig, drawn, -1);
+    const better = mirrored.x_order.agree > as_is.x_order.agree or
+        (mirrored.x_order.agree == as_is.x_order.agree and mirrored.gates.agree > as_is.gates.agree);
+    var out = if (better) mirrored else as_is;
+    out.symmetric = try symmetric(arena, fig, drawn);
+    return out;
+}
 
 fn deck(comptime name: []const u8) Deck {
     return .{ .name = name, .spice = @embedFile("golden/" ++ name ++ ".cir") };

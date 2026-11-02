@@ -2,8 +2,12 @@
 //!
 //!   zig build gallery -- --svgs dir                 every textbook circuit as dir/<name>.svg (and .cir), the golden set as dir/golden_<name>.svg
 //!   zig build gallery -- --score                     the golden set scored against its figures (tests/golden.zig)
+//!   zig build gallery -- --cells [deck]              the skeleton's cells of the golden set, as grids
 //!   zig build gallery -- --gallery out.html         every textbook circuit in one page
 //!   zig build gallery -- [--config lint.zon] in.cir out.svg
+//!
+//! Contents:
+//! - `pub fn main(init: std.process.Init) !void`
 
 const std = @import("std");
 const np = @import("NetlistParser");
@@ -14,19 +18,41 @@ const golden = @import("golden.zig");
 
 const Drawn = struct { svg: []u8, stats: np.schematic.Stats };
 
-/// The stages, so the layout's counts can be printed beside the picture.
-fn draw(gpa: std.mem.Allocator, lib: *np.Library, cfg: *const np.Config, sources: []const []const u8, diag: ?*np.netlist.Diagnostic, caption: bool) !Drawn {
-    var nl = try np.netlist.parse(gpa, sources, diag);
-    defer nl.deinit(gpa);
-    const roles = try np.guessRoles(gpa, &nl);
-    defer gpa.free(roles);
-    var s = try np.Schematic.build(gpa, &nl, roles, lib);
-    defer s.deinit();
-    try np.layout(gpa, &s, cfg);
-    var p = try np.Placed.init(gpa, &s, &nl);
-    defer p.deinit();
-    return .{ .svg = try svg.alloc(gpa, &p, lib, .{ .caption = if (caption) nl.title else "" }), .stats = s.stats };
-}
+const head =
+    \\<!doctype html>
+    \\<html lang="en"><head><meta charset="utf-8">
+    \\<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+    \\<title>Hypergraph → schematic: textbook circuits</title>
+    \\<style>
+    \\:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+    \\  --bg:#f4f3ef;--card:#ffffff;--ink:#1d2330;--muted:#5d6577;--line:#dcd9d0;--net:#2a62b8}
+    \\@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171c;--card:#1f232b;--ink:#e8e9ec;--muted:#9aa1b1;--line:#343a46;--net:#7fa8e8}}
+    \\:root[data-theme="dark"]{--bg:#15171c;--card:#1f232b;--ink:#e8e9ec;--muted:#9aa1b1;--line:#343a46;--net:#7fa8e8}
+    \\html{scroll-padding-top:env(safe-area-inset-top,0px)}
+    \\*,*::before,*::after{box-sizing:inherit}
+    \\body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
+    \\main{max-width:980px;margin:0 auto;padding:2rem 1.25rem 4rem}
+    \\h1{font-size:1.9rem;margin:0 0 .4rem;font-weight:600;letter-spacing:-.01em}
+    \\h2.part{font:600 1.3rem/1.3 Helvetica,Arial,sans-serif;margin:2.4rem 0 .3rem}
+    \\h3{font:600 1.05rem/1.3 Helvetica,Arial,sans-serif;margin:0 0 .3rem}
+    \\.lede{color:var(--muted);max-width:66ch;margin:0 0 1rem}
+    \\.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.4rem;font:13px/1.4 Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:1rem}
+    \\.legend em{color:var(--net)}
+    \\section{border-top:1px solid var(--line);padding:1.4rem 0 .6rem}
+    \\.book{color:var(--muted);margin:0 0 .9rem;max-width:80ch;font-size:14px}
+    \\figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.6rem}
+    \\figcaption{font:12px/1.4 Helvetica,Arial,sans-serif;color:var(--muted);margin:.4rem .2rem 0}
+    \\.scroll{overflow-x:auto}
+    \\.scroll svg{display:block;max-width:100%;height:auto;border-radius:4px}
+    \\</style></head><body><main>
+    \\<h1>Hypergraph → schematic, on textbook circuits</h1>
+    \\<p class="lede">Every picture is generated from the SPICE netlist by the algorithm in docs/ALGORITHM.md;
+    \\nothing is hand-placed. Nets are never nodes: they are straight wires between facing pins,
+    \\bends drawn by the layout, or labels.</p>
+    \\<div class="legend"><span><em>italic blue</em> = a net label (xschem lab_pin): the same name is the same net</span>
+    \\<span>bubble on the gate = PMOS (source toward the supply)</span><span>dot = three or more wire directions meet</span></div>
+    \\
+;
 
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
@@ -82,6 +108,15 @@ pub fn main(init: std.process.Init) !void {
         }
         return;
     }
+    if (args.len >= 2 and std.mem.eql(u8, args[1], "--cells")) {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        for (golden.decks) |d| {
+            if (args.len >= 3 and !std.mem.eql(u8, args[2], d.name)) continue;
+            try cells(arena.allocator(), d.name, d.spice);
+        }
+        return;
+    }
     if (args.len >= 3 and std.mem.eql(u8, args[1], "--dump")) {
         const text = try cwd.readFileAlloc(io, args[2], gpa, .unlimited);
         defer gpa.free(text);
@@ -110,6 +145,48 @@ pub fn main(init: std.process.Init) !void {
     try cwd.writeFile(io, .{ .sub_path = rest[1], .data = d.svg });
     const t = d.stats;
     std.debug.print("{d} {d} {d} {d}\n", .{ t.labeled_nets, t.bent, t.crossings, t.overlaps });
+}
+
+// ---- private ----
+
+/// The stages, so the layout's counts can be printed beside the picture.
+fn draw(gpa: std.mem.Allocator, lib: *np.Library, cfg: *const np.Config, sources: []const []const u8, diag: ?*np.netlist.Diagnostic, caption: bool) !Drawn {
+    var nl = try np.netlist.parse(gpa, sources, diag);
+    defer nl.deinit(gpa);
+    const roles = try np.guessRoles(gpa, &nl);
+    defer gpa.free(roles);
+    var s = try np.Schematic.build(gpa, &nl, roles, lib);
+    defer s.deinit();
+    try np.layout(gpa, &s, cfg);
+    var p = try np.Placed.init(gpa, &s, &nl);
+    defer p.deinit();
+    return .{ .svg = try svg.alloc(gpa, &p, lib, .{ .caption = if (caption) nl.title else "" }), .stats = s.stats };
+}
+
+/// The skeleton's cells as a grid, a device's name in its cell, then `=`
+/// for a bridge, else `>`/`<` as its gate faces right or left.
+fn cells(arena: std.mem.Allocator, name: []const u8, spice: []const u8) !void {
+    var nl = try np.netlist.parse(arena, &.{spice}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    var w: i32 = 0;
+    var h: i32 = 0;
+    for (sk.drawn, sk.x, sk.y) |dr, x, y| if (dr) {
+        w = @max(w, x + 1);
+        h = @max(h, y + 1);
+    };
+    std.debug.print("{s}\n", .{name});
+    for (0..@intCast(h)) |row| {
+        for (0..@intCast(w)) |col| {
+            var text: []const u8 = ".";
+            for (sk.drawn, sk.x, sk.y, 0..) |dr, x, y, d| if (dr and x == col and y == row) {
+                text = try arena.print("{s}{s}", .{ nl.graph.edges.items(.name)[d], if (sk.form[d] == .horizontal) "=" else if (sk.gate_right[d]) ">" else "<" });
+            };
+            std.debug.print("{s:<7}", .{text});
+        }
+        std.debug.print("\n", .{});
+    }
 }
 
 /// Every node, pin, edge, join and route of the layout: for debugging.
@@ -144,39 +221,3 @@ fn section(gpa: std.mem.Allocator, lib: *np.Library, w: *std.Io.Writer, c: textb
     try w.print("<section><h3>{s}</h3><p class=\"book\"><b>Book:</b> {s}</p>", .{ c.spice[0 .. std.mem.indexOfScalar(u8, c.spice, '\n') orelse c.spice.len], c.book });
     try w.print("<figure><div class=\"scroll\">{s}</div><figcaption>labelled nets {d} · bent edges {d} · crossings {d} · overlaps {d}</figcaption></figure></section>\n", .{ d.svg, t.labeled_nets, t.bent, t.crossings, t.overlaps });
 }
-
-const head =
-    \\<!doctype html>
-    \\<html lang="en"><head><meta charset="utf-8">
-    \\<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-    \\<title>Hypergraph → schematic: textbook circuits</title>
-    \\<style>
-    \\:root{box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
-    \\  --bg:#f4f3ef;--card:#ffffff;--ink:#1d2330;--muted:#5d6577;--line:#dcd9d0;--net:#2a62b8}
-    \\@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){--bg:#15171c;--card:#1f232b;--ink:#e8e9ec;--muted:#9aa1b1;--line:#343a46;--net:#7fa8e8}}
-    \\:root[data-theme="dark"]{--bg:#15171c;--card:#1f232b;--ink:#e8e9ec;--muted:#9aa1b1;--line:#343a46;--net:#7fa8e8}
-    \\html{scroll-padding-top:env(safe-area-inset-top,0px)}
-    \\*,*::before,*::after{box-sizing:inherit}
-    \\body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "Iowan Old Style","Palatino Linotype",Palatino,Georgia,serif}
-    \\main{max-width:980px;margin:0 auto;padding:2rem 1.25rem 4rem}
-    \\h1{font-size:1.9rem;margin:0 0 .4rem;font-weight:600;letter-spacing:-.01em}
-    \\h2.part{font:600 1.3rem/1.3 Helvetica,Arial,sans-serif;margin:2.4rem 0 .3rem}
-    \\h3{font:600 1.05rem/1.3 Helvetica,Arial,sans-serif;margin:0 0 .3rem}
-    \\.lede{color:var(--muted);max-width:66ch;margin:0 0 1rem}
-    \\.legend{display:flex;flex-wrap:wrap;gap:.4rem 1.4rem;font:13px/1.4 Helvetica,Arial,sans-serif;color:var(--muted);margin-bottom:1rem}
-    \\.legend em{color:var(--net)}
-    \\section{border-top:1px solid var(--line);padding:1.4rem 0 .6rem}
-    \\.book{color:var(--muted);margin:0 0 .9rem;max-width:80ch;font-size:14px}
-    \\figure{margin:0;background:var(--card);border:1px solid var(--line);border-radius:8px;padding:.6rem}
-    \\figcaption{font:12px/1.4 Helvetica,Arial,sans-serif;color:var(--muted);margin:.4rem .2rem 0}
-    \\.scroll{overflow-x:auto}
-    \\.scroll svg{display:block;max-width:100%;height:auto;border-radius:4px}
-    \\</style></head><body><main>
-    \\<h1>Hypergraph → schematic, on textbook circuits</h1>
-    \\<p class="lede">Every picture is generated from the SPICE netlist by the algorithm in docs/ALGORITHM.md;
-    \\nothing is hand-placed. Nets are never nodes: they are straight wires between facing pins,
-    \\bends drawn by the layout, or labels.</p>
-    \\<div class="legend"><span><em>italic blue</em> = a net label (xschem lab_pin): the same name is the same net</span>
-    \\<span>bubble on the gate = PMOS (source toward the supply)</span><span>dot = three or more wire directions meet</span></div>
-    \\
-;

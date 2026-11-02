@@ -15,6 +15,8 @@ const csr = @import("csr.zig");
 const library = @import("library.zig");
 /// Stage 2a (issue #8): blocks, symmetry and a canonical order.
 pub const structure = @import("structure.zig");
+/// Stage 3 (issue #8): devices on a lattice of rows and columns.
+pub const skeleton = @import("skeleton.zig");
 
 pub const Circuit = netlist.Circuit;
 pub const DeviceKind = netlist.DeviceKind;
@@ -823,7 +825,7 @@ fn stackedAlong(s: *const Schematic, circuit: *const Circuit.Graph, a: u32, b: u
     return false;
 }
 
-fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool {
+pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool {
     if (circuit.edges.items(.kind)[d] != .vsource) return false;
     const pins = circuit.members(EdgeId.from(d));
     if (pins.len < 2) return false;

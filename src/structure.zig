@@ -25,6 +25,7 @@
 //! - `pub const Structure = struct`, `Structure.members(s: *const Structure, b: usize) []const u32`
 //! - `pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role) Allocator.Error!Structure`
 //! - `pub fn nameLess(a: []const u8, b: []const u8) bool`
+//! - `pub fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Allocator.Error![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -172,9 +173,9 @@ pub fn nameLess(a: []const u8, b: []const u8) bool {
     return a.len - i < b.len - j;
 }
 
-// ---- private ----
-
-fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Allocator.Error![]u32 {
+/// Each name's place in natural order (`nameLess`), ties by index: a
+/// permutation, in `arena`; `gpa` holds the sort.
+pub fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Allocator.Error![]u32 {
     const order = try gpa.alloc(u32, names.len);
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
@@ -189,6 +190,8 @@ fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Alloc
     for (rank) |r| assert(r < names.len);
     return rank;
 }
+
+// ---- private ----
 
 fn digitsEnd(s: []const u8, start: usize) usize {
     assert(start < s.len);
