@@ -1105,3 +1105,7 @@ test "L6 wire separations batched: an irregular mesh keeps its cells distinct an
 test {
     _ = @import("golden.zig");
 }
+
+test {
+    _ = @import("structure.zig");
+}

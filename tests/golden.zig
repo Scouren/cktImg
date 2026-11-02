@@ -20,6 +20,8 @@
 //! - `pub const Score = struct`
 //! - `pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score`
 //! - `pub fn formatScore(arena: Allocator, name: []const u8, s: Score) ![]const u8`
+//! - `pub const Shuffle = enum { reversed, rotated }`
+//! - `pub fn shuffled(arena: Allocator, spice: []const u8, how: Shuffle) ![]const u8`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -76,6 +78,9 @@ pub const Score = struct {
     missing_labels: []const []const u8 = &.{},
 };
 
+/// How `shuffled` reorders a deck's cards.
+pub const Shuffle = enum { reversed, rotated };
+
 /// Positions this close (cm) share a row or column in a figure.
 const figure_tol: f64 = 0.2;
 /// The same in a drawing, in its integer units.
@@ -100,8 +105,6 @@ const Drawn = struct {
     y: []const f64,
     gate: []const Gate,
 };
-
-const Shuffle = enum { reversed, rotated };
 
 const Placement = struct { at: np.Pt, orient: np.library.Orient };
 
@@ -200,6 +203,39 @@ pub fn formatScore(arena: Allocator, name: []const u8, s: Score) ![]const u8 {
         try joined(arena, s.extra_labels),
         try joined(arena, s.missing_labels),
     });
+}
+
+/// `spice` with its element cards reordered; title, dot cards and comments
+/// first, in their order. A `+` line stays with its card.
+pub fn shuffled(arena: Allocator, spice: []const u8, how: Shuffle) ![]const u8 {
+    var rest: std.ArrayList(u8) = .empty;
+    var cards: std.ArrayList(std.ArrayList(u8)) = .empty;
+    var lines = std.mem.splitScalar(u8, spice, '\n');
+    const title = lines.next() orelse return spice;
+    try rest.appendSlice(arena, title);
+    try rest.append(arena, '\n');
+    while (lines.next()) |line| {
+        const t = std.mem.trimStart(u8, line, " \t");
+        if (t.len > 0 and t[0] == '+' and cards.items.len > 0) {
+            try cards.items[cards.items.len - 1].appendSlice(arena, line);
+            try cards.items[cards.items.len - 1].append(arena, '\n');
+        } else if (t.len > 0 and std.ascii.isAlphabetic(t[0])) {
+            var card: std.ArrayList(u8) = .empty;
+            try card.appendSlice(arena, line);
+            try card.append(arena, '\n');
+            try cards.append(arena, card);
+        } else {
+            try rest.appendSlice(arena, line);
+            try rest.append(arena, '\n');
+        }
+    }
+    const items = cards.items;
+    switch (how) {
+        .reversed => std.mem.reverse(std.ArrayList(u8), items),
+        .rotated => if (items.len > 1) std.mem.rotate(std.ArrayList(u8), items, 1),
+    }
+    for (items) |card| try rest.appendSlice(arena, card.items);
+    return rest.items;
 }
 
 // ---- private ----
@@ -461,39 +497,6 @@ fn minus(arena: Allocator, a: []const []const u8, b: []const []const u8) ![]cons
 
 fn joined(arena: Allocator, names: []const []const u8) ![]const u8 {
     return std.mem.join(arena, ",", names);
-}
-
-/// `spice` with its element cards reordered; title, dot cards and comments
-/// first, in their order. A `+` line stays with its card.
-fn shuffled(arena: Allocator, spice: []const u8, how: Shuffle) ![]const u8 {
-    var rest: std.ArrayList(u8) = .empty;
-    var cards: std.ArrayList(std.ArrayList(u8)) = .empty;
-    var lines = std.mem.splitScalar(u8, spice, '\n');
-    const title = lines.next() orelse return spice;
-    try rest.appendSlice(arena, title);
-    try rest.append(arena, '\n');
-    while (lines.next()) |line| {
-        const t = std.mem.trimStart(u8, line, " \t");
-        if (t.len > 0 and t[0] == '+' and cards.items.len > 0) {
-            try cards.items[cards.items.len - 1].appendSlice(arena, line);
-            try cards.items[cards.items.len - 1].append(arena, '\n');
-        } else if (t.len > 0 and std.ascii.isAlphabetic(t[0])) {
-            var card: std.ArrayList(u8) = .empty;
-            try card.appendSlice(arena, line);
-            try card.append(arena, '\n');
-            try cards.append(arena, card);
-        } else {
-            try rest.appendSlice(arena, line);
-            try rest.append(arena, '\n');
-        }
-    }
-    const items = cards.items;
-    switch (how) {
-        .reversed => std.mem.reverse(std.ArrayList(u8), items),
-        .rotated => if (items.len > 1) std.mem.rotate(std.ArrayList(u8), items, 1),
-    }
-    for (items) |card| try rest.appendSlice(arena, card.items);
-    return rest.items;
 }
 
 /// Each named device that is not a source (a driver stands apart, in card

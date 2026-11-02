@@ -13,6 +13,8 @@ const Allocator = std.mem.Allocator;
 const netlist = @import("netlist.zig");
 const csr = @import("csr.zig");
 const library = @import("library.zig");
+/// Stage 2a (issue #8): blocks, symmetry and a canonical order.
+pub const structure = @import("structure.zig");
 
 pub const Circuit = netlist.Circuit;
 pub const DeviceKind = netlist.DeviceKind;
