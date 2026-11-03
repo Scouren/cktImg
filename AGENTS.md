@@ -157,6 +157,8 @@ Binding on every change, in every project.
   wrong. The main one is the round trip: an imported fixture, netlisted back
   through Schemify (`schemify cmd … cktimg.import`, `schemify netlist`) and
   compared by Schemify's `spicecmp`, is the same circuit.
+  `python3 tests/roundtrip.py <schemify-bin-dir>` runs it over every fixture;
+  it needs a local Schemify build, and CI does not run it.
 - A golden that disagrees with an independent oracle is a bug in the code
   that wrote it. Fix the code, regenerate the golden, and say so in the commit.
 

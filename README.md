@@ -437,6 +437,7 @@ zig build -Dschemify_plugin=true      # also cktimg.wasm, the Schemify plugin (w
 zig build test                        # library, algorithm, API, C ABI and Schemify-import tests
 zig build gallery -- --svgs out/      # the gallery as SVG
 zig build fuzz                        # 4000 random netlists through the pipeline
+python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back and compared by a Schemify build in <dir>
 ```
 
 ### Repository layout
