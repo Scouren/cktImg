@@ -72,6 +72,10 @@ pub fn main(init: std.process.Init) !void {
             std.debug.print("a wire touches another net:\n{s}\n", .{text});
             return error.Short;
         }
+        if (try support.dots(gpa, &sk.p, true) > 0) {
+            std.debug.print("a dot is wrong:\n{s}\n", .{text});
+            return error.Dots;
+        }
         // One picture per circuit: the cards reversed draw the same.
         const back = try draw(a, lib, try golden.shuffled(a, text, .reversed));
         const want = try canonical(a, &sk.p);

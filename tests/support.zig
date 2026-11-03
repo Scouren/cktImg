@@ -6,6 +6,7 @@
 //! - `pub fn library(gpa: std.mem.Allocator) !*np.Library`
 //! - `pub fn freeLibrary(gpa: std.mem.Allocator, lib: *np.Library) void`
 //! - `pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
+//! - `pub fn dots(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
 //! - `pub fn expectConnected(p: *const np.Placed, lib: *const np.Library) !void`
 
 const std = @import("std");
@@ -71,6 +72,86 @@ pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32 {
     var count: u32 = 0;
     for (bad) |b| count += @intFromBool(b);
     return count;
+}
+
+/// Dots where a net's wires meet, and nowhere else: a point where one net
+/// leaves in three directions or more carries a dot, every dot is such a
+/// point, and no net crosses itself where none is (a crossing without a dot
+/// reads as two nets). At each of a net's wire points and pins, every wire
+/// ending there is one direction, a wire running through it two, and a pin's
+/// lead toward its device one. Returns how many points break this; prints
+/// each when `print`. A four-way junction with its dot is fine: the book draws
+/// them (an op-amp's output node).
+// ponytail: every point against every segment of its net, quadratic; fine at test sizes.
+pub fn dots(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32 {
+    var bad: u32 = 0;
+    var pts: std.ArrayList(np.Pt) = .empty;
+    defer pts.deinit(gpa);
+    var met: std.ArrayList(np.Pt) = .empty;
+    defer met.deinit(gpa);
+    for (0..p.netCount()) |n| {
+        pts.clearRetainingCapacity();
+        var it = p.segments(n);
+        while (it.next()) |poly| try pts.appendSlice(gpa, poly);
+        for (p.pin_xy, p.pin_net) |at, pn| if (pn == n) try pts.append(gpa, at);
+        for (pts.items, 0..) |at, i| {
+            // Each point once.
+            const seen = for (pts.items[0..i]) |q| {
+                if (q.x == at.x and q.y == at.y) break true;
+            } else false;
+            if (seen) continue;
+            var dirs: [4]bool = @splat(false); // left, right, up, down
+            var segs = p.segments(n);
+            while (segs.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+                if (!np.Rect.fromCorners(a, b).contains(at)) continue;
+                const lo = if (a.x < b.x or a.y < b.y) a else b;
+                const hi = if (lo.x == a.x and lo.y == a.y) b else a;
+                if (!(at.x == lo.x and at.y == lo.y)) dirs[if (a.y == b.y) 0 else 2] = true;
+                if (!(at.x == hi.x and at.y == hi.y)) dirs[if (a.y == b.y) 1 else 3] = true;
+            };
+            for (0..p.deviceCount()) |d| {
+                const lo, const hi = p.pinRange(d);
+                for (lo..hi) |pin| {
+                    if (p.pin_net[pin] != n or !(p.pin_xy[pin].x == at.x and p.pin_xy[pin].y == at.y)) continue;
+                    // The lead runs from the pin toward the device's origin,
+                    // along the axis it is farther along; a pin at the origin
+                    // (a MOS body drawn on its symbol) has none.
+                    const o = p.dev_pos[d];
+                    const dx = o.x - at.x;
+                    const dy = o.y - at.y;
+                    if (dx == 0 and dy == 0) continue;
+                    if (@abs(dx) >= @abs(dy)) dirs[if (dx < 0) 0 else 1] = true else dirs[if (dy < 0) 2 else 3] = true;
+                }
+            }
+            var arms: u32 = 0;
+            for (dirs) |x| arms += @intFromBool(x);
+            const dot = for (p.junctions) |j| {
+                if (j.x == at.x and j.y == at.y) break true;
+            } else false;
+            if ((arms >= 3) == dot) continue;
+            if (print) std.debug.print("net {s}: {d} arms at {any}, {s}\n", .{ p.net_name[n], arms, at, if (dot) "a dot" else "no dot" });
+            bad += 1;
+        }
+        // Crossings of the net with itself, away from its points.
+        met.clearRetainingCapacity();
+        var outer = p.segments(n);
+        while (outer.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+            if (a.y != b.y) continue;
+            var inner = p.segments(n);
+            while (inner.next()) |q| for (q[0 .. q.len - 1], q[1..]) |c, d| {
+                if (c.x != d.x) continue;
+                const x = c.x;
+                const y = a.y;
+                if (x <= @min(a.x, b.x) or x >= @max(a.x, b.x) or y <= @min(c.y, d.y) or y >= @max(c.y, d.y)) continue;
+                if (print) std.debug.print("net {s}: crosses itself at {any}\n", .{ p.net_name[n], np.Pt{ .x = x, .y = y } });
+                bad += 1;
+            };
+        };
+    }
+    for (p.junctions, 0..) |j, i| for (p.junctions[i + 1 ..]) |k| {
+        if (j.x == k.x and j.y == k.y) bad += 1;
+    };
+    return bad;
 }
 
 /// Every net is one piece, read the way a netlister reads the JSON: wires

@@ -64,6 +64,11 @@ test "sketch: every drawing keeps its devices, is connected, and shorts nothing"
             std.debug.print("sketch {s}: {d} nets touch another's point\n", .{ d[0], shorts });
             bad += 1;
         }
+        const dotted = try support.dots(gpa, &p, true);
+        if (dotted > 0) {
+            std.debug.print("sketch {s}: {d} points whose dot is wrong\n", .{ d[0], dotted });
+            bad += 1;
+        }
     }
     try std.testing.expectEqual(0, bad);
 }
@@ -92,6 +97,11 @@ test "sketch: every AnalogIOC cell keeps its devices, is connected, and shorts n
             const shorts = try support.shorts(gpa, &p, true);
             if (shorts > 0) {
                 std.debug.print("sketch {s} / {s}: {d} nets touch another's point\n", .{ f.name, d.name, shorts });
+                bad += 1;
+            }
+            const dotted = try support.dots(gpa, &p, true);
+            if (dotted > 0) {
+                std.debug.print("sketch {s} / {s}: {d} points whose dot is wrong\n", .{ f.name, d.name, dotted });
                 bad += 1;
             }
         }
@@ -196,4 +206,29 @@ test "sketch: `stack` lengthens the wire between stacked devices, `rail` is a gr
         } else return error.NoGroundSymbol;
         try std.testing.expectEqual(len, ground.y - src.y);
     }
+}
+
+test "sketch: a net crossing its own wire is joined there, with a dot" {
+    // Found by the fuzz: net c's trunk crossed one of its own pin's lines,
+    // which read as two nets crossing.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const p = try draw(arena_state.allocator(), lib, &.{
+        \\fuzz
+        \\.model nch nmos level=1
+        \\.model pch pmos level=1
+        \\Vdd vdd 0 1.8
+        \\Vin in 0 ac 1
+        \\M0 c b in vdd pch
+        \\M1 in out c 0 nch
+        \\R2 a c 1k
+        \\C3 out c 1p
+        \\M4 in c in 0 nch
+        \\M5 in vdd a 0 nch
+    }, .{});
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.dots(gpa, &p, true));
 }

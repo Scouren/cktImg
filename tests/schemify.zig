@@ -99,6 +99,11 @@ test "every cell the engine is handed draws connected and short-free by #8's sta
                 std.debug.print("{s} cell {d}: {d} nets touch another's point\n", .{ f.name, cell, shorts });
                 bad += 1;
             }
+            const dotted = try support.dots(gpa, &p, true);
+            if (dotted > 0) {
+                std.debug.print("{s} cell {d}: {d} points whose dot is wrong\n", .{ f.name, cell, dotted });
+                bad += 1;
+            }
         }
     }
     try std.testing.expect(cells > fixtures.plugin.len);

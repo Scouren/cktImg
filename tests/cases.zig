@@ -165,6 +165,7 @@ test "random netlists: they end, each device on a cell of its own, every net one
         defer placed.deinit();
         try support.expectConnected(&placed, b.lib);
         try testing.expectEqual(0, try support.shorts(gpa, &placed, true));
+        try testing.expectEqual(0, try support.dots(gpa, &placed, true));
     }
 }
 
