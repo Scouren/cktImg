@@ -1,0 +1,3 @@
+interface:
+  display_name: "cktImg"
+  short_description: "Clean schematics from SPICE netlists"

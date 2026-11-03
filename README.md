@@ -104,6 +104,7 @@ Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
 - [How the layout is made](#how-the-layout-is-made)
 - [Gallery](#gallery)
 - [For developers](#for-developers)
+- [From an AI agent](#from-an-ai-agent)
 - [Documentation](#documentation)
 
 ## Download
@@ -457,6 +458,16 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 | `latex/cktimg.sty` | The LaTeX package |
 | `tests/` | Tests, the bundled symbol set, the SVG renderer and the gallery |
 | `docs/` | API, target manifests, and the layout algorithm |
+| `skills/cktimg/` | The agent skill for drawing schematics with cktImg |
+
+## From an AI agent
+
+[`skills/cktimg/`](skills/cktimg) is a skill for coding agents that draw
+schematics with cktImg: write the deck so its names carry its meaning, draw,
+review the drawing against the book's look, and fix each complaint on the
+highest rung that can (names, then `*@ group` hints, then the `lint.zon`
+lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
+agent's skills directory.
 
 ## Documentation
 
