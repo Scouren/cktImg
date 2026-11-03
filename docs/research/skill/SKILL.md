@@ -62,7 +62,7 @@ the top of the ladder and **descend** one rung at a time, only for a
 | 2 relations | where things stand to each other | `row`, `above`, `order`, `group stack`, `upright`, `bridge`, `face`, `label`, `wire`, `port`, `rail`, `first` | the parts are right, their arrangement is not |
 | 3 cells | each device's lattice cell | `cell` | one device must stand at a given row and column |
 | 4 geometry | exact coordinates and orientation | `at`, `refdes` | the lattice cannot express it |
-| 5 wires | a net's exact route | `route` | the router's path for one net is wrong |
+| 5 wires | points a net passes, or its exact route | `via`, `route` | the router's path for one net is wrong |
 
 Every rung below 0 is a constraint the engine honours when it can, and
 reports when it cannot; the drawing stays clean either way. The vocabulary,

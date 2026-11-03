@@ -169,7 +169,9 @@ keyed by device and net name (never card index, so one picture per circuit
 holds), validated at the edge so a bad request returns a refusal instead of
 reaching an assert.
 
-Overrides that need new algorithm work, not just a table:
+Overrides that need new algorithm work, not just a table
+([algorithms.md](algorithms.md) has an algorithm for each, its guarantees,
+cost and conflict report):
 
 - a forced row order that closes a cycle with column links (a joint
   link-and-row pass with a conflict report);
@@ -184,8 +186,10 @@ Overrides that need new algorithm work, not just a table:
   a wired bias line with three gates);
 - pinned routes on mirrored nets (`routes.mirrored` copies only its own
   segments);
-- "always a wire, never a label" (the maze can fail, and placement never
-  moves for a wire: reported, not forced);
+- "always a wire, never a label": possible by growing channels between
+  lattice rows and columns (in both directions; rows alone are not enough),
+  which moves nothing to another row or column, except where pinned
+  coordinates sit on both sides of every cut: there it is reported;
 - per-instance `expand` and port sides;
 - a driver drawn inside the circuit (R3 is recomputed at three sites).
 
@@ -203,7 +207,7 @@ brief, by rung:
 | 2 relations | `row`, `above`, `order`, `group stack`, `upright`, `bridge`, `face`, `label`, `wire`, `port`, `rail`, `first` |
 | 3 cells | `cell` |
 | 4 geometry | `at`, `refdes` |
-| 5 wires | `route` |
+| 5 wires | `via`, `route` |
 | any | `weak <line>`, a stay |
 
 Lines sit at the deck's top level, or in a `.subckt` for the Schemify import
@@ -240,9 +244,12 @@ rail instead of a symbol per branch.
   out of range, a cell taken) is *relaxed*, with its residual; nothing is
   clamped in silence.
 - **Honoured or reported.** Every line ends in the report as `honoured`,
-  `relaxed`, `dropped` or `rejected`, with a code, the residual, and a
-  minimal `blocked_by` set (the lines or guarantee that stopped it; removing
-  any one would let it in). An independent checker reads the finished
+  `relaxed`, `dropped` or `rejected`, with a code, the residual, and
+  `blocked_by`: the preferred conflict, the stronger lines (or the
+  guarantee) that with this line cannot hold, no proper subset blocking it
+  (Junker's; a line blocked by two separate cycles is admitted by no single
+  removal, so "removing any one would let it in" cannot be promised). Each
+  member is flagged `alone` when deleting it by itself would admit the line. An independent checker reads the finished
   `Placed` and tests every `honoured` line (`row a b`: the same y), so the
   engine cannot claim what it did not draw. This is the overrides' oracle,
   beside fuzzing random hints over random netlists with every guarantee
@@ -276,7 +283,8 @@ plugin's log) carries:
 
 - `gates`: the hard guarantees, each pass or the records that fail it;
 - `requests`: each `*@` line by line number: its state (`honoured`,
-  `relaxed`, `dropped`, `rejected`), code, residual, and `blocked_by`;
+  `relaxed`, `dropped`, `rejected`), code, residual, and `blocked_by` with
+  each member's `alone` flag;
 - `overridden`: the engine decisions and stays the lines displaced;
 - `decisions`: per rung, the lines that would force today's drawing;
 - `metrics` and `findings`: the scores, and one record per problem;
@@ -352,19 +360,27 @@ commands real, and grows a rung at a time.
 ## 8. Slices
 
 1. **Preferences**: the `lint.zon` `.layout` table and `place(gpa, cfg, ...)`
-   again (keeps #8's promise that the `lint.zon` lengths stay).
-2. **The seam**: `analyze → place → draw`; one net-order table; one driver
+   again (keeps #8's promise that the `lint.zon` lengths stay). Built in #9.
+2. **Four-way junctions** (H7): the checker, a maze target only where a net
+   has at most two arms, and the ladder's middle rungs staggered. A broken
+   guarantee today, and small (algorithms.md §4).
+3. **The seam**: `analyze → place → draw`; one net-order table; one driver
    table; validators at the edge.
-3. **The report**: the gates as checks on `Placed` (H1 to H10, the tests'
+4. **The report**: the gates as checks on `Placed` (H1 to H10, the tests'
    checks moved into the library), the scores, `--report` and `--decisions`
    for rungs 1 and 2, the text grid; the fixed-point test.
-4. **Rungs 1 and 2**: every verb above, the honoured-or-reported checker,
-   random hints in the fuzz.
-5. **Rungs 3 to 5**: cells, coordinates (with H5), routes through
-   `Canvas.commit`.
-6. **The plugin**: the designer's device names in the engine deck (ends its
+5. **Rungs 1 and 2**: admission with preferred conflicts first
+   (algorithms.md §1), then every verb, the honoured-or-reported checker,
+   random hints in the fuzz, and the 30 lines of figures.md as the
+   acceptance test.
+6. **Rungs 3 to 5**: pinned coordinates and routes through `Canvas.commit`
+   (§5), mirrored routing by the union of blockages (§6), forced cells with
+   stays (§2), then channel growth for `wire` (§3), the largest change.
+7. **The plugin**: the designer's device names in the engine deck (ends its
    instance-order dependence), every hint and role carried through.
-7. **The skill ships**, with a "Steering the layout" section in the README.
+8. **The skill grows** a rung per slice: `skills/cktimg/` shipped in #9 for
+   names, group hints and the `lint.zon` lengths; the draft in
+   [skill/](skill/) is where it is headed.
 
 ## 9. How we will know
 

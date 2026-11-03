@@ -33,6 +33,7 @@ when two pins share a net (a diode-connected gate).
 | 3 | `cell <dev> <col> <row>` | the lattice cell, in the skeleton's own frame (before it shifts the drawing to start at 0, so moving one device renumbers nothing); a bridge may take any row | distinct cells (I1) | weak |
 | 4 | `at <dev> <x> <y> [R0..MR270]` | coordinates in symbol units (decimals, rounded to the nearest whole target unit: four places are exact for any unit under 5000, so an editor's snapped move reads back exactly), orientation | no symbol overlap (H5); pins clear of other nets | weak |
 | 4 | `refdes <dev> left\|right\|above\|below` | where the device's name goes | clear of symbols and wires | weak |
+| 5 | `via <net> <x,y> ...` | points the net's wire passes through, in order; the router joins them (libavoid's checkpoints), a point it cannot reach reported | the maze's rules | weak |
 | 5 | `route <net> <x,y> <x,y> ...` | a polyline of the net, in symbol units | `Canvas.commit` (I4) | weak |
 
 **Mates.** A line on one device of a mated pair applies to both, mirrored:
@@ -51,13 +52,13 @@ nothing to decide.
 The decision kinds are one closed enum: role, kind, class, block, mate,
 axis, driver, expansion, row, column order, chain, form, pin side, net
 pattern, port side, rail style, net order, cell, coordinates, refdes,
-route. The export switches over it exhaustively, so a new engine decision
+via, route. The export switches over it exhaustively, so a new engine decision
 without a kind does not compile.
 
 Changed from steering.md's first draft: `gate <dev> left|right` and
 `flip <dev>` fold into `face`, which also states which end of a two-pin
 device is up and which way a bridge runs; `kind`, `class`, `driver`,
-`expand`, `rail`, `first` and `refdes` are new; `symmetric` takes nets too
+`expand`, `rail`, `first`, `refdes` and `via` are new; `symmetric` takes nets too
 (a net pair is routed as mirror images); `label` and `wire` take a pin and
 a pattern.
 
