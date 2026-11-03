@@ -2,9 +2,9 @@
 //! lattice. In: the netlist, its roles and its structure. Out, per device:
 //! drawn or not; its form (vertical: current enters at its top and leaves
 //! at its bottom; horizontal: a bridge between columns); which side its
-//! gate faces; its x and y. Device columns stand two apart and device rows
-//! two apart, so a channel lies between any two: taps, bridges and wires go
-//! there.
+//! gate faces; its x and y. Device columns stand four apart and device
+//! rows two apart, so a channel lies between any two: taps, bridges and
+//! wires go there.
 //!
 //! - A device is vertical when it is a transistor, sits on a rail, or is in
 //!   series (alone with one other channel element on each of its nets);
@@ -19,8 +19,8 @@
 //! - Rows by longest path down the chains, mates and blocks held level where
 //!   that closes no cycle; transistors on ground drop to their type's lowest
 //!   such row.
-//! - Columns ordered by `columns.zig`; a bridge in the channel among the
-//!   columns of its nets, at its first net's tap row, or mirroring its mate.
+//! - Columns ordered by `columns.zig`, bridges set in the channels between
+//!   them by `bridges.zig`.
 //! - Gates: a differential pair's face out, a mirror's or a cross-coupled
 //!   pair's face each other, any other transistor's faces the rest of its
 //!   gate net.
@@ -39,6 +39,7 @@ const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
 const columns = @import("columns.zig");
 const levels = @import("levels.zig");
+const bridges = @import("bridges.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -60,12 +61,16 @@ pub const Skeleton = struct {
     lower: []const u32,
     /// Its gate (side pins) faces right.
     gate_right: []const bool,
-    /// Its cell: even for vertical devices, the smallest of each axis 0.
+    /// Its cell; the smallest of each axis is 0.
     x: []const i32,
     y: []const i32,
     /// Twice the x of the axis mated devices mirror about, if any.
     axis2: ?i32,
 };
+
+/// Lattice columns between neighbouring device columns, per step of
+/// `columns.order`: the slots between hold bridges.
+const spread = 4;
 
 /// Each device's neighbours in its column, or `none`.
 const Chain = struct {
@@ -133,10 +138,10 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     defer gpa.free(col_x);
     for (0..n) |d| {
         if (!drawn[d] or form[d] != .vertical) continue;
-        x[d] = col_x[column_of[d]];
+        x[d] = spread * col_x[column_of[d]];
         y[d] = 2 * @as(i32, @intCast(rank[d]));
     }
-    try bridges(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y);
+    try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, x, y);
     gates(nl, roles, st, drawn, form, x, gate_right);
     // The core stands about x = 0 until the cells shift to start at 0.
     var mated = false;
@@ -448,83 +453,6 @@ fn mates(gpa: Allocator, nl: *const Netlist, st: *const Structure, drawn: []cons
         }
     }
     return mate;
-}
-
-/// Bridges in canonical order: a bridge whose mate stands already takes
-/// the mirror image of its cell; any other its first net's tap row
-/// (between the devices above and below it there), in the channel nearest
-/// the middle of its nets' columns. A taken cell moves it away from the
-/// axis (rightward with none) until one is free.
-fn bridges(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, x: []i32, y: []i32) !void {
-    const c = &nl.graph;
-    const n = c.edgeCount();
-    assert(x.len == n);
-    assert(y.len == n);
-    // Twice the axis: the sum of any mirrored pair of vertical devices.
-    var axis2: ?i32 = null;
-    for (st.device_mate, 0..) |m, a| if (m != none and m != a and drawn[a] and form[a] == .vertical) {
-        axis2 = x[a] + x[m];
-        break;
-    };
-    var taken: std.AutoHashMapUnmanaged([2]i32, void) = .empty;
-    defer taken.deinit(gpa);
-    for (0..n) |d| if (drawn[d] and form[d] == .vertical) try taken.put(gpa, .{ x[d], y[d] }, {});
-    const order = try byRank(gpa, st.device_rank);
-    defer gpa.free(order);
-    const placed = try gpa.alloc(bool, n);
-    defer gpa.free(placed);
-    @memset(placed, false);
-    for (order) |d| {
-        if (!drawn[d] or form[d] != .horizontal) continue;
-        const m = st.device_mate[d];
-        var at: [2]i32 = undefined;
-        if (axis2 != null and m != none and m != d and placed[m]) {
-            at = .{ axis2.? - x[m], y[m] };
-        } else {
-            var row: ?i32 = null;
-            var sum: i64 = 0;
-            var count: i64 = 0;
-            for (c.members(EdgeId.from(d))) |net| {
-                if (isRail(roles[net.index()])) continue;
-                if (row == null) row = tapRow(nl, drawn, form, upper, lower, rank, net.index());
-                for (c.incident(net)) |e| {
-                    const v = e.index();
-                    if (!drawn[v] or form[v] != .vertical) continue;
-                    sum += x[v];
-                    count += 1;
-                }
-            }
-            at = .{ if (count > 0) @intCast(@divFloor(sum + @divFloor(count, 2), count)) else 0, row orelse -1 };
-        }
-        const step: i32 = if (axis2 != null and 2 * at[0] < axis2.?) -1 else 1;
-        var steps: usize = 0;
-        while (taken.contains(at)) : (steps += 1) {
-            assert(steps <= n);
-            at[0] += step;
-        }
-        try taken.put(gpa, at, {});
-        x[d] = at[0];
-        y[d] = at[1];
-        placed[d] = true;
-    }
-}
-
-/// The odd row just below a net's lowest device above it, else just above
-/// its highest device below it; null for a net no vertical device ends on.
-fn tapRow(nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, net: u32) ?i32 {
-    assert(net < nl.graph.vertexCount());
-    assert(rank.len == drawn.len);
-    var above: ?u32 = null;
-    var below: ?u32 = null;
-    for (nl.graph.incident(VertexId.from(net))) |e| {
-        const d = e.index();
-        if (!drawn[d] or form[d] != .vertical) continue;
-        if (lower[d] == net) above = @max(above orelse 0, rank[d]);
-        if (upper[d] == net) below = @min(below orelse std.math.maxInt(u32), rank[d]);
-    }
-    if (above) |r| return 2 * @as(i32, @intCast(r)) + 1;
-    if (below) |r| return 2 * @as(i32, @intCast(r)) - 1;
-    return null;
 }
 
 /// Every transistor's gate faces the rest of its gate net, or away from the

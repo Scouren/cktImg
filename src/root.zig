@@ -129,4 +129,6 @@ pub const Pipeline = struct {
 
 test {
     std.testing.refAllDecls(@This());
+    // Reached only through `schematic.sketch`, which nothing here calls.
+    _ = @import("maze.zig");
 }

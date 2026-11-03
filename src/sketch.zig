@@ -25,6 +25,7 @@ const layout = @import("layout.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const wires = @import("wires.zig");
+const routes = @import("routes.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -61,7 +62,7 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, &s, nl, &sk);
     defer gpa.free(boxes);
-    try wires.wire(gpa, &s, &xy, geo.gap, boxes);
+    try wires.wire(gpa, &s, &xy, geo.gap, boxes, drawnMirror(&s, &sk, &st));
     s.xy = xy.items;
     s.pos = try a.alloc([2]i32, xy.items.len);
     for (s.pos, xy.items) |*p, q| p.* = .{ @intFromFloat(q[0]), @intFromFloat(q[1]) };
@@ -156,7 +157,8 @@ fn meanX(nl: *const Netlist, sk: *const Skeleton, net: u32, skip: u32) i64 {
 /// Each lattice column as wide as its widest device's reach on each side,
 /// plus room for a port or label where a side pin on a net driven from
 /// outside (or an output) faces that side; rows as tall as their tallest
-/// device. A gap between neighbours.
+/// device, plus a rail symbol's stub where a pin on a rail faces up or
+/// down (the supply's bar over the top aside). A gap between neighbours.
 fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) !Geo {
     const c = &nl.graph;
     var w: usize = 1;
@@ -179,18 +181,24 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
         const y: usize = @intCast(sk.y[d]);
         var left = r[@backingInt(Side.left)];
         var right = r[@backingInt(Side.right)];
+        var up = r[@backingInt(Side.up)];
+        var down = r[@backingInt(Side.down)];
         for (c.members(EdgeId.from(d)), 0..) |net, i| {
             const side = s.pinSide(@intCast(d), i) orelse continue;
-            const named = switch (s.roles[net.index()]) {
-                .input, .bias, .output => true,
-                else => false,
-            };
-            if (!named) continue;
-            if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
-            if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
+            switch (s.roles[net.index()]) {
+                .input, .bias, .output => {
+                    if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
+                    if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
+                },
+                .sink, .supply => |role| {
+                    if (side == .down) down = r[@backingInt(Side.down)] + gap;
+                    if (side == .up and role == .sink) up = r[@backingInt(Side.up)] + gap;
+                },
+                .internal => {},
+            }
         }
         cols[x] = .{ @max(cols[x][0], left), @max(cols[x][1], right) };
-        rows[y] = .{ @max(rows[y][0], r[@backingInt(Side.up)]), @max(rows[y][1], r[@backingInt(Side.down)]) };
+        rows[y] = .{ @max(rows[y][0], up), @max(rows[y][1], down) };
     };
     // Mirrored columns as wide as each other, so the drawing keeps the
     // skeleton's symmetry exactly.
@@ -207,9 +215,20 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
     errdefer gpa.free(xs);
     const ys = try gpa.alloc(i32, h);
     errdefer gpa.free(ys);
-    for (xs, cols, 0..) |*x, need, k| x.* = if (k == 0) need[0] else xs[k - 1] + cols[k - 1][1] + gap + need[0];
+    // An empty lattice column takes no room: devices stand a gap apart.
+    const used = try gpa.alloc(bool, w);
+    defer gpa.free(used);
+    @memset(used, false);
+    for (0..c.edgeCount()) |d| if (sk.drawn[d]) {
+        used[@intCast(sk.x[d])] = true;
+    };
+    var prev: ?usize = null;
+    for (xs, cols, used, 0..) |*x, need, u, k| {
+        x.* = if (prev) |p| xs[p] + (if (u) cols[p][1] + gap + need[0] else 0) else need[0];
+        if (u) prev = k;
+    }
     for (ys, rows, 0..) |*y, need, k| y.* = if (k == 0) need[0] else ys[k - 1] + rows[k - 1][1] + gap + need[0];
-    for (1..w) |k| assert(xs[k] > xs[k - 1]);
+    for (1..w) |k| assert(xs[k] >= xs[k - 1]);
     for (1..h) |k| assert(ys[k] > ys[k - 1]);
     return .{ .xs = xs, .ys = ys, .gap = gap };
 }
@@ -249,8 +268,22 @@ fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo
     for (s.pins.items(.home)) |h| assert(h < s.nodes.len);
 }
 
-fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]wires.Box {
-    var out: std.ArrayList(wires.Box) = .empty;
+/// The drawing's mirror: twice the x its mated devices stand about, when
+/// every mated pair agrees; null when none stands mirrored.
+fn drawnMirror(s: *const Schematic, sk: *const Skeleton, st: *const structure.Structure) ?routes.Mirror {
+    if (sk.axis2 == null) return null;
+    var axis2: ?i32 = null;
+    for (st.device_mate, 0..) |m, d| {
+        if (m == none or m == d or !sk.drawn[d] or !sk.drawn[m]) continue;
+        const a = toPt(s.xy[s.deviceNode(@intCast(d)).?]).x + toPt(s.xy[s.deviceNode(m).?]).x;
+        if (axis2 != null and axis2.? != a) return null;
+        axis2 = a;
+    }
+    return if (axis2) |a| .{ .axis2 = a, .net_mate = st.net_mate } else null;
+}
+
+fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]Rect {
+    var out: std.ArrayList(Rect) = .empty;
     errdefer out.deinit(gpa);
     const info = s.devices.slice();
     for (0..nl.graph.edgeCount()) |d| {
@@ -259,7 +292,7 @@ fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
         const origin = toPt(s.xy[node]).sub(info.items(.grid)[d]);
         const r = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(origin);
         assert(r.min.x <= r.max.x and r.min.y <= r.max.y);
-        try out.append(gpa, .{ .rect = r, .device = @intCast(d) });
+        try out.append(gpa, r);
     }
     assert(out.items.len <= nl.graph.edgeCount());
     return out.toOwnedSlice(gpa);
