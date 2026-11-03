@@ -144,7 +144,9 @@ pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []co
 }
 
 /// Natural order: runs of digits compare as numbers (`m2` < `m10`), the
-/// rest bytewise; a prefix comes first.
+/// rest bytewise; a prefix comes first. Names equal so (`m01`, `m1`) go
+/// bytewise, so distinct names never tie and no order falls back to the
+/// cards'.
 pub fn nameLess(a: []const u8, b: []const u8) bool {
     var i: usize = 0;
     var j: usize = 0;
@@ -170,11 +172,12 @@ pub fn nameLess(a: []const u8, b: []const u8) bool {
     }
     assert(i == a.len or j == b.len);
     assert(i <= a.len and j <= b.len);
-    return a.len - i < b.len - j;
+    if (a.len - i != b.len - j) return a.len - i < b.len - j;
+    return std.mem.lessThan(u8, a, b);
 }
 
-/// Each name's place in natural order (`nameLess`), ties by index: a
-/// permutation, in `arena`; `gpa` holds the sort.
+/// Each name's place in natural order (`nameLess`), a repeated name by
+/// index: a permutation, in `arena`; `gpa` holds the sort.
 pub fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Allocator.Error![]u32 {
     const order = try gpa.alloc(u32, names.len);
     defer gpa.free(order);

@@ -121,8 +121,9 @@ many symmetries, and the first few are as good as any.
 ## 3. Skeleton
 
 Where each drawn device stands, as a cell of a lattice (`skeleton.place`).
-Device columns stand four lattice columns apart and device rows two apart,
-so a channel lies between any two: bridges and wires go there.
+Neighbouring device columns stand eight lattice columns apart (seven bridge
+slots between) and device rows two apart, so a channel lies between any two:
+bridges and wires go there.
 
 **Drawn and form.** A device is drawn unless it is a driver (R3) or has no
 pin. It is **vertical** (current enters at its top and leaves at its

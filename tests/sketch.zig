@@ -78,3 +78,31 @@ test "sketch: every AnalogIOC cell keeps its devices, is connected, and shorts n
     }
     try std.testing.expectEqual(0, bad);
 }
+
+test "sketch: a symbol set whose unit is under four still draws, connected and short-free" {
+    // The C ABI and a symbol file accept any unit above 0; the router steps
+    // a quarter of it.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var bad: usize = 0;
+    for ([_]i32{ 1, 2, 3 }) |unit| {
+        lib.unit = unit;
+        for (textbook.all ++ textbook.beyond) |c| {
+            const p = try draw(arena, lib, &.{c.spice});
+            support.expectConnected(&p, lib) catch {
+                std.debug.print("unit {d}, {s}: a net in pieces\n", .{ unit, c.name });
+                bad += 1;
+            };
+            const shorts = try support.shorts(gpa, &p, true);
+            if (shorts > 0) {
+                std.debug.print("unit {d}, {s}: {d} nets touch another's point\n", .{ unit, c.name, shorts });
+                bad += 1;
+            }
+        }
+    }
+    try std.testing.expectEqual(0, bad);
+}

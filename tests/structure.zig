@@ -87,6 +87,9 @@ test "structure: names sort by their numbers" {
     try std.testing.expect(structure.nameLess("m", "m1"));
     try std.testing.expect(!structure.nameLess("m1", "m1"));
     try std.testing.expect(structure.nameLess("r007", "r8"));
+    // Equal as numbers, still ordered: nothing falls back to card order.
+    try std.testing.expect(structure.nameLess("m01", "m1"));
+    try std.testing.expect(!structure.nameLess("m1", "m01"));
 }
 
 test "structure: each golden figure's symmetry and blocks" {

@@ -2,9 +2,9 @@
 //! lattice. In: the netlist, its roles and its structure. Out, per device:
 //! drawn or not; its form (vertical: current enters at its top and leaves
 //! at its bottom; horizontal: a bridge between columns); which side its
-//! gate faces; its x and y. Device columns stand four apart and device
-//! rows two apart, so a channel lies between any two: taps, bridges and
-//! wires go there.
+//! gate faces; its x and y. Neighbouring device columns stand eight
+//! lattice columns apart and device rows two apart, so a channel lies
+//! between any two: taps, bridges and wires go there.
 //!
 //! - A device is vertical when it is a transistor, sits on a rail, or is in
 //!   series (alone with one other channel element on each of its nets);
