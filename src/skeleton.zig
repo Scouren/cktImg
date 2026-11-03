@@ -12,9 +12,10 @@
 //!   device between two nets the symmetry swaps (it straddles the axis).
 //! - Columns are the chains current flows down: one device's lower end and
 //!   the next one's upper end on a net. Where several meet, one link is
-//!   kept (a transistor, a chain that reaches a rail, the same type, then
-//!   rank), mirrored by the symmetry; nothing links across a pair's tail, so
-//!   a tail stands in a column of its own.
+//!   kept (a stack block's, hinted or recognized; else a transistor, a
+//!   chain that reaches a rail, the same type, then rank), mirrored by the
+//!   symmetry; nothing else links across a pair's tail, so a tail stands in
+//!   a column of its own.
 //! - Mates: the symmetry's, else each differential, cross-coupled or
 //!   two-member mirror pair's, carried up and down their columns; kept only
 //!   where each column's mates stand in one column, since columns mirror
@@ -328,12 +329,20 @@ fn link(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Stru
     defer downs.deinit(gpa);
     const nets = try byRank(gpa, net_rank);
     defer gpa.free(nets);
+    // Each device's next one down its stack block, hinted or recognized.
+    const stacked = try gpa.alloc(u32, drawn.len);
+    defer gpa.free(stacked);
+    @memset(stacked, none);
+    for (st.block_kind, 0..) |k, b| if (k == .stack) {
+        const ms = st.members(b);
+        for (ms[0 .. ms.len - 1], ms[1..]) |u, l| stacked[u] = l;
+    };
     for (nets) |net| {
         if (isRail(roles[net])) continue;
         const m = st.net_mate[net];
         if (m != none and m != net and net_rank[m] < net_rank[net]) continue;
         try endsOn(gpa, nl, drawn, form, upper, lower, net, &ups, &downs);
-        const u, const l = choose(nl, st, upper, lower, roles, chain, ups.items, downs.items) orelse continue;
+        const u, const l = choose(nl, st, upper, lower, roles, chain, stacked, ups.items, downs.items) orelse continue;
         if (closesLoop(chain, u, l)) continue;
         chain.below[u] = l;
         chain.above[l] = u;
@@ -374,11 +383,21 @@ fn endsOn(gpa: Allocator, nl: *const Netlist, drawn: []const bool, form: []const
     }
 }
 
-/// The link to keep among `ups` over `downs`, or null: none when either
-/// side is a pair (its tail stands alone), else the best free device on
-/// each side.
-fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: []const u32, roles: []const Role, chain: *const Chain, ups: []const u32, downs: []const u32) ?struct { u32, u32 } {
+/// The link to keep among `ups` over `downs`, or null: a stack block's
+/// (`stacked`, either way round: a hint lists its devices in any order),
+/// the first by rank; else none when either side is a pair (its tail
+/// stands alone), else the best free device on each side.
+fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: []const u32, roles: []const Role, chain: *const Chain, stacked: []const u32, ups: []const u32, downs: []const u32) ?struct { u32, u32 } {
     if (ups.len == 0 or downs.len == 0) return null;
+    const rank = st.device_rank;
+    var block: ?struct { u32, u32 } = null;
+    for (ups) |u| for (downs) |l| {
+        if (u == l or chain.below[u] != none or chain.above[l] != none) continue;
+        if (stacked[u] != l and stacked[l] != u) continue;
+        const bu, const bl = block orelse .{ u, l };
+        if (block == null or rank[u] < rank[bu] or (u == bu and rank[l] < rank[bl])) block = .{ u, l };
+    };
+    if (block) |b| return b;
     if (isPair(st, ups) or isPair(st, downs)) return null;
     const kinds = nl.graph.edges.items(.kind);
     var u: u32 = none;

@@ -116,3 +116,26 @@ test "skeleton: a symmetric circuit stands as its exact mirror image" {
     // cmfb_two_stage, diff_pair_resistive (tests/structure.zig).
     try std.testing.expectEqual(7, symmetric);
 }
+
+test "skeleton: a stack hint picks the link its column keeps" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    // m1 over one of two below it (r1 keeps them from being mirror images,
+    // which would stand m1 alone on the axis): rank picks m2; the hint,
+    // written bottom first, m3.
+    const deck = "stack hint\n.model nch nmos level=1\nM1 vdd g1 n 0 nch\nM2 n g2 0 0 nch\nM3 n g3 0 0 nch\nR1 vdd g3 1k\n";
+    for ([_]struct { hint: []const u8, under: []const u8, apart: []const u8 }{
+        .{ .hint = "", .under = "m2", .apart = "m3" },
+        .{ .hint = "*@ group stack m3 m1\n", .under = "m3", .apart = "m2" },
+    }) |case| {
+        const l = try lay(arena, try std.mem.concat(arena, u8, &.{ deck, case.hint }));
+        errdefer std.debug.print("{s}=> {s}\n", .{ case.hint, cells(arena, &l) catch "" });
+        const top = l.nl.device("m1").?.index();
+        const under = l.nl.device(case.under).?.index();
+        const apart = l.nl.device(case.apart).?.index();
+        try std.testing.expectEqual(l.sk.x[top], l.sk.x[under]);
+        try std.testing.expect(l.sk.y[top] < l.sk.y[under]);
+        try std.testing.expect(l.sk.x[top] != l.sk.x[apart]);
+    }
+}
