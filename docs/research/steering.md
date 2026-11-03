@@ -191,38 +191,31 @@ Overrides that need new algorithm work, not just a table:
 
 ## 3. The vocabulary
 
-Every line is `*@ <verb> <args>` at the deck's top level, or in a `.subckt`
-for the Schemify import (which already carries group hints into a cell).
-Devices and nets are named as in the deck, any case.
+[vocabulary.md](vocabulary.md) has every line, what it decides, what it is
+checked against, and how `--decisions` exports it, then maps each of the
+~120 decisions in decisions.md to a line or to why it needs none: a style
+setting, a guarantee, derived, or a search whose result the lines pin. In
+brief, by rung:
 
-| rung | line | effect | lands in (decisions.md) | validated against |
-|---|---|---|---|---|
-| 1 | `role <net> supply\|ground\|input\|output\|bias\|internal` | the net's role | R.name, R.stim | — |
-| 1 | `group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off` | blocks (built; `bank` new) | S.hint | — |
-| 1 | `symmetric <a> <b>`, `axis <dev>`, `symmetry off` | mates; a device on the axis; no symmetry | S.symkeep, K.matesrc | involution, kinds match |
-| 2 | `row <devs>`, `above <a> <b>` | same row; a's row above b's | K.rowlevel, K.rowedge | no cycle with column links (I1) |
-| 2 | `order <devs>` | columns left to right | K.colside, K.colorder | mirror pairs (I2) |
-| 2 | `group stack <devs>` | one column, in series order (built) | K.linkstack | shared nets, no loop |
-| 2 | `upright <dev>`, `bridge <dev>` | the device's form | K.form | upright only for transistors and two-pins |
-| 2 | `gate <dev> left\|right`, `flip <dev>` | gate side, mirror image | K.gate*, D.orient | mates face opposite (I2) |
-| 2 | `label <net>`, `wire <net>`, `port <net> <side>` | a net as names or a wire; a port's side | W.dispatch, W.outport | every net one piece (I3) |
-| 3 | `cell <dev> <col> <row>` | lattice cell | K.colx, K.rowlong, K.br* | distinct cells (I1), mirror (I2) |
-| 4 | `at <dev> <x> <y> [orient]` | coordinates in symbol units and orientation | D.collapse, D.orient | no symbol overlap (H5) |
-| 5 | `route <net> <x,y> <x,y> ...` | a polyline of the net | before W.dispatch | `Canvas.commit` (I4) |
-| any | `weak <line>` | the line as a stay | its rung's | its rung's |
+| rung | lines |
+|---|---|
+| 1 meaning | `role`, `kind`, `class`, `group`, `nogroup`, `grouping off`, `symmetric`, `axis`, `symmetry off`, `driver`, `expand` |
+| 2 relations | `row`, `above`, `order`, `group stack`, `upright`, `bridge`, `face`, `label`, `wire`, `port`, `rail`, `first` |
+| 3 cells | `cell` |
+| 4 geometry | `at`, `refdes` |
+| 5 wires | `route` |
+| any | `weak <line>`, a stay |
 
-**Style is not a hint.** How every drawing looks (wire lengths, router costs,
-one ground symbol per branch or a ground rail) is the project's, set in
-`lint.zon` beside the lint rules:
+Lines sit at the deck's top level, or in a `.subckt` for the Schemify import
+(which already carries group hints into a cell, and would keep editor edits
+in a sidecar: [schemify.md](schemify.md)). [figures.md](figures.md) shows the
+vocabulary reaching every golden figure.
 
-```zon
-.{ .layout = .{ .stack = 1.0, .series = 1.0, .rail = 1.0, .terminal = 1.0, .tap = 1.0,
-                .clearance = 0.25, .bend_cost = 1.0, .cross_cost = 2.0, .ground = .per_branch } }
-```
-
-Lengths are in symbol units, and the defaults are today's look. Keys from
-before #8 that still mean the same thing keep their names, so old files keep
-working; `place(gpa, cfg, lib, ...)` takes the config again, as on `main`.
+**Style is not a hint.** How every drawing looks is the project's, set in
+`lint.zon` beside the lint rules: the `.layout` lengths and router costs,
+built in #9 (`stack`, `series`, `rail`, `terminal`, `label`, `tap`,
+`clearance`, `bend_cost`, `cross_cost`), and later styles such as a ground
+rail instead of a symbol per branch.
 
 ## 4. Semantics
 
@@ -261,6 +254,10 @@ working; `place(gpa, cfg, lib, ...)` takes the config again, as on `main`.
   picture and prints the same lines, every line honoured; shuffling the lines
   changes nothing. Run over the textbook, golden and fixture decks and the
   4000 random netlists.
+- **Mates mirror.** A line on one of a mated pair applies to both,
+  mirrored; two lines that contradict each other's mirror drop the pair's
+  mate, reported. The mirror guarantee holds for the mates that remain: the
+  symmetry is the engine's tentative decision, which a line outranks.
 - **Complete by construction.** The decision kinds are one closed enum, and
   the export switches over it exhaustively: a new engine decision without a
   line to state it is a compile error. A stage whose decisions are all
@@ -369,7 +366,35 @@ commands real, and grows a rung at a time.
    instance-order dependence), every hint and role carried through.
 7. **The skill ships**, with a "Steering the layout" section in the README.
 
-## 9. Found on the way
+## 9. How we will know
+
+The engine tests (the fixed point, the honoured-or-reported checker, random
+hints in the fuzz) show the lines work. Whether an agent can use them is a
+separate experiment, with the golden figures as its tasks:
+
+- **Task:** a golden deck, and its figure as text (each device's row,
+  column and gate side) or as an image. An agent with the skill must reach
+  the figure's full score, every relation agreeing, with no guarantee
+  broken.
+- **Measured per task:** rounds; lines written, and on which rungs; lines
+  refused; the final score; guarantees broken (must be none).
+- **Compared:** the engine alone (rung 0); the agent pinning every device's
+  coordinates (`at` only: the "model writes positions" approach the
+  literature finds worse); the agent descending the ladder.
+- **Measured so far** ([figures.md](figures.md)): lines reach every golden
+  figure's full score, 30 lines over the 14 figures (1 on rung 1, 25 on
+  rung 2, 4 on rung 3; six figures need none), predicted by a transcription
+  of the scorer and the row and gate rules that reproduces today's drawings
+  exactly. No figure needs what a guarantee forbids. That settled seven
+  semantics, now in vocabulary.md (`order` splits links, `symmetry off`
+  drops every mate, bridges take `row` and `order`, `cell`'s frame, the
+  ground drop yields, lines on mates mirror, a chained `above`).
+- **What would falsify the design:**
+  - the ladder taking more rounds than pinning coordinates;
+  - a figure no line reaches (the vocabulary is incomplete: a new kind);
+  - a refusal the agent cannot act on (the report lacks information).
+
+## 10. Found on the way
 
 Fixed in #9 (d84bc30): a symbol unit under four tripped the router's assert;
 natural-order ties (`m01`, `m1`) fell back to card order; ALGORITHM.md had
@@ -394,7 +419,7 @@ Open:
 - A net standing in one column that does not fit there never tries a trunk.
 - The C ABI cannot pass roles.
 
-## 10. Open questions
+## 11. Open questions
 
 - Do the preferences land in #9, before it merges, or first after it?
 - Sets of devices in one line (`*@ row kind:pmos`, `*@ group mirror M3*`):

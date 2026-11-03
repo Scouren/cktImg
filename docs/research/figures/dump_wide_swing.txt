@@ -1,0 +1,64 @@
+node 0 device ibias group 0 at { 100, 20 }
+node 1 device iin group 1 at { 240, 20 }
+node 2 device m5 group 2 at { 100, 220 }
+node 3 device m4 group 3 at { 240, 220 }
+node 4 device m3 group 4 at { 240, 380 }
+node 5 device m1 group 5 at { 400, 220 }
+node 6 device m2 group 6 at { 400, 380 }
+node 7 terminal 0 group 7 at { 100, 280 }
+node 8 terminal 0 group 8 at { 240, 440 }
+node 9 terminal 0 group 9 at { 400, 440 }
+node 10 terminal vdd group 10 at { 100, -40 }
+node 11 label vbias group 11 at { 100, 60 }
+node 12 label vbias group 12 at { 100, 180 }
+node 13 label vbias group 13 at { 60, 220 }
+node 14 label vbias group 14 at { 200, 220 }
+node 15 label vbias group 15 at { 360, 220 }
+node 16 terminal out group 16 at { 400, 160 }
+pin 0 ibias.0 net vdd side up home 0
+pin 1 ibias.1 net vbias side down home 0
+pin 2 iin.0 net vdd side up home 1
+pin 3 iin.1 net n side down home 1
+pin 4 m5.0 net vbias side up home 2
+pin 5 m5.1 net vbias side left home 2
+pin 6 m5.2 net 0 side down home 2
+pin 7 m4.0 net n side up home 3
+pin 8 m4.1 net vbias side left home 3
+pin 9 m4.2 net m side down home 3
+pin 10 m3.0 net m side up home 4
+pin 11 m3.1 net n side right home 4
+pin 12 m3.2 net 0 side down home 4
+pin 13 m1.0 net out side up home 5
+pin 14 m1.1 net vbias side left home 5
+pin 15 m1.2 net k side down home 5
+pin 16 m2.0 net k side up home 6
+pin 17 m2.1 net n side left home 6
+pin 18 m2.2 net 0 side down home 6
+pin 19 -.0 net 0 side up home 7
+pin 20 -.0 net 0 side up home 8
+pin 21 -.0 net 0 side up home 9
+pin 22 -.0 net vdd side down home 10
+pin 23 -.0 net vbias side up home 11
+pin 24 -.0 net vbias side down home 12
+pin 25 -.0 net vbias side right home 13
+pin 26 -.0 net vbias side right home 14
+pin 27 -.0 net vbias side right home 15
+pin 28 -.0 net out side down home 16
+route net 0 { { 100, 240 }, { 100, 280 } }
+route net 0 { { 240, 400 }, { 240, 440 } }
+route net 0 { { 400, 400 }, { 400, 440 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 240, 0 }, { 240, -40 } }
+route net vdd { { 100, -40 }, { 240, -40 } }
+route net vbias { { 100, 40 }, { 100, 60 } }
+route net vbias { { 100, 200 }, { 100, 180 } }
+route net vbias { { 80, 220 }, { 60, 220 } }
+route net vbias { { 220, 220 }, { 200, 220 } }
+route net vbias { { 380, 220 }, { 360, 220 } }
+route net k { { 400, 240 }, { 400, 360 } }
+route net m { { 240, 240 }, { 240, 360 } }
+route net out { { 400, 200 }, { 400, 160 } }
+route net n { { 240, 200 }, { 240, 40 } }
+route net n { { 260, 380 }, { 270, 380 }, { 270, 200 }, { 240, 200 } }
+route net n { { 380, 380 }, { 270, 380 } }
+labeled vbias

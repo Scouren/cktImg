@@ -58,10 +58,10 @@ the top of the ladder and **descend** one rung at a time, only for a
 | rung | you say | lines | reach for it when |
 |---|---|---|---|
 | 0 | nothing | — | always first |
-| 1 meaning | what the circuit is | `role`, `group`, `nogroup`, `grouping off`, `symmetric`, `axis`, `symmetry off` | a net's role or a matched group is misread |
-| 2 relations | where things stand to each other | `row`, `above`, `order`, `group stack`, `upright`, `bridge`, `gate`, `label`, `wire`, `port` | the parts are right, their arrangement is not |
+| 1 meaning | what the circuit is | `role`, `kind`, `class`, `group`, `nogroup`, `grouping off`, `symmetric`, `axis`, `symmetry off`, `driver`, `expand` | a net's role or a matched group is misread |
+| 2 relations | where things stand to each other | `row`, `above`, `order`, `group stack`, `upright`, `bridge`, `face`, `label`, `wire`, `port`, `rail`, `first` | the parts are right, their arrangement is not |
 | 3 cells | each device's lattice cell | `cell` | one device must stand at a given row and column |
-| 4 geometry | exact coordinates and orientation | `at` | the lattice cannot express it |
+| 4 geometry | exact coordinates and orientation | `at`, `refdes` | the lattice cannot express it |
 | 5 wires | a net's exact route | `route` | the router's path for one net is wrong |
 
 Every rung below 0 is a constraint the engine honours when it can, and

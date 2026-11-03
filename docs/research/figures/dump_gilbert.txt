@@ -1,0 +1,83 @@
+node 0 device rd1 group 0 at { 100, 20 }
+node 1 device rd2 group 1 at { 740, 20 }
+node 2 device m1 group 2 at { 100, 140 }
+node 3 device m2 group 3 at { 280, 140 }
+node 4 device m3 group 4 at { 560, 140 }
+node 5 device m4 group 5 at { 740, 140 }
+node 6 device m5 group 6 at { 240, 260 }
+node 7 device m6 group 7 at { 600, 260 }
+node 8 device iss group 8 at { 420, 380 }
+node 9 terminal 0 group 9 at { 420, 440 }
+node 10 terminal vdd group 10 at { 100, -40 }
+node 11 label contn group 11 at { 640, 260 }
+node 12 terminal contp group 12 at { 180, 260 }
+node 13 terminal inn group 13 at { 340, 140 }
+node 14 terminal inn group 14 at { 500, 140 }
+node 15 terminal inp group 15 at { 40, 140 }
+node 16 terminal inp group 16 at { 800, 140 }
+pin 0 rd1.0 net vdd side up home 0
+pin 1 rd1.1 net x side down home 0
+pin 2 rd2.0 net vdd side up home 1
+pin 3 rd2.1 net y side down home 1
+pin 4 m1.0 net x side up home 2
+pin 5 m1.1 net inp side left home 2
+pin 6 m1.2 net a side down home 2
+pin 7 m2.0 net y side up home 3
+pin 8 m2.1 net inn side right home 3
+pin 9 m2.2 net a side down home 3
+pin 10 m3.0 net x side up home 4
+pin 11 m3.1 net inn side left home 4
+pin 12 m3.2 net b side down home 4
+pin 13 m4.0 net y side up home 5
+pin 14 m4.1 net inp side right home 5
+pin 15 m4.2 net b side down home 5
+pin 16 m5.0 net a side up home 6
+pin 17 m5.1 net contp side left home 6
+pin 18 m5.2 net t side down home 6
+pin 19 m6.0 net b side up home 7
+pin 20 m6.1 net contn side right home 7
+pin 21 m6.2 net t side down home 7
+pin 22 iss.0 net t side up home 8
+pin 23 iss.1 net 0 side down home 8
+pin 24 -.0 net 0 side up home 9
+pin 25 -.0 net vdd side down home 10
+pin 26 -.0 net contn side left home 11
+pin 27 -.0 net contp side right home 12
+pin 28 -.0 net inn side left home 13
+pin 29 -.0 net inn side right home 14
+pin 30 -.0 net inp side right home 15
+pin 31 -.0 net inp side left home 16
+route net 0 { { 420, 400 }, { 420, 440 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 740, 0 }, { 740, -40 } }
+route net vdd { { 100, -40 }, { 740, -40 } }
+route net contn { { 620, 260 }, { 640, 260 } }
+route net contp { { 220, 260 }, { 180, 260 } }
+route net inn { { 300, 140 }, { 340, 140 } }
+route net inn { { 540, 140 }, { 500, 140 } }
+route net inp { { 80, 140 }, { 40, 140 } }
+route net inp { { 760, 140 }, { 800, 140 } }
+route net a { { 100, 160 }, { 100, 200 } }
+route net a { { 280, 160 }, { 280, 200 } }
+route net a { { 240, 240 }, { 240, 200 } }
+route net a { { 100, 200 }, { 240, 200 } }
+route net a { { 240, 200 }, { 280, 200 } }
+route net b { { 560, 160 }, { 560, 200 } }
+route net b { { 740, 160 }, { 740, 200 } }
+route net b { { 600, 240 }, { 600, 200 } }
+route net b { { 560, 200 }, { 600, 200 } }
+route net b { { 600, 200 }, { 740, 200 } }
+route net t { { 240, 280 }, { 240, 320 } }
+route net t { { 600, 280 }, { 600, 320 } }
+route net t { { 420, 360 }, { 420, 320 } }
+route net t { { 240, 320 }, { 420, 320 } }
+route net t { { 420, 320 }, { 600, 320 } }
+route net x { { 100, 40 }, { 100, 80 } }
+route net x { { 100, 120 }, { 100, 80 } }
+route net x { { 560, 120 }, { 560, 80 } }
+route net x { { 100, 80 }, { 560, 80 } }
+route net y { { 740, 40 }, { 740, 70 } }
+route net y { { 280, 120 }, { 280, 70 } }
+route net y { { 740, 120 }, { 740, 70 } }
+route net y { { 280, 70 }, { 740, 70 } }
+labeled contn

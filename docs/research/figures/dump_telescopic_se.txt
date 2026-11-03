@@ -1,0 +1,43 @@
+node 0 device m1 group 0 at { 100, 460 }
+node 1 device m2 group 1 at { 100, 340 }
+node 2 device m3 group 2 at { 100, 140 }
+node 3 device m4 group 3 at { 100, 20 }
+node 4 terminal 0 group 4 at { 100, 520 }
+node 5 terminal vdd group 5 at { 100, -40 }
+node 6 label vb1 group 6 at { 60, 340 }
+node 7 label vb2 group 7 at { 60, 140 }
+node 8 label vb3 group 8 at { 60, 20 }
+node 9 terminal vin group 9 at { 40, 460 }
+node 10 terminal vout group 10 at { 140, 240 }
+pin 0 m1.0 net x side up home 0
+pin 1 m1.1 net vin side left home 0
+pin 2 m1.2 net 0 side down home 0
+pin 3 m2.0 net vout side up home 1
+pin 4 m2.1 net vb1 side left home 1
+pin 5 m2.2 net x side down home 1
+pin 6 m3.0 net vout side down home 2
+pin 7 m3.1 net vb2 side left home 2
+pin 8 m3.2 net p side up home 2
+pin 9 m4.0 net p side down home 3
+pin 10 m4.1 net vb3 side left home 3
+pin 11 m4.2 net vdd side up home 3
+pin 12 -.0 net 0 side up home 4
+pin 13 -.0 net vdd side down home 5
+pin 14 -.0 net vb1 side right home 6
+pin 15 -.0 net vb2 side right home 7
+pin 16 -.0 net vb3 side right home 8
+pin 17 -.0 net vin side right home 9
+pin 18 -.0 net vout side left home 10
+route net 0 { { 100, 480 }, { 100, 520 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vb1 { { 80, 340 }, { 60, 340 } }
+route net vb2 { { 80, 140 }, { 60, 140 } }
+route net vb3 { { 80, 20 }, { 60, 20 } }
+route net vin { { 80, 460 }, { 40, 460 } }
+route net p { { 100, 40 }, { 100, 120 } }
+route net vout { { 100, 160 }, { 100, 320 } }
+route net vout { { 100, 240 }, { 140, 240 } }
+route net x { { 100, 360 }, { 100, 440 } }
+labeled vb1
+labeled vb2
+labeled vb3

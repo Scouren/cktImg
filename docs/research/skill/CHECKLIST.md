@@ -18,7 +18,7 @@ fix with hints.
 | Supply on top, ground at the bottom, current flowing down each column | `metrics.flow`, `grid` | 2 |
 | Matched devices share a row; a stack stands in one column in series order | `grid`, `metrics.alignment` | 2 |
 | Signal enters on the left and leaves on the right (a differential output at both sides) | `grid`, `metrics.flow` | 2 |
-| Each gate faces the net it is driven from | `decisions` (`gate`) | 2 |
+| Each gate faces the net it is driven from | `decisions` (`face`) | 2 |
 | A net is a wire unless the book would name it (a bias line, a supply); no stray labels | `metrics.labels`, `requests` | 2 |
 | Few crossings, few bends, no long detours | `metrics.crossings`, `metrics.bends`, `metrics.detour` | 2, then 3 |
 | Nothing crowded: names and wires keep clear of symbols and each other | `metrics.clearance` | 3, then 4 |

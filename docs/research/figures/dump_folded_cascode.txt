@@ -1,0 +1,105 @@
+node 0 device iss group 0 at { 280, 20 }
+node 1 device m1 group 1 at { 240, 140 }
+node 2 device m2 group 2 at { 320, 140 }
+node 3 device m9 group 3 at { 0, 20 }
+node 4 device m10 group 4 at { 560, 20 }
+node 5 device m7 group 5 at { 0, 140 }
+node 6 device m8 group 6 at { 560, 140 }
+node 7 device m3 group 7 at { 0, 340 }
+node 8 device m4 group 8 at { 560, 340 }
+node 9 device m5 group 9 at { 0, 460 }
+node 10 device m6 group 10 at { 560, 460 }
+node 11 terminal 0 group 11 at { 0, 520 }
+node 12 terminal 0 group 12 at { 560, 520 }
+node 13 terminal vdd group 13 at { 280, -40 }
+node 14 label vb1 group 14 at { 280, 340 }
+node 15 label vb2 group 15 at { 40, 140 }
+node 16 label vb2 group 16 at { 520, 140 }
+node 17 label vb3 group 17 at { 40, 20 }
+node 18 label vb3 group 18 at { 520, 20 }
+node 19 label vb4 group 19 at { 280, 460 }
+node 20 terminal vin1 group 20 at { 180, 140 }
+node 21 terminal vin2 group 21 at { 380, 140 }
+node 22 terminal vout1 group 22 at { -40, 240 }
+node 23 terminal vout2 group 23 at { 600, 240 }
+pin 0 iss.0 net vdd side up home 0
+pin 1 iss.1 net p side down home 0
+pin 2 m1.0 net x side down home 1
+pin 3 m1.1 net vin1 side left home 1
+pin 4 m1.2 net p side up home 1
+pin 5 m2.0 net y side down home 2
+pin 6 m2.1 net vin2 side right home 2
+pin 7 m2.2 net p side up home 2
+pin 8 m9.0 net a side down home 3
+pin 9 m9.1 net vb3 side right home 3
+pin 10 m9.2 net vdd side up home 3
+pin 11 m10.0 net b side down home 4
+pin 12 m10.1 net vb3 side left home 4
+pin 13 m10.2 net vdd side up home 4
+pin 14 m7.0 net vout1 side down home 5
+pin 15 m7.1 net vb2 side right home 5
+pin 16 m7.2 net a side up home 5
+pin 17 m8.0 net vout2 side down home 6
+pin 18 m8.1 net vb2 side left home 6
+pin 19 m8.2 net b side up home 6
+pin 20 m3.0 net vout1 side up home 7
+pin 21 m3.1 net vb1 side right home 7
+pin 22 m3.2 net x side down home 7
+pin 23 m4.0 net vout2 side up home 8
+pin 24 m4.1 net vb1 side left home 8
+pin 25 m4.2 net y side down home 8
+pin 26 m5.0 net x side up home 9
+pin 27 m5.1 net vb4 side right home 9
+pin 28 m5.2 net 0 side down home 9
+pin 29 m6.0 net y side up home 10
+pin 30 m6.1 net vb4 side left home 10
+pin 31 m6.2 net 0 side down home 10
+pin 32 -.0 net 0 side up home 11
+pin 33 -.0 net 0 side up home 12
+pin 34 -.0 net vdd side down home 13
+pin 35 -.0 net vb1 side down home 14
+pin 36 -.0 net vb2 side left home 15
+pin 37 -.0 net vb2 side right home 16
+pin 38 -.0 net vb3 side left home 17
+pin 39 -.0 net vb3 side right home 18
+pin 40 -.0 net vb4 side down home 19
+pin 41 -.0 net vin1 side right home 20
+pin 42 -.0 net vin2 side left home 21
+pin 43 -.0 net vout1 side right home 22
+pin 44 -.0 net vout2 side left home 23
+route net 0 { { 0, 480 }, { 0, 520 } }
+route net 0 { { 560, 480 }, { 560, 520 } }
+route net vdd { { 0, 0 }, { 0, -40 } }
+route net vdd { { 280, 0 }, { 280, -40 } }
+route net vdd { { 560, 0 }, { 560, -40 } }
+route net vdd { { 0, -40 }, { 280, -40 } }
+route net vdd { { 280, -40 }, { 560, -40 } }
+route net vb1 { { 20, 340 }, { 540, 340 } }
+route net vb2 { { 20, 140 }, { 40, 140 } }
+route net vb2 { { 540, 140 }, { 520, 140 } }
+route net vb3 { { 20, 20 }, { 40, 20 } }
+route net vb3 { { 540, 20 }, { 520, 20 } }
+route net vb4 { { 20, 460 }, { 540, 460 } }
+route net vin1 { { 220, 140 }, { 180, 140 } }
+route net vin2 { { 340, 140 }, { 380, 140 } }
+route net a { { 0, 40 }, { 0, 120 } }
+route net b { { 560, 40 }, { 560, 120 } }
+route net p { { 280, 40 }, { 280, 80 } }
+route net p { { 240, 120 }, { 240, 80 } }
+route net p { { 320, 120 }, { 320, 80 } }
+route net p { { 240, 80 }, { 280, 80 } }
+route net p { { 280, 80 }, { 320, 80 } }
+route net vout1 { { 0, 160 }, { 0, 320 } }
+route net vout1 { { 0, 240 }, { -40, 240 } }
+route net vout2 { { 560, 160 }, { 560, 320 } }
+route net vout2 { { 560, 240 }, { 600, 240 } }
+route net x { { 240, 160 }, { 240, 400 } }
+route net x { { 0, 360 }, { 0, 400 } }
+route net x { { 0, 440 }, { 0, 400 } }
+route net x { { 0, 400 }, { 240, 400 } }
+route net y { { 320, 160 }, { 320, 400 } }
+route net y { { 560, 360 }, { 560, 400 } }
+route net y { { 560, 440 }, { 560, 400 } }
+route net y { { 320, 400 }, { 560, 400 } }
+labeled vb2
+labeled vb3

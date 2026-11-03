@@ -1,0 +1,132 @@
+node 0 device mt group 0 at { 740, 380 }
+node 1 device m1 group 1 at { 580, 260 }
+node 2 device m2 group 2 at { 900, 260 }
+node 3 device m5 group 3 at { 580, 140 }
+node 4 device m6 group 4 at { 900, 140 }
+node 5 device m3 group 5 at { 580, 20 }
+node 6 device m4 group 6 at { 900, 20 }
+node 7 device s1 group 7 at { 340, 20 }
+node 8 device s1 group 7 at { 340, 14 }
+node 9 device s1 group 7 at { 340, 26 }
+node 10 device s2 group 10 at { 1140, 20 }
+node 11 device s2 group 10 at { 1140, 14 }
+node 12 device s2 group 10 at { 1140, 26 }
+node 13 device s3 group 13 at { 100, 20 }
+node 14 device s3 group 13 at { 100, 14 }
+node 15 device s3 group 13 at { 100, 26 }
+node 16 device s4 group 16 at { 1380, 20 }
+node 17 device s4 group 16 at { 1380, 14 }
+node 18 device s4 group 16 at { 1380, 26 }
+node 19 terminal 0 group 19 at { 740, 440 }
+node 20 terminal 0 group 20 at { 280, 26 }
+node 21 terminal 0 group 21 at { 1080, 26 }
+node 22 terminal 0 group 22 at { 40, 26 }
+node 23 terminal 0 group 23 at { 1320, 26 }
+node 24 terminal vdd group 24 at { 580, -40 }
+node 25 terminal ck group 25 at { 680, 380 }
+node 26 terminal ck group 26 at { 280, 14 }
+node 27 terminal ck group 27 at { 1080, 14 }
+node 28 terminal ck group 28 at { 40, 14 }
+node 29 terminal ck group 29 at { 1320, 14 }
+node 30 terminal vin1 group 30 at { 520, 260 }
+node 31 terminal vin2 group 31 at { 960, 260 }
+pin 0 mt.0 net t side up home 0
+pin 1 mt.1 net ck side left home 0
+pin 2 mt.2 net 0 side down home 0
+pin 3 m1.0 net p side up home 1
+pin 4 m1.1 net vin1 side left home 1
+pin 5 m1.2 net t side down home 1
+pin 6 m2.0 net q side up home 2
+pin 7 m2.1 net vin2 side right home 2
+pin 8 m2.2 net t side down home 2
+pin 9 m5.0 net x side up home 3
+pin 10 m5.1 net y side right home 3
+pin 11 m5.2 net p side down home 3
+pin 12 m6.0 net y side up home 4
+pin 13 m6.1 net x side left home 4
+pin 14 m6.2 net q side down home 4
+pin 15 m3.0 net x side down home 5
+pin 16 m3.1 net y side right home 5
+pin 17 m3.2 net vdd side up home 5
+pin 18 m4.0 net y side down home 6
+pin 19 m4.1 net x side left home 6
+pin 20 m4.2 net vdd side up home 6
+pin 21 s1.0 net vdd side up home 7
+pin 22 s1.1 net x side down home 7
+pin 23 s1.2 net ck side left home 8
+pin 24 s1.3 net 0 side left home 9
+pin 25 s2.0 net vdd side up home 10
+pin 26 s2.1 net y side down home 10
+pin 27 s2.2 net ck side left home 11
+pin 28 s2.3 net 0 side left home 12
+pin 29 s3.0 net vdd side up home 13
+pin 30 s3.1 net p side down home 13
+pin 31 s3.2 net ck side left home 14
+pin 32 s3.3 net 0 side left home 15
+pin 33 s4.0 net vdd side up home 16
+pin 34 s4.1 net q side down home 16
+pin 35 s4.2 net ck side left home 17
+pin 36 s4.3 net 0 side left home 18
+pin 37 -.0 net 0 side up home 19
+pin 38 -.0 net 0 side right home 20
+pin 39 -.0 net 0 side right home 21
+pin 40 -.0 net 0 side right home 22
+pin 41 -.0 net 0 side right home 23
+pin 42 -.0 net vdd side down home 24
+pin 43 -.0 net ck side right home 25
+pin 44 -.0 net ck side right home 26
+pin 45 -.0 net ck side right home 27
+pin 46 -.0 net ck side right home 28
+pin 47 -.0 net ck side right home 29
+pin 48 -.0 net vin1 side right home 30
+pin 49 -.0 net vin2 side left home 31
+route net 0 { { 740, 400 }, { 740, 440 } }
+route net 0 { { 320, 26 }, { 280, 26 } }
+route net 0 { { 1120, 26 }, { 1080, 26 } }
+route net 0 { { 80, 26 }, { 40, 26 } }
+route net 0 { { 1360, 26 }, { 1320, 26 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 340, 0 }, { 340, -40 } }
+route net vdd { { 580, 0 }, { 580, -40 } }
+route net vdd { { 900, 0 }, { 900, -40 } }
+route net vdd { { 1140, 0 }, { 1140, -40 } }
+route net vdd { { 1380, 0 }, { 1380, -40 } }
+route net vdd { { 100, -40 }, { 340, -40 } }
+route net vdd { { 340, -40 }, { 580, -40 } }
+route net vdd { { 580, -40 }, { 900, -40 } }
+route net vdd { { 900, -40 }, { 1140, -40 } }
+route net vdd { { 1140, -40 }, { 1380, -40 } }
+route net ck { { 720, 380 }, { 680, 380 } }
+route net ck { { 320, 14 }, { 280, 14 } }
+route net ck { { 1120, 14 }, { 1080, 14 } }
+route net ck { { 80, 14 }, { 40, 14 } }
+route net ck { { 1360, 14 }, { 1320, 14 } }
+route net vin1 { { 560, 260 }, { 520, 260 } }
+route net vin2 { { 920, 260 }, { 960, 260 } }
+route net p { { 580, 240 }, { 580, 200 } }
+route net p { { 580, 160 }, { 580, 200 } }
+route net p { { 100, 40 }, { 100, 200 } }
+route net p { { 100, 200 }, { 580, 200 } }
+route net q { { 900, 240 }, { 900, 200 } }
+route net q { { 900, 160 }, { 900, 200 } }
+route net q { { 1380, 40 }, { 1380, 200 } }
+route net q { { 900, 200 }, { 1380, 200 } }
+route net t { { 740, 360 }, { 740, 320 } }
+route net t { { 580, 280 }, { 580, 320 } }
+route net t { { 900, 280 }, { 900, 320 } }
+route net t { { 580, 320 }, { 740, 320 } }
+route net t { { 740, 320 }, { 900, 320 } }
+route net x { { 580, 120 }, { 580, 80 } }
+route net x { { 880, 140 }, { 860, 140 }, { 860, 80 } }
+route net x { { 580, 40 }, { 580, 80 } }
+route net x { { 880, 20 }, { 860, 20 }, { 860, 80 } }
+route net x { { 340, 40 }, { 340, 80 } }
+route net x { { 340, 80 }, { 580, 80 } }
+route net x { { 580, 80 }, { 860, 80 } }
+route net y { { 600, 140 }, { 620, 140 }, { 620, 70 } }
+route net y { { 900, 120 }, { 900, 70 } }
+route net y { { 600, 20 }, { 620, 20 }, { 620, 70 } }
+route net y { { 900, 40 }, { 900, 70 } }
+route net y { { 1140, 40 }, { 1140, 70 } }
+route net y { { 620, 70 }, { 900, 70 } }
+route net y { { 900, 70 }, { 1140, 70 } }
