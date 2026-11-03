@@ -54,7 +54,7 @@ flagged `.ground_ref` (an op-amp's reference) gets none when it is on ground.
 
 ```zig
 var diag: cktimg.netlist.Diagnostic = .{};
-var placed = try cktimg.place(gpa, &cfg, &lib, &.{spice_text}, &diag);
+var placed = try cktimg.place(gpa, &lib, &.{spice_text}, &diag);
 defer placed.deinit();
 
 for (0..placed.deviceCount()) |d| {
@@ -89,19 +89,22 @@ var nl = try cktimg.netlist.parse(gpa, &.{spice_text}, &diag);   // or netlist.l
 defer nl.deinit(gpa);
 const roles = try cktimg.guessRoles(gpa, &nl);                    // edit freely: which nets are supply, input, …
 defer gpa.free(roles);
-var s = try cktimg.Schematic.build(gpa, &nl, roles, &lib);        // topology: orientation, wiring, supernodes
+var s = try cktimg.layout(gpa, &nl, roles, &lib);                 // structure, placement, wires
 defer s.deinit();
-try cktimg.layout(gpa, &s, &cfg);                                  // coordinates
 var placed = try cktimg.Placed.init(gpa, &s, &nl);                 // plain geometry out
 ```
 
-The schematic between `build` and `layout` is the topology before any
-coordinate exists — an editor with its own placer stops there.
+`layout` is stages 2 to 4 of `docs/ALGORITHM.md`, and each is callable
+alone: `schematic.structure.analyze` gives the blocks and the symmetry, and
+`schematic.skeleton.place` each device's cell on a lattice before any
+coordinate exists, where an editor with its own geometry stops. The deck's
+grouping hints (`*@ group pair M1 M2`, read by `cktimg.hints`) steer the
+structure.
 
 ### 4. Many documents, one set of pages
 
 ```zig
-var p = cktimg.Pipeline.init(gpa, &cfg, &lib);
+var p = cktimg.Pipeline.init(gpa, &lib);
 defer p.deinit();
 for (decks) |deck| {
     const placed = try p.run(&.{deck}, &diag);   // borrowed: valid until the next run or reset
@@ -117,9 +120,10 @@ var diags: std.ArrayList(cktimg.config.Diagnostic) = .empty;
 const cfg = try cktimg.Config.load(arena, io, dir, "lint.zon", &diags);   // missing file: defaults
 ```
 
-`.layout` holds the wire lengths (ALGORITHM.md §5), `.rules` the lint
-severities, `.render` the TikZ colours and widths. Unknown keys are reported,
-never fatal.
+`.rules` holds the lint severities, `.render` the TikZ colours and widths.
+Unknown keys are reported, never fatal: a `.layout` table from before issue
+#8 among them, since the layout takes no settings (its spacing is the
+symbol set's `unit`).
 
 ### 6. Lint
 
@@ -177,8 +181,9 @@ changed, and why:
 ## Dropped
 
 cktImg's `rerun`, `patch`, `Pipeline.Carry`, `Scratch` and the `.layout` keys
-of its search (`refine`, `enum_limit`, `track_w`, …) belonged to its column
-search and router; this layout is deterministic and has neither. JSON output
+of its search (`refine`, `enum_limit`, `track_w`, …) tuned a search this
+layout does not run: it is one deterministic pass, its searches bounded,
+with no settings. JSON output
 (`json.write`) is kept for the C ABI's `cktimg_json` and for `cktimg-json`,
 the command line tool (`tools/json.zig`; target manifests in
 `docs/TARGETS.md`).

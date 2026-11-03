@@ -72,7 +72,7 @@ pub fn main(init: std.process.Init) !void {
         try w.writeAll(head);
         try w.writeAll("<h2 class=\"part\">Acceptance set</h2><p class=\"lede\">Each drawing is compared with the book's figure below it.</p>\n");
         for (textbook.all) |c| try section(gpa, lib, w, c);
-        try w.writeAll("<h2 class=\"part\">Beyond the set</h2><p class=\"lede\">Textbook circuits that exercise particular rules; docs/ALGORITHM.md lists what is still open.</p>\n");
+        try w.writeAll("<h2 class=\"part\">Beyond the set</h2><p class=\"lede\">Textbook circuits beyond the acceptance set; docs/ALGORITHM.md lists what is still open.</p>\n");
         for (textbook.beyond) |c| try section(gpa, lib, w, c);
         try w.writeAll("</main></body></html>\n");
         try cwd.writeFile(io, .{ .sub_path = out, .data = aw.written() });

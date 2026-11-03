@@ -18,7 +18,7 @@ const usage =
     \\
     \\Options:
     \\  --standalone      a complete \documentclass{standalone} document
-    \\  --config <path>   layout, render and lint settings from a lint.zon file
+    \\  --config <path>   render and lint settings from a lint.zon file
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --lint            run the lint.zon rules and report on stderr
     \\  -h, --help        this message

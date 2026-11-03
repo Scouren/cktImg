@@ -327,7 +327,7 @@ fn toF(p: Pt) [2]f32 {
     return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
 }
 
-/// W10: a device pin with no other pin on its net.
+/// A no-connect cross on each device pin with no other pin on its net.
 fn noConnects(gpa: Allocator, s: *Schematic) !void {
     const count = try gpa.alloc(u32, s.net_name.len);
     defer gpa.free(count);

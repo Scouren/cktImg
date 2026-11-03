@@ -288,9 +288,10 @@ test "placed: random netlists draw every net as one piece, no wire on another's 
     }
 }
 
-// Before L9 and `Placed`'s check: rstring_ladder 29 nets, gain_cell_array
-// 24, write_dac 18, weight_tile 4 (`rowa0` across the `phi1`/`phi2`
-// gates), the nine-port block 4, blocks.spice 3.
+// The wire-first layout failed this, before its relayout and repair passes,
+// on rstring_ladder (29 nets), gain_cell_array 24, write_dac 18,
+// weight_tile 4 (`rowa0` across the `phi1`/`phi2` gates), the nine-port
+// block 4 and blocks.spice 3; #8's canvas commits no such wire.
 test "placed: no wire touches another net's pin, wire end or label" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
