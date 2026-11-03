@@ -21,11 +21,11 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
-const layout = @import("layout.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const wires = @import("wires.zig");
 const routes = @import("routes.zig");
+const maze = @import("maze.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -62,15 +62,11 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, &s, nl, &sk);
     defer gpa.free(boxes);
-    try wires.wire(gpa, &s, &xy, geo.gap, boxes, drawnMirror(&s, &sk, &st));
+    const hidden = try hiddenPins(gpa, &s, nl, &sk);
+    defer gpa.free(hidden);
+    try wires.wire(gpa, &s, &xy, geo.gap, boxes, hidden, drawnMirror(&s, &sk, &st));
     s.xy = xy.items;
-    s.pos = try a.alloc([2]i32, xy.items.len);
-    for (s.pos, xy.items) |*p, q| p.* = .{ @intFromFloat(q[0]), @intFromFloat(q[1]) };
-    try layout.findDots(gpa, &s);
     try noConnects(gpa, &s);
-    var labeled: u32 = 0;
-    for (s.labeled) |l| labeled += @intFromBool(l);
-    s.stats.labeled_nets = labeled;
     assert(s.xy.len == s.nodes.len);
     return s;
 }
@@ -96,11 +92,6 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     for (0..c.edgeCount()) |d| {
         info.items(.kept)[d] = sk.drawn[d];
         info.items(.driver)[d] = c.members(EdgeId.from(d)).len > 0 and sch.isDriver(c, s.roles, @intCast(d));
-        info.items(.on_power_path)[d] = false;
-        info.items(.on_signal_path)[d] = false;
-        info.items(.x_key)[d] = 0;
-        info.items(.y_key)[d] = 0;
-        info.items(.pair_half)[d] = .none;
         const vertical = sk.drawn[d] and sk.form[d] == .vertical;
         info.items(.orientation)[d] = if (vertical) .vertical else .horizontal;
         info.items(.flip_x)[d] = false;
@@ -249,7 +240,7 @@ fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d]) continue;
         const at: [2]f32 = .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
-        const node = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = none, .x_key = 0, .y_key = 0 });
+        const node = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = none });
         try xy.append(a, at);
         const class = s.lib.at(info.items(.class)[d]);
         const o = info.items(.orient)[d];
@@ -263,7 +254,7 @@ fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo
             const across: f32 = @floatFromInt(if (side.isHorizontal()) t.y else t.x);
             var home = node;
             if (across != 0) {
-                home = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = node, .x_key = 0, .y_key = 0 });
+                home = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = node });
                 try xy.append(a, if (side.isHorizontal()) .{ at[0], at[1] + across } else .{ at[0] + across, at[1] });
             }
             _ = try s.addPin(.{ .home = home, .side = side, .net = net.index(), .device = @intCast(d), .index = @intCast(i) });
@@ -285,6 +276,31 @@ fn drawnMirror(s: *const Schematic, sk: *const Skeleton, st: *const structure.St
         axis2 = a;
     }
     return if (axis2) |a| .{ .axis2 = a, .net_mate = st.net_mate } else null;
+}
+
+/// The points of pins `Placed` draws on their symbol with no wire (a MOS
+/// body, an op-amp's reference, a card pin its class lacks): no other net's
+/// wire may touch them.
+fn hiddenPins(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]maze.Mark {
+    var out: std.ArrayList(maze.Mark) = .empty;
+    errdefer out.deinit(gpa);
+    const info = s.devices.slice();
+    assert(sk.drawn.len == nl.graph.edgeCount());
+    for (0..nl.graph.edgeCount()) |d| {
+        if (!sk.drawn[d]) continue;
+        const origin = toPt(s.xy[s.deviceNode(@intCast(d)).?]).sub(info.items(.grid)[d]);
+        const class = s.lib.at(info.items(.class)[d]);
+        const o = info.items(.orient)[d];
+        for (nl.graph.members(EdgeId.from(d)), 0..) |net, i| {
+            const shown = i < sch.max_pins and i < class.terminals.len and s.pinSide(@intCast(d), i) != null and
+                !sch.referencePin(s, @intCast(d), i, net.index());
+            if (shown) continue;
+            const at = if (i < class.terminals.len) origin.add(o.apply(class.terminals[i].at)) else origin;
+            try out.append(gpa, .{ .at = at, .net = net.index() });
+        }
+    }
+    for (out.items) |m| assert(m.net < nl.graph.vertexCount());
+    return out.toOwnedSlice(gpa);
 }
 
 fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]Rect {

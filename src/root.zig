@@ -5,9 +5,9 @@
 //!
 //! | call | gives you |
 //! |------|-----------|
-//! | `place(gpa, cfg, lib, sources, diag)` | an owned `Placed` |
+//! | `place(gpa, lib, sources, diag)` | an owned `Placed` |
 //! | `Pipeline.run` | a borrowed `Placed`, pages reused across documents |
-//! | `netlist.parse` → `guessRoles` → `Schematic.build` → `layout` → `Placed.init` | every stage, each usable alone |
+//! | `netlist.parse` → `guessRoles` → `layout` → `Placed.init` | every stage, each usable alone |
 //!
 //! The library draws nothing and knows no device: the caller's `Library`
 //! says what each class looks like.
@@ -21,7 +21,6 @@ pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
 pub const config = @import("config.zig");
 pub const schematic = @import("schematic.zig");
-pub const layout_engine = @import("layout.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
 pub const lint = @import("lint.zig");
@@ -54,10 +53,12 @@ pub const Placed = placed.Placed;
 pub const Label = placed.Label;
 
 /// Proposes a role per net (supply, sink, input, output, bias, internal);
-/// edit the result freely before `Schematic.build`.
+/// edit the result freely before `layout`.
 pub const guessRoles = schematic.guessRoles;
-/// Coordinates for a built schematic.
-pub const layout = layout_engine.layout;
+/// A netlist and its roles drawn: its structure found, its devices placed
+/// by it, its nets wired (docs/ALGORITHM.md). The caller frees the result
+/// with `Schematic.deinit`.
+pub const layout = schematic.sketch.lay;
 
 /// What can stop a placement: a card the parser does not represent (see
 /// `diag` for where), or memory.
@@ -70,7 +71,6 @@ pub const PlaceError = netlist.Error || library.RegisterError;
 /// any device kind it has no class for.
 pub fn place(
     gpa: Allocator,
-    cfg: *const Config,
     lib: *Library,
     sources: []const []const u8,
     diag: ?*netlist.Diagnostic,
@@ -79,9 +79,8 @@ pub fn place(
     defer nl.deinit(gpa);
     const roles = try guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try Schematic.build(gpa, &nl, roles, lib);
+    var s = try layout(gpa, &nl, roles, lib);
     defer s.deinit();
-    try layout(gpa, &s, cfg);
     return Placed.init(gpa, &s, &nl);
 }
 
@@ -92,13 +91,12 @@ pub const Pipeline = struct {
     scratch: std.heap.ArenaAllocator,
     /// The current result.
     out: std.heap.ArenaAllocator,
-    cfg: *const Config,
     lib: *Library,
     current: ?Placed = null,
 
-    /// Borrows `cfg` and `lib`; both must outlive the pipeline.
-    pub fn init(gpa: Allocator, cfg: *const Config, lib: *Library) Pipeline {
-        return .{ .scratch = .init(gpa), .out = .init(gpa), .cfg = cfg, .lib = lib };
+    /// Borrows `lib`, which must outlive the pipeline.
+    pub fn init(gpa: Allocator, lib: *Library) Pipeline {
+        return .{ .scratch = .init(gpa), .out = .init(gpa), .lib = lib };
     }
 
     pub fn deinit(self: *Pipeline) void {
@@ -112,8 +110,7 @@ pub const Pipeline = struct {
         const tmp = self.scratch.allocator();
         var nl = try netlist.parse(tmp, sources, diag);
         const roles = try guessRoles(tmp, &nl);
-        var s = try Schematic.build(tmp, &nl, roles, self.lib);
-        try layout(tmp, &s, self.cfg);
+        var s = try layout(tmp, &nl, roles, self.lib);
         self.current = try Placed.init(self.out.allocator(), &s, &nl);
         _ = self.scratch.reset(.retain_capacity);
         return &self.current.?;

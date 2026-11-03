@@ -190,7 +190,7 @@ pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*
         for (diags.items) |d| report.writer.print("config:{d}: {s} '{s}'\n", .{ d.line, @tagName(d.kind), d.key }) catch return null;
     }
     var diag: netlist.Diagnostic = .{};
-    sch.placed = root.place(gpa, &sch.cfg, l, &.{std.mem.span(s)}, &diag) catch |err| {
+    sch.placed = root.place(gpa, l, &.{std.mem.span(s)}, &diag) catch |err| {
         if (out_report) |r| {
             var w: std.Io.Writer.Allocating = .init(gpa);
             w.writer.print("line {d}: {s} near '{s}'\n", .{ diag.line, @errorName(err), diag.token() }) catch return null;

@@ -18,9 +18,7 @@
 //! - `pub const Ratio = struct { agree: u16, of: u16 }`
 //! - `pub const Overlap = struct { both: u16, drawing_only: u16, figure_only: u16 }`
 //! - `pub const Score = struct`
-//! - `pub const Engine = enum { layout, sketch }`
 //! - `pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score`
-//! - `pub fn scoreWith(arena: Allocator, lib: *np.Library, spice: []const u8, engine: Engine) !Score`
 //! - `pub fn scoreCells(arena: Allocator, spice: []const u8, nl: *const np.netlist.Netlist, x: []const i32, y: []const i32, gate_right: []const bool) !Score`
 //! - `pub fn formatScore(arena: Allocator, name: []const u8, s: Score) ![]const u8`
 //! - `pub const Shuffle = enum { reversed, rotated }`
@@ -81,9 +79,6 @@ pub const Score = struct {
     missing_labels: []const []const u8 = &.{},
 };
 
-/// Which layout draws a deck: today's, or issue #8's stages.
-pub const Engine = enum { layout, sketch };
-
 /// How `shuffled` reorders a deck's cards.
 pub const Shuffle = enum { reversed, rotated };
 
@@ -114,73 +109,33 @@ const Drawn = struct {
 
 const Placement = struct { at: np.Pt, orient: np.library.Orient };
 
-/// One line per golden deck, as `formatScore` writes it: today's drawing.
-/// A change in either direction fails until the line is updated, so the
-/// numbers in the tree are always the measured ones.
+/// One line per golden deck, as `formatScore` writes it. A change in
+/// either direction fails until the line is updated, so the numbers in the
+/// tree are always the measured ones.
 const recorded = [decks.len][]const u8{
-    "ota_5t x 8/8 y 8/8 rows 1+0-1 cols 2+0-0 sym 2/3 gates 5/5 labels +[] -[]",
-    "two_stage_pmos x 33/33 y 26/26 rows 4+0-6 cols 3+0-0 sym 3/3 gates 6/7 labels +[vbias] -[]",
-    "fd_two_stage x 22/32 y 22/24 rows 8+2-4 cols 4+0-0 sym 2/5 gates 5/8 labels +[vb1,x,y] -[]",
-    "telescopic_fd x 24/24 y 32/32 rows 4+0-0 cols 12+0-0 sym 4/5 gates 5/8 labels +[vb1,vb2,vb3] -[]",
-    "folded_cascode x 29/43 y 40/50 rows 5+6-0 cols 6+1-6 sym 3/6 gates 6/10 labels +[x,y] -[]",
-    "strongarm x 34/49 y 18/46 rows 4+24-5 cols 0+1-6 sym 0/6 gates 4/7 labels +[p,q,t,x,y] -[]",
-    "gilbert x 19/36 y 8/29 rows 2+9-5 cols 0+1-0 sym 0/0 gates 3/6 labels +[a,b,t,x,y] -[inn,inp]",
-    "cmfb_two_stage x 50/74 y 56/64 rows 3+7-11 cols 4+2-0 sym 0/7 gates 7/8 labels +[vout1,vout2,x,y] -[]",
-    "bandgap_ptat x 18/29 y 27/29 rows 5+2-2 cols 7+0-0 sym 0/0 gates 6/6 labels +[g] -[]",
+    "ota_5t x 8/8 y 8/8 rows 2+0-0 cols 2+0-0 sym 3/3 gates 5/5 labels +[] -[]",
+    "two_stage_pmos x 33/33 y 26/26 rows 6+0-4 cols 3+0-0 sym 3/3 gates 7/7 labels +[] -[]",
+    "fd_two_stage x 32/32 y 24/24 rows 12+0-0 cols 4+0-0 sym 5/5 gates 8/8 labels +[] -[]",
+    "telescopic_fd x 24/24 y 32/32 rows 4+0-0 cols 12+0-0 sym 5/5 gates 8/8 labels +[] -[]",
+    "folded_cascode x 43/43 y 44/50 rows 5+6-0 cols 12+0-0 sym 6/6 gates 2/10 labels +[] -[vb1,vb4]",
+    "strongarm x 49/49 y 38/46 rows 9+8-0 cols 6+0-0 sym 6/6 gates 7/7 labels +[] -[]",
+    "gilbert x 34/36 y 28/29 rows 7+1-0 cols 0+2-0 sym 0/0 gates 4/6 labels +[] -[]",
+    "cmfb_two_stage x 70/74 y 64/64 rows 14+0-0 cols 4+0-0 sym 7/7 gates 8/8 labels +[] -[]",
+    "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 5/6 labels +[] -[]",
     "cascode_mirror x 6/6 y 8/8 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/4 labels +[] -[]",
-    "wide_swing x 16/16 y 15/19 rows 1+4-1 cols 4+0-1 sym 0/0 gates 4/5 labels +[n] -[]",
-    "beta_multiplier x 8/11 y 11/13 rows 2+2-0 cols 2+0-2 sym 1/2 gates 4/5 labels +[a,b] -[]",
+    "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 4/5 labels +[] -[]",
+    "beta_multiplier x 11/11 y 13/13 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/5 labels +[] -[]",
     "diff_pair_resistive x 8/8 y 8/8 rows 2+0-0 cols 2+0-0 sym 3/3 gates 2/2 labels +[] -[]",
     "telescopic_se x 0/0 y 6/6 rows 0+0-0 cols 6+0-0 sym 0/0 gates 4/4 labels +[] -[]",
 };
 
-/// Decks whose drawing still changes with the order of their cards. Issue #8
-/// empties this list; a deck that starts passing fails until it is removed.
-const order_dependent = [_][]const u8{
-    "current_mirror",
-    "diff_pair_resistive",
-    "ota_5t",
-    "two_stage_opamp",
-    "bandgap",
-    "noninverting_amp",
-    "telescopic_cascode",
-    "sallen_key",
-    "ring_oscillator",
-    "golden/ota_5t",
-    "golden/two_stage_pmos",
-    "golden/fd_two_stage",
-    "golden/telescopic_fd",
-    "golden/folded_cascode",
-    "golden/strongarm",
-    "golden/gilbert",
-    "golden/cmfb_two_stage",
-    "golden/bandgap_ptat",
-    "golden/cascode_mirror",
-    "golden/wide_swing",
-    "golden/beta_multiplier",
-    "golden/diff_pair_resistive",
-};
-
-/// Lays `spice` out with today's layout and the default settings and
-/// scores the drawing against the figure in its `*%` lines. Everything
-/// lives in `arena`.
+/// Lays `spice` out and scores the drawing against the figure in its `*%`
+/// lines. Everything lives in `arena`.
 pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score {
-    return scoreWith(arena, lib, spice, .layout);
-}
-
-/// `score`, drawn by `engine`.
-pub fn scoreWith(arena: Allocator, lib: *np.Library, spice: []const u8, engine: Engine) !Score {
     const fig = try readFigure(arena, spice);
     var nl = try np.netlist.parse(arena, &.{spice}, null);
     const roles = try np.guessRoles(arena, &nl);
-    const s = switch (engine) {
-        .layout => blk: {
-            var s = try np.Schematic.build(arena, &nl, roles, lib);
-            try np.layout(arena, &s, &.default);
-            break :blk s;
-        },
-        .sketch => try np.schematic.sketch.lay(arena, &nl, roles, lib),
-    };
+    var s = try np.layout(arena, &nl, roles, lib);
     const p = try np.Placed.init(arena, &s, &nl);
     const drawn = try locate(arena, &p, fig.names);
     var out = try compare(arena, fig, drawn);
@@ -543,13 +498,12 @@ fn joined(arena: Allocator, names: []const []const u8) ![]const u8 {
     return std.mem.join(arena, ",", names);
 }
 
-/// Each named device that is not a source (a driver stands apart, in card
-/// order), at its place and orientation.
+/// Each named device at its place and orientation.
 fn placements(arena: Allocator, lib: *np.Library, spice: []const u8) !std.StringHashMapUnmanaged(Placement) {
-    const p = try np.place(arena, &.default, lib, &.{spice}, null);
+    const p = try np.place(arena, lib, &.{spice}, null);
     var out: std.StringHashMapUnmanaged(Placement) = .empty;
     for (p.dev_name, p.dev_pos, p.dev_orient) |name, at, o| {
-        if (name.len == 0 or name[0] == 'v') continue;
+        if (name.len == 0) continue;
         try out.put(arena, name, .{ .at = at, .orient = o });
     }
     return out;
@@ -627,7 +581,7 @@ test "golden: the drawing does not depend on the order of the cards" {
     var all: std.ArrayList(Deck) = .empty;
     for (textbook.all ++ textbook.beyond) |c| try all.append(arena, .{ .name = c.name, .spice = c.spice });
     for (decks) |d| try all.append(arena, .{ .name = try arena.print("golden/{s}", .{d.name}), .spice = d.spice });
-    var dependent: std.ArrayList([]const u8) = .empty;
+    var dependent: usize = 0;
     for (all.items) |d| {
         const base = try placements(arena, lib, d.spice);
         const same = for ([_]Shuffle{ .reversed, .rotated }) |how| {
@@ -640,16 +594,9 @@ test "golden: the drawing does not depend on the order of the cards" {
             } else true;
             if (!all_same) break false;
         } else true;
-        if (!same) try dependent.append(arena, d.name);
+        if (same) continue;
+        std.debug.print("card order changes the drawing of {s}\n", .{d.name});
+        dependent += 1;
     }
-    var wrong: usize = 0;
-    for (dependent.items) |name| if (!contains(&order_dependent, name)) {
-        std.debug.print("card order changes the drawing of {s}\n", .{name});
-        wrong += 1;
-    };
-    for (order_dependent) |name| if (!contains(dependent.items, name)) {
-        std.debug.print("{s} no longer depends on card order: remove it from order_dependent\n", .{name});
-        wrong += 1;
-    };
-    try std.testing.expectEqual(0, wrong);
+    try std.testing.expectEqual(0, dependent);
 }

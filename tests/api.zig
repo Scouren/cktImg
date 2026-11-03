@@ -9,7 +9,7 @@ const support = @import("support.zig");
 const textbook = @import("textbook.zig");
 
 fn placeText(lib: *np.Library, src: []const u8) !np.Placed {
-    return np.place(testing.allocator, &.default, lib, &.{src}, null);
+    return np.place(testing.allocator, lib, &.{src}, null);
 }
 
 /// Wires are Manhattan polylines; every pin with company on its net is on a
@@ -74,9 +74,8 @@ test "place: one call and the stages give the same drawing" {
     defer nl.deinit(gpa);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try np.Schematic.build(gpa, &nl, roles, lib);
+    var s = try np.layout(gpa, &nl, roles, lib);
     defer s.deinit();
-    try np.layout(gpa, &s, &.default);
     var staged = try np.Placed.init(gpa, &s, &nl);
     defer staged.deinit();
 
@@ -88,7 +87,7 @@ test "pipeline: borrowed results, pages kept across documents" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var p = np.Pipeline.init(gpa, &.default, lib);
+    var p = np.Pipeline.init(gpa, lib);
     defer p.deinit();
     for (textbook.all) |c| {
         const got = try p.run(&.{c.spice}, null);
@@ -142,14 +141,12 @@ test "placed: a driver stands apart, between its terminal symbol and ground" {
 }
 
 test "placed: a pin off the layout's line gets a lead onto it" {
-    // The op-amp's inputs are 40 apart on the symbol; the copies the layout
-    // splits it into are a pitch apart. Either way, the wires end on the pins.
+    // The op-amp's inputs are 40 apart on the symbol, the second off its
+    // input side's line: its own copy node, and the wires end on the pins.
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var cfg: np.Config = .default;
-    cfg.layout.min_pitch = 1.5;
-    var p = try np.place(gpa, &cfg, lib, &.{textbook.all[13].spice}, null);
+    var p = try np.place(gpa, lib, &.{textbook.all[13].spice}, null);
     defer p.deinit();
     try expectWellFormed(&p, lib);
 }
@@ -182,19 +179,11 @@ test "blocks: a subcircuit is one block, its ports on the sides its directives s
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var s: np.Schematic = undefined;
-    var nl = try np.netlist.parse(gpa, &.{with_block}, null);
-    defer nl.deinit(gpa);
-    const roles = try np.guessRoles(gpa, &nl);
-    defer gpa.free(roles);
-    s = try np.Schematic.build(gpa, &nl, roles, lib);
-    defer s.deinit();
-    try np.layout(gpa, &s, &.default);
-    try testing.expectEqual(0, s.stats.crossings);
-    try testing.expectEqual(0, s.stats.overlaps);
-    var p = try np.Placed.init(gpa, &s, &nl);
+    var p = try placeText(lib, with_block);
     defer p.deinit();
     try expectWellFormed(&p, lib);
+    try expectConnected(&p, lib);
+    try testing.expectEqual(0, try support.shorts(gpa, &p, true));
 
     const x = for (p.dev_name, 0..) |n, d| {
         if (std.mem.eql(u8, n, "x1")) break d;
@@ -321,10 +310,8 @@ test "placed: no wire touches another net's pin, wire end or label" {
         if (k > 0) std.debug.print("example {s}: {d} nets\n", .{ src[0..@min(src.len, 20)], k });
         failed += k;
     }
-    // As AnalogIOC's converter runs it (cktimg_sky130.zon), a file of
-    // `.subckt`s titled as cktimg-json titles it.
-    var cfg: np.Config = .default;
-    cfg.rules.symbol_geometry = .err;
+    // As AnalogIOC's converter runs it, a file of `.subckt`s titled as
+    // cktimg-json titles it.
     for (fixtures.analogioc) |c| {
         // cktimg-json's top cell: the last `.subckt`'s body, the deck after it.
         const text = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, c.spice });
@@ -333,7 +320,7 @@ test "placed: no wire touches another net's pin, wire end or label" {
         defer nl.deinit(gpa);
         const top = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, nl.defs[nl.defs.len - 1].body });
         defer gpa.free(top);
-        var p = try np.place(gpa, &cfg, lib, &.{ top, text[c.name.len + 1 ..] }, null);
+        var p = try np.place(gpa, lib, &.{ top, text[c.name.len + 1 ..] }, null);
         defer p.deinit();
         try expectConnected(&p, lib);
         const k = try support.shorts(gpa, &p, true);

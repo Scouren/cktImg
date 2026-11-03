@@ -20,7 +20,7 @@
 //! drawing does not depend on card order.
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, mirror: ?routes.Mirror) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -30,6 +30,7 @@ const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const canvas = @import("canvas.zig");
 const routes = @import("routes.zig");
+const maze = @import("maze.zig");
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -62,9 +63,10 @@ const Line = struct {
 };
 
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
-/// in step with it), `gap` the room beside a device.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, mirror: ?routes.Mirror) Allocator.Error!void {
-    var c = try Canvas.init(gpa, s, xy, gap, boxes);
+/// in step with it), `gap` the room beside a device, `hidden` the points of
+/// pins drawn on their symbol with no wire.
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void {
+    var c = try Canvas.init(gpa, s, xy, gap, boxes, hidden);
     defer c.deinit();
     const n_nets = s.net_name.len;
     const pins_of = try gpa.alloc(std.ArrayList(u32), n_nets);

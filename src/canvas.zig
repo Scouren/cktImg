@@ -10,7 +10,7 @@
 //!
 //! Contents:
 //! - `pub const Canvas = struct`, `Canvas.Checkpoint`
-//! - `Canvas.init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect) Allocator.Error!Canvas`, `Canvas.deinit(c: *Canvas) void`
+//! - `Canvas.init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas`, `Canvas.deinit(c: *Canvas) void`
 //! - `Canvas.commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool`, `Canvas.fits(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
 //! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`
@@ -24,7 +24,6 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
-const layout = @import("layout.zig");
 const maze = @import("maze.zig");
 
 const Side = library.Side;
@@ -53,8 +52,9 @@ pub const Canvas = struct {
     /// How much was drawn, to go back to.
     pub const Checkpoint = struct { segs: usize, points: usize, routes: usize, nodes: usize };
 
-    /// A canvas over `s` with every pin on it as a point of its net.
-    pub fn init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect) Allocator.Error!Canvas {
+    /// A canvas over `s` with every pin on it as a point of its net, and the
+    /// `hidden` ones (a MOS body: drawn on its symbol, never wired).
+    pub fn init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas {
         assert(xy.items.len == s.nodes.len);
         assert(gap > 0);
         const rails = try gpa.alloc(bool, s.roles.len);
@@ -62,6 +62,7 @@ pub const Canvas = struct {
         var c: Canvas = .{ .gpa = gpa, .s = s, .xy = xy, .gap = gap, .boxes = boxes, .rails = rails };
         errdefer c.deinit();
         for (s.pins.items(.net), 0..) |net, p| try c.points.append(gpa, .{ .at = pinAt(s, @intCast(p)), .net = net });
+        try c.points.appendSlice(gpa, hidden);
         return c;
     }
 
@@ -79,7 +80,7 @@ pub const Canvas = struct {
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| if (!c.fits(net, a, b)) return false;
         const before = c.segs.items.len;
         defer assert(c.segs.items.len == before + pts.len - 1);
-        var route: sch.Route = .{ .pts = undefined, .len = @intCast(pts.len), .net = net, .kind = .join, .id = none, .straight = true, .owners = .{ none, none, none } };
+        var route: sch.Route = .{ .pts = undefined, .len = @intCast(pts.len), .net = net };
         for (pts, 0..) |p, i| route.pts[i] = toF(p);
         try c.s.routes.append(c.s.arena.allocator(), route);
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| try c.segs.append(c.gpa, .{ .a = a, .b = b, .net = net });
@@ -114,7 +115,7 @@ pub const Canvas = struct {
     /// wire it ends).
     pub fn leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void {
         const s = c.s;
-        const node = try s.addNode(.{ .kind = kind, .ref = net, .group = none, .x_key = 0, .y_key = 0 });
+        const node = try s.addNode(.{ .kind = kind, .ref = net, .group = none });
         try c.xy.append(s.arena.allocator(), toF(at));
         // The list may have moved: pin points are read through `s.xy`.
         s.xy = c.xy.items;
@@ -176,7 +177,7 @@ pub const Canvas = struct {
 pub fn pinAt(s: *const Schematic, p: u32) Pt {
     assert(p < s.pins.len);
     assert(s.pins.items(.home)[p] < s.xy.len);
-    return toPt(layout.pinPoint(s, p));
+    return toPt(s.pinPoint(p));
 }
 
 /// `d` from `p` toward `side`.

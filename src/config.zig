@@ -1,47 +1,22 @@
-//! The `lint.zon` settings file, three tables:
+//! The `lint.zon` settings file, two tables:
 //!
-//! - `.layout`: the wire lengths the layout keeps in each situation
-//!   (docs/ALGORITHM.md §5, Geometry);
 //! - `.rules`: one severity per lint rule (`lint.zig`);
 //! - `.render`: colours and line widths for the TikZ emitter.
 //!
-//! Lengths are in units, where one unit is a two-pin symbol from pin end to
-//! pin end. Every key is optional; an absent key keeps its default, and an
+//! Every key is optional; an absent key keeps its default, and an
 //! unrecognized key or a malformed value is reported, never fatal — failing
-//! to draw a schematic over a typo in a style file is the wrong trade.
+//! to draw a schematic over a typo in a style file is the wrong trade. (The
+//! layout takes no settings: its spacing is the symbols' unit. A `.layout`
+//! table from before issue #8 is reported as an unknown key.)
 //!
 //! ```zon
-//! .{ .layout = .{ .stack = 0.5, .terminal = 1.0 } }
+//! .{ .rules = .{ .no_ground = .err }, .render = .{ .wire = "000000" } }
 //! ```
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Zoir = std.zig.Zoir;
 const lint = @import("lint.zig");
-
-/// Visible wire kept between two things, by situation, in units.
-pub const Layout = struct {
-    /// Smallest spacing between neighbouring rows or columns, centre to centre.
-    min_pitch: f32 = 1.0,
-    /// Two devices on one vertical wire: a transistor stack, a load over its driver.
-    stack: f32 = 0.25,
-    /// Two devices on one horizontal wire: resistors in series.
-    series: f32 = 0.25,
-    /// A device pin to a supply or ground symbol.
-    rail: f32 = 0.5,
-    /// A device pin to an input or output terminal.
-    terminal: f32 = 0.5,
-    /// A device pin to a net label.
-    label: f32 = 0.5,
-    /// A pin to a junction bar, and a junction bar to its terminal.
-    junction: f32 = 0.5,
-    /// A pin to the wire it taps, or to the corner where it turns.
-    tap: f32 = 0.5,
-    /// How far a bend (a wire around a device) leaves a pin before turning.
-    bend: f32 = 0.25,
-    /// Room kept between a wire and another net's symbol.
-    clearance: f32 = 0.2,
-};
 
 /// How the TikZ emitter strokes a drawing.
 pub const Render = struct {
@@ -54,7 +29,6 @@ pub const Render = struct {
 };
 
 pub const Config = struct {
-    layout: Layout = .{},
     rules: lint.Rules = .{},
     render: Render = .{},
 
@@ -90,9 +64,7 @@ pub const Config = struct {
         for (tables.names, 0..) |name, i| {
             const key = name.get(zoir);
             const node = tables.vals.at(@intCast(i));
-            if (std.mem.eql(u8, key, "layout")) {
-                try patch(Layout, arena, ast, zoir, node, &cfg.layout, &sink);
-            } else if (std.mem.eql(u8, key, "rules")) {
+            if (std.mem.eql(u8, key, "rules")) {
                 try patch(lint.Rules, arena, ast, zoir, node, &cfg.rules, &sink);
             } else if (std.mem.eql(u8, key, "render")) {
                 try patch(Render, arena, ast, zoir, node, &cfg.render, &sink);
@@ -213,26 +185,27 @@ test "config: absent keys keep defaults, unknown keys and bad values are reporte
     var diags: std.ArrayList(Diagnostic) = .empty;
     const cfg = try Config.parse(a,
         \\.{
-        \\    .layout = .{ .stack = 0.5, .wobble = 3, .tap = -1 },
-        \\    .colours = .{},
+        \\    .render = .{ .sym_w = 2, .wobble = 3, .wire_w = -1 },
+        \\    .layout = .{ .stack = 0.5 },
         \\}
     , &diags);
-    try std.testing.expectEqual(0.5, cfg.layout.stack);
-    try std.testing.expectEqual((Layout{}).tap, cfg.layout.tap); // -1 rejected
-    try std.testing.expectEqual((Layout{}).terminal, cfg.layout.terminal);
+    try std.testing.expectEqual(2, cfg.render.sym_w);
+    try std.testing.expectEqual((Render{}).wire_w, cfg.render.wire_w); // -1 rejected
+    try std.testing.expectEqualStrings((Render{}).wire, cfg.render.wire);
     try std.testing.expectEqual(3, diags.items.len);
     try std.testing.expectEqualStrings("wobble", diags.items[0].key);
     try std.testing.expectEqual(Diagnostic.Kind.unknown_key, diags.items[0].kind);
-    try std.testing.expectEqualStrings("tap", diags.items[1].key);
+    try std.testing.expectEqualStrings("wire_w", diags.items[1].key);
     try std.testing.expectEqual(Diagnostic.Kind.bad_value, diags.items[1].kind);
-    try std.testing.expectEqualStrings("colours", diags.items[2].key);
+    // The layout's lengths went with the grid they set (issue #8).
+    try std.testing.expectEqualStrings("layout", diags.items[2].key);
 }
 
 test "config: a malformed document gives the defaults" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
     var diags: std.ArrayList(Diagnostic) = .empty;
-    const cfg = try Config.parse(arena.allocator(), ".{ .layout = ", &diags);
-    try std.testing.expectEqual(Layout{}, cfg.layout);
+    const cfg = try Config.parse(arena.allocator(), ".{ .render = ", &diags);
+    try std.testing.expectEqual((Render{}).sym_w, cfg.render.sym_w);
     try std.testing.expectEqual(1, diags.items.len);
 }

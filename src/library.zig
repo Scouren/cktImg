@@ -191,6 +191,9 @@ pub const Terminal = struct {
     hidden: bool = false,
     /// Gets no wire when its net is ground (an op-amp's reference).
     ground_ref: bool = false,
+    /// The side the pin faces, where its anchor does not tell (a generated
+    /// block's port near a corner of a tall box); else `Side.of(at)`.
+    side: ?Side = null,
 };
 
 /// One stroke of a symbol body, in the canonical frame.
@@ -219,7 +222,15 @@ pub const Class = struct {
     /// The side terminal `i` faces under `o`, or null if it is not drawn.
     pub fn side(c: Class, i: usize, o: Orient) ?Side {
         if (i >= c.terminals.len or c.terminals[i].hidden) return null;
-        return Side.of(o.apply(c.terminals[i].at));
+        const t = c.terminals[i];
+        const s = t.side orelse return Side.of(o.apply(t.at));
+        const unit: Pt = switch (s) {
+            .left => .{ .x = -1, .y = 0 },
+            .right => .{ .x = 1, .y = 0 },
+            .up => .{ .x = 0, .y = -1 },
+            .down => .{ .x = 0, .y = 1 },
+        };
+        return Side.of(o.apply(unit));
     }
 
     /// Bounding box of terminals and strokes, in the canonical frame.
@@ -313,7 +324,7 @@ pub const Library = struct {
         const name = try a.allocSentinel(u8, spec.name.len, 0);
         for (spec.name, name) |s, *d| d.* = std.ascii.toLower(s);
         const terms = try a.alloc(Terminal, spec.terminals.len);
-        for (spec.terminals, terms) |s, *d| d.* = .{ .name = try a.dupeSentinel(u8, s.name, 0), .at = s.at, .hidden = s.hidden, .ground_ref = s.ground_ref };
+        for (spec.terminals, terms) |s, *d| d.* = .{ .name = try a.dupeSentinel(u8, s.name, 0), .at = s.at, .hidden = s.hidden, .ground_ref = s.ground_ref, .side = s.side };
         const draw = if (spec.draw.len > 0) try copyOps(a, spec.draw) else try box(a, terms, name);
         self.classes.appendAssumeCapacity(.{ .name = name, .role = spec.role, .terminals = terms, .draw = draw });
         return @fromBackingInt(@intCast(self.classes.items.len - 1));
@@ -404,7 +415,13 @@ pub const Library = struct {
                     .top => .{ .{ .x = along, .y = -hh - lead }, .{ .x = along, .y = -hh }, .{ .x = along, .y = -hh + 7 } },
                     .bottom => .{ .{ .x = along, .y = hh + lead }, .{ .x = along, .y = hh }, .{ .x = along, .y = hh - 7 } },
                 };
-                terms[k] = .{ .name = def.ports[k], .at = pin };
+                const faces: Side = switch (side) {
+                    .left => .left,
+                    .right => .right,
+                    .top => .up,
+                    .bottom => .down,
+                };
+                terms[k] = .{ .name = def.ports[k], .at = pin, .side = faces };
                 try ops.append(a, .{ .line = .{ .a = pin, .b = edge } });
                 try ops.append(a, .{ .text = .{ .at = label, .s = def.ports[k], .size = 5 } });
             }
@@ -470,7 +487,8 @@ fn defaultSide(port: []const u8) netlist.PortSide {
 }
 
 /// Slot k of `count` pins across `m` rows: centred, skipping the middle row
-/// when `count` is even — where the layout's copies put them (S3).
+/// when `count` is even, so a block's ports stand symmetric about its
+/// middle.
 fn centeredSlot(m: usize, count: usize, k: usize) usize {
     const mid = m / 2;
     const first = mid - count / 2;
@@ -509,7 +527,7 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
 fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
     if (a.len != b.len) return false;
     for (a, b) |x, y| {
-        if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
+        if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
     }
     return true;
 }

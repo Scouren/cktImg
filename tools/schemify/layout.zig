@@ -338,9 +338,8 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
         return out;
     }
     const text = try cellDeck(a, deck, rec, c, names);
-    const cfg: engine.Config = .default;
     var diag: engine.netlist.Diagnostic = .{};
-    var placed = engine.place(gpa, &cfg, lib, &.{text}, &diag) catch |e| switch (e) {
+    var placed = engine.place(gpa, lib, &.{text}, &diag) catch |e| switch (e) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });
