@@ -32,7 +32,8 @@ that uses it.
    own decisions back draws the same picture: a free oracle at every rung.
 
 3. **Clean has two tiers.** Hard guarantees (every net one piece, no wire on
-   another net's point, no symbol on another, no four-way junction, ...) are
+   another net's point, no symbol on another, dots exactly where wires
+   meet, ...) are
    never broken: an override that would break one is refused, never
    repaired. Quality (crossings, bends, detours, symmetry, flow, labels) is
    reported as separate scores, never summed, each finding with a location
@@ -299,7 +300,7 @@ against the previous report (new, unchanged, updated, absent). A text form,
 one line per record, follows `lint.format`:
 
 ```text
-hard four_way_junction net=vcm at=(240,120) arms=4 fix="*@ route vcm ..."
+hard symbol_overlap devs=M5,M6 at=(240,120) fix="*@ cell M6 6 4"
 soft detour net=n3 at=(180,60) len=14g hpwl=6g ratio=2.33>1.5
 soft symmetry pair=M3,M4 off_axis=2g fix="*@ symmetric M3 M4"
 summary hard=0 crossings=3(+5 rail) bends/conn=1.2 detour.max=2.33[n3] sym=6/6 flow=14/15[M7] labels=+[]
@@ -320,8 +321,8 @@ refused):
 | H3 | no two nets' wires overlapping along a line | while drawing |
 | H4 | no wire through a symbol's body | while drawing only |
 | H5 | no symbol overlapping another | **missing** (tests compare anchor points only) |
-| H6 | dots exactly where a net has three or more arms; no net crossing itself | dots made, never checked |
-| H7 | no four-way junction ("four wires must not connect at a point": Horowitz and Hill; KiCad ERC `four_way_junction`) | **missing**; a ladder of three or more rungs makes one |
+| H6 | dots exactly where a net has three or more arms, and where a net crosses itself (joined there) | checked on every drawing (`support.dots`, #9) |
+| H7 | dropped: four-way junctions stay, with their dot. Horowitz and Hill forbid them and KiCad's ERC warns, but the owner's reference figures draw them (the two-stage op-amp's output node in the notes), and 93 points in 33 drawings are drawn so today | — |
 | H8 | no dangling wire end or label | **missing** |
 | H9 | Manhattan, well-formed segments; every pin with company touches its net | tests only |
 | H10 | one picture per circuit, the same bytes for the same deck | tests |
@@ -361,9 +362,9 @@ commands real, and grows a rung at a time.
 
 1. **Preferences**: the `lint.zon` `.layout` table and `place(gpa, cfg, ...)`
    again (keeps #8's promise that the `lint.zon` lengths stay). Built in #9.
-2. **Four-way junctions** (H7): the checker, a maze target only where a net
-   has at most two arms, and the ladder's middle rungs staggered. A broken
-   guarantee today, and small (algorithms.md §4).
+2. **Dots** (H6): checked on every drawing, and a net crossing itself
+   joined there with a dot. Done in #9 (d684634); four-way junctions stay,
+   dotted, as the book draws them.
 3. **The seam**: `analyze → place → draw`; one net-order table; one driver
    table; validators at the edge.
 4. **The report**: the gates as checks on `Placed` (H1 to H10, the tests'
@@ -418,7 +419,8 @@ device columns four lattice columns apart instead of eight.
 
 Open:
 
-- A ladder of three or more rungs makes four-way junctions (H7).
+- A net's trunk could cross one of its own pin's lines without a dot,
+  reading as two nets crossing (the fuzz found it; fixed in #9, d684634).
 - The Schemify import names devices `<letter><row>`, so its drawing depends
   on instance order.
 - Mate equalities in `levels.rows` are accepted greedily in device-index

@@ -134,9 +134,11 @@ sides of the cut.
 
 ## 4. Four-way junctions and parallel spacing
 
-**Checker (H7):** a point where a net has four directions, counted as
-`dots.find` counts them (KiCad's
-[`four_way_junction`](https://docs.kicad.org/doxygen/erc__item_8cpp_source.html)).
+Not a guarantee: the owner's reference figures draw four-way junctions with
+a dot (an op-amp's output node), so the guarantee is the dot (H6, checked
+in #9). Staggering them into T's, as Horowitz and Hill and KiCad's
+[`four_way_junction`](https://docs.kicad.org/doxygen/erc__item_8cpp_source.html)
+warning want, would be a style a project chooses in `lint.zon`:
 **Prevention:** a point of a net's tree is a maze target only while it has
 at most two arms, so a new branch makes at most a T, and a branch from the
 far side lands elsewhere: the staggered pair of T's for free. Patterns run
@@ -196,9 +198,9 @@ residual. Self-symmetric nets keep `halves`. Twice the maze's cost.
 
 1. **Admission and preferred conflicts (§1):** rungs 1 and 2 and every
    `blocked_by` rest on it, and it removes a card-order dependence.
-2. **Four-way junctions (§4):** a hard guarantee broken today by ladders of
-   three rungs or more; the checker, the two-arm target rule and the ladder
-   fix are small.
+2. **Dots (H6):** done in #9, the check on every drawing and a net's
+   crossing with itself joined; staggered T's (§4) wait for a project that
+   asks for them.
 3. **Pinned coordinates and routes (§5):** `commit` is already the gate.
 4. **The union of blockages (§6):** better symmetry even without lines.
 5. **Forced cells (§2)**, once §1 stands.
