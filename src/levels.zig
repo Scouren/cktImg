@@ -4,12 +4,14 @@
 //!
 //! A device stands above another when its lower end is the other's upper
 //! end; levels are the longest path down those, after holding mates and
-//! blocks level wherever that closes no cycle. Then each type's transistors
+//! blocks level wherever that closes no cycle. Where devices stand above
+//! each other in a loop (a transmission gate's two), only their column's
+//! links count. Then each type's transistors
 //! on ground drop to that type's lowest level among them, as the book draws
 //! a second stage's current source beside the first stage's mirror.
 //!
 //! Contents:
-//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
+//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -32,10 +34,11 @@ const none = structure.none;
 /// Each vertical device's level: longest path down from the top, after
 /// merging mates and blocks (where that closes no cycle); then each type's
 /// transistors on ground drop to that type's lowest level among them.
-pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
+/// `below` is each device's next in its column, or `none`.
+pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
     const c = &nl.graph;
     const n = c.edgeCount();
-    assert(mate.len == n);
+    assert(mate.len == n and below.len == n);
     assert(roles.len == c.vertexCount());
     // Edges: u above l where u's lower end is l's upper end.
     var edges: std.ArrayList([2]u32) = .empty;
@@ -52,6 +55,16 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     const class = try gpa.alloc(u32, n);
     defer gpa.free(class);
     for (class, 0..) |*k, d| k.* = @intCast(d);
+    // On a loop only the column links stand: those never loop.
+    const keep = try gpa.alloc(bool, edges.items.len);
+    defer gpa.free(keep);
+    for (edges.items, keep) |e, *k| k.* = below[e[0]] == e[1] or !try reaches(gpa, class, edges.items, e[1], e[0]);
+    var kept: usize = 0;
+    for (edges.items, keep) |e, k| if (k) {
+        edges.items[kept] = e;
+        kept += 1;
+    };
+    edges.shrinkRetainingCapacity(kept);
     // Equalities: mates first, then blocks, each kept if it closes no cycle.
     for (mate, 0..) |m, d| if (m != none and m != d) try level(gpa, class, edges.items, @intCast(d), m);
     for (st.block_kind, 0..) |k, b| {
@@ -60,7 +73,7 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         for (ms[1..]) |d| if (drawn[d] and drawn[ms[0]] and form[d] == .vertical and form[ms[0]] == .vertical) try level(gpa, class, edges.items, ms[0], d);
     }
 
-    // Longest path over the classes (Kahn); a cycle's leftovers keep 0.
+    // Longest path over the classes, now free of loops.
     const rank = try gpa.alloc(u32, n);
     errdefer gpa.free(rank);
     @memset(rank, 0);
@@ -78,8 +91,9 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             }
         }
     }
+    assert(!changed);
     for (0..n) |d| rank[d] = rank[find(class, @intCast(d))];
-    for (edges.items) |e| if (find(class, e[0]) != find(class, e[1])) assert(rank[e[1]] > rank[e[0]] or rounds > n);
+    for (edges.items) |e| if (find(class, e[0]) != find(class, e[1])) assert(rank[e[1]] > rank[e[0]]);
 
     // Transistors on ground: each type's to its lowest level among them,
     // a class only when every member stands on ground.

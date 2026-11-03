@@ -113,13 +113,89 @@ const Grid = struct {
 
 const State = struct { f: i64, cost: i64, point: u32, way: u8 };
 
+/// The open states, lowest estimate first (Dial's buckets: costs are
+/// integers and the guess is consistent, so no estimate drops below the
+/// one popped last); the last pushed first among equals.
+const Buckets = struct {
+    lists: std.ArrayList(std.ArrayList(State)) = .empty,
+    base: i64,
+    cur: usize = 0,
+
+    fn push(b: *Buckets, a: Allocator, st: State) Allocator.Error!void {
+        assert(st.f >= b.base);
+        const i: usize = @intCast(st.f - b.base);
+        assert(i >= b.cur);
+        while (b.lists.items.len <= i) try b.lists.append(a, .empty);
+        try b.lists.items[i].append(a, st);
+    }
+    fn pop(b: *Buckets) ?State {
+        while (b.cur < b.lists.items.len) : (b.cur += 1) {
+            if (b.lists.items[b.cur].pop()) |st| return st;
+        }
+        return null;
+    }
+};
+
 /// The cheapest path from `q.from` to the net's wires (or to `q.to`), as
 /// its corners from `q.from.at`; null when there is none or the grid is too
 /// big. The caller owns the slice.
 pub fn route(gpa: Allocator, q: Query) Allocator.Error!?[]Pt {
     assert(q.step > 0 and q.clear >= 1);
     assert(q.bend >= 0 and q.cross >= 0);
-    const g = (try buildGrid(gpa, q)) orelse return null;
+    // Most connections are local: a window round the pin and its nearest
+    // target first, then round the whole net, then the whole drawing.
+    if (try search(gpa, q, window(q, true))) |path| return path;
+    if (try search(gpa, q, window(q, false))) |path| return path;
+    return search(gpa, q, null);
+}
+
+// ---- private ----
+
+/// The pin, the nearest point of the net's wires (all of them unless
+/// `nearest_only`), the pin to reach and the axis it may end on, `8 * step`
+/// round, grown over every box it cuts into, so no box's edge falls
+/// outside.
+fn window(q: Query, nearest_only: bool) Rect {
+    const p = q.from.at;
+    var r: Rect = .point(p);
+    if (q.to) |t| r = r.merge(.point(t.at));
+    if (q.half) |h| r = r.merge(.point(.{ .x = h, .y = p.y }));
+    var nearest: ?Pt = null;
+    var dist: i64 = std.math.maxInt(i64);
+    for (q.wires) |w| if (w.net == q.net) {
+        const b: Rect = .fromCorners(w.a, w.b);
+        if (!nearest_only) r = r.merge(b);
+        const c: Pt = .{ .x = std.math.clamp(p.x, b.min.x, b.max.x), .y = std.math.clamp(p.y, b.min.y, b.max.y) };
+        const d = @as(i64, @abs(c.x - p.x)) + @abs(c.y - p.y);
+        if (d < dist) {
+            dist = d;
+            nearest = c;
+        }
+    };
+    if (nearest) |c| r = r.merge(.point(c));
+    const m = 8 * q.step;
+    r = .{ .min = .{ .x = r.min.x - m, .y = r.min.y - m }, .max = .{ .x = r.max.x + m, .y = r.max.y + m } };
+    var rounds: usize = 0;
+    while (true) : (rounds += 1) {
+        assert(rounds <= q.boxes.len + 1);
+        var grown = false;
+        for (q.boxes) |b| if (b.intersects(r) and !(r.contains(b.min) and r.contains(b.max))) {
+            r = r.merge(b);
+            grown = true;
+        };
+        if (!grown) break;
+    }
+    return r;
+}
+
+/// `route` inside `win` (or everywhere): only what lies within `clear` of
+/// it is an obstacle, and no step leaves it.
+fn search(gpa: Allocator, q_all: Query, win: ?Rect) Allocator.Error!?[]Pt {
+    var arena: std.heap.ArenaAllocator = .init(gpa);
+    defer arena.deinit();
+    const scratch = arena.allocator();
+    const q = try nearby(scratch, q_all, win);
+    const g = (try buildGrid(gpa, q, win)) orelse return null;
     defer g.deinit(gpa);
     const n = g.xs.len * g.ys.len;
     const start = indexOf(g, q.from.at).?;
@@ -142,12 +218,10 @@ pub fn route(gpa: Allocator, q: Query) Allocator.Error!?[]Pt {
     const parent = try gpa.alloc(u32, n * 4);
     defer gpa.free(parent);
     @memset(parent, none);
-    var open: std.PriorityQueue(State, void, before) = .empty;
-    defer open.deinit(gpa);
-
     const first: u8 = @backingInt(q.from.side);
     best[start * 4 + first] = 0;
-    try open.push(gpa, .{ .f = guess(q.from.at, lo, hi), .cost = 0, .point = start, .way = first });
+    var open: Buckets = .{ .base = guess(q.from.at, lo, hi) };
+    try open.push(scratch, .{ .f = open.base, .cost = 0, .point = start, .way = first });
     var popped: usize = 0;
     const found: u32 = while (open.pop()) |st| : (popped += 1) {
         assert(popped <= n * 16);
@@ -170,6 +244,7 @@ pub fn route(gpa: Allocator, q: Query) Allocator.Error!?[]Pt {
             const a = g.at(st.point);
             const b = g.at(next);
             if (q.half) |h| if (b.x > h) continue;
+            if (win) |box| if (!box.contains(b)) continue;
             var cost: i64 = st.cost + @abs(a.x - b.x) + @abs(a.y - b.y);
             if (turn) cost += q.bend;
             cost += switch (if (way < 2) g.v_other[next] else g.h_other[next]) {
@@ -181,20 +256,27 @@ pub fn route(gpa: Allocator, q: Query) Allocator.Error!?[]Pt {
             if (cost >= best[nk]) continue;
             best[nk] = cost;
             parent[nk] = key;
-            try open.push(gpa, .{ .f = cost + guess(b, lo, hi), .cost = cost, .point = next, .way = way });
+            try open.push(scratch, .{ .f = cost + guess(b, lo, hi), .cost = cost, .point = next, .way = way });
         }
     } else return null;
     return try corners(gpa, g, parent, found, start, q.from.at);
 }
 
-// ---- private ----
-
-/// Lower estimate first; on a tie the longer way so far, then the point.
-fn before(_: void, a: State, b: State) std.math.Order {
-    if (a.f != b.f) return std.math.order(a.f, b.f);
-    if (a.cost != b.cost) return std.math.order(b.cost, a.cost);
-    if (a.point != b.point) return std.math.order(a.point, b.point);
-    return std.math.order(a.way, b.way);
+/// `q` with only the boxes, marks and wires within `clear` of `win`.
+fn nearby(a: Allocator, q: Query, win: ?Rect) Allocator.Error!Query {
+    const w = win orelse return q;
+    const reach: Rect = .{ .min = .{ .x = w.min.x - q.clear, .y = w.min.y - q.clear }, .max = .{ .x = w.max.x + q.clear, .y = w.max.y + q.clear } };
+    var boxes: std.ArrayList(Rect) = .empty;
+    for (q.boxes) |b| if (b.intersects(reach)) try boxes.append(a, b);
+    var marks: std.ArrayList(Mark) = .empty;
+    for (q.marks) |m| if (reach.contains(m.at)) try marks.append(a, m);
+    var wires: std.ArrayList(Wire) = .empty;
+    for (q.wires) |x| if (Rect.fromCorners(x.a, x.b).intersects(reach)) try wires.append(a, x);
+    var out = q;
+    out.boxes = boxes.items;
+    out.marks = marks.items;
+    out.wires = wires.items;
+    return out;
 }
 
 fn guess(p: Pt, lo: Pt, hi: Pt) i64 {
@@ -253,8 +335,9 @@ fn spanning(vs: []const i32, lo: i32, hi: i32) [2]usize {
     return .{ first, @max(first, end) };
 }
 
-/// The grid lines, and what lies on them.
-fn buildGrid(gpa: Allocator, q: Query) Allocator.Error!?Grid {
+/// The grid lines, and what lies on them; the lattice over `win`, else
+/// over everything with room to go round it.
+fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
     var xs: std.ArrayList(i32) = .empty;
     defer xs.deinit(gpa);
     var ys: std.ArrayList(i32) = .empty;
@@ -278,12 +361,11 @@ fn buildGrid(gpa: Allocator, q: Query) Allocator.Error!?Grid {
         try xs.appendSlice(gpa, &.{ w.a.x, w.b.x });
         try ys.appendSlice(gpa, &.{ w.a.y, w.b.y });
     }
-    // The lattice, with room to go round everything.
     const margin = 4 * q.step;
-    const lo_x = std.mem.min(i32, xs.items) - margin;
-    const hi_x = std.mem.max(i32, xs.items) + margin;
-    const lo_y = std.mem.min(i32, ys.items) - margin;
-    const hi_y = std.mem.max(i32, ys.items) + margin;
+    const lo_x = if (win) |w| w.min.x else std.mem.min(i32, xs.items) - margin;
+    const hi_x = if (win) |w| w.max.x else std.mem.max(i32, xs.items) + margin;
+    const lo_y = if (win) |w| w.min.y else std.mem.min(i32, ys.items) - margin;
+    const hi_y = if (win) |w| w.max.y else std.mem.max(i32, ys.items) + margin;
     if (@divFloor(hi_x - lo_x, q.step) * @divFloor(hi_y - lo_y, q.step) > points_max) return null;
     var v = @divFloor(lo_x, q.step) * q.step;
     while (v <= hi_x) : (v += q.step) try xs.append(gpa, v);

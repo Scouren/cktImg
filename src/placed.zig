@@ -28,6 +28,7 @@ const library = @import("library.zig");
 const netlist_mod = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const lay = @import("layout.zig");
+const structure = @import("structure.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -307,13 +308,20 @@ const Builder = struct {
     }
 
     /// R3: each driver stands apart, left of the circuit: its terminal symbol
-    /// on top, the source, a ground symbol below, in netlist order.
+    /// on top, the source, a ground symbol below, in name order (so the
+    /// order of the cards changes nothing).
     fn islands(b: *Builder) !void {
         const s = b.s;
         const unit = s.lib.unit;
         var drivers: std.ArrayList(u32) = .empty;
         for (s.devices.items(.driver), 0..) |dr, d| if (dr) try drivers.append(b.a(), @intCast(d));
         if (drivers.items.len == 0) return;
+        std.mem.sort(u32, drivers.items, b.nl, struct {
+            fn lt(nl: *const netlist_mod.Netlist, x: u32, y: u32) bool {
+                const names = nl.graph.edges.items(.name);
+                return structure.nameLess(names[x], names[y]);
+            }
+        }.lt);
 
         var lo: Pt = .{ .x = 0, .y = 0 };
         var have = false;

@@ -155,10 +155,11 @@ fn meanX(nl: *const Netlist, sk: *const Skeleton, net: u32, skip: u32) i64 {
 }
 
 /// Each lattice column as wide as its widest device's reach on each side,
-/// plus room for a port or label where a side pin on a net driven from
-/// outside (or an output) faces that side; rows as tall as their tallest
-/// device, plus a rail symbol's stub where a pin on a rail faces up or
-/// down (the supply's bar over the top aside). A gap between neighbours.
+/// plus room for a port, label or rail symbol where a side pin on a net
+/// driven from outside, an output or a rail faces that side; rows as tall
+/// as their tallest device, plus a port's or rail symbol's stub where such a
+/// pin faces up or down (the supply's bar over the top aside). A gap
+/// between neighbours.
 fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) !Geo {
     const c = &nl.graph;
     var w: usize = 1;
@@ -189,8 +190,12 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
                 .input, .bias, .output => {
                     if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
                     if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
+                    if (side == .up) up = r[@backingInt(Side.up)] + gap;
+                    if (side == .down) down = r[@backingInt(Side.down)] + gap;
                 },
                 .sink, .supply => |role| {
+                    if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
+                    if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
                     if (side == .down) down = r[@backingInt(Side.down)] + gap;
                     if (side == .up and role == .sink) up = r[@backingInt(Side.up)] + gap;
                 },

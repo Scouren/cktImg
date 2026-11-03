@@ -127,8 +127,8 @@ fn terminal(c: *Canvas, p: u32) !void {
 }
 
 /// Supply pins facing up: stubs to a bar a gap above the highest, one
-/// symbol on the bar at the middle stub. Any other supply pin: a symbol of
-/// its own.
+/// symbol on each unbroken run of the bar at its middle stub. Any other
+/// supply pin: a symbol of its own.
 fn supply(c: *Canvas, pins: []const u32) !void {
     const s = c.s;
     const gpa = c.gpa;
@@ -162,14 +162,22 @@ fn supply(c: *Canvas, pins: []const u32) !void {
         }
     }
     if (on_bar.items.len == 0) return;
-    // The bar in pieces between stubs, so every joint is a wire's end.
-    for (on_bar.items[0 .. on_bar.items.len - 1], on_bar.items[1..]) |p, q| {
-        const x0 = pinAt(s, p).x;
-        const x1 = pinAt(s, q).x;
-        if (x0 != x1) _ = try c.commit(net, &.{ .{ .x = x0, .y = bar }, .{ .x = x1, .y = bar } });
+    // The bar in pieces between stubs, so every joint is a wire's end; a
+    // piece that does not fit ends a run, and each run gets a symbol at its
+    // middle stub.
+    var run: usize = 0;
+    for (on_bar.items, 0..) |q, i| {
+        const last = i + 1 == on_bar.items.len;
+        const joined = !last and blk: {
+            const x0 = pinAt(s, q).x;
+            const x1 = pinAt(s, on_bar.items[i + 1]).x;
+            break :blk x0 == x1 or try c.commit(net, &.{ .{ .x = x0, .y = bar }, .{ .x = x1, .y = bar } });
+        };
+        if (joined) continue;
+        const mid = pinAt(s, on_bar.items[(run + i) / 2]);
+        try c.leaf(.terminal, net, .{ .x = mid.x, .y = bar }, .down);
+        run = i + 1;
     }
-    const mid = pinAt(s, on_bar.items[(on_bar.items.len - 1) / 2]);
-    try c.leaf(.terminal, net, .{ .x = mid.x, .y = bar }, .down);
 }
 
 /// Two gates of one row facing each other: a gate line between them, named
@@ -250,7 +258,11 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
     const s = c.s;
     assert(pins.len >= 1);
     for (pins) |p| assert(s.pins.items(.net)[p] == net);
-    if (pins.len == 1 and s.roles[net] != .output) return true;
+    // A lone pin has nothing to join: an output's gets its port.
+    if (pins.len == 1) {
+        if (s.roles[net] == .output) try c.port(net, pinAt(s, pins[0]), s.pins.items(.side)[pins[0]]);
+        return true;
+    }
     var lines: std.ArrayList(Line) = .empty;
     defer lines.deinit(c.gpa);
     var lo: i32 = std.math.maxInt(i32);
@@ -276,15 +288,10 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
     if (!linesFit(c, net, lines.items)) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
     if (s.roles[net] != .output) return true;
-    // The output's port: beyond a lone pin, else out from the outer end of
-    // the trunk, or of the column at its tap, on the drawing's nearer side.
-    const from: Pt, const side: Side = if (pins.len == 1)
-        .{ pinAt(s, pins[0]), s.pins.items(.side)[pins[0]] }
-    else blk: {
-        const right = 2 * hi >= c.middle2();
-        break :blk .{ .{ .x = if (right) hi else lo, .y = y_t }, if (right) .right else .left };
-    };
-    try c.port(net, from, side);
+    // The output's port: out from the outer end of the trunk, or of the
+    // column at its tap, on the drawing's nearer side.
+    const right = 2 * hi >= c.middle2();
+    try c.port(net, .{ .x = if (right) hi else lo, .y = y_t }, if (right) .right else .left);
     return true;
 }
 
@@ -306,14 +313,22 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, 
         hi.* = lo.*;
         return;
     }
+    var ends: std.ArrayList(i32) = .empty;
+    defer ends.deinit(gpa);
     for (pins) |p| {
         const line = reachTrunk(s, p, y_t, gap);
-        try lines.append(gpa, line);
+        // A pin on the trunk already needs no line of its own.
+        if (line.len >= 2) try lines.append(gpa, line);
         const end = line.pts[line.len - 1];
+        try ends.append(gpa, end.x);
         lo.* = @min(lo.*, end.x);
         hi.* = @max(hi.*, end.x);
     }
-    if (lo.* < hi.*) try lines.append(gpa, .of(&.{ .{ .x = lo.*, .y = y_t }, .{ .x = hi.*, .y = y_t } }));
+    // The trunk in pieces between the ends, so every joint is a wire's end.
+    std.mem.sort(i32, ends.items, {}, std.sort.asc(i32));
+    for (ends.items[0 .. ends.items.len - 1], ends.items[1..]) |a, b| {
+        if (a != b) try lines.append(gpa, .of(&.{ .{ .x = a, .y = y_t }, .{ .x = b, .y = y_t } }));
+    }
 }
 
 /// A half gap over the top of the pins' devices and under their bottom,

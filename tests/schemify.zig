@@ -1,94 +1,14 @@
 //! The Schemify import over every fixture, natively: each converts without a crash and
-//! twice to the same bytes (determinism is a test). Connectivity is the round trip's job:
-//! `tests/schemify_roundtrip.sh` netlists the output through Schemify and compares it with
-//! the input.
+//! twice to the same bytes (determinism is a test). Every cell the engine is handed, drawn
+//! by #8's stages, keeps its devices, is connected as a netlister reads it, and shorts
+//! nothing. Connectivity of the import's own files is the round trip's job.
 
 const std = @import("std");
 const cktimg = @import("cktimg");
+const np = @import("NetlistParser");
+const support = @import("support.zig");
 
-const fixtures = [_][]const u8{
-    "power/bandgap_reference.sp",
-    "bjt/bjt_current_mirror.sp",
-    "bjt/bjt_diff_pair.sp",
-    "power/buck_converter.sp",
-    "bus/bus_4bit_flash_adc.sp",
-    "bus/bus_8bit_dac.sp",
-    "bus/bus_current_dac.sp",
-    "bus/bus_data_bus_driver.sp",
-    "bus/bus_decoder_2to4.sp",
-    "bus/bus_mux_4to1.sp",
-    "bus/bus_parallel_adder.sp",
-    "bus/bus_shift_register.sp",
-    "bus/bus_sram_cell_array.sp",
-    "bjt/cascode_amplifier.sp",
-    "mosfet/cascode_current_mirror.sp",
-    "power/charge_pump.sp",
-    "mixed_signal/charge_pump_pll.sp",
-    "mosfet/cmos_inverter.sp",
-    "bjt/common_emitter.sp",
-    "mosfet/common_source.sp",
-    "mosfet/common_source_active_load.sp",
-    "mixed_signal/comparator.sp",
-    "hand/default_after_override.sp",
-    "opamp/differentiator.sp",
-    "bjt/emitter_follower.sp",
-    "mosfet/folded_cascode_ota.sp",
-    "opamp/instrumentation_amp.sp",
-    "opamp/integrator.sp",
-    "opamp/inverting_amplifier.sp",
-    "power/ldo_regulator.sp",
-    "hand/library_only.sp",
-    "mosfet/mosfet_current_mirror.sp",
-    "mosfet/mosfet_diff_pair.sp",
-    "digital/nand_gate.sp",
-    "opamp/noninverting_amplifier.sp",
-    "digital/nor_gate.sp",
-    "hand/params_hierarchy.sp",
-    "mixed_signal/phase_detector.sp",
-    "mixed_signal/r2r_dac.sp",
-    "hand/raw_cards.sp",
-    "basic/rc_integrator.sp",
-    "basic/rc_lowpass.sp",
-    "digital/ring_oscillator.sp",
-    "basic/rl_highpass.sp",
-    "basic/rlc_bandpass.sp",
-    "mixed_signal/sample_and_hold.sp",
-    "mosfet/source_follower.sp",
-    "digital/sr_latch.sp",
-    "opamp/summing_amplifier.sp",
-    "testbench/tb_bandgap_temp.sp",
-    "testbench/tb_buck_converter_waveform.sp",
-    "testbench/tb_charge_pump_waveform.sp",
-    "testbench/tb_cmos_inverter_transient.sp",
-    "testbench/tb_cmos_inverter_vtc.sp",
-    "testbench/tb_common_source_ac.sp",
-    "testbench/tb_common_source_dc.sp",
-    "testbench/tb_comparator_speed.sp",
-    "testbench/tb_current_mirror_compliance.sp",
-    "testbench/tb_diff_pair_cmrr.sp",
-    "testbench/tb_diff_pair_offset.sp",
-    "testbench/tb_diff_pair_transient.sp",
-    "testbench/tb_ldo_load_regulation.sp",
-    "testbench/tb_ldo_psrr.sp",
-    "testbench/tb_rc_lowpass_ac.sp",
-    "testbench/tb_rc_lowpass_bode.sp",
-    "testbench/tb_rc_lowpass_step.sp",
-    "testbench/tb_ring_osc_waveform.sp",
-    "testbench/tb_ring_oscillator_freq.sp",
-    "testbench/tb_telescopic_ota_full.sp",
-    "testbench/tb_two_stage_opamp_cl.sp",
-    "testbench/tb_two_stage_opamp_ol.sp",
-    "testbench/tb_vco_kvco.sp",
-    "testbench/tb_voltage_divider.sp",
-    "mosfet/telescopic_ota.sp",
-    "digital/transmission_gate.sp",
-    "mosfet/two_stage_opamp.sp",
-    "mixed_signal/vco.sp",
-    "basic/voltage_divider.sp",
-    "basic/wheatstone_bridge.sp",
-    "mosfet/wilson_mirror.sp",
-    "hand/xspice_cards.sp",
-};
+const fixtures = @import("fixtures.zig");
 
 fn bytesOf(gpa: std.mem.Allocator, a: std.mem.Allocator, name: []const u8, text: []const u8) ![]const u8 {
     const out = try cktimg.convert(gpa, a, name, text);
@@ -101,12 +21,13 @@ fn bytesOf(gpa: std.mem.Allocator, a: std.mem.Allocator, name: []const u8, text:
 }
 
 test "every fixture converts, deterministically" {
-    inline for (fixtures) |name| {
+    for (fixtures.plugin) |f| {
         var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
         defer arena.deinit();
         const a = arena.allocator();
-        const text = @embedFile("fixtures/" ++ name);
-        const source = "n2s/" ++ name;
+        const name = f.name;
+        const text = f.spice;
+        const source = try std.fmt.allocPrint(a, "n2s/{s}", .{name});
         const first = try bytesOf(std.testing.allocator, a, source, text);
         const again = try bytesOf(std.testing.allocator, a, source, text);
         std.testing.expectEqualStrings(first, again) catch |e| {
@@ -114,4 +35,43 @@ test "every fixture converts, deterministically" {
             return e;
         };
     }
+}
+
+test "every cell the engine is handed draws connected and short-free by #8's stages" {
+    const gpa = std.testing.allocator;
+    var bad: usize = 0;
+    var cells: usize = 0;
+    for (fixtures.plugin ++ fixtures.analogioc) |f| {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        var conv = try cktimg.Converter.init(gpa, a, f.name, f.spice);
+        defer conv.deinit();
+        for (conv.todo.items) |cell| {
+            // The cells `layout.draw` hands the engine: some device has a net, at most
+            // `cell_devices_max` do.
+            const devs = conv.deck.devs(cell);
+            var wired: u32 = 0;
+            for (devs.lo..devs.hi) |d| wired += @intFromBool(conv.deck.netsOf(@intCast(d)).len > 0);
+            if (wired == 0 or wired > cktimg.layout.cell_devices_max) continue;
+            cells += 1;
+            const names = try cktimg.layout.netNames(a, &conv.deck, cell);
+            const text = try cktimg.layout.cellDeck(a, &conv.deck, &conv.rec, cell, names);
+            var nl = try np.netlist.parse(a, &.{text}, null);
+            const roles = try np.guessRoles(a, &nl);
+            const s = try np.schematic.sketch.lay(a, &nl, roles, &conv.lib);
+            const p = try np.Placed.init(a, &s, &nl);
+            support.expectConnected(&p, &conv.lib) catch {
+                std.debug.print("{s} cell {d}: a net in pieces\n", .{ f.name, cell });
+                bad += 1;
+            };
+            const shorts = try support.shorts(gpa, &p, true);
+            if (shorts > 0) {
+                std.debug.print("{s} cell {d}: {d} nets touch another's point\n", .{ f.name, cell, shorts });
+                bad += 1;
+            }
+        }
+    }
+    try std.testing.expect(cells > fixtures.plugin.len);
+    try std.testing.expectEqual(0, bad);
 }

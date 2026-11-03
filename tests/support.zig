@@ -81,7 +81,10 @@ pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32 {
 /// Stronger than `expectWellFormed`: a wire stub ending in the open, or two
 /// unnamed pieces, fails here.
 pub fn expectConnected(p: *const np.Placed, lib: *const np.Library) !void {
-    const gpa = std.testing.allocator;
+    // Its own scratch, so the fuzzer (no test runner) checks with it too.
+    var arena: std.heap.ArenaAllocator = .init(std.heap.page_allocator);
+    defer arena.deinit();
+    const gpa = arena.allocator();
     var index: std.AutoHashMapUnmanaged([2]i32, u32) = .empty;
     defer index.deinit(gpa);
     var parent: std.ArrayList(u32) = .empty;

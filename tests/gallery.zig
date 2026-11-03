@@ -4,6 +4,7 @@
 //!   zig build gallery -- --score                     the golden set scored against its figures (tests/golden.zig)
 //!   zig build gallery -- --cells [deck]              the skeleton's cells of the golden set, as grids
 //!   zig build gallery -- --sketch dir [deck]         the golden and textbook circuits drawn by issue #8's stages, and their scores
+//!   zig build gallery -- --sketch-file out.svg in.cir [lib.cir…]   one deck drawn by issue #8's stages, the rest lending it `.subckt`s
 //!   zig build gallery -- --gallery out.html         every textbook circuit in one page
 //!   zig build gallery -- [--config lint.zon] in.cir out.svg
 //!
@@ -122,6 +123,19 @@ pub fn main(init: std.process.Init) !void {
         }
         for (golden.decks) |c| if (only == null or std.mem.eql(u8, only.?, c.name)) try sketchFile(gpa, lib, io, dir, c.name, c.spice);
         for (textbook.all ++ textbook.beyond) |c| if (only == null or std.mem.eql(u8, only.?, c.name)) try sketchFile(gpa, lib, io, dir, c.name, c.spice);
+        return;
+    }
+    if (args.len >= 4 and std.mem.eql(u8, args[1], "--sketch-file")) {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        var sources: std.ArrayList([]const u8) = .empty;
+        for (args[3..]) |path| try sources.append(a, try cwd.readFileAlloc(io, path, a, .unlimited));
+        var nl = try np.netlist.parse(a, sources.items, null);
+        const roles = try np.guessRoles(a, &nl);
+        const s = try np.schematic.sketch.lay(a, &nl, roles, lib);
+        const p = try np.Placed.init(a, &s, &nl);
+        try cwd.writeFile(io, .{ .sub_path = args[2], .data = try svg.alloc(a, &p, lib, .{ .caption = nl.title }) });
         return;
     }
     if (args.len >= 2 and std.mem.eql(u8, args[1], "--cells")) {

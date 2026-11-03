@@ -14,7 +14,7 @@
 //! slots move it outward.
 //!
 //! Contents:
-//! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, x: []i32, y: []i32) Allocator.Error!void`
+//! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -34,19 +34,13 @@ const Form = skeleton.Form;
 const none = structure.none;
 
 /// Places every drawn horizontal device, `order` (devices by rank) chain by
-/// chain, into a free cell of `x`, `y`; the vertical devices' cells are set
-/// and `rank` holds their rows.
-pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, x: []i32, y: []i32) Allocator.Error!void {
+/// chain, into a free cell of `x`, `y`; the vertical devices' cells are set,
+/// `rank` holds their rows and `axis2` is twice the x they mirror about.
+pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(x.len == n and y.len == n);
     assert(order.len == n);
-    // Twice the axis: the sum of any mirrored pair of vertical devices.
-    var axis2: ?i32 = null;
-    for (st.device_mate, 0..) |m, a| if (m != none and m != a and drawn[a] and form[a] == .vertical) {
-        axis2 = x[a] + x[m];
-        break;
-    };
     var taken: std.AutoHashMapUnmanaged([2]i32, void) = .empty;
     defer taken.deinit(gpa);
     for (0..n) |d| if (drawn[d] and form[d] == .vertical) try taken.put(gpa, .{ x[d], y[d] }, {});
@@ -252,12 +246,14 @@ fn outside(drawn: []const bool, form: []const Form, y: []const i32) i32 {
     return bottom + 1;
 }
 
-/// Nearer columns first, then the leftmost pair.
+/// Nearer columns first, then the leftmost pair, then the one whose first
+/// end is on the left (so the order of the cards decides nothing).
 fn closer(a: [2]i32, b: [2]i32) bool {
     const da = @abs(a[0] - a[1]);
     const db = @abs(b[0] - b[1]);
     if (da != db) return da < db;
-    return @min(a[0], a[1]) < @min(b[0], b[1]);
+    if (@min(a[0], a[1]) != @min(b[0], b[1])) return @min(a[0], a[1]) < @min(b[0], b[1]);
+    return a[0] < b[0];
 }
 
 /// The odd row just below a net's lowest device above it, else just above

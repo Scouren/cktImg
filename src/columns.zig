@@ -5,7 +5,8 @@
 //!
 //! Mated columns are the core: one of each pair on the left, its mate
 //! mirrored on the right; a column the mates map to itself, a pair's tail,
-//! or a column wired to both halves stands on the axis. The left half's
+//! or a column wired to both halves stands on the axis, the first by rank
+//! where several share a row (the rest go free). The left half's
 //! order is the one whose wired nets span least (rails, biases and nets
 //! driven from outside aside: they are symbols or labels), tried
 //! exhaustively up to `exhaustive_max` columns. Columns with no mate go
@@ -14,7 +15,7 @@
 //!
 //! Contents:
 //! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`
-//! - `pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Columns, column_of: []const u32, mate: []const u32, partner: []const u32, rank: []const u32) Allocator.Error![]i32`
+//! - `pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Columns, column_of: []const u32, mate: []const u32, partner: []const u32, rank: []const u32, row: []const u32) Allocator.Error![]i32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -65,13 +66,13 @@ const Ctx = struct {
     placed: []bool,
 };
 
-/// Each column's x. `column_of`, `mate`, `partner` and `rank` have one entry
-/// per device (`none` for a device in no column, or with no mate or
-/// partner). Asserts that every column holds a device.
-pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Columns, column_of: []const u32, mate: []const u32, partner: []const u32, rank: []const u32) Allocator.Error![]i32 {
+/// Each column's x. `column_of`, `mate`, `partner`, `rank` and `row` have
+/// one entry per device (`none` for a device in no column, or with no mate
+/// or partner). Asserts that every column holds a device.
+pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Columns, column_of: []const u32, mate: []const u32, partner: []const u32, rank: []const u32, row: []const u32) Allocator.Error![]i32 {
     const n = cols.count();
     assert(column_of.len == nl.graph.edgeCount());
-    assert(mate.len == column_of.len);
+    assert(mate.len == column_of.len and row.len == column_of.len);
     const x = try gpa.alloc(i32, n);
     errdefer gpa.free(x);
     if (n == 0) return x;
@@ -107,6 +108,23 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     };
     sortByRank(ctx, left.items);
     sortByRank(ctx, axis.items);
+    // One x for the axis: a column spanning a row of one before it there
+    // goes free instead.
+    var kept: usize = 0;
+    for (axis.items) |k| {
+        const clash = for (axis.items[0..kept]) |j| {
+            if (shareRow(cols, row, j, k)) break true;
+        } else false;
+        if (!clash) {
+            axis.items[kept] = k;
+            kept += 1;
+        } else if (touchesOutput(ctx, k)) {
+            try free_right.append(gpa, k);
+        } else {
+            try free_left.append(gpa, k);
+        }
+    }
+    axis.shrinkRetainingCapacity(kept);
     sortByRank(ctx, free_left.items);
     sortByRank(ctx, free_right.items);
 
@@ -312,6 +330,22 @@ fn touchesOutput(ctx: Ctx, k: usize) bool {
 }
 
 /// By the rank of each column's top device.
+/// Columns `j` and `k` span a common row: one x would stack their devices
+/// or run their wires together.
+fn shareRow(cols: Columns, row: []const u32, j: u32, k: u32) bool {
+    assert(j != k);
+    const a = rowSpan(cols, row, j);
+    const b = rowSpan(cols, row, k);
+    return a[0] <= b[1] and b[0] <= a[1];
+}
+
+fn rowSpan(cols: Columns, row: []const u32, k: u32) [2]u32 {
+    var out: [2]u32 = .{ std.math.maxInt(u32), 0 };
+    for (cols.of(k)) |d| out = .{ @min(out[0], row[d]), @max(out[1], row[d]) };
+    assert(out[0] <= out[1]);
+    return out;
+}
+
 fn sortByRank(ctx: Ctx, list: []u32) void {
     std.mem.sort(u32, list, ctx, struct {
         fn lt(c: Ctx, a: u32, b: u32) bool {

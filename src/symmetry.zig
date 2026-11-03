@@ -40,9 +40,10 @@ pub const Polarity = enum(u8) { n, p, other };
 
 /// Refinements one symmetry search may run, and complete maps it may weigh:
 /// a circuit of many identical cells has many symmetries, and the first
-/// few of the search are as good as any.
-const refines_max = 512;
-const candidates_max = 32;
+/// few of the search are as good as any. The golden and textbook decks need
+/// 14 and 4 at most; a bus of 8 slices would spend 512 refinements, 5 ms.
+const refines_max = 64;
+const candidates_max = 16;
 
 /// Devices then nets as one vertex set; an edge per pin, labelled with the
 /// pin's terminal (pins a device has no order between share a label).

@@ -8,14 +8,17 @@
 //!
 //! - A device is vertical when it is a transistor, sits on a rail, or is in
 //!   series (alone with one other channel element on each of its nets);
-//!   a capacitor only on a rail. Anything else bridges.
+//!   a capacitor only on a rail. Anything else bridges, as does a two-pin
+//!   device between two nets the symmetry swaps (it straddles the axis).
 //! - Columns are the chains current flows down: one device's lower end and
 //!   the next one's upper end on a net. Where several meet, one link is
 //!   kept (a transistor, a chain that reaches a rail, the same type, then
 //!   rank), mirrored by the symmetry; nothing links across a pair's tail, so
 //!   a tail stands in a column of its own.
 //! - Mates: the symmetry's, else each differential, cross-coupled or
-//!   two-member mirror pair's, carried up and down their columns.
+//!   two-member mirror pair's, carried up and down their columns; kept only
+//!   where each column's mates stand in one column, since columns mirror
+//!   whole.
 //! - Rows by longest path down the chains, mates and blocks held level where
 //!   that closes no cycle; transistors on ground drop to their type's lowest
 //!   such row.
@@ -95,7 +98,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     @memset(y, 0);
     @memset(gate_right, false);
 
-    try classify(gpa, nl, roles, drawn, form);
+    try classify(gpa, nl, roles, st, drawn, form);
     try ends(gpa, nl, roles, drawn, form, upper, lower);
     const net_rank = try structure.rankByName(gpa, gpa, c.vertices.items(.name));
     defer gpa.free(net_rank);
@@ -126,26 +129,30 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
         try start.append(gpa, @intCast(members.items.len));
     }
 
-    const mate = try mates(gpa, nl, st, drawn, form, column_of, chain);
+    const mate = try mates(gpa, nl, st, drawn, form, column_of, chain, start.items.len - 1);
     defer gpa.free(mate);
-    const rank = try levels.rows(gpa, nl, roles, st, mate, drawn, form, upper, lower);
+    const rank = try levels.rows(gpa, nl, roles, st, mate, chain.below, drawn, form, upper, lower);
     defer gpa.free(rank);
     const cols: columns.Columns = .{ .start = start.items, .devices = members.items };
     const partners = try gpa.alloc(u32, n);
     defer gpa.free(partners);
     for (partners, 0..) |*p, d| p.* = blockPartner(st, @intCast(d));
-    const col_x = try columns.order(gpa, nl, roles, cols, column_of, mate, partners, st.device_rank);
+    const col_x = try columns.order(gpa, nl, roles, cols, column_of, mate, partners, st.device_rank, rank);
     defer gpa.free(col_x);
     for (0..n) |d| {
         if (!drawn[d] or form[d] != .vertical) continue;
         x[d] = spread * col_x[column_of[d]];
         y[d] = 2 * @as(i32, @intCast(rank[d]));
     }
-    try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, x, y);
-    gates(nl, roles, st, drawn, form, x, gate_right);
-    // The core stands about x = 0 until the cells shift to start at 0.
+    // The core stands about x = 0 until the cells shift to start at 0; a
+    // device its own mate whose column went free keeps none.
     var mated = false;
-    for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
+    for (mate, 0..) |*m, d| {
+        if (m.* == d and x[d] != 0) m.* = none;
+        mated = mated or (m.* != none and drawn[d] and form[d] == .vertical);
+    }
+    try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, if (mated) 0 else null, x, y);
+    gates(nl, roles, st, drawn, form, x, gate_right);
     const shift = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
     const axis2: ?i32 = if (mated) -2 * shift else null;
@@ -176,8 +183,10 @@ fn isRail(r: Role) bool {
 
 /// Drawn: not a driver and with pins. Vertical: a transistor, a two-pin
 /// device on a rail, or one in series (each of its nets holds one other
-/// channel element); capacitors only on a rail.
-fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []bool, form: []Form) !void {
+/// channel element); capacitors only on a rail; never a two-pin device
+/// between two nets the symmetry swaps, which straddles the axis, nor a
+/// device whose current path is shorted (a MOS dummy: no current flows).
+fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form) !void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     assert(drawn.len == c.edgeCount());
@@ -204,13 +213,14 @@ fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []bo
         f.* = .horizontal;
         if (!drawn[d]) continue;
         if (isTransistor(kinds[d]) and pins.len >= 3) {
-            f.* = .vertical;
-        } else if (isTwoPin(kinds[d]) and pins.len >= 2) {
+            if (pins[0].index() != pins[2].index()) f.* = .vertical;
+        } else if (isTwoPin(kinds[d]) and pins.len >= 2 and pins[0].index() != pins[1].index()) {
             const a = pins[0].index();
             const b = pins[1].index();
             const on_rail = isRail(roles[a]) or isRail(roles[b]);
             const series = kinds[d] != .capacitor and count[a] == 2 and count[b] == 2;
-            if (on_rail or series) f.* = .vertical;
+            const straddles = a != b and st.net_mate[a] == b;
+            if ((on_rail or series) and !straddles) f.* = .vertical;
         }
     }
 }
@@ -241,8 +251,8 @@ fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const 
             upper[d] = if (a_up) a else b;
             lower[d] = if (a_up) b else a;
         }
-        assert(upper[d] != none);
-        assert(lower[d] != none);
+        assert(upper[d] != none and lower[d] != none);
+        assert(upper[d] != lower[d]);
     }
 }
 
@@ -324,17 +334,31 @@ fn link(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Stru
         if (m != none and m != net and net_rank[m] < net_rank[net]) continue;
         try endsOn(gpa, nl, drawn, form, upper, lower, net, &ups, &downs);
         const u, const l = choose(nl, st, upper, lower, roles, chain, ups.items, downs.items) orelse continue;
+        if (closesLoop(chain, u, l)) continue;
         chain.below[u] = l;
         chain.above[l] = u;
         if (m == none or m == net) continue;
         const mu = st.device_mate[u];
         const ml = st.device_mate[l];
         if (mu == none or ml == none or chain.below[mu] != none or chain.above[ml] != none) continue;
-        if (lower[mu] != m or upper[ml] != m) continue;
+        if (lower[mu] != m or upper[ml] != m or closesLoop(chain, mu, ml)) continue;
         chain.below[mu] = ml;
         chain.above[ml] = mu;
     }
     for (chain.below, 0..) |b, d| if (b != none) assert(chain.above[b] == d);
+}
+
+/// Whether `u` over `l` closes a loop: `u` stands below `l` already (two
+/// devices joined by both their ends, each over the other on one net).
+fn closesLoop(chain: *const Chain, u: u32, l: u32) bool {
+    var d = l;
+    var steps: usize = 0;
+    while (d != none) : (steps += 1) {
+        assert(steps <= chain.below.len);
+        if (d == u) return true;
+        d = chain.below[d];
+    }
+    return false;
 }
 
 /// The drawn vertical devices with their lower end (`ups`) and upper end
@@ -414,19 +438,27 @@ fn reachesRail(roles: []const Role, upper: []const u32, lower: []const u32, chai
 
 /// The symmetry's mates where it has one; else each pair's and two-member
 /// mirror's or bank's, carried up and down their two columns while the
-/// devices there are of one kind.
-fn mates(gpa: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, chain: Chain) ![]u32 {
-    const n = column_of.len;
-    const mate = try gpa.alloc(u32, n);
+/// devices there are of one kind. Vertical devices only, and only where
+/// each column's mates stand in one column (`mirrorable`).
+fn mates(gpa: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, chain: Chain, n_columns: usize) ![]u32 {
+    const mate = try gpa.alloc(u32, column_of.len);
     errdefer gpa.free(mate);
     @memset(mate, none);
     var exact = false;
-    for (st.device_mate, 0..) |m, d| if (m != none and drawn[d]) {
+    for (st.device_mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical and form[m] == .vertical) {
         mate[d] = m;
         exact = true;
     };
-    if (exact) return mate;
-    defer for (mate, 0..) |m, d| if (m != none) assert(mate[m] == d);
+    if (!exact) pairMates(nl, st, form, column_of, chain, mate);
+    try mirrorable(gpa, column_of, n_columns, mate);
+    for (mate, 0..) |m, d| if (m != none) assert(mate[m] == d);
+    return mate;
+}
+
+/// Each pair's and two-member mirror's or bank's mates, carried up and down
+/// their two columns while the devices there are of one kind.
+fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, column_of: []const u32, chain: Chain, mate: []u32) void {
+    const n = column_of.len;
     const kinds = nl.graph.edges.items(.kind);
     for (st.block_kind, 0..) |k, b| {
         const ms = st.members(b);
@@ -452,7 +484,35 @@ fn mates(gpa: Allocator, nl: *const Netlist, st: *const Structure, drawn: []cons
             }
         }
     }
-    return mate;
+}
+
+/// Drops the mates of every column whose members' mates do not all stand in
+/// one column that maps back to it (and the mates' own): the columns'
+/// order mirrors column onto column, so such a column has no image. A
+/// keeper's two devices in two columns, mated to one inverter's, lose them.
+fn mirrorable(gpa: Allocator, column_of: []const u32, n_columns: usize, mate: []u32) !void {
+    const conflict = none - 1;
+    const image = try gpa.alloc(u32, n_columns);
+    defer gpa.free(image);
+    var rounds: usize = 0;
+    while (true) : (rounds += 1) {
+        assert(rounds <= mate.len);
+        @memset(image, none);
+        for (mate, 0..) |m, d| if (m != none) {
+            const c = column_of[d];
+            image[c] = if (image[c] == none or image[c] == column_of[m]) column_of[m] else conflict;
+        };
+        var changed = false;
+        for (mate, 0..) |m, d| if (m != none) {
+            const c = column_of[d];
+            const ok = image[c] != conflict and image[image[c]] == c;
+            if (ok) continue;
+            mate[d] = none;
+            mate[m] = none;
+            changed = true;
+        };
+        if (!changed) break;
+    }
 }
 
 /// Every transistor's gate faces the rest of its gate net, or away from the

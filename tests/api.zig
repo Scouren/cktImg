@@ -4,6 +4,7 @@
 const std = @import("std");
 const testing = std.testing;
 const np = @import("NetlistParser");
+const fixtures = @import("fixtures.zig");
 const support = @import("support.zig");
 const textbook = @import("textbook.zig");
 
@@ -298,20 +299,6 @@ test "placed: random netlists draw every net as one piece, no wire on another's 
     }
 }
 
-/// AnalogIOC's decks (`analog/<block>/netlist/<block>.spice`), whose xschem
-/// converter found wires running across other nets' pins.
-const analogioc = [_]struct { name: []const u8, spice: []const u8 }{
-    .{ .name = "async_ctrl", .spice = @embedFile("fixtures/analogioc/async_ctrl.spice") },
-    .{ .name = "cmos_switch", .spice = @embedFile("fixtures/analogioc/cmos_switch.spice") },
-    .{ .name = "gain_cell_array", .spice = @embedFile("fixtures/analogioc/gain_cell_array.spice") },
-    .{ .name = "ota", .spice = @embedFile("fixtures/analogioc/ota.spice") },
-    .{ .name = "pwm_driver", .spice = @embedFile("fixtures/analogioc/pwm_driver.spice") },
-    .{ .name = "rstring_ladder", .spice = @embedFile("fixtures/analogioc/rstring_ladder.spice") },
-    .{ .name = "strongarm", .spice = @embedFile("fixtures/analogioc/strongarm.spice") },
-    .{ .name = "weight_tile", .spice = @embedFile("fixtures/analogioc/weight_tile.spice") },
-    .{ .name = "write_dac", .spice = @embedFile("fixtures/analogioc/write_dac.spice") },
-};
-
 // Before L9 and `Placed`'s check: rstring_ladder 29 nets, gain_cell_array
 // 24, write_dac 18, weight_tile 4 (`rowa0` across the `phi1`/`phi2`
 // gates), the nine-port block 4, blocks.spice 3.
@@ -338,7 +325,7 @@ test "placed: no wire touches another net's pin, wire end or label" {
     // `.subckt`s titled as cktimg-json titles it.
     var cfg: np.Config = .default;
     cfg.rules.symbol_geometry = .err;
-    for (analogioc) |c| {
+    for (fixtures.analogioc) |c| {
         // cktimg-json's top cell: the last `.subckt`'s body, the deck after it.
         const text = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, c.spice });
         defer gpa.free(text);

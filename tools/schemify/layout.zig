@@ -232,7 +232,7 @@ const label_orient = [4]u8{ 2, 0, 3, 1 };
 /// The engine's name for each local net of cell `c` (lowercase): the deck's own name where
 /// the engine's tokenizer reads it as one field, `0` for ground (`gnd` too when the cell
 /// has no `0`), else a fresh `n2s_<n>`.
-fn netNames(a: Allocator, deck: *const Deck, c: u32) Allocator.Error![]const []const u8 {
+pub fn netNames(a: Allocator, deck: *const Deck, c: u32) Allocator.Error![]const []const u8 {
     const n = deck.netCount(c);
     var has_zero = false;
     for (0..n) |k| has_zero = has_zero or mem.eql(u8, deck.netKey(c, @intCast(k)), "0");

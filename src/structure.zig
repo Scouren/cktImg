@@ -250,7 +250,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
             const d = e.index();
             const f = transistor(nl, d) orelse continue;
             gated = gated or f.gate == n;
-            if (f.source != n or (count > 0 and on[count - 1] == d)) continue;
+            if (f.source != n or (count > 0 and on[@min(count, on.len) - 1] == d)) continue;
             if (count < on.len) on[count] = d;
             count += 1;
         }

@@ -2,6 +2,9 @@
 //! Checks that every layout ends and puts one node per cell, and reports,
 //! for each rare case, how many netlists hit it and the smallest one — the
 //! source of the example netlists for L2, L5 and L7 in docs/ALGORITHM.md.
+//! Issue #8's stages draw each netlist too: they end, every net is one piece
+//! as a netlister reads it, no wire touches another net's point, and the
+//! cards reversed draw the same picture.
 
 const std = @import("std");
 const np = @import("NetlistParser");
@@ -9,6 +12,7 @@ const netlist = np.netlist;
 const sch = np.schematic;
 const lay = np.layout_engine;
 const support = @import("support.zig");
+const golden = @import("golden.zig");
 
 const runs = 4000;
 
@@ -39,6 +43,8 @@ pub fn main(init: std.process.Init) !void {
         .{ .name = "S5 rail or junction re-dealt" },
         .{ .name = "L9 laid out again, no contact left" },
         .{ .name = "L9 contact left (drawn as names)" },
+        .{ .name = "a net drawn as labels" },
+        .{ .name = "#8: a net drawn as labels" },
     };
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -93,10 +99,67 @@ pub fn main(init: std.process.Init) !void {
             std.debug.print("a wire touches another net:\n{s}\n", .{text});
             return error.Short;
         }
+
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const sk = try sketch(a, lib, text);
+        support.expectConnected(&sk.p, lib) catch |e| {
+            std.debug.print("#8: a net in pieces:\n{s}\n", .{text});
+            return e;
+        };
+        if (try support.shorts(gpa, &sk.p, true) > 0) {
+            std.debug.print("#8: a wire touches another net:\n{s}\n", .{text});
+            return error.Short;
+        }
+        // One picture per circuit: the cards reversed draw the same.
+        const back = try sketch(a, lib, try golden.shuffled(a, text, .reversed));
+        const want = try canonical(a, &sk.p);
+        const got = try canonical(a, &back.p);
+        if (!std.mem.eql(u8, want, got)) {
+            std.debug.print("#8: the cards reversed draw differently:\n{s}\n", .{text});
+            return error.CardOrder;
+        }
+        cases[8].record(t.labeled_nets > 0, text);
+        cases[9].record(sk.labeled > 0, text);
     }
-    std.debug.print("{d} random netlists: every layout ended, one node per cell, no wire on another net's point\n", .{runs});
+    std.debug.print("{d} random netlists: every layout ended, one node per cell, no wire on another net's point; #8's drawings too, each net one piece\n", .{runs});
     for (cases) |c| {
         std.debug.print("\n== {s}: {d}\n", .{ c.name, c.count });
         if (c.count > 0) std.debug.print("{s}", .{c.text[0..c.len]});
     }
+}
+
+/// A netlist drawn by issue #8's stages, and how many nets it labels.
+fn sketch(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: np.Placed, labeled: u32 } {
+    var nl = try netlist.parse(a, &.{text}, null);
+    const roles = try sch.guessRoles(a, &nl);
+    const s = try sch.sketch.lay(a, &nl, roles, lib);
+    return .{ .p = try np.Placed.init(a, &s, &nl), .labeled = s.stats.labeled_nets };
+}
+
+/// Each device by name with its place and turn, then each net by name with
+/// its wires' segments, sorted: equal for equal drawings, whatever the
+/// order things were drawn in.
+fn canonical(a: std.mem.Allocator, p: *const np.Placed) ![]const u8 {
+    var lines: std.ArrayList([]const u8) = .empty;
+    for (p.dev_name, p.dev_pos, p.dev_orient) |name, at, o| {
+        if (name.len > 0) try lines.append(a, try std.fmt.allocPrint(a, "d {s} {d} {d} {any}", .{ name, at.x, at.y, o }));
+    }
+    for (p.net_name, 0..) |name, n| {
+        for (p.net_seg[n]..p.net_seg[n + 1]) |k| {
+            const pts = p.wire_pts[p.seg_pt[k]..p.seg_pt[k + 1]];
+            for (pts[0 .. pts.len - 1], pts[1..]) |u, v| {
+                const lo = if (u.x < v.x or (u.x == v.x and u.y < v.y)) u else v;
+                const hi = if (lo.x == u.x and lo.y == u.y) v else u;
+                try lines.append(a, try std.fmt.allocPrint(a, "w {s} {d} {d} {d} {d}", .{ name, lo.x, lo.y, hi.x, hi.y }));
+            }
+        }
+    }
+    std.mem.sort([]const u8, lines.items, {}, struct {
+        fn lt(_: void, x: []const u8, y: []const u8) bool {
+            return std.mem.lessThan(u8, x, y);
+        }
+    }.lt);
+    return std.mem.join(a, "\n", lines.items);
 }
