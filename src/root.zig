@@ -32,8 +32,9 @@ const build_options = @import("build_options");
 /// Plain-data JSON of a `Placed` (what `cktimg_json` writes).
 pub const json = @import("json.zig");
 /// The C ABI, `include/cktimg.h`. Nothing in Zig calls it, so it is forced
-/// into the build here, or the static library would export nothing.
-pub const abi = @import("abi.zig");
+/// into the build here, or the static library would export nothing; the
+/// Schemify plugin builds without it (`c_abi = false`), exporting only its own.
+pub const abi = if (build_options.c_abi) @import("abi.zig") else void;
 comptime {
     _ = abi;
 }

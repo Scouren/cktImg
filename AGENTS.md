@@ -1,10 +1,10 @@
 # AGENTS.md
 
-cktImg: a Schemify plugin that imports a SPICE netlist as editable schematics.
-Two halves: the layout engine in `engine/` (Zig 0.17, C ABI, also a Zig
-package and the `cktimg-tex`/`cktimg-json` tools) and the plugin at the root
-(Rust 1.95, edition 2024, built to `cktimg.wasm`). `README.md` and
-`engine/README.md` are the overview.
+cktImg: automatic schematics from SPICE netlists, all Zig 0.17. The layout
+engine is `src/` (a Zig package, and a C ABI in `include/cktimg.h`); its front
+ends are in `tools/`: `cktimg-json`, `cktimg-tex`, and the Schemify plugin in
+`tools/schemify/` (built to the committed `cktimg.wasm`). `README.md` is the
+overview.
 
 ## Skills to load first
 
@@ -14,12 +14,12 @@ https://github.com/OmarSiwy/NixOSConfig/tree/main/skills
 
 | Skill | Use it for here |
 |---|---|
-| `data-oriented-design` | Netlist, placement and wire tables (`engine/src/netlist.zig`, `placed.zig`, `csr.zig`): the six questions, SoA, narrowest widths, handles |
+| `data-oriented-design` | Netlist, placement and wire tables (`src/netlist.zig`, `placed.zig`, `csr.zig`): the six questions, SoA, narrowest widths, handles |
 | `codebase-clean-code` | Owners: the engine lays out, the plugin maps cells and writes Schemify records; one spine per import; seams on the cheapest rung |
-| `api-design` | Every `pub` function, `engine/src/abi.zig` and `engine/include/cktimg.h` (shipped surface): usage code first, caller owns memory and flow |
+| `api-design` | Every `pub` function, `src/abi.zig` and `include/cktimg.h` (shipped surface): usage code first, caller owns memory and flow |
 | `code-style` | File order, ≤500 code lines per file, `check_style.py` |
 | `simd-loops` | Hot loops in placement and routing cost: the plain-loop forms, or `@Vector` with a scalar oracle |
-| `doc-comments` | Every `pub` item, Zig and Rust |
+| `doc-comments` | Every `pub` item |
 | `ponytail` (ultra) | How little code; never what shape the data takes |
 | `assertions` | Contracts, capacities, bounded loops; the plugin's fuel budget per event |
 | `test-plan`, `tdd` | The oracles below, the CI gates, a feature's definition of done |
@@ -28,14 +28,13 @@ Language:
 
 | Skill | Use it for here |
 |---|---|
-| `zig` | `engine/`: Zig 0.17 idioms and the zero-cost probe |
-| `rust` | The plugin: types, memory, `zero-cost.md`; it runs as a wasm guest, so size counts (550 KB cap) |
+| `zig` | Everything: Zig 0.17 idioms and the zero-cost probe; the plugin runs as a wasm guest, so size counts (550 KB cap) |
 
 Project-specific:
 
 | Skill | Use it for here |
 |---|---|
-| `compiler-construction` | `engine/src/netlist.zig` and `src/spice.rs`: the SPICE reader, rows plus `extra_data`, interning, coded diagnostics |
+| `compiler-construction` | `src/netlist.zig` and `tools/schemify/spice.zig`: the SPICE readers, rows plus `extra_data`, interning, coded diagnostics |
 | `gui-architecture` | What the plugin hands Schemify's editor: records the view draws, never editor state |
 | `branchless` | Data-dependent branches in layout scans, before `simd-loops` |
 
@@ -141,24 +140,23 @@ Binding on every change, in every project.
 
 ## Building
 
-- Every build runs inside `nix develop -c …`: it pins rustc 1.95, wasm-ld and
-  Zig 0.17, the toolchain `cktimg.wasm` is byte-reproducible under.
-- `./build.sh` rebuilds `cktimg.wasm`, which is committed. Commit it with any
-  change to `src/` or `engine/`: CI fails when the committed module differs
-  from its rebuild, or reaches 550 KB.
-- The plugin: `cargo test --locked`, `cargo fmt --check`,
-  `cargo clippy --locked --all-targets -- -D warnings`.
-- The engine, from `engine/`: `zig build test` with `-Dlatex_renderer=false`
-  and `=true` (the option gates code, both must pass), `zig fmt --check`, and
-  `zig build gallery -- --svgs out/` to eyeball a layout change.
-- Run one cargo or zig process per agent, and don't build while `free -g`
-  shows under 6 GB available.
+- Every build runs inside `nix develop -c …`: it pins Zig 0.17, the toolchain
+  `cktimg.wasm` is byte-reproducible under.
+- `zig build -Dschemify_plugin=true` rebuilds `cktimg.wasm`, which is
+  committed. Commit it with any change to `src/` or `tools/schemify/`: CI fails
+  when the committed module differs from its rebuild, or reaches 550 KB.
+- `zig build test` with `-Dlatex_renderer=false` and `=true` (the option gates
+  code, both must pass), `zig fmt --check`, and `zig build gallery -- --svgs out/`
+  to eyeball a layout change.
+- Run one zig process per agent, and don't build while `free -g` shows under
+  6 GB available.
 
 ## Testing
 
 - Every test names its oracle: the independent thing that says the output is
   wrong. The main one is the round trip: an imported fixture, netlisted back
-  through Schemify's `elab`, netlister and `spicecmp`, is the same circuit.
+  through Schemify (`schemify cmd … cktimg.import`, `schemify netlist`) and
+  compared by Schemify's `spicecmp`, is the same circuit.
 - A golden that disagrees with an independent oracle is a bug in the code
   that wrote it. Fix the code, regenerate the golden, and say so in the commit.
 
