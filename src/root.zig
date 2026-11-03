@@ -16,6 +16,8 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub const netlist = @import("netlist.zig");
+/// The `*@` grouping hints a deck gives `layout` (issue #7).
+pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");

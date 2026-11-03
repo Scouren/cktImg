@@ -1,6 +1,6 @@
 //! Stage 2a (issue #8) against the book: each golden figure's symmetry and
 //! blocks, read off the figure by hand, and that neither depends on the
-//! order of the cards.
+//! order of the cards; the deck's grouping hints (#7) over recognition.
 //!
 //! Contents: tests only.
 
@@ -71,6 +71,15 @@ fn describe(arena: std.mem.Allocator, spice: []const u8) !Described {
     return .{ .symmetry = try std.mem.join(arena, " ", sym.items), .blocks = try std.mem.join(arena, "; ", blocks.items) };
 }
 
+/// The 5T OTA's blocks under `hints` (lines appended to its deck): what
+/// recognition finds is "mirror m3 m4; pair m1 m2; stack m3 m1; stack m4 m2".
+fn hinted(arena: std.mem.Allocator, hints: []const u8) ![]const u8 {
+    const deck = for (golden.decks) |d| {
+        if (std.mem.eql(u8, d.name, "ota_5t")) break d;
+    } else return error.NoSuchDeck;
+    return (try describe(arena, try std.mem.concat(arena, u8, &.{ deck.spice, "\n", hints, "\n" }))).blocks;
+}
+
 test "structure: names sort by their numbers" {
     try std.testing.expect(structure.nameLess("m2", "m10"));
     try std.testing.expect(!structure.nameLess("m10", "m2"));
@@ -112,4 +121,35 @@ test "structure: the order of the cards changes nothing" {
             try std.testing.expectEqualStrings(base.blocks, other.blocks);
         }
     }
+}
+
+test "hints: a hinted group stands as written, over recognition" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    // The loads hinted a pair: no longer a mirror; the inputs still a pair.
+    try std.testing.expectEqualStrings("pair m1 m2; pair m3 m4; stack m3 m1; stack m4 m2", try hinted(arena, "*@ group pair m4 m3"));
+    // A stack hint, top to bottom as written, holds its devices from
+    // recognized stacks.
+    try std.testing.expectEqualStrings("mirror m3 m4; pair m1 m2; stack m1 m3; stack m4 m2", try hinted(arena, "*@ group stack m1 m3"));
+}
+
+test "hints: nogroup keeps a device out of every group, grouping off out of recognized ones" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    // m1 in no pair and no stack: m2 has no partner left.
+    try std.testing.expectEqualStrings("mirror m3 m4; stack m4 m2", try hinted(arena, "*@ nogroup m1"));
+    // Nothing recognized, the hinted group only; nogroup wins over a hint.
+    try std.testing.expectEqualStrings("mirror m3 m4", try hinted(arena, "*@ grouping off\n*@ group mirror m3 m4\n*@ group pair m1 m2\n*@ nogroup m1"));
+}
+
+test "hints: a name the deck does not have is passed over, and the rest holds" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    // A pair of one known device is no pair: recognition finds m1 m2.
+    try std.testing.expectEqualStrings("mirror m3 m4; pair m1 m2; stack m3 m1; stack m4 m2", try hinted(arena, "*@ group pair m1 mx\n*@ nogroup my"));
+    // Hints inside a `.subckt` are its own, not the deck's.
+    try std.testing.expectEqualStrings("mirror m3 m4; pair m1 m2; stack m3 m1; stack m4 m2", try hinted(arena, ".subckt blk a b\n*@ grouping off\nr1 a b 1k\n.ends"));
 }

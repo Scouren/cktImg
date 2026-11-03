@@ -29,6 +29,7 @@ pub const spice = @import("spice.zig");
 pub const recognize = @import("recognize.zig");
 pub const layout = @import("layout.zig");
 pub const emit = @import("emit.zig");
+const hints = @import("hints.zig");
 pub const OutFile = emit.OutFile;
 
 /// Counts for the import log.
@@ -76,6 +77,7 @@ pub const Converter = struct {
         var rec = try recognize.recognize(a, &deck);
         var out: Conversion = .{};
         try out.warnings.appendSlice(a, deck.warnings);
+        try hints.check(a, &deck, &out.warnings);
         try out.warnings.appendSlice(a, rec.warnings.items);
         const lib = try layout.library(gpa, a, &rec, &out.warnings);
         const file = source[if (mem.lastIndexOfScalar(u8, source, '/')) |i| i + 1 else 0..];

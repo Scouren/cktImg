@@ -221,9 +221,14 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     defer gpa.free(taken);
     @memset(taken, false);
     var list: BlockList = .{};
+    // Hints first: a hinted group stands as written, a device kept out of
+    // groups is in none, and `grouping off` leaves the hinted ones only.
+    const hinted = try hints(gpa, arena, nl, device_rank, taken, &list);
+    defer gpa.free(hinted.held);
+    const recognize = !hinted.off;
 
     // Cross-coupled pairs: a's gate is b's drain and b's gate a's drain.
-    for (by_rank) |a| {
+    if (recognize) for (by_rank) |a| {
         const fa = transistor(nl, a) orelse continue;
         if (taken[a] or isRail(roles[fa.drain]) or isRail(roles[fa.gate]) or fa.drain == fa.gate) continue;
         var best: ?u32 = null;
@@ -238,10 +243,10 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
         taken[a] = true;
         taken[b] = true;
         try list.add(arena, .cross, &.{ a, b });
-    }
+    };
 
     // Differential pairs: the only two transistor sources on a net.
-    for (nets_by_rank) |n| {
+    if (recognize) for (nets_by_rank) |n| {
         if (isRail(roles[n])) continue;
         var on: [2]u32 = undefined;
         var count: usize = 0;
@@ -263,12 +268,12 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
         taken[lo] = true;
         taken[hi] = true;
         try list.add(arena, .pair, &.{ lo, hi });
-    }
+    };
 
     // Gate groups: transistors of one type on a gate net, by rank.
     var group: std.ArrayList(u32) = .empty;
     defer group.deinit(gpa);
-    for (nets_by_rank) |n| {
+    if (recognize) for (nets_by_rank) |n| {
         if (isRail(roles[n])) continue;
         for ([_]Polarity{ .n, .p, .other }) |pol| for ([_]DeviceKind{ .mosfet, .bjt, .jfet, .mesfet }) |kind| {
             group.clearRetainingCapacity();
@@ -283,7 +288,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
             for (group.items) |d| taken[d] = true;
             try list.add(arena, if (diode) .mirror else .bank, group.items);
         };
-    }
+    };
 
     // Stacks: links where a net holds just one transistor's lower end and
     // another's upper end.
@@ -294,6 +299,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     @memset(below, none);
     @memset(above, none);
     for (0..c.vertexCount()) |n| {
+        if (!recognize) break;
         if (isRail(roles[n])) continue;
         var top: u32 = none;
         var bottom: u32 = none;
@@ -313,6 +319,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
             }
         }
         if (ends != 2 or top == none or bottom == none or top == bottom) continue;
+        if (hinted.held[top] or hinted.held[bottom]) continue;
         assert(below[top] == none);
         assert(above[bottom] == none);
         below[top] = bottom;
@@ -335,6 +342,65 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     out.block_kind = list.kind.items;
     out.block_start = if (list.start.items.len == 0) try arena.dupe(u32, &[_]u32{0}) else list.start.items;
     out.block_devices = list.devices.items;
+}
+
+/// The deck's grouping hints: each hinted group added to `list` with its
+/// known devices no earlier hint took (a pair or a cross-coupled pair of two
+/// exactly), its members `taken` (a stack's: `held` from recognized
+/// stacks); a device `*@ nogroup` names `taken` and `held`. `off`: the deck
+/// turns recognition off.
+fn hints(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []const u32, taken: []bool, list: *BlockList) !struct { off: bool, held: []bool } {
+    const n = taken.len;
+    assert(device_rank.len == n);
+    const held = try gpa.alloc(bool, n);
+    errdefer gpa.free(held);
+    @memset(held, false);
+    const nogroup = try gpa.alloc(bool, n);
+    defer gpa.free(nogroup);
+    @memset(nogroup, false);
+    var off = false;
+    for (nl.hints) |h| switch (h.verb) {
+        .off => off = true,
+        .nogroup => for (h.devices) |name| if (nl.device(name)) |e| {
+            nogroup[e.index()] = true;
+            held[e.index()] = true;
+            taken[e.index()] = true;
+        },
+        .pair, .mirror, .stack, .cross => {},
+    };
+    var members: std.ArrayList(u32) = .empty;
+    defer members.deinit(gpa);
+    for (nl.hints) |h| {
+        const kind: BlockKind = switch (h.verb) {
+            .pair => .pair,
+            .mirror => .mirror,
+            .stack => .stack,
+            .cross => .cross,
+            .nogroup, .off => continue,
+        };
+        members.clearRetainingCapacity();
+        for (h.devices) |name| {
+            const d = (nl.device(name) orelse continue).index();
+            const busy = if (kind == .stack) held[d] else taken[d];
+            if (busy or nogroup[d] or std.mem.indexOfScalar(u32, members.items, d) != null) continue;
+            try members.append(gpa, d);
+        }
+        if (members.items.len < 2 or ((kind == .pair or kind == .cross) and members.items.len != 2)) continue;
+        // In rank order, as recognition lists them; a stack top to bottom as
+        // written. ponytail: insertion sort, quadratic, for the handful of
+        // names a hint gives; `std.mem.sort` costs the plugin 8 KB more.
+        if (kind != .stack) std.sort.insertion(u32, members.items, device_rank, struct {
+            fn lt(rank: []const u32, a: u32, b: u32) bool {
+                return rank[a] < rank[b];
+            }
+        }.lt);
+        for (members.items) |d| {
+            if (kind == .stack) held[d] = true else taken[d] = true;
+        }
+        try list.add(arena, kind, members.items);
+    }
+    for (nogroup, taken) |g, t| assert(!g or t);
+    return .{ .off = off, .held = held };
 }
 
 fn transistor(nl: *const Netlist, d: u32) ?Fet {
