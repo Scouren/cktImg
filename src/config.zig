@@ -1,22 +1,57 @@
-//! The `lint.zon` settings file, two tables:
+//! The `lint.zon` settings file, three tables:
 //!
+//! - `.layout`: the drawing's lengths and the router's costs
+//!   (docs/ALGORITHM.md §4);
 //! - `.rules`: one severity per lint rule (`lint.zig`);
 //! - `.render`: colours and line widths for the TikZ emitter.
 //!
-//! Every key is optional; an absent key keeps its default, and an
+//! Lengths are in units, one unit being a two-pin symbol from pin end to pin
+//! end. Every key is optional; an absent key keeps its default, and an
 //! unrecognized key or a malformed value is reported, never fatal — failing
-//! to draw a schematic over a typo in a style file is the wrong trade. (The
-//! layout takes no settings: its spacing is the symbols' unit. A `.layout`
-//! table from before issue #8 is reported as an unknown key.)
+//! to draw a schematic over a typo in a style file is the wrong trade. Keys
+//! of the wire-first layout whose rules went with it (`min_pitch`,
+//! `junction`, `bend`) are reported as unknown.
 //!
 //! ```zon
-//! .{ .rules = .{ .no_ground = .err }, .render = .{ .wire = "000000" } }
+//! .{ .layout = .{ .stack = 1.5 }, .rules = .{ .no_ground = .err }, .render = .{ .wire = "000000" } }
 //! ```
+//!
+//! Contents:
+//! - `pub const Layout = struct`, `pub const Render = struct`
+//! - `pub const Config = struct`, `Config.default`
+//! - `Config.parse(arena: Allocator, text: []const u8, diags: ?*std.ArrayList(Diagnostic)) Allocator.Error!Config`
+//! - `Config.load(arena: Allocator, io: std.Io, dir: std.Io.Dir, path: []const u8, diags: ?*std.ArrayList(Diagnostic)) Allocator.Error!Config`
+//! - `pub const Diagnostic = struct`, `Diagnostic.Kind`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Zoir = std.zig.Zoir;
 const lint = @import("lint.zig");
+
+/// The drawing's lengths, in units, and the router's costs, in units of
+/// wire. The defaults are the look the golden figures are scored on. A
+/// length moves nothing to another row or column: rows, columns and order
+/// are the layout's.
+pub const Layout = struct {
+    /// Between neighbouring rows: the wire between two devices of one column.
+    stack: f32 = 1.0,
+    /// Between neighbouring columns.
+    series: f32 = 1.0,
+    /// A pin to its supply or ground symbol; the supply bar over its pins.
+    rail: f32 = 1.0,
+    /// A pin to its input or output port.
+    terminal: f32 = 1.0,
+    /// A pin to its net label.
+    label: f32 = 0.5,
+    /// Pins facing one way to the trunk that joins them.
+    tap: f32 = 1.0,
+    /// The router's room between a wire and another net's wire or point.
+    clearance: f32 = 0.25,
+    /// What the router pays for a bend, in wire.
+    bend_cost: f32 = 1.0,
+    /// What the router pays to cross another net's wire, in wire.
+    cross_cost: f32 = 2.0,
+};
 
 /// How the TikZ emitter strokes a drawing.
 pub const Render = struct {
@@ -29,6 +64,7 @@ pub const Render = struct {
 };
 
 pub const Config = struct {
+    layout: Layout = .{},
     rules: lint.Rules = .{},
     render: Render = .{},
 
@@ -64,7 +100,9 @@ pub const Config = struct {
         for (tables.names, 0..) |name, i| {
             const key = name.get(zoir);
             const node = tables.vals.at(@intCast(i));
-            if (std.mem.eql(u8, key, "rules")) {
+            if (std.mem.eql(u8, key, "layout")) {
+                try patch(Layout, arena, ast, zoir, node, &cfg.layout, &sink);
+            } else if (std.mem.eql(u8, key, "rules")) {
                 try patch(lint.Rules, arena, ast, zoir, node, &cfg.rules, &sink);
             } else if (std.mem.eql(u8, key, "render")) {
                 try patch(Render, arena, ast, zoir, node, &cfg.render, &sink);
@@ -186,19 +224,25 @@ test "config: absent keys keep defaults, unknown keys and bad values are reporte
     const cfg = try Config.parse(a,
         \\.{
         \\    .render = .{ .sym_w = 2, .wobble = 3, .wire_w = -1 },
-        \\    .layout = .{ .stack = 0.5 },
+        \\    .layout = .{ .stack = 0.5, .min_pitch = 1, .tap = -1 },
         \\}
     , &diags);
     try std.testing.expectEqual(2, cfg.render.sym_w);
     try std.testing.expectEqual((Render{}).wire_w, cfg.render.wire_w); // -1 rejected
     try std.testing.expectEqualStrings((Render{}).wire, cfg.render.wire);
-    try std.testing.expectEqual(3, diags.items.len);
+    try std.testing.expectEqual(0.5, cfg.layout.stack);
+    try std.testing.expectEqual((Layout{}).tap, cfg.layout.tap); // -1 rejected
+    try std.testing.expectEqual((Layout{}).terminal, cfg.layout.terminal);
+    try std.testing.expectEqual(4, diags.items.len);
     try std.testing.expectEqualStrings("wobble", diags.items[0].key);
     try std.testing.expectEqual(Diagnostic.Kind.unknown_key, diags.items[0].kind);
     try std.testing.expectEqualStrings("wire_w", diags.items[1].key);
     try std.testing.expectEqual(Diagnostic.Kind.bad_value, diags.items[1].kind);
-    // The layout's lengths went with the grid they set (issue #8).
-    try std.testing.expectEqualStrings("layout", diags.items[2].key);
+    // A key whose rule went with the wire-first layout (issue #8).
+    try std.testing.expectEqualStrings("min_pitch", diags.items[2].key);
+    try std.testing.expectEqual(Diagnostic.Kind.unknown_key, diags.items[2].kind);
+    try std.testing.expectEqualStrings("tap", diags.items[3].key);
+    try std.testing.expectEqual(Diagnostic.Kind.bad_value, diags.items[3].kind);
 }
 
 test "config: a malformed document gives the defaults" {

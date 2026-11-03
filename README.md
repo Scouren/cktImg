@@ -376,7 +376,7 @@ var lib = np.Library.init(gpa);                 // your symbol set
 defer lib.deinit();
 try lib.loadZon(arena, symbols_zon, &diags);    // e.g. tests/symbols.zon
 
-var placed = try np.place(gpa, &lib, &.{spice_text}, &diag);
+var placed = try np.place(gpa, &np.Config.default, &lib, &.{spice_text}, &diag);
 defer placed.deinit();
 // placed.dev_pos, .dev_orient, .pin_xy, .segments(net), .junctions, .labels, …
 ```
@@ -415,13 +415,18 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--symbols set.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
-The layout takes no settings: its spacing is the symbol set's `unit`.
-`src/config.zig` lists every lint rule and TikZ render setting with its
-default; a settings file (`cktimg-tex --config`) sets any of them.
+`src/config.zig` lists every setting with its default: the layout's lengths
+and the router's costs (`.layout`, in units of the symbol set's `unit`), the
+lint rules, and the TikZ style. A settings file (`--config`) sets any of
+them, as the lint rules are set:
+
+```zon
+.{ .layout = .{ .stack = 1.5, .terminal = 2 }, .rules = .{ .no_ground = .err } }
+```
 A file containing only `.subckt` definitions draws its last one, and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is
 described in `src/json.zig`.

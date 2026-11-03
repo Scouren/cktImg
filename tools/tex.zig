@@ -18,7 +18,7 @@ const usage =
     \\
     \\Options:
     \\  --standalone      a complete \documentclass{standalone} document
-    \\  --config <path>   render and lint settings from a lint.zon file
+    \\  --config <path>   layout, render and lint settings from a lint.zon file
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --lint            run the lint.zon rules and report on stderr
     \\  -h, --help        this message
@@ -71,7 +71,7 @@ pub fn main(init: std.process.Init) !void {
     if (sym_diags.items.len > 0) std.process.exit(1);
 
     var diag: np.netlist.Diagnostic = .{};
-    var placed = np.place(gpa, &lib, &.{text}, &diag) catch |err| switch (err) {
+    var placed = np.place(gpa, &cfg, &lib, &.{text}, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };

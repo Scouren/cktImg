@@ -65,7 +65,7 @@ fn fastest(gpa: std.mem.Allocator, io: std.Io, lib: *np.Library, text: []const u
         const t0 = std.Io.Clock.awake.now(io);
         var nl = try np.netlist.parse(a, &.{text}, null);
         const roles = try np.guessRoles(a, &nl);
-        const s = try np.layout(a, &nl, roles, lib);
+        const s = try np.layout(a, &nl, roles, lib, .{});
         _ = try np.Placed.init(a, &s, &nl);
         const t1 = std.Io.Clock.awake.now(io);
         best = @min(best, @as(u64, @intCast(t0.durationTo(t1).nanoseconds)));

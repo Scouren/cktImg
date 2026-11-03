@@ -29,7 +29,7 @@ const Built = struct {
         errdefer nl.deinit(gpa);
         const roles = try sch.guessRoles(gpa, &nl);
         errdefer gpa.free(roles);
-        const s = try np.layout(gpa, &nl, roles, lib);
+        const s = try np.layout(gpa, &nl, roles, lib, .{});
         return .{ .lib = lib, .nl = nl, .roles = roles, .s = s };
     }
     fn deinit(b: *Built) void {

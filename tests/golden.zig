@@ -135,7 +135,7 @@ pub fn score(arena: Allocator, lib: *np.Library, spice: []const u8) !Score {
     const fig = try readFigure(arena, spice);
     var nl = try np.netlist.parse(arena, &.{spice}, null);
     const roles = try np.guessRoles(arena, &nl);
-    var s = try np.layout(arena, &nl, roles, lib);
+    var s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     const drawn = try locate(arena, &p, fig.names);
     var out = try compare(arena, fig, drawn);
@@ -500,7 +500,7 @@ fn joined(arena: Allocator, names: []const []const u8) ![]const u8 {
 
 /// Each named device at its place and orientation.
 fn placements(arena: Allocator, lib: *np.Library, spice: []const u8) !std.StringHashMapUnmanaged(Placement) {
-    const p = try np.place(arena, lib, &.{spice}, null);
+    const p = try np.place(arena, &.default, lib, &.{spice}, null);
     var out: std.StringHashMapUnmanaged(Placement) = .empty;
     for (p.dev_name, p.dev_pos, p.dev_orient) |name, at, o| {
         if (name.len == 0) continue;

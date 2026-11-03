@@ -7,13 +7,13 @@
 //!   its gate on the skeleton's side, and a bridge's first pin toward its
 //!   first net's devices.
 //! - Coordinates: each lattice row and column as wide as the widest device
-//!   in it, with room for a port or label on a side a gate faces, a unit of
-//!   room beside each; mirrored columns as wide as each other, so the
-//!   drawing keeps the skeleton's symmetry.
+//!   in it, with room for a port or label on a side a gate faces, and the
+//!   `config.Layout` lengths between neighbours; mirrored columns as wide as
+//!   each other, so the drawing keeps the skeleton's symmetry.
 //! - Wires, terminals and labels: `wires.zig`.
 //!
 //! Contents:
-//! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library) !Schematic`
+//! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -26,6 +26,8 @@ const skeleton = @import("skeleton.zig");
 const wires = @import("wires.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
+const canvas = @import("canvas.zig");
+const config = @import("config.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -37,24 +39,24 @@ const Rect = library.Rect;
 const Schematic = sch.Schematic;
 const Role = sch.Role;
 const Skeleton = skeleton.Skeleton;
+const Lengths = canvas.Lengths;
 const none = sch.none;
 
 /// Lattice column and row → coordinate.
 const Geo = struct {
     xs: []const i32,
     ys: []const i32,
-    /// Room beside a device: a wire's or a terminal's.
-    gap: i32,
 };
 
-pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library) !Schematic {
+pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
     const st = try structure.analyze(gpa, a, nl, roles);
     const sk = try skeleton.place(gpa, a, nl, roles, &st);
     orientAll(&s, nl, &sk);
-    const geo = try coordinates(gpa, &s, nl, &sk);
+    const len = Lengths.of(layout, lib.unit);
+    const geo = try coordinates(gpa, &s, nl, &sk, len);
     defer gpa.free(geo.xs);
     defer gpa.free(geo.ys);
     var xy: std.ArrayList([2]f32) = .empty;
@@ -64,7 +66,7 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, &s, nl, &sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, &s, &xy, geo.gap, boxes, hidden, drawnMirror(&s, &sk, &st));
+    try wires.wire(gpa, &s, &xy, len, boxes, hidden, drawnMirror(&s, &sk, &st));
     s.xy = xy.items;
     try noConnects(gpa, &s);
     assert(s.xy.len == s.nodes.len);
@@ -146,12 +148,13 @@ fn meanX(nl: *const Netlist, sk: *const Skeleton, net: u32, skip: u32) i64 {
 }
 
 /// Each lattice column as wide as its widest device's reach on each side,
-/// plus room for a port, label or rail symbol where a side pin on a net
-/// driven from outside, an output or a rail faces that side; rows as tall
-/// as their tallest device, plus a port's or rail symbol's stub where such a
-/// pin faces up or down (the supply's bar over the top aside). A gap
-/// between neighbours.
-fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) !Geo {
+/// plus room for a port, label or rail symbol (its stub and a unit) where a
+/// side pin on a net driven from outside, an output or a rail faces that
+/// side; rows as tall as their tallest device, plus a port's or rail
+/// symbol's stub where such a pin faces up or down (the supply's bar over
+/// the top aside). `len.series` between neighbouring columns, `len.stack`
+/// between rows.
+fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton, len: Lengths) !Geo {
     const c = &nl.graph;
     var w: usize = 1;
     var h: usize = 1;
@@ -159,7 +162,6 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
         w = @max(w, @as(usize, @intCast(sk.x[d])) + 1);
         h = @max(h, @as(usize, @intCast(sk.y[d])) + 1);
     };
-    const gap = s.lib.unit;
     // Per column, room left and right; per row, up and down.
     const room = try gpa.alloc([2]i32, w + h);
     defer gpa.free(room);
@@ -179,16 +181,16 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
             const side = s.pinSide(@intCast(d), i) orelse continue;
             switch (s.roles[net.index()]) {
                 .input, .bias, .output => {
-                    if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
-                    if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
-                    if (side == .up) up = r[@backingInt(Side.up)] + gap;
-                    if (side == .down) down = r[@backingInt(Side.down)] + gap;
+                    if (side == .left) left = r[@backingInt(Side.left)] + len.terminal + len.unit;
+                    if (side == .right) right = r[@backingInt(Side.right)] + len.terminal + len.unit;
+                    if (side == .up) up = r[@backingInt(Side.up)] + len.terminal;
+                    if (side == .down) down = r[@backingInt(Side.down)] + len.terminal;
                 },
                 .sink, .supply => |role| {
-                    if (side == .left) left = r[@backingInt(Side.left)] + 2 * gap;
-                    if (side == .right) right = r[@backingInt(Side.right)] + 2 * gap;
-                    if (side == .down) down = r[@backingInt(Side.down)] + gap;
-                    if (side == .up and role == .sink) up = r[@backingInt(Side.up)] + gap;
+                    if (side == .left) left = r[@backingInt(Side.left)] + len.rail + len.unit;
+                    if (side == .right) right = r[@backingInt(Side.right)] + len.rail + len.unit;
+                    if (side == .down) down = r[@backingInt(Side.down)] + len.rail;
+                    if (side == .up and role == .sink) up = r[@backingInt(Side.up)] + len.rail;
                 },
                 .internal => {},
             }
@@ -211,7 +213,7 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
     errdefer gpa.free(xs);
     const ys = try gpa.alloc(i32, h);
     errdefer gpa.free(ys);
-    // An empty lattice column takes no room: devices stand a gap apart.
+    // An empty lattice column takes no room: devices stand `series` apart.
     const used = try gpa.alloc(bool, w);
     defer gpa.free(used);
     @memset(used, false);
@@ -220,13 +222,13 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
     };
     var prev: ?usize = null;
     for (xs, cols, used, 0..) |*x, need, u, k| {
-        x.* = if (prev) |p| xs[p] + (if (u) cols[p][1] + gap + need[0] else 0) else need[0];
+        x.* = if (prev) |p| xs[p] + (if (u) cols[p][1] + len.series + need[0] else 0) else need[0];
         if (u) prev = k;
     }
-    for (ys, rows, 0..) |*y, need, k| y.* = if (k == 0) need[0] else ys[k - 1] + rows[k - 1][1] + gap + need[0];
+    for (ys, rows, 0..) |*y, need, k| y.* = if (k == 0) need[0] else ys[k - 1] + rows[k - 1][1] + len.stack + need[0];
     for (1..w) |k| assert(xs[k] >= xs[k - 1]);
     for (1..h) |k| assert(ys[k] > ys[k - 1]);
-    return .{ .xs = xs, .ys = ys, .gap = gap };
+    return .{ .xs = xs, .ys = ys };
 }
 
 /// A node per drawn device at its cell, and a pin per drawn card pin. A pin

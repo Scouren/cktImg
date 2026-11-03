@@ -20,7 +20,7 @@
 //! drawing does not depend on card order.
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -38,6 +38,7 @@ const Rect = library.Rect;
 const Schematic = sch.Schematic;
 const Role = sch.Role;
 const Canvas = canvas.Canvas;
+const Lengths = canvas.Lengths;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
 
@@ -65,8 +66,8 @@ const Line = struct {
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
 /// pins drawn on their symbol with no wire.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void {
-    var c = try Canvas.init(gpa, s, xy, gap, boxes, hidden);
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void {
+    var c = try Canvas.init(gpa, s, xy, len, boxes, hidden);
     defer c.deinit();
     const n_nets = s.net_name.len;
     const pins_of = try gpa.alloc(std.ArrayList(u32), n_nets);
@@ -119,7 +120,7 @@ fn terminal(c: *Canvas, p: u32) !void {
     const at = pinAt(c.s, p);
     const side = c.s.pins.items(.side)[p];
     const net = c.s.pins.items(.net)[p];
-    const end = stepPt(at, side, c.gap);
+    const end = stepPt(at, side, if (c.rails[net]) c.len.rail else c.len.terminal);
     if (try c.commit(net, &.{ at, end })) {
         try c.leaf(.terminal, net, end, side.opposite());
     } else {
@@ -146,7 +147,7 @@ fn supply(c: *Canvas, pins: []const u32) !void {
     if (ups.items.len < 2) return;
     assert(top != std.math.maxInt(i32));
     const net = s.pins.items(.net)[ups.items[0]];
-    const bar = top - c.gap;
+    const bar = top - c.len.rail;
     std.mem.sort(u32, ups.items, s, struct {
         fn lt(sc: *Schematic, x: u32, y: u32) bool {
             return pinAt(sc, x).x < pinAt(sc, y).x;
@@ -195,7 +196,9 @@ fn bias(c: *Canvas, net: u32, pins: []const u32) !void {
         const sb = s.pins.items(.side)[pins[1]];
         const facing = a.y == b.y and ((a.x < b.x and sa == .right and sb == .left) or (b.x < a.x and sb == .right and sa == .left));
         if (facing and try c.commit(net, &.{ a, b })) {
-            try c.leaf(.label, net, .{ .x = @divFloor(a.x + b.x, 2), .y = a.y }, .down);
+            // Named at its middle, unless another net's wire crosses there.
+            const mid: Pt = .{ .x = @divFloor(a.x + b.x, 2), .y = a.y };
+            if (c.fits(net, mid, mid)) try c.leaf(.label, net, mid, .down) else try c.labelAt(pins[0]);
             return;
         }
     }
@@ -274,8 +277,8 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
     // point is on: the tap row, a quarter gap either side, then half; then
     // a half gap past its pins' devices, away from the drawing's middle
     // first (a gate line over the top row's gates, under the bottom's).
-    const tap = tapY(s, pins, c.gap);
-    const q = @divFloor(c.gap, 4);
+    const tap = tapY(s, pins, c.len.tap);
+    const q = @divFloor(c.len.unit, 4);
     const past = pastDevices(c, pins);
     var y_t = tap;
     for ([_]i32{ tap, tap - q, tap + q, tap - 2 * q, tap + 2 * q, past[0], past[1] }) |track| {
@@ -283,7 +286,7 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
         lines.clearRetainingCapacity();
         lo = std.math.maxInt(i32);
         hi = std.math.minInt(i32);
-        try trunkLines(c.gpa, s, pins, y_t, c.gap, column, &lines, &lo, &hi);
+        try trunkLines(c.gpa, s, pins, y_t, c.len.unit, column, &lines, &lo, &hi);
         if (linesFit(c, net, lines.items)) break;
         if (column) break;
     }
@@ -349,7 +352,7 @@ fn pastDevices(c: *const Canvas, pins: []const u32) [2]i32 {
         };
     }
     if (top > bottom) return .{ pinAt(c.s, pins[0]).y, pinAt(c.s, pins[0]).y };
-    const half = @divFloor(c.gap, 2);
+    const half = @divFloor(c.len.unit, 2);
     const over = top - half;
     const under = bottom + half;
     return if (top + bottom < lo + hi) .{ over, under } else .{ under, over };

@@ -14,10 +14,10 @@ whole layout is one pass, with no relayout rounds.
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
 `layout` (in `root.zig`) is stages 2 to 4; `place` is parse, roles, layout
-and `Placed.init` in one call. The layout takes no settings: every length is
-a multiple of the symbol set's `unit` (the **gap**: pin end to pin end of a
-two-pin symbol), and every symbol's shape is the caller's library
-(`library.zig`).
+and `Placed.init` in one call. Its lengths and the router's costs are the
+`.layout` table of a `lint.zon` file (`config.Layout`, §4), in **units**: one
+unit is the symbol set's `unit`, pin end to pin end of a two-pin symbol.
+Every symbol's shape is the caller's library (`library.zig`).
 
 ## 0. Terms
 
@@ -205,14 +205,32 @@ mean column).
 | O0 | a MOS bulk, a BJT substrate; a controlled source's out− on the sink; a card pin past the class's terminals | a pin of its net, drawn on the symbol with no wire (the op-amp symbol has no reference pin) | `M1 d g s b nch`, `E1 out 0 in fb 1e5` | O0 |
 
 **Coordinates.** Each lattice column is as wide as its widest device's reach
-on each side, plus two gaps where a side pin on an input, bias, output or
-rail net faces that side (room for its port, label or symbol); each row as
-tall as its tallest device, plus a gap where such a pin faces up or down (the
-supply's bar over the top aside). Mirrored columns are as wide as each other,
-so the drawing keeps the skeleton's symmetry exactly; an empty lattice column
-takes no room; neighbours stand a gap apart. Every coordinate is an integer.
-A pin whose terminal is off its device's line for that side (an op-amp's
-second input) gets a copy node on its own line.
+on each side, plus a stub and a unit where a side pin on an input, bias,
+output or rail net faces that side (room for its port, label or symbol);
+each row as tall as its tallest device, plus a stub where such a pin faces up
+or down (the supply's bar over the top aside). Neighbouring columns stand
+`series` apart and rows `stack` apart; an empty lattice column takes no room,
+but a channel row does, so two stacked devices stand two `stack`s apart plus
+their ports' room. Mirrored columns are as wide as each other, so the drawing
+keeps the skeleton's symmetry exactly. Every length is rounded up to a whole
+target unit, at least 1, so every coordinate is an integer. A pin whose
+terminal is off its device's line for that side (an op-amp's second input)
+gets a copy node on its own line.
+
+| `.layout` key | default | the length of |
+|---|---|---|
+| `stack` | 1 | the space between neighbouring rows |
+| `series` | 1 | the space between neighbouring columns |
+| `rail` | 1 | a pin's stub to its supply or ground symbol; the supply bar over its pins |
+| `terminal` | 1 | a pin's stub to its input or output port |
+| `label` | 0.5 | a pin's stub to its net label |
+| `tap` | 1 | pins facing one way to the trunk that joins them |
+| `clearance` | 0.25 | the router's room to another net's wire or point |
+| `bend_cost` | 1 | what the router pays for a bend, in wire |
+| `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
+
+A length moves nothing to another row or column: rows, columns and order are
+the skeleton's (tested by stretching every one).
 
 **The canvas** (`canvas.zig`) is what is drawn so far, and its `commit` the
 one way to draw a wire. A wire is drawn only where it fits: through no
@@ -223,17 +241,19 @@ point of its net from the start. So no wire is ever on another net's point,
 and nothing drawn is moved or repaired afterwards.
 
 **Wires** (`wires.wire`). Nets go rails first, then inputs and bias nets,
-then the rest, each group in canonical order. A **stub** is a gap of wire out
-from a pin along its side; where a symbol's stub does not fit, a label goes
-on the pin instead.
+then the rest, each group in canonical order. A **stub** is a short wire out
+from a pin along its side (`rail` long to a rail symbol, `terminal` to a
+port, `label` to a label); where a symbol's stub does not fit, a label goes
+on the pin instead. A label off a pin goes only where no other net's wire
+crosses, so a label never joins two nets.
 
 | net | drawn as |
 |---|---|
 | ground | a ground symbol on a stub at each pin: one per branch, as the book draws it |
-| supply | its pins facing up: stubs to a bar a gap above the highest, one supply symbol on each unbroken run of the bar, at its middle stub; any other supply pin, a symbol of its own |
+| supply | its pins facing up: stubs to a bar `rail` above the highest, one supply symbol on each unbroken run of the bar, at its middle stub; any other supply pin, a symbol of its own |
 | input | a port on a stub at each pin |
 | bias | a gate line between the two facing gates of one row, named at its middle; else a label at each pin |
-| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the net's tap row: between the lowest pin facing down and the highest facing up, else a gap past the pins; or the first free track a quarter or half gap either side, or half a gap past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
+| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the net's tap row: between the lowest pin facing down and the highest facing up, else `tap` past the pins; or the first free track a quarter or half unit either side, or half a unit past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
 
 **Routes** (`routes.draw`), for the nets waiting, in canonical order:
 
@@ -251,11 +271,12 @@ on the pin instead.
 
 **The maze** (`maze.route`): the cheapest orthogonal path from a pin to its
 net's wires, after Wybrow, Marriott and Stuckey ("Orthogonal Connector
-Routing", Graph Drawing 2009). The grid is a lattice of a quarter gap over
-the drawing, plus every coordinate a pin, a box edge or a wire has, so a path
-meets any of them exactly. A step costs its length, a bend a gap, crossing
-another net's wire two gaps (a rail's, half a gap). A path never runs inside a
-box, along or within a quarter gap of another net's wire or point, or through
+Routing", Graph Drawing 2009). The grid is a lattice of a quarter unit (at
+least 1) over the drawing, plus every coordinate a pin, a box edge or a wire
+has, so a path meets any of them exactly. A step costs its length, a bend
+`bend_cost`, crossing another net's wire `cross_cost` (a rail's, a quarter of
+that). A path never runs inside a box, along or within `clearance` of another
+net's wire or point, or through
 a point of its own net that is no target; it crosses straight, never ends on
 another net's wire, and enters its target pin from the pin's side. Routing one
 half of a symmetric net, it keeps left of the axis and may end on it. The
@@ -343,7 +364,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the three forms…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`; `src/maze.zig`: `maze: …` (4) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |
 | result | `tests/api.zig`: the tiers agree, `Placed` is well-formed and loses no device, every net is one piece, no wire on another net's point, leads, generated boxes, subcircuit blocks; `tests/abi_test.c`: the C ABI |

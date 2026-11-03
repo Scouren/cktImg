@@ -88,7 +88,7 @@ test "every cell the engine is handed draws connected and short-free by #8's sta
             const text = try cktimg.layout.cellDeck(a, &conv.deck, &conv.rec, cell, names);
             var nl = try np.netlist.parse(a, &.{text}, null);
             const roles = try np.guessRoles(a, &nl);
-            const s = try np.layout(a, &nl, roles, &conv.lib);
+            const s = try np.layout(a, &nl, roles, &conv.lib, .{});
             const p = try np.Placed.init(a, &s, &nl);
             support.expectConnected(&p, &conv.lib) catch {
                 std.debug.print("{s} cell {d}: a net in pieces\n", .{ f.name, cell });

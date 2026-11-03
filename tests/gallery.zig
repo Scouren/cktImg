@@ -159,7 +159,7 @@ fn draw(gpa: std.mem.Allocator, lib: *np.Library, sources: []const []const u8, d
     defer nl.deinit(gpa);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try np.layout(gpa, &nl, roles, lib);
+    var s = try np.layout(gpa, &nl, roles, lib, .{});
     defer s.deinit();
     var p = try np.Placed.init(gpa, &s, &nl);
     defer p.deinit();
@@ -200,7 +200,7 @@ fn dump(gpa: std.mem.Allocator, lib: *np.Library, text: []const u8) !void {
     defer nl.deinit(gpa);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try np.layout(gpa, &nl, roles, lib);
+    var s = try np.layout(gpa, &nl, roles, lib, .{});
     defer s.deinit();
     const pr = std.debug.print;
     const none = np.schematic.none;
