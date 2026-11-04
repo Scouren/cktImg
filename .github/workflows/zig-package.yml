@@ -27,6 +27,13 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # A tag must name the version build.zig.zon declares.
+      - name: Version
+        if: startsWith(github.ref, 'refs/tags/v')
+        run: |
+          want="v$(sed -n 's/^    \.version = "\(.*\)",$/\1/p' build.zig.zon)"
+          test "$want" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME}, build.zig.zon says $want"; exit 1; }
+
       - uses: mlugg/setup-zig@v2
         with:
           version: 0.17.0
