@@ -54,7 +54,7 @@ flagged `.ground_ref` (an op-amp's reference) gets none when it is on ground.
 
 ```zig
 var diag: cktimg.netlist.Diagnostic = .{};
-var placed = try cktimg.place(gpa, &lib, &.{spice_text}, &diag);
+var placed = try cktimg.place(gpa, &cfg, &lib, &.{spice_text}, &diag);   // cfg: §5, or &.default
 defer placed.deinit();
 
 for (0..placed.deviceCount()) |d| {
@@ -89,7 +89,7 @@ var nl = try cktimg.netlist.parse(gpa, &.{spice_text}, &diag);   // or netlist.l
 defer nl.deinit(gpa);
 const roles = try cktimg.guessRoles(gpa, &nl);                    // edit freely: which nets are supply, input, …
 defer gpa.free(roles);
-var s = try cktimg.layout(gpa, &nl, roles, &lib);                 // structure, placement, wires
+var s = try cktimg.layout(gpa, &nl, roles, &lib, cfg.layout);     // structure, placement, wires
 defer s.deinit();
 var placed = try cktimg.Placed.init(gpa, &s, &nl);                 // plain geometry out
 ```
@@ -104,7 +104,7 @@ structure.
 ### 4. Many documents, one set of pages
 
 ```zig
-var p = cktimg.Pipeline.init(gpa, &lib);
+var p = cktimg.Pipeline.init(gpa, &cfg, &lib);
 defer p.deinit();
 for (decks) |deck| {
     const placed = try p.run(&.{deck}, &diag);   // borrowed: valid until the next run or reset
@@ -120,10 +120,10 @@ var diags: std.ArrayList(cktimg.config.Diagnostic) = .empty;
 const cfg = try cktimg.Config.load(arena, io, dir, "lint.zon", &diags);   // missing file: defaults
 ```
 
-`.rules` holds the lint severities, `.render` the TikZ colours and widths.
-Unknown keys are reported, never fatal: a `.layout` table from before issue
-#8 among them, since the layout takes no settings (its spacing is the
-symbol set's `unit`).
+`.layout` holds the drawing's lengths and the router's costs (ALGORITHM.md
+§4), `.rules` the lint severities, `.render` the TikZ colours and widths.
+Unknown keys are reported, never fatal, among them the wire-first layout's
+`min_pitch`, `junction` and `bend`, whose rules are gone.
 
 ### 6. Lint
 
@@ -182,8 +182,8 @@ changed, and why:
 
 cktImg's `rerun`, `patch`, `Pipeline.Carry`, `Scratch` and the `.layout` keys
 of its search (`refine`, `enum_limit`, `track_w`, …) tuned a search this
-layout does not run: it is one deterministic pass, its searches bounded,
-with no settings. JSON output
+layout does not run: it is one deterministic pass, its searches bounded.
+JSON output
 (`json.write`) is kept for the C ABI's `cktimg_json` and for `cktimg-json`,
 the command line tool (`tools/json.zig`; target manifests in
 `docs/TARGETS.md`).

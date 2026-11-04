@@ -141,7 +141,7 @@ test "json: a MOS body past the symbol's terminals is `bulk`, not a pin" {
     var lib = Library.init(gpa);
     defer lib.deinit();
     _ = try lib.register(.{ .name = "nmos", .terminals = &.{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } } });
-    var p = try @import("root.zig").place(gpa, &lib, &.{"t\nM1 d g 0 sub nch\nR1 d g 1k\n"}, null);
+    var p = try @import("root.zig").place(gpa, &.default, &lib, &.{"t\nM1 d g 0 sub nch\nR1 d g 1k\n"}, null);
     defer p.deinit();
     var aw: Writer.Allocating = .init(gpa);
     defer aw.deinit();

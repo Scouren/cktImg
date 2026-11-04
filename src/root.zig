@@ -5,7 +5,7 @@
 //!
 //! | call | gives you |
 //! |------|-----------|
-//! | `place(gpa, lib, sources, diag)` | an owned `Placed` |
+//! | `place(gpa, cfg, lib, sources, diag)` | an owned `Placed` |
 //! | `Pipeline.run` | a borrowed `Placed`, pages reused across documents |
 //! | `netlist.parse` → `guessRoles` → `layout` → `Placed.init` | every stage, each usable alone |
 //!
@@ -58,8 +58,8 @@ pub const Label = placed.Label;
 /// edit the result freely before `layout`.
 pub const guessRoles = schematic.guessRoles;
 /// A netlist and its roles drawn: its structure found, its devices placed
-/// by it, its nets wired (docs/ALGORITHM.md). The caller frees the result
-/// with `Schematic.deinit`.
+/// by it, its nets wired (docs/ALGORITHM.md), spaced by `config.Layout`'s
+/// lengths. The caller frees the result with `Schematic.deinit`.
 pub const layout = schematic.sketch.lay;
 
 /// What can stop a placement: a card the parser does not represent (see
@@ -70,9 +70,11 @@ pub const PlaceError = netlist.Error || library.RegisterError;
 ///
 /// `sources[0]` is the netlist (its first line the title); later sources are
 /// read as if appended (model files). `lib` gains a generated box class for
-/// any device kind it has no class for.
+/// any device kind it has no class for. Of `cfg`, the layout reads
+/// `.layout`.
 pub fn place(
     gpa: Allocator,
+    cfg: *const Config,
     lib: *Library,
     sources: []const []const u8,
     diag: ?*netlist.Diagnostic,
@@ -81,7 +83,7 @@ pub fn place(
     defer nl.deinit(gpa);
     const roles = try guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try layout(gpa, &nl, roles, lib);
+    var s = try layout(gpa, &nl, roles, lib, cfg.layout);
     defer s.deinit();
     return Placed.init(gpa, &s, &nl);
 }
@@ -93,12 +95,13 @@ pub const Pipeline = struct {
     scratch: std.heap.ArenaAllocator,
     /// The current result.
     out: std.heap.ArenaAllocator,
+    cfg: *const Config,
     lib: *Library,
     current: ?Placed = null,
 
-    /// Borrows `lib`, which must outlive the pipeline.
-    pub fn init(gpa: Allocator, lib: *Library) Pipeline {
-        return .{ .scratch = .init(gpa), .out = .init(gpa), .lib = lib };
+    /// Borrows `cfg` and `lib`; both must outlive the pipeline.
+    pub fn init(gpa: Allocator, cfg: *const Config, lib: *Library) Pipeline {
+        return .{ .scratch = .init(gpa), .out = .init(gpa), .cfg = cfg, .lib = lib };
     }
 
     pub fn deinit(self: *Pipeline) void {
@@ -112,7 +115,7 @@ pub const Pipeline = struct {
         const tmp = self.scratch.allocator();
         var nl = try netlist.parse(tmp, sources, diag);
         const roles = try guessRoles(tmp, &nl);
-        var s = try layout(tmp, &nl, roles, self.lib);
+        var s = try layout(tmp, &nl, roles, self.lib, self.cfg.layout);
         self.current = try Placed.init(self.out.allocator(), &s, &nl);
         _ = self.scratch.reset(.retain_capacity);
         return &self.current.?;

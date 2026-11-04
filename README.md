@@ -1,10 +1,10 @@
 # cktImg
 
-[![ci](https://github.com/OmarSiwy/cktImg/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OmarSiwy/cktImg/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/OmarSiwy/cktImg?label=download)](https://github.com/OmarSiwy/cktImg/releases/latest)
+[![ci](https://github.com/OpenFAT/cktImg/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OpenFAT/cktImg/actions/workflows/ci.yml)
+[![release](https://img.shields.io/github/v/release/OpenFAT/cktImg?label=download)](https://github.com/OpenFAT/cktImg/releases/latest)
 [![zig](https://img.shields.io/badge/zig-0.17.0-f7a41d?logo=zig&logoColor=white)](https://ziglang.org/download/)
-[![docs](https://img.shields.io/badge/docs-omarsiwy.github.io%2FcktImg-blue)](https://omarsiwy.github.io/cktImg/)
-[![license](https://img.shields.io/github/license/OmarSiwy/cktImg)](LICENSE)
+[![docs](https://img.shields.io/badge/docs-omarsiwy.github.io%2FcktImg-blue)](https://openfat.github.io/cktImg/)
+[![license](https://img.shields.io/github/license/OpenFAT/cktImg)](LICENSE)
 
 **Automatic schematics from SPICE netlists.**
 
@@ -37,7 +37,7 @@ file to make it a project plugin:
 
 ```lua
 schemify.pack.add({
-  { src = "https://github.com/OmarSiwy/cktImg", name = "cktimg",
+  { src = "https://github.com/OpenFAT/cktImg", name = "cktimg",
     grant = { "read_project", "write_project" }, fuel = 100000000000 },
 })
 ```
@@ -93,7 +93,7 @@ script only has to create them. Pass `--symbols` with your own symbol file and
 [Your own schematic editor](#your-own-schematic-editor).
 
 Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
-[releases page](https://github.com/OmarSiwy/cktImg/releases/latest).
+[releases page](https://github.com/OpenFAT/cktImg/releases/latest).
 
 ## Contents
 
@@ -104,11 +104,12 @@ Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
 - [How the layout is made](#how-the-layout-is-made)
 - [Gallery](#gallery)
 - [For developers](#for-developers)
+- [From an AI agent](#from-an-ai-agent)
 - [Documentation](#documentation)
 
 ## Download
 
-Every [release](https://github.com/OmarSiwy/cktImg/releases/latest) includes
+Every [release](https://github.com/OpenFAT/cktImg/releases/latest) includes
 the tools prebuilt. Each one is a single file, so there's nothing to install.
 Choose the file whose name ends with your platform:
 
@@ -358,9 +359,9 @@ are thin layers on top of it.
 
 ```sh
 # The repository root is the package (build.zig.zon):
-zig fetch --save git+https://github.com/OmarSiwy/cktImg#<tag-or-commit>
+zig fetch --save git+https://github.com/OpenFAT/cktImg#<tag-or-commit>
 # or a release tarball, the same files:
-zig fetch --save https://github.com/OmarSiwy/cktImg/releases/download/<tag>/NetlistParser-<tag>.tar.gz
+zig fetch --save https://github.com/OpenFAT/cktImg/releases/download/<tag>/NetlistParser-<tag>.tar.gz
 ```
 
 ```zig
@@ -376,7 +377,7 @@ var lib = np.Library.init(gpa);                 // your symbol set
 defer lib.deinit();
 try lib.loadZon(arena, symbols_zon, &diags);    // e.g. tests/symbols.zon
 
-var placed = try np.place(gpa, &lib, &.{spice_text}, &diag);
+var placed = try np.place(gpa, &np.Config.default, &lib, &.{spice_text}, &diag);
 defer placed.deinit();
 // placed.dev_pos, .dev_orient, .pin_xy, .segments(net), .junctions, .labels, …
 ```
@@ -415,13 +416,18 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--symbols set.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
-The layout takes no settings: its spacing is the symbol set's `unit`.
-`src/config.zig` lists every lint rule and TikZ render setting with its
-default; a settings file (`cktimg-tex --config`) sets any of them.
+`src/config.zig` lists every setting with its default: the layout's lengths
+and the router's costs (`.layout`, in units of the symbol set's `unit`), the
+lint rules, and the TikZ style. A settings file (`--config`) sets any of
+them, as the lint rules are set:
+
+```zon
+.{ .layout = .{ .stack = 1.5, .terminal = 2 }, .rules = .{ .no_ground = .err } }
+```
 A file containing only `.subckt` definitions draws its last one, and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is
 described in `src/json.zig`.
@@ -452,13 +458,23 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 | `latex/cktimg.sty` | The LaTeX package |
 | `tests/` | Tests, the bundled symbol set, the SVG renderer and the gallery |
 | `docs/` | API, target manifests, and the layout algorithm |
+| `skills/cktimg/` | The agent skill for drawing schematics with cktImg |
+
+## From an AI agent
+
+[`skills/cktimg/`](skills/cktimg) is a skill for coding agents that draw
+schematics with cktImg: write the deck so its names carry its meaning, draw,
+review the drawing against the book's look, and fix each complaint on the
+highest rung that can (names, then `*@ group` hints, then the `lint.zon`
+lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
+agent's skills directory.
 
 ## Documentation
 
 - [`docs/API.md`](docs/API.md): the Zig and C API
 - [`docs/TARGETS.md`](docs/TARGETS.md): target manifests for other editors
 - [`docs/ALGORITHM.md`](docs/ALGORITHM.md): how the structure, placement and wiring work, stage by stage
-- [omarsiwy.github.io/cktImg](https://omarsiwy.github.io/cktImg/): the documentation site
+- [openfat.github.io/cktImg](https://openfat.github.io/cktImg/): the documentation site
 
 ## License
 

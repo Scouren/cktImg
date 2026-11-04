@@ -29,7 +29,7 @@ const Built = struct {
         errdefer nl.deinit(gpa);
         const roles = try sch.guessRoles(gpa, &nl);
         errdefer gpa.free(roles);
-        const s = try np.layout(gpa, &nl, roles, lib);
+        const s = try np.layout(gpa, &nl, roles, lib, .{});
         return .{ .lib = lib, .nl = nl, .roles = roles, .s = s };
     }
     fn deinit(b: *Built) void {
@@ -165,6 +165,7 @@ test "random netlists: they end, each device on a cell of its own, every net one
         defer placed.deinit();
         try support.expectConnected(&placed, b.lib);
         try testing.expectEqual(0, try support.shorts(gpa, &placed, true));
+        try testing.expectEqual(0, try support.dots(gpa, &placed, true));
     }
 }
 

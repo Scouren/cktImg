@@ -9,7 +9,7 @@ const support = @import("support.zig");
 const textbook = @import("textbook.zig");
 
 fn placeText(lib: *np.Library, src: []const u8) !np.Placed {
-    return np.place(testing.allocator, lib, &.{src}, null);
+    return np.place(testing.allocator, &.default, lib, &.{src}, null);
 }
 
 /// Wires are Manhattan polylines; every pin with company on its net is on a
@@ -74,7 +74,7 @@ test "place: one call and the stages give the same drawing" {
     defer nl.deinit(gpa);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try np.layout(gpa, &nl, roles, lib);
+    var s = try np.layout(gpa, &nl, roles, lib, .{});
     defer s.deinit();
     var staged = try np.Placed.init(gpa, &s, &nl);
     defer staged.deinit();
@@ -87,7 +87,7 @@ test "pipeline: borrowed results, pages kept across documents" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var p = np.Pipeline.init(gpa, lib);
+    var p = np.Pipeline.init(gpa, &.default, lib);
     defer p.deinit();
     for (textbook.all) |c| {
         const got = try p.run(&.{c.spice}, null);
@@ -146,7 +146,7 @@ test "placed: a pin off the layout's line gets a lead onto it" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var p = try np.place(gpa, lib, &.{textbook.all[13].spice}, null);
+    var p = try np.place(gpa, &.default, lib, &.{textbook.all[13].spice}, null);
     defer p.deinit();
     try expectWellFormed(&p, lib);
 }
@@ -321,7 +321,7 @@ test "placed: no wire touches another net's pin, wire end or label" {
         defer nl.deinit(gpa);
         const top = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, nl.defs[nl.defs.len - 1].body });
         defer gpa.free(top);
-        var p = try np.place(gpa, lib, &.{ top, text[c.name.len + 1 ..] }, null);
+        var p = try np.place(gpa, &.default, lib, &.{ top, text[c.name.len + 1 ..] }, null);
         defer p.deinit();
         try expectConnected(&p, lib);
         const k = try support.shorts(gpa, &p, true);

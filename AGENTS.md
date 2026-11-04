@@ -138,6 +138,10 @@ Binding on every change, in every project.
   reference suites gated by name, a nightly, the downstream contracts, the
   release job.
 
+`skills/cktimg/` is the skill agents use to draw with cktImg; a change to
+the command line, the `*@` hints or the `lint.zon` keys updates it in the
+same commit.
+
 ## Building
 
 - Every build runs inside `nix develop -c …`: it pins Zig 0.17, the toolchain

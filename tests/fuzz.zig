@@ -72,6 +72,10 @@ pub fn main(init: std.process.Init) !void {
             std.debug.print("a wire touches another net:\n{s}\n", .{text});
             return error.Short;
         }
+        if (try support.dots(gpa, &sk.p, true) > 0) {
+            std.debug.print("a dot is wrong:\n{s}\n", .{text});
+            return error.Dots;
+        }
         // One picture per circuit: the cards reversed draw the same.
         const back = try draw(a, lib, try golden.shuffled(a, text, .reversed));
         const want = try canonical(a, &sk.p);
@@ -95,7 +99,7 @@ pub fn main(init: std.process.Init) !void {
 fn draw(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: np.Placed, labeled: u32 } {
     var nl = try netlist.parse(a, &.{text}, null);
     const roles = try sch.guessRoles(a, &nl);
-    const s = try np.layout(a, &nl, roles, lib);
+    const s = try np.layout(a, &nl, roles, lib, .{});
     var labeled: u32 = 0;
     for (s.labeled) |l| labeled += @intFromBool(l);
     return .{ .p = try np.Placed.init(a, &s, &nl), .labeled = labeled };

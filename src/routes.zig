@@ -118,12 +118,12 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, failed: *std.ArrayL
             .wires = c.segs.items,
             .marks = c.points.items,
             .rails = c.rails,
-            // A quarter gap, and never 0: a symbol set may have a unit
+            // A quarter unit, and never 0: a symbol set may have a unit
             // under four.
-            .step = @max(1, @divFloor(c.gap, 4)),
-            .clear = @max(1, @divFloor(c.gap, 4)),
-            .bend = c.gap,
-            .cross = 2 * c.gap,
+            .step = @max(1, @divFloor(c.len.unit, 4)),
+            .clear = c.len.clearance,
+            .bend = c.len.bend_cost,
+            .cross = c.len.cross_cost,
         }) orelse {
             try failed.append(gpa, pins[i]);
             continue;

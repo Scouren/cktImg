@@ -1,5 +1,7 @@
 //! Junction dots: where a net's wires leave a point in three or more
-//! directions (a device lead counts as one). In: a laid-out `Schematic`'s
+//! directions (a device lead counts as one), and where a net's wire crosses
+//! another of its own (the two join there, so the crossing reads as the
+//! junction it is, not as two nets crossing). In: a laid-out `Schematic`'s
 //! routes and pins. Out: the points, rounded to the target's units.
 //!
 //! Contents:
@@ -82,6 +84,23 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
         for (found.items) |j| {
             if (j.eql(at)) break;
         } else try found.append(out, at);
+    };
+    // A net's horizontal piece crossing one of its own vertical pieces,
+    // strictly inside both.
+    for (s.routes.items) |hr| for (hr.pts[0 .. hr.len - 1], hr.pts[1..hr.len]) |a, b| {
+        if (@abs(a[1] - b[1]) >= eps or near(a, b)) continue;
+        for (r_by_net[r_off[hr.net]..r_off[hr.net + 1]]) |vi| {
+            const vr = s.routes.items[vi];
+            for (vr.pts[0 .. vr.len - 1], vr.pts[1..vr.len]) |c, d| {
+                if (@abs(c[0] - d[0]) >= eps or near(c, d)) continue;
+                const x: [2]f32 = .{ c[0], a[1] };
+                if (!inside(x, a, b) or !inside(x, c, d)) continue;
+                const at: Pt = .{ .x = @intFromFloat(@round(x[0])), .y = @intFromFloat(@round(x[1])) };
+                for (found.items) |j| {
+                    if (j.eql(at)) break;
+                } else try found.append(out, at);
+            }
+        }
     };
     for (found.items, 0..) |p, i| for (found.items[i + 1 ..]) |q| assert(!p.eql(q));
     return found.items;

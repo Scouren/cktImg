@@ -2,7 +2,7 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--symbols file.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
@@ -31,13 +31,14 @@ const usage =
     \\Usage: cktimg-json [options] <netlist.spice> [out.json]
     \\
     \\Options:
+    \\  --config <path>   layout settings and lint severities from a lint.zon file
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
     \\                    add a "target" block to the document
     \\  --svg <path>      also draw the placed schematic as SVG
     \\  -h, --help        this message
     \\
-    \\Exit status: 0 written; 1 bad command line, netlist, symbols or manifest
+    \\Exit status: 0 written; 1 bad command line, netlist, config, symbols or manifest
     \\(nothing written).
     \\
 ;
@@ -45,6 +46,7 @@ const usage =
 const Options = struct {
     netlist: []const u8,
     out: ?[]const u8 = null,
+    config: ?[]const u8 = null,
     symbols: ?[]const u8 = null,
     target: ?[]const u8 = null,
     svg: ?[]const u8 = null,
@@ -61,6 +63,13 @@ pub fn main(init: std.process.Init) !void {
     const opts = parseArgs(try init.minimal.args.toSlice(arena)) orelse return;
 
     const raw = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
+    const cfg: np.Config = if (opts.config) |path| blk: {
+        const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
+        var diags: std.ArrayList(np.config.Diagnostic) = .empty;
+        const c = try np.Config.parse(arena, t, &diags);
+        for (diags.items) |d| std.log.warn("{s}:{d}: {t} '{s}'", .{ path, d.line, d.kind, d.key });
+        break :blk c;
+    } else .default;
     // Read before placing: a manifest typo is reported before any work.
     const target: ?Target = if (opts.target) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 22)) catch |err| fatal("cannot read target manifest '{s}': {t}", .{ path, err });
@@ -82,7 +91,7 @@ pub fn main(init: std.process.Init) !void {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
-    var placed = np.place(gpa, &lib, srcs, &diag) catch |err| switch (err) {
+    var placed = np.place(gpa, &cfg, &lib, srcs, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -265,7 +274,7 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
             std.debug.print("{s}", .{usage});
             return null;
         }
-        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else null;
+        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else null;
         if (slot) |s| {
             i += 1;
             if (i >= argv.len) fatal("{s} needs a path", .{a});
@@ -298,7 +307,7 @@ test "target: a manifest maps classes and subcircuits, and pins are checked" {
     var lib = np.Library.init(gpa);
     defer lib.deinit();
     try lib.loadZon(arena, symbols, null);
-    var placed = try np.place(gpa, &lib, &.{
+    var placed = try np.place(gpa, &.default, &lib, &.{
         \\t
         \\.subckt amp in out vdd
         \\R1 vdd out 1k

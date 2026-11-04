@@ -9,8 +9,9 @@
 //! from the start, so no wire passes through another net's pin.
 //!
 //! Contents:
+//! - `pub const Lengths = struct`, `Lengths.of(layout: config.Layout, unit: i32) Lengths`
 //! - `pub const Canvas = struct`, `Canvas.Checkpoint`
-//! - `Canvas.init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas`, `Canvas.deinit(c: *Canvas) void`
+//! - `Canvas.init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas`, `Canvas.deinit(c: *Canvas) void`
 //! - `Canvas.commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool`, `Canvas.fits(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
 //! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`
@@ -25,6 +26,7 @@ const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const maze = @import("maze.zig");
+const config = @import("config.zig");
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -32,14 +34,45 @@ const Rect = library.Rect;
 const Schematic = sch.Schematic;
 const none = sch.none;
 
+/// The drawing's lengths in the target's units: `config.Layout` times the
+/// symbols' unit, each rounded up to a whole unit and at least 1, so the
+/// drawing stays on integers and mirrors exactly.
+pub const Lengths = struct {
+    /// The symbols' unit: the grain of trunk tracks and the router's lattice.
+    unit: i32,
+    stack: i32,
+    series: i32,
+    rail: i32,
+    terminal: i32,
+    label: i32,
+    tap: i32,
+    clearance: i32,
+    bend_cost: i32,
+    cross_cost: i32,
+
+    /// `layout`'s lengths for symbols of `unit`. Asserts a positive unit.
+    pub fn of(layout: config.Layout, unit: i32) Lengths {
+        assert(unit > 0);
+        var out: Lengths = undefined;
+        out.unit = unit;
+        inline for (@typeInfo(config.Layout).@"struct".field_names) |f| {
+            const v: f32 = @field(layout, f);
+            assert(v >= 0);
+            const scaled = @ceil(v * @as(f32, @floatFromInt(unit)));
+            @field(out, f) = @max(1, @as(i32, @intFromFloat(@min(scaled, 1 << 20))));
+        }
+        assert(out.stack >= 1 and out.clearance >= 1);
+        return out;
+    }
+};
+
 /// One schematic's drawing in progress: `init`, draw, `deinit`.
 pub const Canvas = struct {
     gpa: Allocator,
     s: *Schematic,
     /// The nodes' points; `s.xy` is kept in step with it.
     xy: *std.ArrayList([2]f32),
-    /// The room beside a device.
-    gap: i32,
+    len: Lengths,
     /// The devices' symbols.
     boxes: []const Rect,
     /// Per net: a rail (supply or ground).
@@ -54,12 +87,12 @@ pub const Canvas = struct {
 
     /// A canvas over `s` with every pin on it as a point of its net, and the
     /// `hidden` ones (a MOS body: drawn on its symbol, never wired).
-    pub fn init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), gap: i32, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas {
+    pub fn init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas {
         assert(xy.items.len == s.nodes.len);
-        assert(gap > 0);
+        assert(len.unit > 0);
         const rails = try gpa.alloc(bool, s.roles.len);
         for (rails, s.roles) |*r, role| r.* = role == .supply or role == .sink;
-        var c: Canvas = .{ .gpa = gpa, .s = s, .xy = xy, .gap = gap, .boxes = boxes, .rails = rails };
+        var c: Canvas = .{ .gpa = gpa, .s = s, .xy = xy, .len = len, .boxes = boxes, .rails = rails };
         errdefer c.deinit();
         for (s.pins.items(.net), 0..) |net, p| try c.points.append(gpa, .{ .at = pinAt(s, @intCast(p)), .net = net });
         try c.points.appendSlice(gpa, hidden);
@@ -124,26 +157,31 @@ pub const Canvas = struct {
         try c.points.append(c.gpa, .{ .at = at, .net = net });
     }
 
-    /// A label on a half-gap stub from pin `p`, or on the pin when the stub
-    /// does not fit.
+    /// A label on a stub from pin `p`, or on the pin when the stub does not
+    /// fit.
     pub fn labelAt(c: *Canvas, p: u32) Allocator.Error!void {
         const at = pinAt(c.s, p);
         const side = c.s.pins.items(.side)[p];
         const net = c.s.pins.items(.net)[p];
-        const end = stepPt(at, side, @divFloor(c.gap, 2));
+        const end = stepPt(at, side, c.len.label);
         const stub = try c.commit(net, &.{ at, end });
         try c.leaf(.label, net, if (stub) end else at, side.opposite());
     }
 
-    /// An output's port a gap out from `from` toward `side`, or a label at
-    /// `from` when the stub does not fit.
+    /// An output's port on a stub out from `from` toward `side`. When the
+    /// stub does not fit, a label at `from`, or at the net's first pin when
+    /// `from` is where another net's wire crosses (a label there would join
+    /// the two).
     pub fn port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void {
         assert(c.s.roles[net] == .output);
-        const end = stepPt(from, side, c.gap);
+        const end = stepPt(from, side, c.len.terminal);
         if (try c.commit(net, &.{ from, end })) {
             try c.leaf(.terminal, net, end, side.opposite());
-        } else {
+        } else if (c.fits(net, from, from)) {
             try c.leaf(.label, net, from, side.opposite());
+        } else {
+            const first = std.mem.indexOfScalar(u32, c.s.pins.items(.net), net).?;
+            try c.labelAt(@intCast(first));
         }
     }
 
@@ -207,4 +245,17 @@ fn toPt(p: [2]f32) Pt {
 
 fn toF(p: Pt) [2]f32 {
     return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
+}
+
+test "lengths: units scale to whole target units, at least 1" {
+    const at40 = Lengths.of(.{}, 40);
+    try std.testing.expectEqual(40, at40.stack);
+    try std.testing.expectEqual(20, at40.label);
+    try std.testing.expectEqual(10, at40.clearance);
+    try std.testing.expectEqual(80, at40.cross_cost);
+    // Rounded up, never to 0: a unit of 3 and a zero length.
+    const at3 = Lengths.of(.{ .stack = 0 }, 3);
+    try std.testing.expectEqual(2, at3.label);
+    try std.testing.expectEqual(1, at3.clearance);
+    try std.testing.expectEqual(1, at3.stack);
 }
