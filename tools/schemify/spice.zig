@@ -1,7 +1,8 @@
 //! Parse transform: SPICE netlist text → `Deck` tables.
 //!
 //! Subset (the cards ngspice and xschem netlists use): `*` comments (`*.PININFO` and, in a
-//! `.subckt`, cktImg's `*@ left|right|top|bottom <ports>` block-side directives read),
+//! `.subckt`, cktImg's `*@ left|right|top|bottom <ports>` block-side directives read; its
+//! other `*@` directives, the grouping hints among them, kept for the engine),
 //! `;` and whitespace-delimited `$` inline comments, `+` continuations, `.control` …
 //! `.endc` kept as one opaque text block, `.subckt`/`.ends` (nested definitions are
 //! hoisted), `.global`, `.param` (inside a subckt: the cell's parameters), `.end`.
@@ -120,6 +121,12 @@ pub const Deck = struct {
     code: []const []const u8,
     /// Cell each `code` entry was written in.
     code_cell: []const u16,
+    /// cktImg's `*@` directives other than block sides (the grouping hints the engine
+    /// reads with `hints.read`), as written, in file order; with the cell and the 1-based
+    /// line of each.
+    directive: []const []const u8,
+    directive_cell: []const u16,
+    directive_line: []const u32,
     /// `.global` names, lowercase.
     globals: []const []const u8,
     models: []const Model,
@@ -457,6 +464,9 @@ const Builder = struct {
     cell_name: ArrayList([]const u8) = .empty,
     code: ArrayList([]const u8) = .empty,
     code_cell: ArrayList(u16) = .empty,
+    directive_text: ArrayList([]const u8) = .empty,
+    directive_cell: ArrayList(u16) = .empty,
+    directive_line: ArrayList(u32) = .empty,
     globals: ArrayList([]const u8) = .empty,
     models: ArrayList(Model) = .empty,
     pininfo: ArrayList(PinInfo) = .empty,
@@ -538,16 +548,21 @@ const Builder = struct {
 
     /// A `*@ left|right|top|bottom <ports>` directive (cktImg's block shape): records the
     /// side of each named port of the current subckt, in directive order; a port named
-    /// again takes its later side and place. Other verbs (`*@ expand`), names that are no
-    /// port and directives outside a subckt are ignored, as cktImg ignores them.
+    /// again takes its later side and place. Names that are no port and sides outside a
+    /// subckt are ignored, as cktImg ignores them. Any other verb is kept for the engine.
     fn directive(b: *Builder, st: *const Stmt) Allocator.Error!void {
         const c = b.cell();
-        if (c == 0) return;
         var words = mem.tokenizeAny(u8, st.text.items[2..], ws ++ ",");
         const verb = words.next() orelse return;
         const side: Side = inline for (.{ Side.left, Side.right, Side.top, Side.bottom }) |s| {
             if (ascii.eqlIgnoreCase(verb, @tagName(s))) break s;
-        } else return;
+        } else {
+            try b.directive_text.append(b.a, st.text.items);
+            try b.directive_cell.append(b.a, c);
+            try b.directive_line.append(b.a, st.line);
+            return;
+        };
+        if (c == 0) return;
         while (words.next()) |w| {
             const key = try b.a.print("{d}/{s}", .{ c, try ascii.allocLowerString(b.a, w) });
             const id = b.net_ids.get(key) orelse continue;
@@ -818,6 +833,9 @@ const Builder = struct {
             .dev_rest = dev_rest,
             .code = b.code.items,
             .code_cell = b.code_cell.items,
+            .directive = b.directive_text.items,
+            .directive_cell = b.directive_cell.items,
+            .directive_line = b.directive_line.items,
             .globals = b.globals.items,
             .models = b.models.items,
             .pininfo = b.pininfo.items,

@@ -1,0 +1,27 @@
+Two-stage op amp, PMOS input, Miller capacitor with lead resistor
+* Golden figure: notes Amplifiers/Operational Amplifiers.md:406, after Carusone, Johns and Martin Fig. 6.3 (its Q1-Q7 are M1-M7 here).
+.model nch nmos level=1
+.model pch pmos level=1
+Vdd vdd 0 1.8
+Vinm vinm 0 dc 0.9
+Vinp vinp 0 dc 0.9 ac 1
+Vbias vbias 0 1.0
+M1 x vinm t vdd pch
+M2 v1 vinp t vdd pch
+M3 x x 0 0 nch
+M4 v1 x 0 0 nch
+M5 t vbias vdd vdd pch
+M6 vout vbias vdd vdd pch
+M7 vout v1 0 0 nch
+Rc v1 z 1k
+Cc z vout 1p
+*% M1 1 2.2 L
+*% M2 4 2.2 R
+*% M5 2.5 4.4 R
+*% M3 1 0 R
+*% M4 4 0 L
+*% M6 9 4.4 L
+*% M7 9 0 L
+*% Rc 6.6 2.2 -
+*% Cc 8.2 2.2 -
+*% labels

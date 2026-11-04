@@ -52,6 +52,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const csr = @import("csr.zig");
 const analysis = @import("analysis.zig");
+const hints = @import("hints.zig");
 
 pub const VertexId = csr.VertexId;
 pub const EdgeId = csr.EdgeId;
@@ -187,6 +188,9 @@ pub const Netlist = struct {
     models: std.StringHashMapUnmanaged([]const u8),
     /// Every `.subckt` definition, in file order.
     defs: []const Subckt,
+    /// The grouping hints of the deck drawn (the first source's top level),
+    /// in file order.
+    hints: []const hints.Hint,
 
     /// The definition a `subckt` block device instantiates.
     pub fn defOf(self: *const Netlist, e: EdgeId) ?*const Subckt {
@@ -264,6 +268,7 @@ pub fn parse(gpa: Allocator, sources: []const []const u8, diag: ?*Diagnostic) Er
     errdefer graph.deinit(gpa);
 
     const analyses = try p.collectAnalyses(graph.edges.items(.kind));
+    const top_hints = if (texts.len > 0) try hints.collect(arena, texts[0]) else &.{};
 
     return .{
         .arena = arena_state,
@@ -275,6 +280,7 @@ pub fn parse(gpa: Allocator, sources: []const []const u8, diag: ?*Diagnostic) Er
         .device_ids = p.device_ids,
         .models = p.models,
         .defs = p.defs.items,
+        .hints = top_hints,
     };
 }
 

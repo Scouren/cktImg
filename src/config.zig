@@ -1,46 +1,56 @@
 //! The `lint.zon` settings file, three tables:
 //!
-//! - `.layout`: the wire lengths the layout keeps in each situation
-//!   (docs/ALGORITHM.md §5, Geometry);
+//! - `.layout`: the drawing's lengths and the router's costs
+//!   (docs/ALGORITHM.md §4);
 //! - `.rules`: one severity per lint rule (`lint.zig`);
 //! - `.render`: colours and line widths for the TikZ emitter.
 //!
-//! Lengths are in units, where one unit is a two-pin symbol from pin end to
-//! pin end. Every key is optional; an absent key keeps its default, and an
+//! Lengths are in units, one unit being a two-pin symbol from pin end to pin
+//! end. Every key is optional; an absent key keeps its default, and an
 //! unrecognized key or a malformed value is reported, never fatal — failing
-//! to draw a schematic over a typo in a style file is the wrong trade.
+//! to draw a schematic over a typo in a style file is the wrong trade. Keys
+//! of the wire-first layout whose rules went with it (`min_pitch`,
+//! `junction`, `bend`) are reported as unknown.
 //!
 //! ```zon
-//! .{ .layout = .{ .stack = 0.5, .terminal = 1.0 } }
+//! .{ .layout = .{ .stack = 1.5 }, .rules = .{ .no_ground = .err }, .render = .{ .wire = "000000" } }
 //! ```
+//!
+//! Contents:
+//! - `pub const Layout = struct`, `pub const Render = struct`
+//! - `pub const Config = struct`, `Config.default`
+//! - `Config.parse(arena: Allocator, text: []const u8, diags: ?*std.ArrayList(Diagnostic)) Allocator.Error!Config`
+//! - `Config.load(arena: Allocator, io: std.Io, dir: std.Io.Dir, path: []const u8, diags: ?*std.ArrayList(Diagnostic)) Allocator.Error!Config`
+//! - `pub const Diagnostic = struct`, `Diagnostic.Kind`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const Zoir = std.zig.Zoir;
 const lint = @import("lint.zig");
 
-/// Visible wire kept between two things, by situation, in units.
+/// The drawing's lengths, in units, and the router's costs, in units of
+/// wire. The defaults are the look the golden figures are scored on. A
+/// length moves nothing to another row or column: rows, columns and order
+/// are the layout's.
 pub const Layout = struct {
-    /// Smallest spacing between neighbouring rows or columns, centre to centre.
-    min_pitch: f32 = 1.0,
-    /// Two devices on one vertical wire: a transistor stack, a load over its driver.
-    stack: f32 = 0.25,
-    /// Two devices on one horizontal wire: resistors in series.
-    series: f32 = 0.25,
-    /// A device pin to a supply or ground symbol.
-    rail: f32 = 0.5,
-    /// A device pin to an input or output terminal.
-    terminal: f32 = 0.5,
-    /// A device pin to a net label.
+    /// Between neighbouring rows: the wire between two devices of one column.
+    stack: f32 = 1.0,
+    /// Between neighbouring columns.
+    series: f32 = 1.0,
+    /// A pin to its supply or ground symbol; the supply bar over its pins.
+    rail: f32 = 1.0,
+    /// A pin to its input or output port.
+    terminal: f32 = 1.0,
+    /// A pin to its net label.
     label: f32 = 0.5,
-    /// A pin to a junction bar, and a junction bar to its terminal.
-    junction: f32 = 0.5,
-    /// A pin to the wire it taps, or to the corner where it turns.
-    tap: f32 = 0.5,
-    /// How far a bend (a wire around a device) leaves a pin before turning.
-    bend: f32 = 0.25,
-    /// Room kept between a wire and another net's symbol.
-    clearance: f32 = 0.2,
+    /// Pins facing one way to the trunk that joins them.
+    tap: f32 = 1.0,
+    /// The router's room between a wire and another net's wire or point.
+    clearance: f32 = 0.25,
+    /// What the router pays for a bend, in wire.
+    bend_cost: f32 = 1.0,
+    /// What the router pays to cross another net's wire, in wire.
+    cross_cost: f32 = 2.0,
 };
 
 /// How the TikZ emitter strokes a drawing.
@@ -213,26 +223,33 @@ test "config: absent keys keep defaults, unknown keys and bad values are reporte
     var diags: std.ArrayList(Diagnostic) = .empty;
     const cfg = try Config.parse(a,
         \\.{
-        \\    .layout = .{ .stack = 0.5, .wobble = 3, .tap = -1 },
-        \\    .colours = .{},
+        \\    .render = .{ .sym_w = 2, .wobble = 3, .wire_w = -1 },
+        \\    .layout = .{ .stack = 0.5, .min_pitch = 1, .tap = -1 },
         \\}
     , &diags);
+    try std.testing.expectEqual(2, cfg.render.sym_w);
+    try std.testing.expectEqual((Render{}).wire_w, cfg.render.wire_w); // -1 rejected
+    try std.testing.expectEqualStrings((Render{}).wire, cfg.render.wire);
     try std.testing.expectEqual(0.5, cfg.layout.stack);
     try std.testing.expectEqual((Layout{}).tap, cfg.layout.tap); // -1 rejected
     try std.testing.expectEqual((Layout{}).terminal, cfg.layout.terminal);
-    try std.testing.expectEqual(3, diags.items.len);
+    try std.testing.expectEqual(4, diags.items.len);
     try std.testing.expectEqualStrings("wobble", diags.items[0].key);
     try std.testing.expectEqual(Diagnostic.Kind.unknown_key, diags.items[0].kind);
-    try std.testing.expectEqualStrings("tap", diags.items[1].key);
+    try std.testing.expectEqualStrings("wire_w", diags.items[1].key);
     try std.testing.expectEqual(Diagnostic.Kind.bad_value, diags.items[1].kind);
-    try std.testing.expectEqualStrings("colours", diags.items[2].key);
+    // A key whose rule went with the wire-first layout (issue #8).
+    try std.testing.expectEqualStrings("min_pitch", diags.items[2].key);
+    try std.testing.expectEqual(Diagnostic.Kind.unknown_key, diags.items[2].kind);
+    try std.testing.expectEqualStrings("tap", diags.items[3].key);
+    try std.testing.expectEqual(Diagnostic.Kind.bad_value, diags.items[3].kind);
 }
 
 test "config: a malformed document gives the defaults" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
     var diags: std.ArrayList(Diagnostic) = .empty;
-    const cfg = try Config.parse(arena.allocator(), ".{ .layout = ", &diags);
-    try std.testing.expectEqual(Layout{}, cfg.layout);
+    const cfg = try Config.parse(arena.allocator(), ".{ .render = ", &diags);
+    try std.testing.expectEqual((Render{}).sym_w, cfg.render.sym_w);
     try std.testing.expectEqual(1, diags.items.len);
 }

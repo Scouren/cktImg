@@ -1,14 +1,18 @@
-//! Random small netlists through the whole pipeline (`zig build fuzz`).
-//! Checks that every layout ends and puts one node per cell, and reports,
-//! for each rare case, how many netlists hit it and the smallest one — the
-//! source of the example netlists for L2, L5 and L7 in docs/ALGORITHM.md.
+//! Random small netlists through the whole pipeline (`zig build fuzz`, in
+//! CI): every layout ends, every net is one piece as a netlister reads it,
+//! no wire touches another net's point, and the cards reversed draw the same
+//! picture. Reports how many netlists name a net instead of wiring it, and
+//! the smallest one.
+//!
+//! Contents:
+//! - `pub fn main(init: std.process.Init) !void`
 
 const std = @import("std");
 const np = @import("NetlistParser");
 const netlist = np.netlist;
 const sch = np.schematic;
-const lay = np.layout_engine;
 const support = @import("support.zig");
+const golden = @import("golden.zig");
 
 const runs = 4000;
 
@@ -31,14 +35,7 @@ pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const nets = [_][]const u8{ "vdd", "0", "in", "out", "a", "b", "c" };
     var cases = [_]Case{
-        .{ .name = "L2 collision (bent edge, no order conflict)" },
-        .{ .name = "L5 order conflict" },
-        .{ .name = "L7 a straight edge gave way (clean result)" },
-        .{ .name = "residual crossing (rails / label stubs)" },
-        .{ .name = "residual overlap (rails / label stubs)" },
-        .{ .name = "S5 rail or junction re-dealt" },
-        .{ .name = "L9 laid out again, no contact left" },
-        .{ .name = "L9 contact left (drawn as names)" },
+        .{ .name = "a net drawn as labels" },
     };
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -60,43 +57,76 @@ pub fn main(init: std.process.Init) !void {
             }
         }
         const text = w.buffered();
-        var nl = netlist.parse(gpa, &.{text}, null) catch continue;
-        defer nl.deinit(gpa);
-        const roles = try sch.guessRoles(gpa, &nl);
-        defer gpa.free(roles);
-        var s = try sch.build(gpa, &nl, roles, lib);
-        defer s.deinit();
-        try lay.layout(gpa, &s, &.default);
-
-        for (s.pos, 0..) |p, i| for (s.pos[i + 1 ..]) |q| {
-            if (p[0] == q[0] and p[1] == q[1]) {
-                std.debug.print("two nodes on one cell:\n{s}\n", .{text});
-                return error.SharedCell;
-            }
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const sk = draw(a, lib, text) catch |e| switch (e) {
+            error.OutOfMemory => return e,
+            else => continue, // a card the parser does not take
         };
-        const t = s.stats;
-        var dropped: u32 = 0;
-        for (s.edges.items) |e| dropped += @intFromBool(e.kind == .dropped);
-        cases[0].record(t.bent > 0 and t.conflicts == 0, text);
-        cases[1].record(t.conflicts > 0, text);
-        cases[2].record(dropped > 0 and t.crossings == 0 and t.overlaps == 0, text);
-        cases[3].record(t.crossings > 0, text);
-        cases[4].record(t.overlaps > 0, text);
-        cases[5].record(t.redealt, text);
-        cases[6].record(t.relaid and t.contacts == 0, text);
-        cases[7].record(t.contacts > 0, text);
-
-        // No wire touches another net's point; every net is still joined.
-        var p = try np.Placed.init(gpa, &s, &nl);
-        defer p.deinit();
-        if (try support.shorts(gpa, &p, true) > 0) {
+        support.expectConnected(&sk.p, lib) catch |e| {
+            std.debug.print("a net in pieces:\n{s}\n", .{text});
+            return e;
+        };
+        if (try support.shorts(gpa, &sk.p, true) > 0) {
             std.debug.print("a wire touches another net:\n{s}\n", .{text});
             return error.Short;
         }
+        if (try support.dots(gpa, &sk.p, true) > 0) {
+            std.debug.print("a dot is wrong:\n{s}\n", .{text});
+            return error.Dots;
+        }
+        // One picture per circuit: the cards reversed draw the same.
+        const back = try draw(a, lib, try golden.shuffled(a, text, .reversed));
+        const want = try canonical(a, &sk.p);
+        const got = try canonical(a, &back.p);
+        if (!std.mem.eql(u8, want, got)) {
+            std.debug.print("the cards reversed draw differently:\n{s}\n", .{text});
+            return error.CardOrder;
+        }
+        cases[0].record(sk.labeled > 0, text);
     }
-    std.debug.print("{d} random netlists: every layout ended, one node per cell, no wire on another net's point\n", .{runs});
+    std.debug.print("{d} random netlists: every layout ended, each net one piece, no wire on another net's point, the same picture with the cards reversed\n", .{runs});
     for (cases) |c| {
         std.debug.print("\n== {s}: {d}\n", .{ c.name, c.count });
         if (c.count > 0) std.debug.print("{s}", .{c.text[0..c.len]});
     }
+}
+
+// ---- private ----
+
+/// A netlist laid out, and how many nets it labels.
+fn draw(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: np.Placed, labeled: u32 } {
+    var nl = try netlist.parse(a, &.{text}, null);
+    const roles = try sch.guessRoles(a, &nl);
+    const s = try np.layout(a, &nl, roles, lib, .{});
+    var labeled: u32 = 0;
+    for (s.labeled) |l| labeled += @intFromBool(l);
+    return .{ .p = try np.Placed.init(a, &s, &nl), .labeled = labeled };
+}
+
+/// Each device by name with its place and turn, then each net by name with
+/// its wires' segments, sorted: equal for equal drawings, whatever the
+/// order things were drawn in.
+fn canonical(a: std.mem.Allocator, p: *const np.Placed) ![]const u8 {
+    var lines: std.ArrayList([]const u8) = .empty;
+    for (p.dev_name, p.dev_pos, p.dev_orient) |name, at, o| {
+        if (name.len > 0) try lines.append(a, try std.fmt.allocPrint(a, "d {s} {d} {d} {any}", .{ name, at.x, at.y, o }));
+    }
+    for (p.net_name, 0..) |name, n| {
+        for (p.net_seg[n]..p.net_seg[n + 1]) |k| {
+            const pts = p.wire_pts[p.seg_pt[k]..p.seg_pt[k + 1]];
+            for (pts[0 .. pts.len - 1], pts[1..]) |u, v| {
+                const lo = if (u.x < v.x or (u.x == v.x and u.y < v.y)) u else v;
+                const hi = if (lo.x == u.x and lo.y == u.y) v else u;
+                try lines.append(a, try std.fmt.allocPrint(a, "w {s} {d} {d} {d} {d}", .{ name, lo.x, lo.y, hi.x, hi.y }));
+            }
+        }
+    }
+    std.mem.sort([]const u8, lines.items, {}, struct {
+        fn lt(_: void, x: []const u8, y: []const u8) bool {
+            return std.mem.lessThan(u8, x, y);
+        }
+    }.lt);
+    return std.mem.join(a, "\n", lines.items);
 }

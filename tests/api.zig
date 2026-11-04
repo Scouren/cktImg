@@ -4,6 +4,7 @@
 const std = @import("std");
 const testing = std.testing;
 const np = @import("NetlistParser");
+const fixtures = @import("fixtures.zig");
 const support = @import("support.zig");
 const textbook = @import("textbook.zig");
 
@@ -59,87 +60,7 @@ fn expectWellFormed(p: *const np.Placed, lib: *const np.Library) !void {
     }
 }
 
-/// Every net is one piece, read the way a netlister reads the JSON: wires
-/// meet only at their ends (`Placed` splits a wire wherever another of its
-/// net meets it), a pin joins the wire ending on it, a label the wire it
-/// lies on, and the net's labels and one-pin symbols (ports, rails) are
-/// joined by their name.
-/// Stronger than `expectWellFormed`: a wire stub ending in the open, or two
-/// unnamed pieces, fails here.
-fn expectConnected(p: *const np.Placed, lib: *const np.Library) !void {
-    const gpa = testing.allocator;
-    var index: std.AutoHashMapUnmanaged([2]i32, u32) = .empty;
-    defer index.deinit(gpa);
-    var parent: std.ArrayList(u32) = .empty;
-    defer parent.deinit(gpa);
-    const uf = struct {
-        fn find(par: []u32, x0: u32) u32 {
-            var x = x0;
-            while (par[x] != x) x = par[x];
-            return x;
-        }
-        fn node(g: std.mem.Allocator, idx: *std.AutoHashMapUnmanaged([2]i32, u32), par: *std.ArrayList(u32), at: np.Pt) !u32 {
-            const gop = try idx.getOrPut(g, .{ at.x, at.y });
-            if (!gop.found_existing) {
-                gop.value_ptr.* = @intCast(par.items.len);
-                try par.append(g, gop.value_ptr.*);
-            }
-            return gop.value_ptr.*;
-        }
-        fn join(par: []u32, a: u32, b: u32) void {
-            par[find(par, a)] = find(par, b);
-        }
-    };
-    for (0..p.netCount()) |n| {
-        index.clearRetainingCapacity();
-        parent.clearRetainingCapacity();
-        try parent.append(gpa, 0); // node 0: the net's name
-        var it = p.segments(n);
-        while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-            const ia = try uf.node(gpa, &index, &parent, a);
-            const ib = try uf.node(gpa, &index, &parent, b);
-            uf.join(parent.items, ia, ib);
-        };
-        for (p.labels) |l| if (l.net == n) {
-            const at = try uf.node(gpa, &index, &parent, l.at);
-            uf.join(parent.items, at, 0);
-            // A name written on a wire (an annotation) names the wire.
-            var on = p.segments(n);
-            while (on.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-                if (np.Rect.fromCorners(a, b).contains(l.at)) uf.join(parent.items, at, index.get(.{ a.x, a.y }).?);
-            };
-        };
-        var pins: u32 = 0;
-        for (0..p.deviceCount()) |d| {
-            const class = lib.at(p.dev_class[d]);
-            const lo, const hi = p.pinRange(d);
-            for (lo..@min(hi, lo + class.terminals.len)) |pin| {
-                const t = class.terminals[pin - lo];
-                if (p.pin_net[pin] != n or t.hidden) continue;
-                pins += 1;
-                const at = try uf.node(gpa, &index, &parent, p.pin_xy[pin]);
-                // A port or rail symbol names its net; a ground_ref pin may
-                // be left unwired on ground (O0), its symbol naming it.
-                if (hi - lo == 1 or t.ground_ref) uf.join(parent.items, at, 0);
-            }
-        }
-        if (pins < 2) continue;
-        // Distinct pieces among the points (the name node counts only
-        // through what it joins).
-        var roots: u32 = 0;
-        for (1..parent.items.len) |i| {
-            const r = uf.find(parent.items, @intCast(i));
-            const first = for (1..i) |j| {
-                if (uf.find(parent.items, @intCast(j)) == r) break false;
-            } else true;
-            roots += @intFromBool(first);
-        }
-        if (roots != 1) {
-            std.debug.print("net {s} is in {d} pieces\n", .{ p.net_name[n], roots });
-            return error.SplitNet;
-        }
-    }
-}
+const expectConnected = support.expectConnected;
 
 test "place: one call and the stages give the same drawing" {
     const gpa = testing.allocator;
@@ -153,9 +74,8 @@ test "place: one call and the stages give the same drawing" {
     defer nl.deinit(gpa);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try np.Schematic.build(gpa, &nl, roles, lib);
+    var s = try np.layout(gpa, &nl, roles, lib, .{});
     defer s.deinit();
-    try np.layout(gpa, &s, &.default);
     var staged = try np.Placed.init(gpa, &s, &nl);
     defer staged.deinit();
 
@@ -221,14 +141,12 @@ test "placed: a driver stands apart, between its terminal symbol and ground" {
 }
 
 test "placed: a pin off the layout's line gets a lead onto it" {
-    // The op-amp's inputs are 40 apart on the symbol; the copies the layout
-    // splits it into are a pitch apart. Either way, the wires end on the pins.
+    // The op-amp's inputs are 40 apart on the symbol, the second off its
+    // input side's line: its own copy node, and the wires end on the pins.
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var cfg: np.Config = .default;
-    cfg.layout.min_pitch = 1.5;
-    var p = try np.place(gpa, &cfg, lib, &.{textbook.all[13].spice}, null);
+    var p = try np.place(gpa, &.default, lib, &.{textbook.all[13].spice}, null);
     defer p.deinit();
     try expectWellFormed(&p, lib);
 }
@@ -261,19 +179,11 @@ test "blocks: a subcircuit is one block, its ports on the sides its directives s
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
-    var s: np.Schematic = undefined;
-    var nl = try np.netlist.parse(gpa, &.{with_block}, null);
-    defer nl.deinit(gpa);
-    const roles = try np.guessRoles(gpa, &nl);
-    defer gpa.free(roles);
-    s = try np.Schematic.build(gpa, &nl, roles, lib);
-    defer s.deinit();
-    try np.layout(gpa, &s, &.default);
-    try testing.expectEqual(0, s.stats.crossings);
-    try testing.expectEqual(0, s.stats.overlaps);
-    var p = try np.Placed.init(gpa, &s, &nl);
+    var p = try placeText(lib, with_block);
     defer p.deinit();
     try expectWellFormed(&p, lib);
+    try expectConnected(&p, lib);
+    try testing.expectEqual(0, try support.shorts(gpa, &p, true));
 
     const x = for (p.dev_name, 0..) |n, d| {
         if (std.mem.eql(u8, n, "x1")) break d;
@@ -378,23 +288,10 @@ test "placed: random netlists draw every net as one piece, no wire on another's 
     }
 }
 
-/// AnalogIOC's decks (`analog/<block>/netlist/<block>.spice`), whose xschem
-/// converter found wires running across other nets' pins.
-const analogioc = [_]struct { name: []const u8, spice: []const u8 }{
-    .{ .name = "async_ctrl", .spice = @embedFile("fixtures/analogioc/async_ctrl.spice") },
-    .{ .name = "cmos_switch", .spice = @embedFile("fixtures/analogioc/cmos_switch.spice") },
-    .{ .name = "gain_cell_array", .spice = @embedFile("fixtures/analogioc/gain_cell_array.spice") },
-    .{ .name = "ota", .spice = @embedFile("fixtures/analogioc/ota.spice") },
-    .{ .name = "pwm_driver", .spice = @embedFile("fixtures/analogioc/pwm_driver.spice") },
-    .{ .name = "rstring_ladder", .spice = @embedFile("fixtures/analogioc/rstring_ladder.spice") },
-    .{ .name = "strongarm", .spice = @embedFile("fixtures/analogioc/strongarm.spice") },
-    .{ .name = "weight_tile", .spice = @embedFile("fixtures/analogioc/weight_tile.spice") },
-    .{ .name = "write_dac", .spice = @embedFile("fixtures/analogioc/write_dac.spice") },
-};
-
-// Before L9 and `Placed`'s check: rstring_ladder 29 nets, gain_cell_array
-// 24, write_dac 18, weight_tile 4 (`rowa0` across the `phi1`/`phi2`
-// gates), the nine-port block 4, blocks.spice 3.
+// The wire-first layout failed this, before its relayout and repair passes,
+// on rstring_ladder (29 nets), gain_cell_array 24, write_dac 18,
+// weight_tile 4 (`rowa0` across the `phi1`/`phi2` gates), the nine-port
+// block 4 and blocks.spice 3; #8's canvas commits no such wire.
 test "placed: no wire touches another net's pin, wire end or label" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
@@ -414,11 +311,9 @@ test "placed: no wire touches another net's pin, wire end or label" {
         if (k > 0) std.debug.print("example {s}: {d} nets\n", .{ src[0..@min(src.len, 20)], k });
         failed += k;
     }
-    // As AnalogIOC's converter runs it (cktimg_sky130.zon), a file of
-    // `.subckt`s titled as cktimg-json titles it.
-    var cfg: np.Config = .default;
-    cfg.rules.symbol_geometry = .err;
-    for (analogioc) |c| {
+    // As AnalogIOC's converter runs it, a file of `.subckt`s titled as
+    // cktimg-json titles it.
+    for (fixtures.analogioc) |c| {
         // cktimg-json's top cell: the last `.subckt`'s body, the deck after it.
         const text = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, c.spice });
         defer gpa.free(text);
@@ -426,7 +321,7 @@ test "placed: no wire touches another net's pin, wire end or label" {
         defer nl.deinit(gpa);
         const top = try std.fmt.allocPrint(gpa, "{s}\n{s}", .{ c.name, nl.defs[nl.defs.len - 1].body });
         defer gpa.free(top);
-        var p = try np.place(gpa, &cfg, lib, &.{ top, text[c.name.len + 1 ..] }, null);
+        var p = try np.place(gpa, &.default, lib, &.{ top, text[c.name.len + 1 ..] }, null);
         defer p.deinit();
         try expectConnected(&p, lib);
         const k = try support.shorts(gpa, &p, true);

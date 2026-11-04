@@ -138,6 +138,10 @@ Binding on every change, in every project.
   reference suites gated by name, a nightly, the downstream contracts, the
   release job.
 
+`skills/cktimg/` is the skill agents use to draw with cktImg; a change to
+the command line, the `*@` hints or the `lint.zon` keys updates it in the
+same commit.
+
 ## Building
 
 - Every build runs inside `nix develop -c …`: it pins Zig 0.17, the toolchain
@@ -157,6 +161,8 @@ Binding on every change, in every project.
   wrong. The main one is the round trip: an imported fixture, netlisted back
   through Schemify (`schemify cmd … cktimg.import`, `schemify netlist`) and
   compared by Schemify's `spicecmp`, is the same circuit.
+  `python3 tests/roundtrip.py <schemify-bin-dir>` runs it over every fixture;
+  it needs a local Schemify build, and CI does not run it.
 - A golden that disagrees with an independent oracle is a bug in the code
   that wrote it. Fix the code, regenerate the golden, and say so in the commit.
 

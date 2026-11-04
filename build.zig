@@ -67,7 +67,7 @@ pub fn build(b: *std.Build) void {
         .root_source_file = b.path("tests/schemify.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{.{ .name = "cktimg", .module = convert }},
+        .imports = &.{ .{ .name = "cktimg", .module = convert }, .{ .name = "NetlistParser", .module = mod } },
     }) });
     // The example decks, for the API suite's connectivity check.
     const ex_files = b.addWriteFiles();
@@ -108,6 +108,23 @@ pub fn build(b: *std.Build) void {
     const fuzz_run = b.addRunArtifact(fuzz);
     fuzz_run.addPassthruArgs();
     b.step("fuzz", "Random netlists through the pipeline; smallest example per rare case").dependOn(&fuzz_run.step);
+
+    // Layout time, today's engine against issue #8's stages, over every cell the
+    // Schemify import hands the engine.
+    const fast_mod = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = target, .optimize = .ReleaseFast });
+    fast_mod.addOptions("build_options", options);
+    const bench = b.addExecutable(.{ .name = "bench", .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/bench.zig"),
+        .target = target,
+        .optimize = .ReleaseFast,
+        .imports = &.{ .{ .name = "cktimg", .module = b.createModule(.{
+            .root_source_file = b.path("tools/schemify/convert.zig"),
+            .target = target,
+            .optimize = .ReleaseFast,
+            .imports = &.{.{ .name = "NetlistParser", .module = fast_mod }},
+        }) }, .{ .name = "NetlistParser", .module = fast_mod } },
+    }) });
+    b.step("bench", "Layout time per fixture cell, today's engine against issue #8's stages").dependOn(&b.addRunArtifact(bench).step);
 
     const gallery = b.addExecutable(.{ .name = "gallery", .root_module = b.createModule(.{
         .root_source_file = b.path("tests/gallery.zig"),

@@ -27,6 +27,7 @@ const ascii = std.ascii;
 const engine = @import("NetlistParser");
 const spice = @import("spice.zig");
 const recognize = @import("recognize.zig");
+const hints = @import("hints.zig");
 const Deck = spice.Deck;
 const Range = spice.Range;
 const Recognized = recognize.Recognized;
@@ -232,7 +233,7 @@ const label_orient = [4]u8{ 2, 0, 3, 1 };
 /// The engine's name for each local net of cell `c` (lowercase): the deck's own name where
 /// the engine's tokenizer reads it as one field, `0` for ground (`gnd` too when the cell
 /// has no `0`), else a fresh `n2s_<n>`.
-fn netNames(a: Allocator, deck: *const Deck, c: u32) Allocator.Error![]const []const u8 {
+pub fn netNames(a: Allocator, deck: *const Deck, c: u32) Allocator.Error![]const []const u8 {
     const n = deck.netCount(c);
     var has_zero = false;
     for (0..n) |k| has_zero = has_zero or mem.eql(u8, deck.netKey(c, @intCast(k)), "0");
@@ -264,8 +265,9 @@ fn plainWords(a: Allocator, text: []const u8) Allocator.Error![]const u8 {
 
 /// The SPICE deck the engine places for cell `c`: a title, a `.subckt b<s>` stub per box
 /// symbol the cell uses, then one card per device in deck order (`<letter><row>`, so the
-/// names are unique and the engine's device names give the cell's rows). Node-less devices
-/// have nothing to lay out and are left out (`draw` places them).
+/// names are unique and the engine's device names give the cell's rows), then the cell's
+/// grouping hints under those names. Node-less devices have nothing to lay out and are
+/// left out (`draw` places them).
 pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) Allocator.Error![]const u8 {
     const syms = &rec.syms;
     var text: ArrayList(u8) = .empty;
@@ -283,6 +285,9 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
         for (1..syms.pins(s).len + 1) |k| try text.print(a, " p{d}", .{k});
         try text.appendSlice(a, "\n.ends\n");
     }
+    // The card letter each device is written with, 0 for none.
+    const cards = try a.alloc(u8, devs.len());
+    @memset(cards, 0);
     for (devs.lo..devs.hi, 0..) |d, i| {
         const nets = deck.netsOf(@intCast(d));
         if (nets.len == 0) continue;
@@ -303,10 +308,12 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
             .tline => .{ 't', "z0=50 td=1n" },
             .box => .{ 'x', try a.print("b{d}", .{s}) },
         };
+        cards[i] = card;
         try text.print(a, "{c}{d}", .{ card, i });
         for (nets) |n| try text.print(a, " {s}", .{names[n]});
         try text.print(a, " {s}\n", .{tail});
     }
+    try hints.write(a, &text, deck, c, cards);
     return text.items;
 }
 
@@ -338,9 +345,8 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
         return out;
     }
     const text = try cellDeck(a, deck, rec, c, names);
-    const cfg: engine.Config = .default;
     var diag: engine.netlist.Diagnostic = .{};
-    var placed = engine.place(gpa, &cfg, lib, &.{text}, &diag) catch |e| switch (e) {
+    var placed = engine.place(gpa, &engine.Config.default, lib, &.{text}, &diag) catch |e| switch (e) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });

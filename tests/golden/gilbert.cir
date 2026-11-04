@@ -1,0 +1,27 @@
+Gilbert cell
+* Golden figure: notes Amplifiers/Differential Amplifiers.md:639, after Razavi Fig. 4.42(d). The book leaves the gates of M1-M4 to the text.
+.model nch nmos level=1
+Vdd vdd 0 1.8
+Vinp inp 0 dc 1.2 ac 1
+Vinn inn 0 dc 1.2
+Vcp contp 0 dc 0.8 ac 1
+Vcn contn 0 dc 0.8
+RD1 vdd x 1k
+RD2 vdd y 1k
+M1 x inp a 0 nch
+M2 y inn a 0 nch
+M3 x inn b 0 nch
+M4 y inp b 0 nch
+M5 a contp t 0 nch
+M6 b contn t 0 nch
+Iss t 0 1m
+*% M1 0 0 L
+*% M2 2.2 0 L
+*% M3 4.6 0 L
+*% M4 6.8 0 L
+*% M5 1.1 -2.27 L
+*% M6 5.7 -2.27 R
+*% Iss 3.4 -3.65 -
+*% RD1 -0.8 2.55 -
+*% RD2 7.6 2.25 -
+*% labels inp inn

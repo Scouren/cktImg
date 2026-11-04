@@ -101,8 +101,10 @@ Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
 - [Figures for a paper](#figures-for-a-paper)
 - [Your own schematic editor](#your-own-schematic-editor)
 - [Defining devices](#defining-devices)
+- [How the layout is made](#how-the-layout-is-made)
 - [Gallery](#gallery)
 - [For developers](#for-developers)
+- [From an AI agent](#from-an-ai-agent)
 - [Documentation](#documentation)
 
 ## Download
@@ -269,27 +271,67 @@ subcircuit if you define one, and as a generated box otherwise; see
 [`tests/symbols.zon`](tests/symbols.zon) holds generic textbook symbols. The
 tools use it by default, and it is the easiest file to copy and edit.
 
+## How the layout is made
+
+cktImg draws an analog circuit the way the textbook prints it.
+
+| The book | cktImg |
+|---|---|
+| Supply on top, ground below, current flowing down | Each branch from the supply to ground is a column, its devices in current order. The supply is a rail across the top; each branch ends in its own ground symbol. |
+| Matched devices side by side | A differential pair, a current mirror, a cross-coupled pair, and every pair of devices the symmetry maps onto each other share a row wherever the circuit allows. |
+| Symmetric circuits drawn symmetric | A left-right symmetry found from the connectivity (not the names) is drawn as an exact mirror image about a vertical axis. What the symmetry maps to itself (a tail, a common-mode node) sits on the axis. |
+| Signal left to right | Inputs enter as ports from the outside and outputs leave at the edge. A stage with no mirror image sits right of the core when it reaches an output, left of it otherwise. |
+| Wires, not labels | Folds, gate lines, feedback and common-mode loops and cross-couplings are wired. A bias line from outside is a named wire between two facing gates of one row, and a label at each gate otherwise; any other net is a label only where its wire cannot be drawn without running through a device or touching another net. |
+| One picture per circuit | The drawing depends on the circuit, not on the order of its cards. |
+
+It is made in the order a person draws: find the structure (pairs, mirrors,
+stacks, and the circuit's symmetry, by colour refinement of the netlist
+graph), place the devices by it (rows by current order with matched groups
+level, columns ordered for the shortest wires, the symmetric half mirrored),
+then wire the placement (the book's patterns for rails, gate lines and
+trunks, and a maze router for the rest). Placement never moves to make room
+for a wire. [`docs/ALGORITHM.md`](docs/ALGORITHM.md) has every rule.
+
+**Grouping hints.** A deck can say what belongs together, in the `*@` style
+of the port-side directives: at the top level of the deck drawn, or inside a
+`.subckt` for the Schemify import, which carries them into that cell.
+
+```spice
+*@ group pair M1 M2        (also mirror, stack, cross)
+*@ group stack M5 M7
+*@ nogroup M9
+*@ grouping off
+```
+
+A hint wins over recognition. `*@ nogroup` keeps a device out of every
+group, and `*@ grouping off` turns recognition off for the deck. A hint that
+names a device the deck does not have skips that name (the Schemify import
+logs it) and the rest still applies.
+
 ## Gallery
 
 Each drawing below comes straight from its netlist, with no hand edits
 (`zig build gallery -- --svgs out/` regenerates them).
 
-**Telescopic cascode OTA.** Two stacked columns of five transistors stay
-level, and the bias lines are labels.
+**Telescopic cascode OTA.** Two columns of four transistors, mirrored about
+the tail. The bias lines `vb2` and `vb3` are named wires between their gates;
+`vb1`, on the tail's one gate, is a label.
 
 ![Telescopic cascode OTA](assets/telescopic_cascode.svg)
 
-**Two-stage Miller op-amp.** Mirror load, tail source, second stage, and the
-compensation capacitor across it.
+**Two-stage Miller op-amp.** Mirror load on top, the pair mirrored about its
+tail, the second stage on the right with its current source beside the tail
+on the bias line `vb`, and the compensation capacitor across it.
 
 ![Two-stage Miller op-amp](assets/two_stage_opamp.svg)
 
-**Five-transistor OTA.**
+**Five-transistor OTA.** The pair mirrored about the tail, the mirror load
+above it.
 
 ![Five-transistor OTA](assets/ota_5t.svg)
 
-**Sallen-Key low-pass with a unity-gain buffer.** Rather than routing the
-feedback capacitor's far end around the op-amp, cktImg labels it `out`.
+**Sallen-Key low-pass with a unity-gain buffer.** Every net is a wire, the
+feedback capacitor's included.
 
 ![Sallen-Key low-pass](assets/sallen_key.svg)
 
@@ -302,9 +344,9 @@ placed where the `*@` comments ask.
 
 ![Subcircuit block](assets/subckt_block.svg)
 
-The bandgap reference at the top has three mirrored PMOS branches with an
-op-amp between the first two. Its shared gate line `g` is a label, because
-wiring it would mean crossing the branches.
+The bandgap reference at the top has three PMOS branches on one gate line,
+driven by the op-amp between the first two branches; the line is wired over
+the branches.
 
 ## For developers
 
@@ -378,8 +420,14 @@ cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
-`src/config.zig` lists every layout setting and lint rule along with its default;
-a settings file (`--config`) sets any of them.
+`src/config.zig` lists every setting with its default: the layout's lengths
+and the router's costs (`.layout`, in units of the symbol set's `unit`), the
+lint rules, and the TikZ style. A settings file (`--config`) sets any of
+them, as the lint rules are set:
+
+```zon
+.{ .layout = .{ .stack = 1.5, .terminal = 2 }, .rules = .{ .no_ground = .err } }
+```
 A file containing only `.subckt` definitions draws its last one, and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is
 described in `src/json.zig`.
@@ -395,13 +443,14 @@ zig build -Dschemify_plugin=true      # also cktimg.wasm, the Schemify plugin (w
 zig build test                        # library, algorithm, API, C ABI and Schemify-import tests
 zig build gallery -- --svgs out/      # the gallery as SVG
 zig build fuzz                        # 4000 random netlists through the pipeline
+python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back and compared by a Schemify build in <dir>
 ```
 
 ### Repository layout
 
 | Path | Contents |
 |---|---|
-| `src/` | The library: parser (`netlist.zig`), layout (`schematic.zig`, `layout.zig`), result (`placed.zig`), symbol sets (`library.zig`), settings (`config.zig`), C ABI (`abi.zig`) |
+| `src/` | The library: parser (`netlist.zig`, `hints.zig`), layout (`schematic.zig`, then `structure.zig`, `skeleton.zig`, `sketch.zig` and the files they name), result (`placed.zig`), symbol sets (`library.zig`), lint and render settings (`config.zig`), C ABI (`abi.zig`) |
 | `include/cktimg.h` | The C header |
 | `tools/` | `cktimg-json` and `cktimg-tex` |
 | `tools/schemify/` | The Schemify plugin: SPICE reader, cell mapping, layout through the engine, file writer, wasm glue, and Schemify's plugin ABI (`abi.zig`, vendored) |
@@ -409,12 +458,22 @@ zig build fuzz                        # 4000 random netlists through the pipelin
 | `latex/cktimg.sty` | The LaTeX package |
 | `tests/` | Tests, the bundled symbol set, the SVG renderer and the gallery |
 | `docs/` | API, target manifests, and the layout algorithm |
+| `skills/cktimg/` | The agent skill for drawing schematics with cktImg |
+
+## From an AI agent
+
+[`skills/cktimg/`](skills/cktimg) is a skill for coding agents that draw
+schematics with cktImg: write the deck so its names carry its meaning, draw,
+review the drawing against the book's look, and fix each complaint on the
+highest rung that can (names, then `*@ group` hints, then the `lint.zon`
+lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
+agent's skills directory.
 
 ## Documentation
 
 - [`docs/API.md`](docs/API.md): the Zig and C API
 - [`docs/TARGETS.md`](docs/TARGETS.md): target manifests for other editors
-- [`docs/ALGORITHM.md`](docs/ALGORITHM.md): how placement and routing work, rule by rule
+- [`docs/ALGORITHM.md`](docs/ALGORITHM.md): how the structure, placement and wiring work, stage by stage
 - [openfat.github.io/cktImg](https://openfat.github.io/cktImg/): the documentation site
 
 ## License

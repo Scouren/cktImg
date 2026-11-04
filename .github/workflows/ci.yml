@@ -37,6 +37,12 @@ jobs:
       - name: Gallery
         run: zig build gallery -- --svgs gallery
 
+      # 4000 random netlists through both engines: every layout ends, no wire
+      # touches another net's point, and issue #8's drawings keep every net
+      # one piece and draw the same with the cards reversed.
+      - name: Fuzz
+        run: zig build fuzz
+
       # The library alone for a host without an OS (a wasm guest links it): `zig build`
       # must not reach the tools there, and `zig build lib` installs only the archive
       # and the header.

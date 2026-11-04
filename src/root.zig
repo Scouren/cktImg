@@ -7,7 +7,7 @@
 //! |------|-----------|
 //! | `place(gpa, cfg, lib, sources, diag)` | an owned `Placed` |
 //! | `Pipeline.run` | a borrowed `Placed`, pages reused across documents |
-//! | `netlist.parse` → `guessRoles` → `Schematic.build` → `layout` → `Placed.init` | every stage, each usable alone |
+//! | `netlist.parse` → `guessRoles` → `layout` → `Placed.init` | every stage, each usable alone |
 //!
 //! The library draws nothing and knows no device: the caller's `Library`
 //! says what each class looks like.
@@ -16,12 +16,13 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub const netlist = @import("netlist.zig");
+/// The `*@` grouping hints a deck gives `layout` (issue #7).
+pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
 pub const config = @import("config.zig");
 pub const schematic = @import("schematic.zig");
-pub const layout_engine = @import("layout.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
 pub const lint = @import("lint.zig");
@@ -54,10 +55,12 @@ pub const Placed = placed.Placed;
 pub const Label = placed.Label;
 
 /// Proposes a role per net (supply, sink, input, output, bias, internal);
-/// edit the result freely before `Schematic.build`.
+/// edit the result freely before `layout`.
 pub const guessRoles = schematic.guessRoles;
-/// Coordinates for a built schematic.
-pub const layout = layout_engine.layout;
+/// A netlist and its roles drawn: its structure found, its devices placed
+/// by it, its nets wired (docs/ALGORITHM.md), spaced by `config.Layout`'s
+/// lengths. The caller frees the result with `Schematic.deinit`.
+pub const layout = schematic.sketch.lay;
 
 /// What can stop a placement: a card the parser does not represent (see
 /// `diag` for where), or memory.
@@ -67,7 +70,8 @@ pub const PlaceError = netlist.Error || library.RegisterError;
 ///
 /// `sources[0]` is the netlist (its first line the title); later sources are
 /// read as if appended (model files). `lib` gains a generated box class for
-/// any device kind it has no class for.
+/// any device kind it has no class for. Of `cfg`, the layout reads
+/// `.layout`.
 pub fn place(
     gpa: Allocator,
     cfg: *const Config,
@@ -79,9 +83,8 @@ pub fn place(
     defer nl.deinit(gpa);
     const roles = try guessRoles(gpa, &nl);
     defer gpa.free(roles);
-    var s = try Schematic.build(gpa, &nl, roles, lib);
+    var s = try layout(gpa, &nl, roles, lib, cfg.layout);
     defer s.deinit();
-    try layout(gpa, &s, cfg);
     return Placed.init(gpa, &s, &nl);
 }
 
@@ -112,8 +115,7 @@ pub const Pipeline = struct {
         const tmp = self.scratch.allocator();
         var nl = try netlist.parse(tmp, sources, diag);
         const roles = try guessRoles(tmp, &nl);
-        var s = try Schematic.build(tmp, &nl, roles, self.lib);
-        try layout(tmp, &s, self.cfg);
+        var s = try layout(tmp, &nl, roles, self.lib, self.cfg.layout);
         self.current = try Placed.init(self.out.allocator(), &s, &nl);
         _ = self.scratch.reset(.retain_capacity);
         return &self.current.?;
@@ -129,4 +131,6 @@ pub const Pipeline = struct {
 
 test {
     std.testing.refAllDecls(@This());
+    // Reached only through `schematic.sketch`, which nothing here calls.
+    _ = @import("maze.zig");
 }

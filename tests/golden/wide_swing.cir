@@ -1,0 +1,19 @@
+Wide-swing cascode mirror with its bias generator
+* Golden figure: notes Amplifiers/Current Mirrors.md:474, after Carusone, Johns and Martin Fig. 6.12 (its Q1-Q5 are M1-M5 here).
+.model nch nmos level=1
+Vdd vdd 0 1.8
+Ibias vdd vbias 20u
+Iin vdd n 100u
+M5 vbias vbias 0 0 nch
+M4 n vbias m 0 nch
+M3 m n 0 0 nch
+M1 out vbias k 0 nch
+M2 k n 0 0 nch
+*% M5 -3.2 0.6 R
+*% Ibias -3.2 2.57 -
+*% M4 0 1.8 L
+*% M3 0 0 R
+*% Iin 0 3.77 -
+*% M2 3.8 0 L
+*% M1 3.8 1.8 L
+*% labels vbias
