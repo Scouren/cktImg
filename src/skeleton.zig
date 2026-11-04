@@ -33,6 +33,7 @@
 //! - `pub const Form = enum(u8) { vertical, horizontal }`
 //! - `pub const Skeleton = struct`
 //! - `pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure) Allocator.Error!Skeleton`
+//! - `pub const Invalid = error{...}`, `pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -72,6 +73,18 @@ pub const Skeleton = struct {
     axis2: ?i32,
 };
 
+/// What a skeleton edited by a caller can get wrong for the drawing.
+pub const Invalid = error{
+    /// A slice is not one entry per device.
+    WrongLength,
+    /// A drawn device's cell is negative.
+    OffLattice,
+    /// Two drawn devices share a cell.
+    CellTaken,
+    /// A vertical device's ends are not two of its nets.
+    BadEnds,
+};
+
 /// Lattice columns between neighbouring device columns, per step of
 /// `columns.order`: the slots between hold bridges.
 const spread = 4;
@@ -101,8 +114,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
 
     try classify(gpa, nl, roles, st, drawn, form);
     try ends(gpa, nl, roles, drawn, form, upper, lower);
-    const net_rank = try structure.rankByName(gpa, gpa, c.vertices.items(.name));
-    defer gpa.free(net_rank);
+    const net_rank = st.net_rank;
     var chain: Chain = .{ .above = try gpa.alloc(u32, n), .below = try gpa.alloc(u32, n) };
     defer gpa.free(chain.above);
     defer gpa.free(chain.below);
@@ -159,6 +171,36 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     const axis2: ?i32 = if (mated) -2 * shift else null;
     if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
     return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .axis2 = axis2 };
+}
+
+/// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
+/// it: one entry per device, drawn devices on distinct cells of the lattice
+/// (x and y at least 0), and each vertical device's upper and lower ends two
+/// distinct nets it touches. `place`'s own skeletons always pass.
+pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
+    const c = &nl.graph;
+    const n = c.edgeCount();
+    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len }) |len| {
+        if (len != n) return error.WrongLength;
+    }
+    for (0..n) |d| {
+        if (!sk.drawn[d]) continue;
+        if (sk.x[d] < 0 or sk.y[d] < 0) return error.OffLattice;
+        for (d + 1..n) |e| {
+            if (sk.drawn[e] and sk.x[e] == sk.x[d] and sk.y[e] == sk.y[d]) return error.CellTaken;
+        }
+        if (sk.form[d] != .vertical) continue;
+        const up = sk.upper[d];
+        const low = sk.lower[d];
+        if (up == low or up >= c.vertexCount() or low >= c.vertexCount()) return error.BadEnds;
+        var has_up = false;
+        var has_low = false;
+        for (c.members(EdgeId.from(d))) |net| {
+            has_up = has_up or net.index() == up;
+            has_low = has_low or net.index() == low;
+        }
+        if (!has_up or !has_low) return error.BadEnds;
+    }
 }
 
 // ---- private ----
