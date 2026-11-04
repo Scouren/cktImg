@@ -285,7 +285,8 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
     return r;
 }
 
-fn nameTaken(names: []const []const u8, n: []const u8) bool {
+/// True when `n` equals one of `names`, case-insensitively (file stems on a case-folding disk).
+pub fn nameTaken(names: []const []const u8, n: []const u8) bool {
     for (names) |x| if (ascii.eqlIgnoreCase(x, n)) return true;
     return false;
 }
