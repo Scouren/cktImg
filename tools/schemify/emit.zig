@@ -258,17 +258,16 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
             // `${NAME}` expands in code text (netlist spec §7.1); `$$` is a literal `$`.
             while (lines.next()) |line| try w.verbatim(try mem.replaceOwned(u8, a, line, "$", "$$"));
         };
-    } else if (c > 0 and (has_code or params.len > 0)) {
+    } else if (c > 0 and (has_code or rec.shim[c])) {
         // Inside a subckt the text must stay in its definition: one `spice_code` instance
-        // per entry, stacked below the drawing (clear of every wire), pin no-connected. The
-        // first re-declares the cell's parameters for the card text that names them:
-        // `.param k={k}` renders each (specialized) value.
+        // per entry, stacked below the drawing (clear of every wire), pin no-connected. When
+        // card text kept verbatim names the cell's parameters, the first re-declares them:
+        // `.param k={k}` renders each (specialized) value, bare, which every dialect reads.
         var texts: ArrayList([]const u8) = .empty;
-        if (params.len > 0) {
+        if (rec.shim[c]) {
             var line: ArrayList(u8) = .empty;
             try line.appendSlice(a, ".param");
-            // Template `k={{{k}}}`: literal braces around a hole.
-            for (params) |p| try line.print(a, " {s}={{{{{{{s}}}}}}}", .{ p.name, p.name });
+            for (params) |p| try line.print(a, " {s}={{{s}}}", .{ p.name, p.name });
             try texts.append(a, line.items);
         }
         for (deck.code, deck.code_cell) |text, cc| if (cc == c) try texts.append(a, try recognize.template(a, text, &.{}));

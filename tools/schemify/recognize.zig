@@ -50,8 +50,24 @@ pub const Family = enum {
 };
 
 /// How a symbol is written out: a bundled `core` cell (nothing to write), the generated
-/// `.shcomp` of a deck cell, or a generated `.shprim` leaf re-emitting card text.
-pub const Origin = enum { core, sub, leaf };
+/// `.shcomp` of a deck cell, a generated `.shprim` leaf re-emitting card text, or a cell of
+/// a project library (nothing to write; `Symbols.lib` names it).
+pub const Origin = enum { core, sub, leaf, lib };
+
+/// A cell of a project library an `X` card may call by its subckt name (read by the
+/// plugin from `<lib dir>/<name>.shprim|.shcomp`, `place.libCell`).
+pub const LibCell = struct {
+    /// Library name (the `lib` row), and the cell's.
+    lib: []const u8,
+    name: []const u8,
+    /// Pins in file order, which is the card's node order.
+    pins: []const Pin,
+    body: Body,
+    params: []const LibParam,
+};
+
+/// A library cell's parameter: string params take templates, the rest expressions.
+pub const LibParam = struct { name: []const u8, string: bool };
 
 pub const Pin = struct { name: []const u8, x: i32, y: i32, dir: Dir };
 /// A closed rectangle `[x0, y0, x1, y1]`.
@@ -73,6 +89,8 @@ pub const Symbols = struct {
     pin_start: ArrayList(u32) = .empty,
     /// Pins: offsets are multiples of 10; control pins are `in`.
     pin: ArrayList(Pin) = .empty,
+    /// A `lib` symbol's library (`""` otherwise).
+    lib: ArrayList([]const u8) = .empty,
 
     pub fn len(s: *const Symbols) u32 {
         return @intCast(s.stem.items.len);
@@ -89,6 +107,7 @@ pub const Symbols = struct {
         const stem = s.stem.items[i];
         const ext = switch (s.origin.items[i]) {
             .core => return try a.print("core:{s}", .{stem}),
+            .lib => return try a.print("{s}:{s}", .{ s.lib.items[i], stem }),
             .sub => "shcomp",
             .leaf => "shprim",
         };
@@ -103,7 +122,7 @@ pub const Symbols = struct {
         if (s.pin_start.items.len == 0) try s.pin_start.append(a, 0);
         var body: Body = .{ 0, 0, 0, 0 };
         for (pins_, 0..) |p, i| {
-            assert(@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0);
+            assert(origin == .lib or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
             if (i == 0) body = .{ p.x, p.y, p.x, p.y };
             body = .{ @min(body[0], p.x), @min(body[1], p.y), @max(body[2], p.x), @max(body[3], p.y) };
         }
@@ -122,6 +141,7 @@ pub const Symbols = struct {
         try s.family.append(a, family);
         try s.args_default.append(a, "");
         try s.format.append(a, "");
+        try s.lib.append(a, "");
         try s.body.append(a, body);
         return s.len() - 1;
     }
@@ -202,13 +222,17 @@ pub const Recognized = struct {
     code_sym: u32 = none,
     /// Generated stems taken so far (case-insensitive).
     taken: ArrayList([]const u8) = .empty,
+    /// Per deck cell: its definition re-declares its parameters (`.param k={k}`), because
+    /// card text kept verbatim in it names them.
+    shim: []const bool = &.{},
 
     pub const none = std.math.maxInt(u32);
 };
 
-/// Recognizes every device of `deck`. Never fails but on memory: an unmappable card
-/// becomes a leaf instance that re-emits it verbatim.
-pub fn recognize(a: Allocator, deck: *const Deck) Allocator.Error!Recognized {
+/// Recognizes every device of `deck`, an `X` of a subckt the deck does not define calling
+/// the cell of that name in `libs` when there is one. Never fails but on memory: an
+/// unmappable card becomes a leaf instance that re-emits it verbatim.
+pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocator.Error!Recognized {
     var r: Recognized = .{};
     for (core) |c| _ = try r.syms.push(a, c.name, .core, c.family, c.pins, null);
     for (1..deck.cells()) |c| {
@@ -216,8 +240,10 @@ pub fn recognize(a: Allocator, deck: *const Deck) Allocator.Error!Recognized {
         const bp = try boxPins(a, deck, @intCast(c));
         _ = try r.syms.push(a, stem, .sub, .box, bp.pins, bp.body);
     }
-    var has_code = false;
-    for (1..deck.cells()) |c| has_code = has_code or deck.params(@intCast(c)).len > 0;
+    const shim = try a.alloc(bool, deck.cells());
+    for (shim, 0..) |*x, c| x.* = c > 0 and try needsShim(a, deck, libs, @intCast(c));
+    r.shim = shim;
+    var has_code = mem.indexOfScalar(bool, shim, true) != null;
     for (deck.code_cell) |c| has_code = has_code or c != 0;
     if (has_code) {
         const stem = try uniqueStem(a, "spice_code", &r.taken);
@@ -231,7 +257,7 @@ pub fn recognize(a: Allocator, deck: *const Deck) Allocator.Error!Recognized {
         const devs = deck.devs(c);
         for (devs.lo..devs.hi) |di| {
             const d: u32 = @intCast(di);
-            try device(a, deck, d, deck.params(c), &r);
+            try device(a, deck, d, deck.params(c), libs, &r);
             try r.parts.over_start.append(a, @intCast(r.parts.over_key.items.len));
             // Instance names are unique per cell (E009): a repeated card name gets a suffix.
             const names = r.parts.inst_name.items;
@@ -252,6 +278,37 @@ pub fn recognize(a: Allocator, deck: *const Deck) Allocator.Error!Recognized {
 
 fn nameTaken(names: []const []const u8, n: []const u8) bool {
     for (names) |x| if (ascii.eqlIgnoreCase(x, n)) return true;
+    return false;
+}
+
+/// The cell of `libs` an `X` of undefined subckt `sub` with `nodes` nodes calls (first in
+/// `libs` order, its pins in node order).
+fn libCellOf(libs: []const LibCell, sub: []const u8, nodes: usize) ?*const LibCell {
+    for (libs) |*l| if (ascii.eqlIgnoreCase(l.name, sub) and l.pins.len == nodes) return l;
+    return null;
+}
+
+/// Whether text kept verbatim in subckt `c` names one of its parameters: a code entry, or
+/// a card other than an `X` that `device` maps to a cell (whose overrides are holes).
+fn needsShim(a: Allocator, deck: *const Deck, libs: []const LibCell, c: u32) Allocator.Error!bool {
+    const params = deck.params(c);
+    if (params.len == 0) return false;
+    const names = struct {
+        fn f(a_: Allocator, text: []const u8, ps: []const spice.Param) Allocator.Error!bool {
+            return !mem.eql(u8, try template(a_, text, ps), try template(a_, text, &.{}));
+        }
+    }.f;
+    for (deck.code, deck.code_cell) |text, cc| if (cc == c and try names(a, text, params)) return true;
+    const devs = deck.devs(c);
+    for (devs.lo..devs.hi) |d| {
+        if (ascii.toLower(deck.dev_name[d][0]) == 'x') {
+            const nodes = deck.netsOf(@intCast(d)).len;
+            const sub = deck.dev_sub[d];
+            const called = if (deck.findCell(sub)) |k| deck.ports(k).len == nodes else libCellOf(libs, sub, nodes) != null;
+            if (called) continue;
+        }
+        if (try names(a, deck.dev_rest[d], params)) return true;
+    }
     return false;
 }
 
@@ -563,7 +620,7 @@ fn isPmos(a: Allocator, model: []const u8, kind: ?[]const u8) Allocator.Error!bo
 }
 
 /// Recognizes device `d` (in a cell with parameters `params`) and appends its row.
-fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, r: *Recognized) Allocator.Error!void {
+fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, libs: []const LibCell, r: *Recognized) Allocator.Error!void {
     const name = deck.dev_name[d];
     const letter = ascii.toLower(name[0]);
     const nodes = deck.netsOf(d).len;
@@ -670,6 +727,23 @@ fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, 
             break :blk try xspiceLeaf(a, @intCast(nodes), format, r);
         },
         'x' => blk: {
+            if (deck.findCell(deck.dev_sub[d]) == null) if (libCellOf(libs, deck.dev_sub[d], nodes)) |l| {
+                for (toks) |t| {
+                    if (ascii.eqlIgnoreCase(t.text, "params:")) continue;
+                    const k = keyOf(t.text);
+                    const hit: ?LibParam = if (k) |kk| for (l.params) |p| {
+                        if (ascii.eqlIgnoreCase(p.name, kk)) break p;
+                    } else null else null;
+                    const p = hit orelse {
+                        try r.warnings.append(a, try a.print("line {d}: {s}: `{s}` is no parameter of {s}:{s}; dropped", .{ deck.dev_line[d], name, t.text, l.lib, l.name }));
+                        continue;
+                    };
+                    try o.keys.append(a, p.name);
+                    try o.vals.append(a, try libValue(a, t.text[k.?.len + 1 ..], p.string, params));
+                }
+                if (name.len > 1) inst_name = name[1..];
+                break :blk try libSymbol(a, l, r);
+            };
             const c = deck.findCell(deck.dev_sub[d]) orelse {
                 const s = try stub(a, deck, d, r);
                 if (rest.len > 0) try o.text("args", try a.print("{s} {s}", .{ deck.dev_sub[d], rest }));
@@ -706,6 +780,28 @@ fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, 
     try r.parts.over_val.appendSlice(a, o.vals.items);
     try r.parts.sym.append(a, s);
     try r.parts.inst_name.append(a, inst_name);
+}
+
+/// An override of library cell parameter (a `string` one, else a number) from card value
+/// `v` in a cell with parameters `params`: a lone parameter name is the parameter itself
+/// (`{w}`, `w`), so no dialect's brace or quote syntax reaches the netlist; other text keeps
+/// the deck's spelling with parameter holes (strings) or as the expression (numbers).
+fn libValue(a: Allocator, v: []const u8, string: bool, params: []const spice.Param) Allocator.Error![]const u8 {
+    const bare = stripOuter(v);
+    for (params) |p| if (ascii.eqlIgnoreCase(p.name, bare))
+        return if (string) try a.print("{{{s}}}", .{p.name}) else p.name;
+    return if (string) template(a, v, params) else bare;
+}
+
+/// The symbol of library cell `l`, made on first use.
+fn libSymbol(a: Allocator, l: *const LibCell, r: *Recognized) Allocator.Error!u32 {
+    const s = &r.syms;
+    for (0..s.len()) |i| {
+        if (s.origin.items[i] == .lib and mem.eql(u8, s.stem.items[i], l.name) and mem.eql(u8, s.lib.items[i], l.lib)) return @intCast(i);
+    }
+    const i = try s.push(a, l.name, .lib, .box, l.pins, l.body);
+    s.lib.items[i] = l.lib;
+    return i;
 }
 
 /// The leaf symbol of origin `leaf` with stem `want` and template `format`, if made already.
@@ -842,7 +938,7 @@ test "box pins take their directive sides and face them" {
     const a = arena.allocator();
     const d = try spice.parse(a, ".subckt blk in out vdd vss b2\n*@ top vdd b2\n*@ bottom vss\nR1 in out 1\n.ends\n" ++
         "X1 a b c d e blk\nX2 n1 n2 n3 n4 n5 n6 n7 n8 eight\n");
-    const r = try recognize(a, &d);
+    const r = try recognize(a, &d, &.{});
     const s = subSymbol(1);
     // Pins stay in port order: `in` (an input by name) left, `out` right, vdd then b2 on
     // top (directive order, left to right), vss below.
@@ -864,7 +960,7 @@ test "xspice and node-less cards get their own templates" {
     defer arena.deinit();
     const a = arena.allocator();
     const d = try spice.parse(a, "A1 [a b] ~y nand1\nA2 a b y nand1\nA3 [c d] ~e nand2\nX1 g\nX2 h k=1\n");
-    const r = try recognize(a, &d);
+    const r = try recognize(a, &d, &.{});
     const sym = struct {
         fn f(rr: *const Recognized, dk: *const Deck, i: u32) u32 {
             return rr.parts.sym.items[dk.devs(0).lo + i];
@@ -924,7 +1020,7 @@ test "faithful cards map to core, others to leaves" {
     const a = arena.allocator();
     const d = try spice.parse(a, ".model dm d\nR1 a b 1k m=2\nD1 a 0 dm\nD2 a 0 dm area=2\nM1 d g 0 0 nch w=1u l=1u nf=2\n" ++
         "M2 d g 0 0 pch l=1u\nQ1 c b 0 qx\nX1 a b undefined_sub w=1\nE1 o 0 value={v(a)}\nJ1 d g s jm\n");
-    const r = try recognize(a, &d);
+    const r = try recognize(a, &d, &.{});
     const want = [_][]const u8{ "res", "spice_diode", "diode", "nmos4", "spice_pmos4", "spice_npn", "undefined_sub", "spice_e2", "spice_j3" };
     try testing.expectEqual(want.len, d.dev_name.len);
     for (want, r.parts.sym.items) |w, s| try testing.expectEqualStrings(w, r.syms.stem.items[s]);
