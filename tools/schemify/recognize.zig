@@ -21,6 +21,7 @@ const Side = spice.Side;
 const Tok = spice.Tok;
 const Range = spice.Range;
 const keyOf = spice.keyOf;
+const Place = @import("place.zig").Place;
 
 /// Symbols per conversion (core rows + generated cells).
 pub const symbols_max = 8192;
@@ -81,9 +82,17 @@ pub const Symbols = struct {
         return s.pin.items[s.pin_start.items[i]..s.pin_start.items[i + 1]];
     }
 
-    /// Cell reference written in `inst` records.
-    pub fn cellref(s: *const Symbols, a: Allocator, i: u32) Allocator.Error![]const u8 {
-        return a.print("{s}{s}", .{ if (s.origin.items[i] == .core) "core:" else "./", s.stem.items[i] });
+    /// Cell reference written in `inst` records of file `from` (`top.shbench`), where `place`
+    /// puts the files: `core:<stem>`, `./<stem>`, or `<lib>:<stem>` across directories;
+    /// `null` when `place` puts the cell where `from` cannot reach it.
+    pub fn cellref(s: *const Symbols, a: Allocator, i: u32, place: *const Place, from: []const u8) Allocator.Error!?[]const u8 {
+        const stem = s.stem.items[i];
+        const ext = switch (s.origin.items[i]) {
+            .core => return try a.print("core:{s}", .{stem}),
+            .sub => "shcomp",
+            .leaf => "shprim",
+        };
+        return place.ref(a, from, try a.print("{s}.{s}", .{ stem, ext }), stem);
     }
 
     /// Appends a symbol; a `box` passes its body (from `boxLayout`), the other families'
