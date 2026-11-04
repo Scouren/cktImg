@@ -20,6 +20,9 @@ pub fn check(a: Allocator, deck: *const Deck, warnings: *ArrayList([]const u8)) 
     assert(deck.directive.len == deck.directive_cell.len and deck.directive.len == deck.directive_line.len);
     for (deck.directive, deck.directive_cell, deck.directive_line) |line, c, n| {
         var h = engine.hints.read(line) orelse continue;
+        // ponytail: the grouping verbs only; the rest wait for the designer's
+        // names in the engine deck (steering slice 7), which need no renaming.
+        if (!h.verb.grouping()) continue;
         while (h.names.next()) |name| {
             if (deviceNamed(deck, c, name) != null) continue;
             const cell = if (c == 0) "the top level" else deck.cell_name[c];
@@ -38,6 +41,7 @@ pub fn write(a: Allocator, text: *ArrayList(u8), deck: *const Deck, c: u32, card
     for (deck.directive, deck.directive_cell) |line, at| {
         if (at != c) continue;
         var h = engine.hints.read(line) orelse continue;
+        if (!h.verb.grouping()) continue;
         try text.appendSlice(a, h.head);
         while (h.names.next()) |name| {
             const i = (deviceNamed(deck, c, name) orelse continue) - devs.lo;

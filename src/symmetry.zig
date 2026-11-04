@@ -19,7 +19,8 @@
 //! Contents:
 //! - `pub const none: u32`
 //! - `pub const Polarity = enum(u8) { n, p, other }`
-//! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, device_mate: []u32, net_mate: []u32) Allocator.Error!void`
+//! - `pub const Pin = struct`
+//! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool`
 //! - `pub fn polarity(model: ?[]const u8) Polarity`
 
 const std = @import("std");
@@ -37,6 +38,10 @@ const Role = sch.Role;
 pub const none: u32 = std.math.maxInt(u32);
 
 pub const Polarity = enum(u8) { n, p, other };
+
+/// Two devices (or nets) the symmetry must swap; one on the axis when
+/// `a == b` (`*@ symmetric`, `*@ axis`).
+pub const Pin = struct { net: bool, a: u32, b: u32 };
 
 /// Refinements one symmetry search may run, and complete maps it may weigh:
 /// a circuit of many identical cells has many symmetries, and the first
@@ -75,6 +80,8 @@ const Search = struct {
     candidates: u32 = 0,
     best: ?[]u32 = null,
     best_moved: u32 = 0,
+    /// Vertex pairs every map kept must swap.
+    pinned: []const [2]u32 = &.{},
 };
 
 const SigOrder = struct {
@@ -91,9 +98,11 @@ const SigOrder = struct {
 };
 
 /// Fills both mate tables (one entry per device and per net, in card
-/// order; the ranks are the canonical order) with the involution that maps the circuit onto
-/// itself and moves the most devices that are not sources, or with `none`.
-pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, device_mate: []u32, net_mate: []u32) Allocator.Error!void {
+/// order; the ranks are the canonical order) with the involution that maps
+/// the circuit onto itself, swaps every pair of `pins`, and moves the most
+/// devices that are not sources; or with `none`, returning false when there
+/// is none.
+pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool {
     assert(device_mate.len == device_rank.len);
     assert(net_mate.len == net_rank.len);
     @memset(device_mate, none);
@@ -107,14 +116,26 @@ pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank
 
     const colour = try initialColours(gpa, nl, roles, g);
     defer gpa.free(colour);
-    var search: Search = .{ .gpa = gpa, .g = g, .nl = nl, .roles = roles, .canon = canon };
+    // Each pinned pair a colour of its own, so the search maps it onto
+    // itself; `consider` keeps only the maps that swap it.
+    const pinned = try gpa.alloc([2]u32, pins.len);
+    defer gpa.free(pinned);
+    for (pins, pinned) |p, *v| {
+        const base: u32 = if (p.net) g.devices else 0;
+        assert(base + @max(p.a, p.b) < g.vertices());
+        v.* = .{ base + p.a, base + p.b };
+    }
+    if (pins.len > 0) try seed(gpa, colour, pinned);
+    var search: Search = .{ .gpa = gpa, .g = g, .nl = nl, .roles = roles, .canon = canon, .pinned = pinned };
     defer if (search.best) |b| gpa.free(b);
     try complete(&search, colour, colour, 0);
-    const sigma = search.best orelse return;
+    const sigma = search.best orelse return false;
     assert(isInvolution(sigma));
     for (device_mate, sigma[0..g.devices]) |*m, s| m.* = s;
     for (net_mate, sigma[g.devices..]) |*m, s| m.* = s - g.devices;
     for (device_mate, 0..) |m, d| assert(device_mate[m] == d);
+    for (pinned) |v| assert(sigma[v[0]] == v[1]);
+    return true;
 }
 
 /// A transistor's type from its model: n- or p-channel (npn, pnp), else
@@ -347,7 +368,10 @@ fn consider(s: *Search, a: []const u32, b: []const u32) !void {
     const sigma = try s.gpa.alloc(u32, n);
     errdefer s.gpa.free(sigma);
     for (a, sigma) |c, *m| m.* = at[c];
-    const keep = isInvolution(sigma) and try preservesPins(s.gpa, g, sigma) and movesSignal(s, sigma);
+    const swaps = for (s.pinned) |v| {
+        if (sigma[v[0]] != v[1]) break false;
+    } else true;
+    const keep = swaps and isInvolution(sigma) and try preservesPins(s.gpa, g, sigma) and movesSignal(s, sigma);
     const moved = movedDevices(s, sigma);
     if (!keep or moved <= s.best_moved) {
         s.gpa.free(sigma);
@@ -356,6 +380,28 @@ fn consider(s: *Search, a: []const u32, b: []const u32) !void {
     if (s.best) |old| s.gpa.free(old);
     s.best = sigma;
     s.best_moved = moved;
+}
+
+/// Gives each pinned pair a colour no other vertex has, then renumbers the
+/// colours densely (refinement keeps them below the vertex count).
+fn seed(gpa: Allocator, colour: []u32, pinned: []const [2]u32) !void {
+    var next = countClasses(colour);
+    for (pinned) |v| {
+        colour[v[0]] = next;
+        colour[v[1]] = next;
+        next += 1;
+    }
+    const used = try gpa.alloc(u32, next);
+    defer gpa.free(used);
+    @memset(used, none);
+    var k: u32 = 0;
+    for (0..next) |c| {
+        if (std.mem.indexOfScalar(u32, colour, @intCast(c)) == null) continue;
+        used[c] = k;
+        k += 1;
+    }
+    for (colour) |*c| c.* = used[c.*];
+    assert(k <= colour.len);
 }
 
 fn isInvolution(sigma: []const u32) bool {

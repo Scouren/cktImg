@@ -9,17 +9,22 @@
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
+//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const placed = @import("placed.zig");
+const netlist = @import("netlist.zig");
+const hints = @import("hints.zig");
+const relations = @import("relations.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
 const Library = library.Library;
 const Placed = placed.Placed;
+const Netlist = netlist.Netlist;
 
 pub const Rule = enum {
     /// A net in more than one piece; `other` is how many.
@@ -217,5 +222,63 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
     }
     for (p.junctions, 0..) |j, i| for (p.junctions[i + 1 ..]) |k| {
         if (j.x == k.x and j.y == k.y) try out.append(gpa, .{ .rule = .dot_twice, .net = placed.no_net, .at = j, .other = 2 });
+    };
+}
+
+/// Whether `p` draws what line `h` of `nl`'s deck asks, read from the
+/// drawing alone (y grows down): `row` one y, `above` y increasing, `order`
+/// x increasing, `face` the pin on that side of its device or its other
+/// end. Null for a line the drawing cannot show (a group, the symmetry).
+pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool {
+    switch (h.verb) {
+        .row, .above, .order => {
+            var prev: ?Pt = null;
+            for (h.args) |name| {
+                const at = p.dev_pos[deviceIn(p, name) orelse return false];
+                if (prev) |q| {
+                    const ok = switch (h.verb) {
+                        .row => at.y == q.y,
+                        .above => at.y > q.y,
+                        else => at.x > q.x,
+                    };
+                    if (!ok) return false;
+                }
+                prev = at;
+            }
+            return true;
+        },
+        .face => {
+            if (h.args.len != 3) return null;
+            const d = deviceIn(p, h.args[0]) orelse return false;
+            const e = (nl.device(h.args[0]) orelse return false).index();
+            const pin = relations.pinIndex(nl, e, h.args[1]) orelse return false;
+            const lo, const hi = p.pinRange(d);
+            if (lo + pin >= hi) return false;
+            const at = p.pin_xy[lo + pin];
+            const o = p.dev_pos[d];
+            const dir = h.args[2];
+            if (std.mem.eql(u8, dir, "left")) return at.x < o.x;
+            if (std.mem.eql(u8, dir, "right")) return at.x > o.x;
+            // An end: above or below the device's other end.
+            const other: u32 = if (isFet(nl, e)) (if (pin == 0) 2 else 0) else (if (pin == 0) 1 else 0);
+            if (lo + other >= hi) return false;
+            const there = p.pin_xy[lo + other];
+            return if (std.mem.eql(u8, dir, "up")) at.y < there.y else at.y > there.y;
+        },
+        else => return null,
+    }
+}
+
+// ---- private ----
+
+fn deviceIn(p: *const Placed, name: []const u8) ?usize {
+    for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return d;
+    return null;
+}
+
+fn isFet(nl: *const Netlist, e: u32) bool {
+    return switch (nl.graph.edges.items(.kind)[e]) {
+        .mosfet, .bjt, .jfet, .mesfet => true,
+        else => false,
     };
 }

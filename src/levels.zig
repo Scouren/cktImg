@@ -2,16 +2,19 @@
 //! netlist, its structure, each device's mate, form and ends. Out: one level
 //! per device (unspecified for a device not drawn or not vertical).
 //!
-//! A device stands above another when its lower end is the other's upper
+//! The deck's `row` and `above` lines (`rel`, admitted already) come first:
+//! their equalities and edges always stand, with the column links. A device
+//! stands above another when its lower end is the other's upper
 //! end; levels are the longest path down those, after holding mates and
 //! blocks level wherever that closes no cycle. Where devices stand above
 //! each other in a loop (a transmission gate's two), only their column's
 //! links count. Then each type's transistors
 //! on ground drop to that type's lowest level among them, as the book draws
-//! a second stage's current source beside the first stage's mirror.
+//! a second stage's current source beside the first stage's mirror, unless
+//! that breaks a line.
 //!
 //! Contents:
-//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
+//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -20,6 +23,7 @@ const netlist = @import("netlist.zig");
 const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
+const relations = @import("relations.zig");
 const sch = @import("schematic.zig");
 
 const Netlist = netlist.Netlist;
@@ -29,13 +33,14 @@ const VertexId = netlist.VertexId;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
 const Role = sch.Role;
+const Relations = relations.Relations;
 const none = structure.none;
 
 /// Each vertical device's level: longest path down from the top, after
 /// merging mates and blocks (where that closes no cycle); then each type's
 /// transistors on ground drop to that type's lowest level among them.
 /// `below` is each device's next in its column, or `none`.
-pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
+pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(mate.len == n and below.len == n);
@@ -54,11 +59,15 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     }
     const class = try gpa.alloc(u32, n);
     defer gpa.free(class);
-    for (class, 0..) |*k, d| k.* = @intCast(d);
-    // On a loop only the column links stand: those never loop.
+    for (class, 0..) |*k, d| k.* = rel.find(@intCast(d));
+    const lines = edges.items.len;
+    for (rel.edges) |e| try edges.append(gpa, e);
+    // On a loop only the column links and the lines stand: those never
+    // loop (the links were chosen around the lines).
     const keep = try gpa.alloc(bool, edges.items.len);
     defer gpa.free(keep);
-    for (edges.items, keep) |e, *k| k.* = below[e[0]] == e[1] or !try reaches(gpa, class, edges.items, e[1], e[0]);
+    for (edges.items, keep, 0..) |e, *k, at| k.* = at >= lines or below[e[0]] == e[1] or
+        (find(class, e[0]) != find(class, e[1]) and !try reaches(gpa, class, edges.items, e[1], e[0]));
     var kept: usize = 0;
     for (edges.items, keep) |e, k| if (k) {
         edges.items[kept] = e;
@@ -96,7 +105,10 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     for (edges.items) |e| if (find(class, e[0]) != find(class, e[1])) assert(rank[e[1]] > rank[e[0]]);
 
     // Transistors on ground: each type's to its lowest level among them,
-    // a class only when every member stands on ground.
+    // a class only when every member stands on ground; a drop that breaks a
+    // line is undone.
+    const before = try gpa.dupe(u32, rank);
+    defer gpa.free(before);
     const kinds = c.edges.items(.kind);
     for ([_]symmetry.Polarity{ .n, .p, .other }) |pol| {
         var low: u32 = 0;
@@ -112,10 +124,35 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             if (all) rank[d] = low;
         }
     }
+    var undone = true;
+    var passes: usize = 0;
+    while (undone) : (passes += 1) {
+        assert(passes <= n);
+        undone = false;
+        for (rel.edges) |e| if (rank[e[0]] >= rank[e[1]]) {
+            for ([_]u32{ e[0], e[1] }) |v| undone = undo(class, rank, before, v) or undone;
+        };
+        for (0..n) |d| if (rank[d] != rank[rel.find(@intCast(d))]) {
+            for ([_]u32{ @intCast(d), rel.find(@intCast(d)) }) |v| undone = undo(class, rank, before, v) or undone;
+        };
+    }
+    for (rel.edges) |e| assert(rank[e[0]] < rank[e[1]]);
     return rank;
 }
 
 // ---- private ----
+
+/// Restores the level of `v`'s class from before the ground drop; whether
+/// anything changed.
+fn undo(class: []u32, rank: []u32, before: []const u32, v: u32) bool {
+    const k = find(class, v);
+    var changed = false;
+    for (0..rank.len) |d| if (find(class, @intCast(d)) == k and rank[d] != before[d]) {
+        rank[d] = before[d];
+        changed = true;
+    };
+    return changed;
+}
 
 fn onGround(nl: *const Netlist, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize, pol: symmetry.Polarity) bool {
     if (!drawn[d] or form[d] != .vertical or !isTransistor(kinds[d])) return false;
