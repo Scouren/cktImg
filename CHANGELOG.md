@@ -2,7 +2,12 @@
 
 One line per change, citing its issue or pull request. Numbers are measured.
 
-## Unreleased
+## 2.1.0 (2026-11-04)
+
+Changed (Zig API; the C ABI is unchanged):
+
+- `report.decisions` takes the skeleton, the drawing, its unit and a rung (1 to 4) (#15, #17).
+- `hints.Hint.devices` is `args` (a line's arguments are not all devices), and `hints.Verb` holds every verb (#15).
 
 Added:
 
