@@ -1,0 +1,53 @@
+node 0 device m1 group 0 at { 100, 220 }
+node 1 device m2 group 1 at { 420, 220 }
+node 2 device m3 group 2 at { 100, 20 }
+node 3 device m4 group 3 at { 420, 20 }
+node 4 device m5 group 4 at { 260, 340 }
+node 5 terminal 0 group 5 at { 260, 400 }
+node 6 terminal vdd group 6 at { 100, -40 }
+node 7 label vb group 7 at { 220, 340 }
+node 8 terminal vin1 group 8 at { 40, 220 }
+node 9 terminal vin2 group 9 at { 480, 220 }
+node 10 terminal vout group 10 at { 460, 120 }
+pin 0 m1.0 net f side up home 0
+pin 1 m1.1 net vin1 side left home 0
+pin 2 m1.2 net p side down home 0
+pin 3 m2.0 net vout side up home 1
+pin 4 m2.1 net vin2 side right home 1
+pin 5 m2.2 net p side down home 1
+pin 6 m3.0 net f side down home 2
+pin 7 m3.1 net f side right home 2
+pin 8 m3.2 net vdd side up home 2
+pin 9 m4.0 net vout side down home 3
+pin 10 m4.1 net f side left home 3
+pin 11 m4.2 net vdd side up home 3
+pin 12 m5.0 net p side up home 4
+pin 13 m5.1 net vb side left home 4
+pin 14 m5.2 net 0 side down home 4
+pin 15 -.0 net 0 side up home 5
+pin 16 -.0 net vdd side down home 6
+pin 17 -.0 net vb side right home 7
+pin 18 -.0 net vin1 side right home 8
+pin 19 -.0 net vin2 side left home 9
+pin 20 -.0 net vout side left home 10
+route net 0 { { 260, 360 }, { 260, 400 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 420, 0 }, { 420, -40 } }
+route net vdd { { 100, -40 }, { 420, -40 } }
+route net vb { { 240, 340 }, { 220, 340 } }
+route net vin1 { { 80, 220 }, { 40, 220 } }
+route net vin2 { { 440, 220 }, { 480, 220 } }
+route net f { { 100, 200 }, { 100, 120 } }
+route net f { { 100, 40 }, { 100, 120 } }
+route net f { { 120, 20 }, { 140, 20 }, { 140, 120 } }
+route net f { { 400, 20 }, { 380, 20 }, { 380, 120 } }
+route net f { { 100, 120 }, { 140, 120 } }
+route net f { { 140, 120 }, { 380, 120 } }
+route net p { { 100, 240 }, { 100, 280 } }
+route net p { { 420, 240 }, { 420, 280 } }
+route net p { { 260, 320 }, { 260, 280 } }
+route net p { { 100, 280 }, { 260, 280 } }
+route net p { { 260, 280 }, { 420, 280 } }
+route net vout { { 420, 40 }, { 420, 200 } }
+route net vout { { 420, 120 }, { 460, 120 } }
+labeled vb

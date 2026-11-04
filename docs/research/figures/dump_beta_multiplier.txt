@@ -1,0 +1,52 @@
+node 0 device m4 group 0 at { 0, 20 }
+node 1 device m3 group 1 at { 160, 20 }
+node 2 device m1 group 2 at { 0, 260 }
+node 3 device m2 group 3 at { 160, 260 }
+node 4 device rs group 4 at { 160, 420 }
+node 5 device m5 group 5 at { 80, 140 }
+node 6 terminal 0 group 6 at { 0, 320 }
+node 7 terminal 0 group 7 at { 160, 480 }
+node 8 terminal vdd group 8 at { 0, -40 }
+pin 0 m4.0 net a side down home 0
+pin 1 m4.1 net b side right home 0
+pin 2 m4.2 net vdd side up home 0
+pin 3 m3.0 net b side down home 1
+pin 4 m3.1 net b side left home 1
+pin 5 m3.2 net vdd side up home 1
+pin 6 m1.0 net a side up home 2
+pin 7 m1.1 net a side right home 2
+pin 8 m1.2 net 0 side down home 2
+pin 9 m2.0 net b side up home 3
+pin 10 m2.1 net a side left home 3
+pin 11 m2.2 net s side down home 3
+pin 12 rs.0 net s side up home 4
+pin 13 rs.1 net 0 side down home 4
+pin 14 m5.0 net b side up home 5
+pin 15 m5.1 net b side right home 5
+pin 16 m5.2 net a side down home 5
+pin 17 -.0 net 0 side up home 6
+pin 18 -.0 net 0 side up home 7
+pin 19 -.0 net vdd side down home 8
+route net 0 { { 0, 280 }, { 0, 320 } }
+route net 0 { { 160, 440 }, { 160, 480 } }
+route net vdd { { 0, 0 }, { 0, -40 } }
+route net vdd { { 160, 0 }, { 160, -40 } }
+route net vdd { { 0, -40 }, { 160, -40 } }
+route net a { { 0, 40 }, { 0, 200 } }
+route net a { { 0, 240 }, { 0, 200 } }
+route net a { { 20, 260 }, { 40, 260 }, { 40, 200 } }
+route net a { { 140, 260 }, { 120, 260 }, { 120, 200 } }
+route net a { { 80, 160 }, { 80, 200 } }
+route net a { { 0, 200 }, { 40, 200 } }
+route net a { { 40, 200 }, { 80, 200 } }
+route net a { { 80, 200 }, { 120, 200 } }
+route net b { { 20, 20 }, { 40, 20 }, { 40, 80 } }
+route net b { { 160, 40 }, { 160, 80 } }
+route net b { { 140, 20 }, { 120, 20 }, { 120, 80 } }
+route net b { { 160, 240 }, { 160, 80 } }
+route net b { { 80, 120 }, { 80, 80 } }
+route net b { { 100, 140 }, { 120, 140 }, { 120, 80 } }
+route net b { { 40, 80 }, { 80, 80 } }
+route net b { { 80, 80 }, { 120, 80 } }
+route net b { { 120, 80 }, { 160, 80 } }
+route net s { { 160, 280 }, { 160, 400 } }

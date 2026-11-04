@@ -1,0 +1,44 @@
+node 0 device rd1 group 0 at { 100, 20 }
+node 1 device rd2 group 1 at { 180, 20 }
+node 2 device m1 group 2 at { 100, 220 }
+node 3 device m2 group 3 at { 180, 220 }
+node 4 device iss group 4 at { 140, 340 }
+node 5 terminal 0 group 5 at { 140, 400 }
+node 6 terminal vdd group 6 at { 100, -40 }
+node 7 terminal vin1 group 7 at { 40, 220 }
+node 8 terminal vin2 group 8 at { 240, 220 }
+node 9 terminal vout1 group 9 at { 60, 120 }
+node 10 terminal vout2 group 10 at { 220, 120 }
+pin 0 rd1.0 net vdd side up home 0
+pin 1 rd1.1 net vout1 side down home 0
+pin 2 rd2.0 net vdd side up home 1
+pin 3 rd2.1 net vout2 side down home 1
+pin 4 m1.0 net vout1 side up home 2
+pin 5 m1.1 net vin1 side left home 2
+pin 6 m1.2 net p side down home 2
+pin 7 m2.0 net vout2 side up home 3
+pin 8 m2.1 net vin2 side right home 3
+pin 9 m2.2 net p side down home 3
+pin 10 iss.0 net p side up home 4
+pin 11 iss.1 net 0 side down home 4
+pin 12 -.0 net 0 side up home 5
+pin 13 -.0 net vdd side down home 6
+pin 14 -.0 net vin1 side right home 7
+pin 15 -.0 net vin2 side left home 8
+pin 16 -.0 net vout1 side right home 9
+pin 17 -.0 net vout2 side left home 10
+route net 0 { { 140, 360 }, { 140, 400 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 180, 0 }, { 180, -40 } }
+route net vdd { { 100, -40 }, { 180, -40 } }
+route net vin1 { { 80, 220 }, { 40, 220 } }
+route net vin2 { { 200, 220 }, { 240, 220 } }
+route net p { { 100, 240 }, { 100, 280 } }
+route net p { { 180, 240 }, { 180, 280 } }
+route net p { { 140, 320 }, { 140, 280 } }
+route net p { { 100, 280 }, { 140, 280 } }
+route net p { { 140, 280 }, { 180, 280 } }
+route net vout1 { { 100, 40 }, { 100, 200 } }
+route net vout1 { { 100, 120 }, { 60, 120 } }
+route net vout2 { { 180, 40 }, { 180, 200 } }
+route net vout2 { { 180, 120 }, { 220, 120 } }

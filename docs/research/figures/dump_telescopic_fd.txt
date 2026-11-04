@@ -1,0 +1,75 @@
+node 0 device m1 group 0 at { 100, 460 }
+node 1 device m2 group 1 at { 380, 460 }
+node 2 device m3 group 2 at { 100, 340 }
+node 3 device m4 group 3 at { 380, 340 }
+node 4 device m5 group 4 at { 100, 140 }
+node 5 device m6 group 5 at { 380, 140 }
+node 6 device m7 group 6 at { 100, 20 }
+node 7 device m8 group 7 at { 380, 20 }
+node 8 device iss group 8 at { 240, 580 }
+node 9 terminal 0 group 9 at { 240, 640 }
+node 10 terminal vdd group 10 at { 100, -40 }
+node 11 label vb1 group 11 at { 240, 340 }
+node 12 label vb2 group 12 at { 240, 140 }
+node 13 label vb3 group 13 at { 240, 20 }
+node 14 terminal vin1 group 14 at { 40, 460 }
+node 15 terminal vin2 group 15 at { 440, 460 }
+node 16 terminal vout1 group 16 at { 60, 240 }
+node 17 terminal vout2 group 17 at { 420, 240 }
+pin 0 m1.0 net x side up home 0
+pin 1 m1.1 net vin1 side left home 0
+pin 2 m1.2 net p side down home 0
+pin 3 m2.0 net y side up home 1
+pin 4 m2.1 net vin2 side right home 1
+pin 5 m2.2 net p side down home 1
+pin 6 m3.0 net vout1 side up home 2
+pin 7 m3.1 net vb1 side right home 2
+pin 8 m3.2 net x side down home 2
+pin 9 m4.0 net vout2 side up home 3
+pin 10 m4.1 net vb1 side left home 3
+pin 11 m4.2 net y side down home 3
+pin 12 m5.0 net vout1 side down home 4
+pin 13 m5.1 net vb2 side right home 4
+pin 14 m5.2 net a side up home 4
+pin 15 m6.0 net vout2 side down home 5
+pin 16 m6.1 net vb2 side left home 5
+pin 17 m6.2 net b side up home 5
+pin 18 m7.0 net a side down home 6
+pin 19 m7.1 net vb3 side right home 6
+pin 20 m7.2 net vdd side up home 6
+pin 21 m8.0 net b side down home 7
+pin 22 m8.1 net vb3 side left home 7
+pin 23 m8.2 net vdd side up home 7
+pin 24 iss.0 net p side up home 8
+pin 25 iss.1 net 0 side down home 8
+pin 26 -.0 net 0 side up home 9
+pin 27 -.0 net vdd side down home 10
+pin 28 -.0 net vb1 side down home 11
+pin 29 -.0 net vb2 side down home 12
+pin 30 -.0 net vb3 side down home 13
+pin 31 -.0 net vin1 side right home 14
+pin 32 -.0 net vin2 side left home 15
+pin 33 -.0 net vout1 side right home 16
+pin 34 -.0 net vout2 side left home 17
+route net 0 { { 240, 600 }, { 240, 640 } }
+route net vdd { { 100, 0 }, { 100, -40 } }
+route net vdd { { 380, 0 }, { 380, -40 } }
+route net vdd { { 100, -40 }, { 380, -40 } }
+route net vb1 { { 120, 340 }, { 360, 340 } }
+route net vb2 { { 120, 140 }, { 360, 140 } }
+route net vb3 { { 120, 20 }, { 360, 20 } }
+route net vin1 { { 80, 460 }, { 40, 460 } }
+route net vin2 { { 400, 460 }, { 440, 460 } }
+route net a { { 100, 40 }, { 100, 120 } }
+route net b { { 380, 40 }, { 380, 120 } }
+route net p { { 100, 480 }, { 100, 520 } }
+route net p { { 380, 480 }, { 380, 520 } }
+route net p { { 240, 560 }, { 240, 520 } }
+route net p { { 100, 520 }, { 240, 520 } }
+route net p { { 240, 520 }, { 380, 520 } }
+route net vout1 { { 100, 160 }, { 100, 320 } }
+route net vout1 { { 100, 240 }, { 60, 240 } }
+route net vout2 { { 380, 160 }, { 380, 320 } }
+route net vout2 { { 380, 240 }, { 420, 240 } }
+route net x { { 100, 360 }, { 100, 440 } }
+route net y { { 380, 360 }, { 380, 440 } }

@@ -1,0 +1,114 @@
+node 0 device m1 group 0 at { 160, 220 }
+node 1 device m2 group 1 at { 760, 220 }
+node 2 device m3 group 2 at { 160, 20 }
+node 3 device m4 group 3 at { 760, 20 }
+node 4 device r1 group 4 at { 400, 120 }
+node 5 device r2 group 5 at { 520, 120 }
+node 6 device m5 group 6 at { 0, 20 }
+node 7 device m6 group 7 at { 920, 20 }
+node 8 device m7 group 8 at { 0, 220 }
+node 9 device m8 group 9 at { 920, 220 }
+node 10 device r3 group 10 at { 320, 480 }
+node 11 device r4 group 11 at { 600, 480 }
+node 12 device iss group 12 at { 460, 380 }
+node 13 terminal 0 group 13 at { 0, 280 }
+node 14 terminal 0 group 14 at { 920, 280 }
+node 15 terminal 0 group 15 at { 460, 440 }
+node 16 terminal vdd group 16 at { 160, -40 }
+node 17 terminal vin1 group 17 at { 100, 220 }
+node 18 terminal vin2 group 18 at { 820, 220 }
+node 19 terminal vout1 group 19 at { -40, 120 }
+node 20 terminal vout2 group 20 at { 960, 120 }
+pin 0 m1.0 net x side up home 0
+pin 1 m1.1 net vin1 side left home 0
+pin 2 m1.2 net p side down home 0
+pin 3 m2.0 net y side up home 1
+pin 4 m2.1 net vin2 side right home 1
+pin 5 m2.2 net p side down home 1
+pin 6 m3.0 net x side down home 2
+pin 7 m3.1 net m side right home 2
+pin 8 m3.2 net vdd side up home 2
+pin 9 m4.0 net y side down home 3
+pin 10 m4.1 net m side left home 3
+pin 11 m4.2 net vdd side up home 3
+pin 12 r1.0 net x side left home 4
+pin 13 r1.1 net m side right home 4
+pin 14 r2.0 net m side left home 5
+pin 15 r2.1 net y side right home 5
+pin 16 m5.0 net vout1 side down home 6
+pin 17 m5.1 net x side right home 6
+pin 18 m5.2 net vdd side up home 6
+pin 19 m6.0 net vout2 side down home 7
+pin 20 m6.1 net y side left home 7
+pin 21 m6.2 net vdd side up home 7
+pin 22 m7.0 net vout1 side up home 8
+pin 23 m7.1 net q side right home 8
+pin 24 m7.2 net 0 side down home 8
+pin 25 m8.0 net vout2 side up home 9
+pin 26 m8.1 net q side left home 9
+pin 27 m8.2 net 0 side down home 9
+pin 28 r3.0 net vout1 side left home 10
+pin 29 r3.1 net q side right home 10
+pin 30 r4.0 net q side left home 11
+pin 31 r4.1 net vout2 side right home 11
+pin 32 iss.0 net p side up home 12
+pin 33 iss.1 net 0 side down home 12
+pin 34 -.0 net 0 side up home 13
+pin 35 -.0 net 0 side up home 14
+pin 36 -.0 net 0 side up home 15
+pin 37 -.0 net vdd side down home 16
+pin 38 -.0 net vin1 side right home 17
+pin 39 -.0 net vin2 side left home 18
+pin 40 -.0 net vout1 side right home 19
+pin 41 -.0 net vout2 side left home 20
+route net 0 { { 0, 240 }, { 0, 280 } }
+route net 0 { { 920, 240 }, { 920, 280 } }
+route net 0 { { 460, 400 }, { 460, 440 } }
+route net vdd { { 0, 0 }, { 0, -40 } }
+route net vdd { { 160, 0 }, { 160, -40 } }
+route net vdd { { 760, 0 }, { 760, -40 } }
+route net vdd { { 920, 0 }, { 920, -40 } }
+route net vdd { { 0, -40 }, { 160, -40 } }
+route net vdd { { 160, -40 }, { 760, -40 } }
+route net vdd { { 760, -40 }, { 920, -40 } }
+route net vin1 { { 140, 220 }, { 100, 220 } }
+route net vin2 { { 780, 220 }, { 820, 220 } }
+route net m { { 180, 20 }, { 460, 20 } }
+route net m { { 460, 20 }, { 740, 20 } }
+route net m { { 420, 120 }, { 460, 120 } }
+route net m { { 460, 120 }, { 500, 120 } }
+route net m { { 460, 20 }, { 460, 120 } }
+route net p { { 160, 240 }, { 160, 300 } }
+route net p { { 760, 240 }, { 760, 300 } }
+route net p { { 460, 360 }, { 460, 300 } }
+route net p { { 160, 300 }, { 460, 300 } }
+route net p { { 460, 300 }, { 760, 300 } }
+route net q { { 20, 220 }, { 40, 220 }, { 40, 504 } }
+route net q { { 900, 220 }, { 880, 220 }, { 880, 504 } }
+route net q { { 340, 480 }, { 360, 480 }, { 360, 504 } }
+route net q { { 580, 480 }, { 560, 480 }, { 560, 504 } }
+route net q { { 40, 504 }, { 360, 504 } }
+route net q { { 360, 504 }, { 560, 504 } }
+route net q { { 560, 504 }, { 880, 504 } }
+route net vout1 { { 0, 40 }, { 0, 120 } }
+route net vout1 { { 0, 200 }, { 0, 120 } }
+route net vout1 { { 300, 480 }, { 280, 480 }, { 280, 120 } }
+route net vout1 { { 0, 120 }, { 280, 120 } }
+route net vout1 { { 0, 120 }, { -40, 120 } }
+route net vout2 { { 920, 40 }, { 920, 120 } }
+route net vout2 { { 920, 200 }, { 920, 120 } }
+route net vout2 { { 620, 480 }, { 640, 480 }, { 640, 120 } }
+route net vout2 { { 640, 120 }, { 920, 120 } }
+route net vout2 { { 920, 120 }, { 960, 120 } }
+route net x { { 160, 200 }, { 160, 110 } }
+route net x { { 160, 40 }, { 160, 110 } }
+route net x { { 380, 120 }, { 360, 120 }, { 360, 110 } }
+route net x { { 20, 20 }, { 40, 20 }, { 40, 110 } }
+route net x { { 40, 110 }, { 160, 110 } }
+route net x { { 160, 110 }, { 360, 110 } }
+route net y { { 760, 200 }, { 760, 110 } }
+route net y { { 760, 40 }, { 760, 110 } }
+route net y { { 540, 120 }, { 560, 120 }, { 560, 110 } }
+route net y { { 900, 20 }, { 880, 20 }, { 880, 110 } }
+route net y { { 560, 110 }, { 760, 110 } }
+route net y { { 760, 110 }, { 880, 110 } }
