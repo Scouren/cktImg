@@ -101,6 +101,19 @@ coordinate exists, where an editor with its own geometry stops. The deck's
 grouping hints (`*@ group pair M1 M2`, read by `cktimg.hints`) steer the
 structure.
 
+Two more read a finished drawing, however it was drawn:
+
+```zig
+var found: std.ArrayList(cktimg.checks.Finding) = .empty;
+try cktimg.checks.find(gpa, &found, &placed, &lib);               // none: one piece, no shorts, dots right
+try cktimg.report.write(gpa, &w, &placed, &lib, &nl, roles);      // the decision report, JSON
+```
+
+`report.write` is what `cktimg-json --report` writes: the findings, scores
+(crossings, bends, the nets drawn as names), the engine's decisions as the
+`*@ group` lines that state them (`report.decisions`), and each lattice row.
+A deck plus its decisions, under `*@ grouping off`, draws the same picture.
+
 ### 4. Many documents, one set of pages
 
 ```zig

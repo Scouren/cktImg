@@ -26,6 +26,9 @@ pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
 pub const lint = @import("lint.zig");
+/// The drawing's guarantees, checked on a finished `Placed`.
+pub const checks = @import("checks.zig");
+pub const report = @import("report.zig");
 /// The TikZ emitter, only with `-Dlatex_renderer=true`; `void` otherwise, so
 /// a reference without the option is a compile error naming it.
 pub const latex = if (build_options.latex_renderer) @import("latex.zig") else void;
