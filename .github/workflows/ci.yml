@@ -9,11 +9,6 @@ on:
 permissions:
   contents: read
 
-# The Zig engine lives in engine/ (the repository root is the Schemify plugin).
-defaults:
-  run:
-    working-directory: engine
-
 jobs:
   check:
     runs-on: ubuntu-24.04
@@ -26,13 +21,7 @@ jobs:
 
       # The cheapest way to fail, so first.
       - name: Format
-        run: zig fmt --check src tests tools build.zig lint.zon ../build.zig ../build.zig.zon
-
-      # The Zig package is the repository root (build.zig.zon, a build.zig forwarding to
-      # engine/build.zig): its steps must reach the engine's.
-      - name: Root package
-        run: zig build lib --summary all
-        working-directory: .
+        run: zig fmt --check src tests tools build.zig build.zig.zon
 
       # Library, algorithm (tests/cases.zig), API (tests/api.zig) and the C
       # program tests/abi_test.c against libcktimg.a — with the TikZ emitter
@@ -79,49 +68,34 @@ jobs:
           zig build -Dlatex_renderer=true
           mkdir -p build/latex && cp examples/latex/* latex/cktimg.sty build/latex/
           cd build/latex
-          PATH="$GITHUB_WORKSPACE/engine/zig-out/bin:$PATH" pdflatex -shell-escape -interaction=nonstopmode -halt-on-error figure.tex
+          PATH="$GITHUB_WORKSPACE/zig-out/bin:$PATH" pdflatex -shell-escape -interaction=nonstopmode -halt-on-error figure.tex
           test -s figure.pdf
 
       - uses: actions/upload-artifact@v4
         with:
           name: gallery
           path: |
-            engine/gallery/*.svg
-            engine/build/latex/figure.pdf
+            gallery/*.svg
+            build/latex/figure.pdf
 
-  # The Schemify plugin (the repository root): Nix gives the flake-pinned rustc, wasm-ld and
-  # Zig 0.17, the toolchain cktimg.wasm is reproducible under.
+  # The Schemify plugin: Nix gives the flake-pinned Zig the committed cktimg.wasm is
+  # reproducible under, so the build fails when the committed module differs from its
+  # rebuild (a source change without its module): commit the artifact of this run.
   plugin:
     runs-on: ubuntu-24.04
-    defaults:
-      run:
-        working-directory: .
     steps:
       - uses: actions/checkout@v4
       - uses: cachix/install-nix-action@v31
-      - uses: Swatinem/rust-cache@v2
-      - run: nix develop -c cargo fmt --check
-      - run: nix develop -c cargo clippy --locked --all-targets -- -D warnings
-      # build.sh fails when the module reaches 550 KB. It is byte-reproducible, so the
-      # next step fails when the committed module differs from its rebuild (a source
-      # change without its module, or a module built elsewhere): commit the artifact.
-      - run: nix develop -c ./build.sh
+      - run: nix develop -c zig build -Dschemify_plugin=true
       - uses: actions/upload-artifact@v4
         with:
           name: cktimg-wasm
           path: cktimg.wasm
           if-no-files-found: error
-      - name: committed cktimg.wasm equals the rebuild
+      - name: committed cktimg.wasm equals the rebuild, under 550 KB
         run: |
+          size=$(stat -c%s cktimg.wasm); echo "cktimg.wasm: $size bytes"
+          test "$size" -lt $((550 * 1024))
           [ -z "$(git status --porcelain -- cktimg.wasm)" ] && exit 0
-          echo "::error::cktimg.wasm differs from build.sh output: commit the cktimg-wasm artifact of this run"
+          echo "::error::cktimg.wasm differs from its rebuild: commit the cktimg-wasm artifact of this run"
           exit 1
-      # Native oracles (round trip through Schemify's elab, netlister and spicecmp) and the
-      # rebuilt guest through Schemify's real host.
-      - run: nix develop -c cargo test --locked --no-fail-fast
-      # The fixtures over the default fuel, at the manifest's fuel ceiling (10^11 per
-      # event): needs an optimized wasmi, so its own profile.
-      - name: over-budget fixtures at the fuel ceiling
-        run: >-
-          nix develop -c cargo test --locked --profile fuel --test guest
-          -- --ignored over_budget --nocapture

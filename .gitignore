@@ -14,5 +14,3 @@ zig-out/
 .claude/
 zig-pkg/
 
-# The plugin's cargo output.
-/target/
