@@ -20,14 +20,13 @@
 //! drawing does not depend on card order.
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
-const structure = @import("structure.zig");
 const canvas = @import("canvas.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
@@ -66,7 +65,8 @@ const Line = struct {
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
 /// pins drawn on their symbol with no wire.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32) Allocator.Error!void {
+    assert(net_rank.len == s.net_name.len);
     var c = try Canvas.init(gpa, s, xy, len, boxes, hidden);
     defer c.deinit();
     const n_nets = s.net_name.len;
@@ -80,7 +80,8 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const order = try gpa.alloc(u32, n_nets);
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
-    std.mem.sort(u32, order, s, struct {
+    const Order = struct { roles: []const Role, rank: []const u32 };
+    std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank }, struct {
         fn first(r: Role) u8 {
             return switch (r) {
                 .supply, .sink => 0,
@@ -88,11 +89,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 .internal, .output => 2,
             };
         }
-        fn lt(sc: *Schematic, x: u32, y: u32) bool {
-            const fx = first(sc.roles[x]);
-            const fy = first(sc.roles[y]);
+        fn lt(o: Order, x: u32, y: u32) bool {
+            const fx = first(o.roles[x]);
+            const fy = first(o.roles[y]);
             if (fx != fy) return fx < fy;
-            return structure.nameLess(sc.net_name[x], sc.net_name[y]);
+            return o.rank[x] < o.rank[y];
         }
     }.lt);
     var waiting: std.ArrayList(u32) = .empty;

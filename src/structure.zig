@@ -65,6 +65,8 @@ pub const BlockKind = enum(u8) {
 pub const Structure = struct {
     /// Per device: its place in the canonical order. A permutation.
     device_rank: []const u32,
+    /// Per net: likewise. Every stage orders nets by it.
+    net_rank: []const u32,
     /// Per device: the device the symmetry maps it to (itself on the
     /// axis), or `none`.
     device_mate: []const u32,
@@ -123,13 +125,13 @@ pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []co
     const g = &nl.graph;
     assert(roles.len == g.vertexCount());
     const device_rank = try rankByName(arena, gpa, g.edges.items(.name));
-    const net_rank = try rankByName(gpa, gpa, g.vertices.items(.name));
-    defer gpa.free(net_rank);
+    const net_rank = try rankByName(arena, gpa, g.vertices.items(.name));
     const device_mate = try arena.alloc(u32, g.edgeCount());
     const net_mate = try arena.alloc(u32, g.vertexCount());
     try symmetry.find(gpa, nl, roles, device_rank, net_rank, device_mate, net_mate);
     var out: Structure = .{
         .device_rank = device_rank,
+        .net_rank = net_rank,
         .device_mate = device_mate,
         .net_mate = net_mate,
         .block_kind = &.{},

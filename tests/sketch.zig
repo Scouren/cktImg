@@ -42,6 +42,21 @@ fn pinOf(p: *const np.Placed, name: []const u8, index: u32) np.Pt {
     unreachable;
 }
 
+/// `spice` through the stages one by one, ready to draw: the schematic, its
+/// structure, and a skeleton the caller may edit.
+fn staged(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8) !struct { nl: np.netlist.Netlist, s: np.Schematic, st: np.schematic.structure.Structure, x: []i32, y: []i32, sk: np.schematic.skeleton.Skeleton } {
+    var nl = try np.netlist.parse(arena, &.{spice}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    const s = try np.schematic.initDevices(arena, &nl, roles, lib);
+    const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
+    var sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const x = try arena.dupe(i32, sk.x);
+    const y = try arena.dupe(i32, sk.y);
+    sk.x = x;
+    sk.y = y;
+    return .{ .nl = nl, .s = s, .st = st, .x = x, .y = y, .sk = sk };
+}
+
 test "sketch: every drawing keeps its devices, is connected, and shorts nothing" {
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
@@ -231,4 +246,82 @@ test "sketch: a net crossing its own wire is joined there, with a dot" {
     }, .{});
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.dots(gpa, &p, true));
+}
+
+test "sketch: a skeleton the drawing cannot use is refused, not drawn" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const lib = try support.library(std.testing.allocator);
+    defer support.freeLibrary(std.testing.allocator, lib);
+    const deck = golden.decks[0].spice;
+    // Two drawn devices on one cell (the deck's sources are drivers, not
+    // drawn).
+    var a = try staged(arena, lib, deck);
+    var drawn: [2]usize = undefined;
+    var k: usize = 0;
+    for (a.sk.drawn, 0..) |dr, i| if (dr and k < 2) {
+        drawn[k] = i;
+        k += 1;
+    };
+    try std.testing.expectEqual(2, k);
+    a.x[drawn[1]] = a.x[drawn[0]];
+    a.y[drawn[1]] = a.y[drawn[0]];
+    try std.testing.expectError(error.CellTaken, np.schematic.sketch.draw(arena, &a.s, &a.nl, .{}, &a.st, &a.sk));
+    // A cell off the lattice.
+    var b = try staged(arena, lib, deck);
+    b.x[drawn[0]] = -1;
+    try std.testing.expectError(error.OffLattice, np.schematic.sketch.draw(arena, &b.s, &b.nl, .{}, &b.st, &b.sk));
+    // A vertical device whose ends are one net.
+    var c = try staged(arena, lib, deck);
+    const lower = try arena.dupe(u32, c.sk.lower);
+    const d = for (c.sk.form, 0..) |f, i| {
+        if (c.sk.drawn[i] and f == .vertical) break i;
+    } else unreachable;
+    lower[d] = c.sk.upper[d];
+    c.sk.lower = lower;
+    try std.testing.expectError(error.BadEnds, np.schematic.sketch.draw(arena, &c.s, &c.nl, .{}, &c.st, &c.sk));
+}
+
+test "sketch: devices dealt to any cells still draw connected, short-free and dotted" {
+    // Full freedom over placement: the canvas keeps every guarantee
+    // whatever cells the devices stand on.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var prng = std.Random.DefaultPrng.init(8);
+    const r = prng.random();
+    var decks: std.ArrayList(struct { []const u8, []const u8 }) = .empty;
+    for (golden.decks) |dk| try decks.append(arena, .{ dk.name, dk.spice });
+    for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
+    var bad: usize = 0;
+    for (decks.items) |dk| for (0..3) |round| {
+        var t = try staged(arena, lib, dk[1]);
+        // Deal the drawn devices' cells among them at random.
+        var drawn: std.ArrayList(usize) = .empty;
+        for (t.sk.drawn, 0..) |dr, i| if (dr) try drawn.append(arena, i);
+        const cells = try arena.alloc([2]i32, drawn.items.len);
+        for (drawn.items, cells) |i, *cell| cell.* = .{ t.x[i], t.y[i] };
+        r.shuffle([2]i32, cells);
+        for (drawn.items, cells) |i, cell| {
+            t.x[i] = cell[0];
+            t.y[i] = cell[1];
+        }
+        try np.schematic.sketch.draw(arena, &t.s, &t.nl, .{}, &t.st, &t.sk);
+        const p = try np.Placed.init(arena, &t.s, &t.nl);
+        support.expectConnected(&p, lib) catch {
+            std.debug.print("{s} round {d}: a net in pieces\n", .{ dk[0], round });
+            bad += 1;
+        };
+        const shorts = try support.shorts(gpa, &p, true);
+        const dotted = try support.dots(gpa, &p, true);
+        if (shorts + dotted > 0) {
+            std.debug.print("{s} round {d}: {d} shorts, {d} wrong dots\n", .{ dk[0], round, shorts, dotted });
+            bad += 1;
+        }
+    };
+    try std.testing.expectEqual(0, bad);
 }

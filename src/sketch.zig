@@ -14,6 +14,7 @@
 //!
 //! Contents:
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
+//! - `pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -39,6 +40,7 @@ const Rect = library.Rect;
 const Schematic = sch.Schematic;
 const Role = sch.Role;
 const Skeleton = skeleton.Skeleton;
+const Structure = structure.Structure;
 const Lengths = canvas.Lengths;
 const none = sch.none;
 
@@ -48,32 +50,50 @@ const Geo = struct {
     ys: []const i32,
 };
 
+/// The stages in one call: the structure (`structure.analyze`), the
+/// skeleton (`skeleton.place`), then `draw`.
 pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
     const st = try structure.analyze(gpa, a, nl, roles);
     const sk = try skeleton.place(gpa, a, nl, roles, &st);
-    orientAll(&s, nl, &sk);
-    const len = Lengths.of(layout, lib.unit);
-    const geo = try coordinates(gpa, &s, nl, &sk, len);
-    defer gpa.free(geo.xs);
-    defer gpa.free(geo.ys);
-    var xy: std.ArrayList([2]f32) = .empty;
-    try placeDevices(&s, nl, &sk, geo, &xy);
-    s.xy = xy.items;
-    const boxes = try deviceBoxes(gpa, &s, nl, &sk);
-    defer gpa.free(boxes);
-    const hidden = try hiddenPins(gpa, &s, nl, &sk);
-    defer gpa.free(hidden);
-    try wires.wire(gpa, &s, &xy, len, boxes, hidden, drawnMirror(&s, &sk, &st));
-    s.xy = xy.items;
-    try noConnects(gpa, &s);
-    assert(s.xy.len == s.nodes.len);
+    // `place`'s skeletons always hold.
+    skeleton.validate(&sk, nl) catch unreachable;
+    try drawValid(gpa, &s, nl, layout, &st, &sk);
     return s;
 }
 
+/// The drawing of a skeleton: each device oriented and placed, its nets
+/// wired, into `s` (from `schematic.initDevices`). `st` and `sk` are
+/// `structure.analyze`'s and `skeleton.place`'s, a caller's edits between
+/// the stages included: a skeleton the drawing cannot use is refused
+/// (`skeleton.Invalid`) before anything is drawn.
+pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+    try skeleton.validate(sk, nl);
+    try drawValid(gpa, s, nl, layout, st, sk);
+}
+
 // ---- private ----
+
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+    orientAll(s, nl, sk);
+    const len = Lengths.of(layout, s.lib.unit);
+    const geo = try coordinates(gpa, s, nl, sk, len);
+    defer gpa.free(geo.xs);
+    defer gpa.free(geo.ys);
+    var xy: std.ArrayList([2]f32) = .empty;
+    try placeDevices(s, nl, sk, geo, &xy);
+    s.xy = xy.items;
+    const boxes = try deviceBoxes(gpa, s, nl, sk);
+    defer gpa.free(boxes);
+    const hidden = try hiddenPins(gpa, s, nl, sk);
+    defer gpa.free(hidden);
+    try wires.wire(gpa, s, &xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank);
+    s.xy = xy.items;
+    try noConnects(gpa, s);
+    assert(s.xy.len == s.nodes.len);
+}
 
 fn isTransistor(kind: netlist.DeviceKind) bool {
     return switch (kind) {
@@ -93,7 +113,8 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     assert(sk.drawn.len == c.edgeCount());
     for (0..c.edgeCount()) |d| {
         info.items(.kept)[d] = sk.drawn[d];
-        info.items(.driver)[d] = c.members(EdgeId.from(d)).len > 0 and sch.isDriver(c, s.roles, @intCast(d));
+        // A device with pins the skeleton leaves out is a driver (R3).
+        info.items(.driver)[d] = c.members(EdgeId.from(d)).len > 0 and !sk.drawn[d];
         const vertical = sk.drawn[d] and sk.form[d] == .vertical;
         info.items(.orientation)[d] = if (vertical) .vertical else .horizontal;
         info.items(.flip_x)[d] = false;
