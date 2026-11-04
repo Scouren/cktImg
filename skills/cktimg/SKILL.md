@@ -23,8 +23,11 @@ one rung only for a **complaint** the rung above cannot fix.
    ("`m3` and `m4` in different rows").
 
 4. **Fix each complaint on the highest rung that fixes it** (the ladder):
-   change the names, add the line, or set the length; redraw. Done when
-   every complaint is gone or is open (no rung here fixes it).
+   change the names, add the line (start from the matching one in
+   `cktimg-json --decisions 2 deck.sp`), or set the length; redraw. Done
+   when every complaint is gone or is open (no rung here fixes it), and
+   every line you wrote is `honoured` in `r.json`'s `requests` (Lines,
+   below).
 
 5. **Stop** when the checklist passes, or after three rounds that fixed
    nothing. Hand over the drawing, `r.json`, the deck with its `*@` lines and
@@ -35,30 +38,37 @@ one rung only for a **complaint** the rung above cannot fix.
 | rung | you change | how | for a complaint like |
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
-| 1 meaning | the groups cktImg recognizes | `*@ group pair\|mirror\|bank\|stack\|cross <devices>`, `*@ nogroup <devices>`, `*@ grouping off` | matched devices not side by side; a stack not one column; a device pulled into the wrong group |
+| 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between); `face <dev> g left\|right`, `face <dev> <pin> up`; `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each`, `first <nets>` | the parts are right, their arrangement is not |
 | style | lengths for every drawing of the project | a `lint.zon` with `.{ .layout = .{ .stack = 1.5, .terminal = 2 } }`, passed as `--config lint.zon` | crowded or sprawling |
 
-A complaint about rows, left-to-right order, cells, coordinates or routes is
-open: those rungs are still to come.
+A complaint about cells, coordinates or routes is open: those rungs are
+still to come.
 
 ## Reference
 
 - **Reading a drawing.** `r.json` first:
   - `gates`: the checklist's first item.
+  - `requests`: each of your lines' state (Lines, below).
   - `grid`: each lattice row, top down, each device `name@column`.
-  - `decisions`: the groups cktImg chose, as `*@ group` lines (below).
+  - `decisions`: cktImg's choices as `*@` lines (below).
   - `metrics`: crossings, bends, and the nets drawn as names.
 
   Then `d.json`: each device's `pos` (y grows down; names starting `_` are
   the rail and port symbols cktImg drew), its `pins` and their nets. Then
   the image (`magick -density 110 d.svg d.png` when you read PNG).
-- **Decisions.** A `decisions` line pasted into the deck holds that group;
-  edit its kind or devices to change it. The deck plus every line and
-  `*@ grouping off` draws the same picture, so a rung-1 fix starts from them.
-- **Hints** (`*@` lines) sit at the deck's top level; inside a `.subckt`
-  they are that subckt's, and the Schemify import carries them into its
-  cell. A hinted group stands over recognition; `nogroup` keeps a device out
-  of every group; `grouping off` keeps the hinted groups alone.
+- **Decisions.** `--decisions 2` (and the report's `decisions`) states the
+  engine's choices as lines; a pasted line holds that choice, an edited one
+  changes it. The deck plus every line and `*@ grouping off` draws the same
+  picture.
+- **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
+  line beats the engine; a later line beats an earlier one, a strong one a
+  `weak` one (a stay). `requests` gives each line a state: `honoured`;
+  `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`,
+  `blocked_by` the lines it cannot hold with (`alone`: deleting that one
+  admits it), so delete or change a blocker; `rejected` (malformed, or a
+  name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it. The
+  Schemify import carries only `group` lines into its cells.
 - **Roles.** A net's name decides its role: supply `vdd*`, ground `0`, `gnd`
   or `vss`, inputs `in*`/`vin*`, outputs `out*`/`vout*`, bias `vb*`/`bias*`.
   A V source from ground makes its net an input when it carries a signal

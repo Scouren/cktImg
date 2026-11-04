@@ -77,30 +77,58 @@ the first three, and at most one stack.
 | mirror, bank | two or more transistors of one kind and polarity on one gate net (no rail): a mirror when one of them is diode-connected, else a bank |
 | stack | transistors in series: a net (no rail) holding just one's lower end and another's upper end, chained top to bottom |
 
-### Hints
+### Lines
 
-The deck's own word overrides recognition (issue #7), in the `*@` style of the
-block-side directives:
+The deck's own word overrides the engine's (issue #7, the steering research:
+`docs/research/steering.md`), one `*@ [weak] <verb> <arguments>` line per
+decision, read at the deck's top level (`hints.collect`; the lines inside a
+`.subckt` are that definition's). Each stage applies the lines it owns and
+gives each a verdict (`hints.Verdict`): honoured, relaxed, dropped (with
+`blocked_by`, the stronger lines it cannot hold with) or rejected
+(malformed, or naming what the deck lacks: nothing changes).
 
-```spice
-*@ group pair M1 M2        (also mirror, bank, stack, cross)
-*@ nogroup M9
-*@ grouping off
-```
-
-- Hints are read at the deck's top level (`hints.collect`); the lines inside
-  a `.subckt` are that definition's. The Schemify import carries a subckt's
-  hints into the deck of the cell it lays out, under that deck's device
-  names.
-- A hinted group stands as written, before recognition: a hinted stack's
-  devices join no recognized stack, any other hinted group's no recognized
-  cross-coupled pair, differential pair, mirror or bank. A pair or cross
-  takes exactly two known devices; a group's members are in canonical
-  order, a stack's as written.
-- `nogroup` keeps a device out of every group, hinted or recognized.
-- `grouping off` turns recognition off; hinted groups still stand.
-- A name the deck does not have is passed over and the rest of the hint
-  holds (the Schemify import logs it, naming it).
+- **Strength.** Lines are admitted strongest first (`hints.admitOrder`):
+  strong before `weak`, the later line first. A line that cannot hold with
+  those admitted is dropped, `blocked_by` its preferred conflict (Junker:
+  from the least preferred admitted line up, each one it still conflicts
+  without is left out; `alone` marks a member whose deletion alone admits
+  it). Of lines setting one value (a gate's side, a net's style), the
+  preferred stands. The engine's own decisions come after every line.
+- **Meaning (rung 1).** `group pair|mirror|bank|stack|cross`, `nogroup`,
+  `grouping off`: groups stand before recognition (a hinted stack's devices
+  join no recognized stack, any other hinted group's no recognized pair,
+  mirror or bank; a pair or cross takes two). `symmetric a b` and `axis x`
+  pin the symmetry search (`symmetry.find` seeds each pinned pair with a
+  colour of its own and keeps only maps that swap it); `symmetry off`
+  drops every mate, the blocks' too. `role` sets a net's role
+  (`guessRoles`), `driver` a source apart or inline, `class` the symbol a
+  device is drawn with, `kind` a device's kind and polarity, `expand` one
+  instance flattened (the parser).
+- **Relations (rung 2).** `upright` and `bridge` set a two-pin device's
+  form; `face <dev> <pin> up|down` which end is up, `face <dev> g
+  left|right` a gate's side, mirrored onto an unnamed mate (a line that
+  turns a pair out of its mirror ends the drawing's mirror). `row` and
+  `above` are difference constraints on rows (`relations.zig`), admitted
+  before the engine's column links, which a link that would break one does
+  not make, and before mates, blocks and the ground drop, which give way; a
+  bridge a `row` line names takes that row. `order` puts columns left to
+  right (`sequence.zig`): devices one line names stand in different
+  columns, the columns are reordered by a stable topological sort, and a
+  bridge goes between its neighbours. Each also states its mirror image on
+  mated devices, kept where it fits; a mate an order line moves off its
+  mirror is dropped. `label`, `wire [ladder|trunk|route]`, `port`, `rail
+  bar|each` and `first` set how a net is drawn (`netlines.zig`): a `wire`
+  with no room falls back to names, reported `no_room`.
+- **Checked.** `report.verdicts` gathers every stage's verdicts and tests
+  each honoured line on the finished `Placed` (`checks.drawnAs`: a row one
+  y, an order increasing x, a gate on its side, a net named or wired): a
+  claim the drawing does not show is `not_drawn`, a bug the fuzz hunts.
+- **Fixed point.** `report.decisions` writes the engine's decisions on
+  rungs 1 and 2 as lines; the deck plus them, under `grouping off`, draws
+  the same picture, every line honoured.
+- Rungs 3 to 5 (`cell`, `at`, `refdes`, `via`, `route`) are rejected
+  `not_built`. The Schemify import carries the `group` lines into the deck
+  of the cell it lays out, under that deck's device names.
 
 ### Symmetry
 
@@ -369,9 +397,10 @@ through a device or touching another net is a label at its pins.
 | what | tests |
 |------|-------|
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
-| structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the three forms…` |
+| structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
 | drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |
 | result | `tests/api.zig`: the tiers agree, `Placed` is well-formed and loses no device, every net is one piece, no wire on another net's point, leads, generated boxes, subcircuit blocks; `tests/abi_test.c`: the C ABI |

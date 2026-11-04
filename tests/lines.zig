@@ -1,0 +1,290 @@
+//! Steering rungs 1 and 2 (docs/research/vocabulary.md): each verb's effect
+//! on the drawing, read from the drawing, and each refusal's verdict, its
+//! code and the lines that blocked it. Oracles: the finished `Placed` (a
+//! device's place, a pin's side, a net's names and symbols), and the
+//! guarantees every drawing keeps.
+//!
+//! Contents: tests only.
+
+const std = @import("std");
+const np = @import("NetlistParser");
+const support = @import("support.zig");
+
+const ota =
+    \\Five-transistor OTA
+    \\.model nch nmos level=1
+    \\.model pch pmos level=1
+    \\Vdd vdd 0 1.8
+    \\Vin1 vin1 0 dc 0.9 ac 1
+    \\Vin2 vin2 0 dc 0.9
+    \\Vb vb 0 0.7
+    \\M1 f vin1 p 0 nch
+    \\M2 vout vin2 p 0 nch
+    \\M3 f f vdd vdd pch
+    \\M4 vout f vdd vdd pch
+    \\M5 p vb 0 0 nch
+    \\
+;
+
+const Run = struct {
+    nl: np.netlist.Netlist,
+    roles: []np.Role,
+    st: np.schematic.structure.Structure,
+    sk: np.schematic.skeleton.Skeleton,
+    p: np.Placed,
+    v: []const np.hints.Verdict,
+
+    /// The verdict of the line whose text is `text`.
+    fn verdict(r: *const Run, text: []const u8) np.hints.Verdict {
+        for (r.nl.hints, r.v) |h, v| if (std.mem.eql(u8, h.text, text)) return v;
+        unreachable;
+    }
+
+    /// The deck line number of the line whose text is `text`.
+    fn line(r: *const Run, text: []const u8) u32 {
+        for (r.nl.hints, 0..) |h, i| if (std.mem.eql(u8, h.text, text)) return @intCast(i);
+        unreachable;
+    }
+
+    fn device(r: *const Run, name: []const u8) usize {
+        for (r.p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return d;
+        unreachable;
+    }
+
+    fn at(r: *const Run, name: []const u8) np.Pt {
+        return r.p.dev_pos[r.device(name)];
+    }
+
+    /// Pin `k` of device `name`.
+    fn pin(r: *const Run, name: []const u8, k: u32) np.Pt {
+        return r.p.pin_xy[r.p.pinRange(r.device(name))[0] + k];
+    }
+
+    fn net(r: *const Run, name: []const u8) u32 {
+        for (r.p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
+        unreachable;
+    }
+
+    /// The unnamed one-pin symbols (rails, ports) on net `name`.
+    fn symbols(r: *const Run, name: []const u8) usize {
+        const n = r.net(name);
+        var count: usize = 0;
+        for (0..r.p.deviceCount()) |d| {
+            const a, const b = r.p.pinRange(d);
+            if (r.p.dev_name[d].len == 0 and b - a == 1 and r.p.pin_net[a] == n) count += 1;
+        }
+        return count;
+    }
+
+    fn labelled(r: *const Run, name: []const u8) bool {
+        const n = r.net(name);
+        for (r.p.labels) |l| if (l.net == n) return true;
+        return false;
+    }
+};
+
+const Fixture = struct {
+    arena_state: std.heap.ArenaAllocator,
+    lib: *np.Library,
+
+    fn init() !Fixture {
+        return .{ .arena_state = .init(std.testing.allocator), .lib = try support.library(std.testing.allocator) };
+    }
+    fn deinit(f: *Fixture) void {
+        support.freeLibrary(std.testing.allocator, f.lib);
+        f.arena_state.deinit();
+    }
+    fn arena(f: *Fixture) std.mem.Allocator {
+        return f.arena_state.allocator();
+    }
+};
+
+// ---- private ----
+
+/// `spice` with `lines` after its title, laid out and reported on; the
+/// drawing's guarantees checked.
+fn run(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8, lines: []const u8) !Run {
+    const at = std.mem.indexOfScalar(u8, spice, '\n').? + 1;
+    const deck = try std.mem.concat(arena, u8, &.{ spice[0..at], lines, spice[at..] });
+    var nl = try np.netlist.parse(arena, &.{deck}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const s = try np.layout(arena, &nl, roles, lib, .{});
+    const p = try np.Placed.init(arena, &s, &nl);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(std.testing.allocator, &p, true));
+    try std.testing.expectEqual(0, try support.dots(std.testing.allocator, &p, true));
+    const v = try np.report.verdicts(arena, &nl, roles, &st, &sk, &p, lib);
+    return .{ .nl = nl, .roles = roles, .st = st, .sk = sk, .p = p, .v = v };
+}
+
+fn expectState(v: np.hints.Verdict, state: np.hints.State, code: np.hints.Code) !void {
+    if (v.state != state or v.code != code) std.debug.print("got {t} {t}\n", .{ v.state, v.code });
+    try std.testing.expectEqual(state, v.state);
+    try std.testing.expectEqual(code, v.code);
+}
+
+test "lines: above puts the tail above the pair; the later of two contradicting lines wins, the earlier blocked by it" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ above m1 m3\n*@ above m5 m1\n*@ above m3 m1\n");
+    try std.testing.expect(r.at("m5").y < r.at("m1").y);
+    try expectState(r.verdict("*@ above m5 m1"), .honoured, .ok);
+    try expectState(r.verdict("*@ above m3 m1"), .honoured, .ok);
+    const dropped = r.verdict("*@ above m1 m3");
+    try expectState(dropped, .dropped, .cycle);
+    try std.testing.expectEqualSlices(u32, &.{r.line("*@ above m3 m1")}, dropped.blocked_by);
+    try std.testing.expectEqualSlices(bool, &.{true}, dropped.alone);
+}
+
+test "lines: a weak line gives way to a strong one" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ weak row m1 m3\n*@ above m3 m1\n");
+    try expectState(r.verdict("*@ weak row m1 m3"), .dropped, .cycle);
+    try std.testing.expect(r.at("m3").y < r.at("m1").y);
+}
+
+test "lines: row holds the pair and the tail level" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ row m3 m5\n");
+    try expectState(r.verdict("*@ row m3 m5"), .honoured, .ok);
+    try std.testing.expectEqual(r.at("m3").y, r.at("m5").y);
+}
+
+test "lines: face turns a gate, and its mate turns the mirror way" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    // The pair's gates face out: m1's toward the left of the two.
+    const left = if (base.at("m1").x < base.at("m2").x) "m1" else "m2";
+    const right = if (std.mem.eql(u8, left, "m1")) "m2" else "m1";
+    const line = try std.fmt.allocPrint(f.arena(), "*@ face {s} g right\n", .{left});
+    const r = try run(f.arena(), f.lib, ota, line);
+    try expectState(r.verdict(line[0 .. line.len - 1]), .honoured, .ok);
+    try std.testing.expect(r.pin(left, 1).x > r.at(left).x);
+    try std.testing.expect(r.pin(right, 1).x < r.at(right).x);
+}
+
+test "lines: order splits a column the engine would make, and keeps the sides it asks" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    try std.testing.expectEqual(base.at("m3").x, base.at("m1").x);
+    const r = try run(f.arena(), f.lib, ota, "*@ order m1 m3\n");
+    try expectState(r.verdict("*@ order m1 m3"), .honoured, .ok);
+    try std.testing.expect(r.at("m1").x < r.at("m3").x);
+}
+
+test "lines: symmetry off leaves no mates; symmetric refuses what no symmetry swaps; axis pins a device on it" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const off = try run(f.arena(), f.lib, ota, "*@ symmetry off\n");
+    try expectState(off.verdict("*@ symmetry off"), .honoured, .ok);
+    for (off.st.device_mate) |m| try std.testing.expectEqual(np.schematic.structure.none, m);
+    try std.testing.expectEqual(null, off.sk.axis2);
+    // The 5T OTA has no exact symmetry (one load is diode-connected); a pair
+    // with resistive loads has one, its tail on the axis.
+    const pair =
+        \\Resistive pair
+        \\.model nch nmos level=1
+        \\Vdd vdd 0 1.8
+        \\Vin1 inp 0 dc 0.9 ac 1
+        \\Vin2 inn 0 dc 0.9
+        \\Vb vb 0 0.7
+        \\R1 vdd outn 1k
+        \\R2 vdd outp 1k
+        \\M1 outn inp tail 0 nch
+        \\M2 outp inn tail 0 nch
+        \\M5 tail vb 0 0 nch
+        \\
+    ;
+    const r = try run(f.arena(), f.lib, pair, "*@ symmetric m1 r1\n*@ axis m5\n*@ symmetric m1 m2\n");
+    try expectState(r.verdict("*@ symmetric m1 r1"), .dropped, .asymmetric);
+    try expectState(r.verdict("*@ axis m5"), .honoured, .ok);
+    try expectState(r.verdict("*@ symmetric m1 m2"), .honoured, .ok);
+    const m5 = r.nl.device("m5").?.index();
+    try std.testing.expectEqual(m5, r.st.device_mate[m5]);
+    try std.testing.expectEqual(r.nl.device("m2").?.index(), r.st.device_mate[r.nl.device("m1").?.index()]);
+}
+
+test "lines: role, driver, class" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ role vb input\n*@ driver vin1 inline\n*@ driver m1 apart\n*@ class m5 pmos\n");
+    try expectState(r.verdict("*@ role vb input"), .honoured, .ok);
+    try std.testing.expectEqual(np.Role.input, r.roles[r.nl.net("vb").?.index()]);
+    try expectState(r.verdict("*@ driver vin1 inline"), .honoured, .ok);
+    try std.testing.expect(r.sk.drawn[r.nl.device("vin1").?.index()]);
+    try expectState(r.verdict("*@ driver m1 apart"), .rejected, .not_placeable);
+    try expectState(r.verdict("*@ class m5 pmos"), .honoured, .ok);
+    try std.testing.expectEqualStrings("pmos", f.lib.at(r.p.dev_class[r.device("m5")]).name);
+}
+
+test "lines: kind makes an unknown block a transistor; expand flattens one instance" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\blocks
+        \\.subckt inv a y vdd
+        \\M1 y a vdd vdd pmos
+        \\M2 y a 0 0 nmos
+        \\.ends
+        \\Vdd vdd 0 1
+        \\X1 in mid vdd inv
+        \\X2 mid out vdd inv
+        \\X3 out g 0 0 fet
+        \\R1 vdd out 1k
+        \\
+    ;
+    const r = try run(f.arena(), f.lib, deck, "*@ expand x1\n*@ expand x9\n*@ kind x3 nmos\n");
+    try expectState(r.verdict("*@ expand x1"), .honoured, .ok);
+    try expectState(r.verdict("*@ expand x9"), .rejected, .unknown_name);
+    try std.testing.expectEqual(null, r.nl.device("x1"));
+    try std.testing.expect(r.nl.device("x2") != null);
+    try expectState(r.verdict("*@ kind x3 nmos"), .honoured, .ok);
+    const x3 = r.nl.device("x3").?;
+    try std.testing.expectEqual(np.netlist.DeviceKind.mosfet, r.nl.graph.edges.items(.kind)[x3.index()]);
+}
+
+test "lines: label names a net, wire wires one, port and rail set their symbols" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    try std.testing.expect(!base.labelled("f"));
+    try std.testing.expect(base.labelled("vb") or base.symbols("vb") > 0);
+    const r = try run(f.arena(), f.lib, ota, "*@ label f\n*@ port vout left\n*@ rail vdd each\n*@ first vout\n");
+    try expectState(r.verdict("*@ label f"), .honoured, .ok);
+    try std.testing.expect(r.labelled("f"));
+    try expectState(r.verdict("*@ port vout left"), .honoured, .ok);
+    try expectState(r.verdict("*@ rail vdd each"), .honoured, .ok);
+    try std.testing.expect(r.symbols("vdd") > base.symbols("vdd"));
+    try expectState(r.verdict("*@ first vout"), .honoured, .ok);
+    // Two ground pins facing down share one bar.
+    const dividers =
+        \\Two dividers
+        \\Vdd vdd 0 1
+        \\R1 vdd a 1k
+        \\R2 a 0 1k
+        \\R3 vdd b 1k
+        \\R4 b 0 1k
+        \\
+    ;
+    const each = try run(f.arena(), f.lib, dividers, "");
+    const one = try run(f.arena(), f.lib, dividers, "*@ rail 0 bar\n");
+    try expectState(one.verdict("*@ rail 0 bar"), .honoured, .ok);
+    try std.testing.expect(one.symbols("0") < each.symbols("0"));
+}
+
+test "lines: a malformed line, an unknown name or verb, and a rung not built yet are rejected" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ frobnicate m1\n*@ above m1 m99\n*@ face m1 g sideways\n*@ cell m1 2 4\n*@ rail vout bar\n");
+    try expectState(r.verdict("*@ frobnicate m1"), .rejected, .unknown_verb);
+    try expectState(r.verdict("*@ above m1 m99"), .rejected, .unknown_name);
+    try expectState(r.verdict("*@ face m1 g sideways"), .rejected, .bad_args);
+    try expectState(r.verdict("*@ cell m1 2 4"), .rejected, .not_built);
+    try expectState(r.verdict("*@ rail vout bar"), .rejected, .not_placeable);
+}

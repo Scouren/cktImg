@@ -12,12 +12,14 @@
 //! - `pub const DeviceInfo = struct`, `pub const NodeKind = enum(u8)`, `pub const Node = struct`, `pub const Pin = struct`, `pub const Route = struct`
 //! - `pub const Schematic = struct`, `Schematic.deinit`, `Schematic.pinSide`, `Schematic.reach`, `Schematic.pinPoint`, `Schematic.deviceNode`, `Schematic.addNode`, `Schematic.addPin`
 //! - `pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]Role`
+//! - `pub fn roleWord(word: []const u8) ?Role`
 //! - `pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role, lib: *Library) !Schematic`
 //! - `pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void`
 //! - `pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool`
 //! - `pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool`
 
 const std = @import("std");
+const hints = @import("hints.zig");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
@@ -211,8 +213,24 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         if (roles[driven] != .internal) continue;
         roles[driven] = if (isSignalSource(nl, @intCast(d))) .input else .bias;
     }
+    // The deck's `*@ role <net> <role>` lines, the preferred one last.
+    const order = try hints.applyOrder(gpa, nl.hints);
+    defer gpa.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .role or h.args.len != 2) continue;
+        const net = nl.net(h.args[0]) orelse continue;
+        roles[net.index()] = roleWord(h.args[1]) orelse continue;
+    }
     assert(roles.len == circuit.vertexCount());
     return roles;
+}
+
+/// The role a `*@ role` line names (`ground` is the sink), or null.
+pub fn roleWord(word: []const u8) ?Role {
+    if (std.mem.eql(u8, word, "ground")) return .sink;
+    const r = std.meta.stringToEnum(Role, word) orelse return null;
+    return if (r == .sink) null else r;
 }
 
 /// A schematic with its devices' classes and nothing else: no orientation,
@@ -225,6 +243,19 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
     for (classes, circuit.edges.items(.kind), 0..) |*c, k, d| {
         const e = EdgeId.from(d);
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
+    }
+    // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
+    // class with as many terminals as the one it replaces draws every pin
+    // it did.
+    const order = try hints.applyOrder(gpa, nl.hints);
+    defer gpa.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .class or h.args.len != 2) continue;
+        const e = nl.device(h.args[0]) orelse continue;
+        const id = lib.find(h.args[1]) orelse continue;
+        if (lib.at(id).terminals.len < lib.at(classes[e.index()]).terminals.len) continue;
+        classes[e.index()] = id;
     }
     var s: Schematic = .{
         .arena = .init(gpa),

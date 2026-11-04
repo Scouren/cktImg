@@ -59,7 +59,7 @@ test "report: a deck plus its exported decisions, rungs 1 and 2, recognition off
             const s2 = try np.layout(arena, &nl2, roles2, lib, .{});
             const p2 = try np.Placed.init(arena, &s2, &nl2);
             var refused: usize = 0;
-            for (nl2.hints, try np.report.verdicts(arena, &nl2, &st2, &sk2, &p2)) |h, v| if (v.state != .honoured) {
+            for (nl2.hints, try np.report.verdicts(arena, &nl2, roles2, &st2, &sk2, &p2, lib)) |h, v| if (v.state != .honoured) {
                 std.debug.print("{s} rung {d}: `{s}` {t} {t}\n", .{ d[0], rung, h.text, v.state, v.code });
                 refused += 1;
             };

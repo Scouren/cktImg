@@ -292,21 +292,30 @@ then wire the placement (the book's patterns for rails, gate lines and
 trunks, and a maze router for the rest). Placement never moves to make room
 for a wire. [`docs/ALGORITHM.md`](docs/ALGORITHM.md) has every rule.
 
-**Grouping hints.** A deck can say what belongs together, in the `*@` style
-of the port-side directives: at the top level of the deck drawn, or inside a
-`.subckt` for the Schemify import, which carries them into that cell.
+**Steering lines.** A deck can override what the engine decides, one `*@`
+line per decision, at the top level of the deck drawn:
 
 ```spice
-*@ group pair M1 M2        (also mirror, bank, stack, cross)
-*@ group stack M5 M7
-*@ nogroup M9
-*@ grouping off
+*@ group pair M1 M2        what belongs together (also mirror, bank, stack, cross)
+*@ symmetric M3 M4         the left-right mates; axis M5; symmetry off
+*@ role vb1 bias           a net's role; driver, class, kind, expand
+*@ above M9 Iss M7         rows top down; row M1 Rc Cc holds them level
+*@ order RD1 M1 M5 M2      columns left to right
+*@ face M3 g left          a gate's side, or which end is up
+*@ label vb1               names, not a wire; wire, port, rail, first
+*@ weak row M5 M6          a stay: kept unless a strong line needs the room
 ```
 
-A hint wins over recognition. `*@ nogroup` keeps a device out of every
-group, and `*@ grouping off` turns recognition off for the deck. A hint that
-names a device the deck does not have skips that name (the Schemify import
-logs it) and the rest still applies.
+Every line is honoured or reported: `cktimg-json --report` lists each as
+honoured, relaxed, dropped (with the stronger lines that blocked it) or
+rejected, and checks every honoured line against the finished drawing. Lines
+never break the drawing's guarantees: a line that would is refused. A
+later line beats an earlier one, a strong one a `weak` one, and every line
+beats what the engine would decide. `--decisions 2` prints the engine's own
+decisions as these lines; a deck plus them draws the same picture.
+[`docs/research/vocabulary.md`](docs/research/vocabulary.md) has every
+verb; cells, coordinates and routes (rungs 3 to 5) are still to come. The
+Schemify import carries the `group` lines into a cell (the rest follow).
 
 ## Gallery
 
@@ -416,7 +425,7 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1|2] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
@@ -465,8 +474,8 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 [`skills/cktimg/`](skills/cktimg) is a skill for coding agents that draw
 schematics with cktImg: write the deck so its names carry its meaning, draw,
 review the drawing against the book's look, and fix each complaint on the
-highest rung that can (names, then `*@ group` hints, then the `lint.zon`
-lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
+highest rung that can (names, then what the circuit means, then where
+things stand to each other, then the `lint.zon` lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
 agent's skills directory.
 
 ## Documentation

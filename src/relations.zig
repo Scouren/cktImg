@@ -15,6 +15,7 @@
 //! Contents:
 //! - `pub const Relations = struct`, `Relations.find(r: *const Relations, d: u32) u32`, `Relations.refuses(r: *const Relations, gpa: Allocator, below: []const u32, u: u32, l: u32) Allocator.Error!bool`
 //! - `Check.holds(ck: Check, lines: []const u32) Allocator.Error!bool`: the admission test `hints.conflict` calls
+//! - `pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?Verdict) Allocator.Error!void`
 //! - `pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void`
 //! - `pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32, verdicts: []?Verdict) Allocator.Error!void`
 //! - `pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Relations`
@@ -119,13 +120,50 @@ const Check = struct {
     }
 };
 
+/// `driver <dev> apart|inline`: a two-pin source drawn apart, left of the
+/// circuit (as one driving a terminal net is), or a device in it.
+pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?Verdict) Allocator.Error!void {
+    const c = &nl.graph;
+    const order = try hints.applyOrder(gpa, nl.hints);
+    defer gpa.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .driver) continue;
+        if (h.args.len != 2) {
+            verdicts[i] = reject(.bad_args);
+            continue;
+        }
+        const apart = std.mem.eql(u8, h.args[1], "apart");
+        if (!apart and !std.mem.eql(u8, h.args[1], "inline")) {
+            verdicts[i] = reject(.bad_args);
+            continue;
+        }
+        const d = (nl.device(h.args[0]) orelse {
+            verdicts[i] = reject(.unknown_name);
+            continue;
+        }).index();
+        // Apart, a source stands upright between its net's symbol and
+        // ground: only a two-pin source is drawn so.
+        const kind = c.edges.items(.kind)[d];
+        const source = (kind == .vsource or kind == .isource) and c.members(EdgeId.from(d)).len == 2;
+        if (c.members(EdgeId.from(d)).len == 0 or (apart and !source)) {
+            verdicts[i] = reject(.not_placeable);
+            continue;
+        }
+        drawn[d] = !apart;
+        verdicts[i] = honoured;
+    }
+}
+
 /// `upright <dev>` and `bridge <dev>`: a drawn transistor, or a two-pin
 /// device on two nets, stands in a column or bridges.
 pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void {
-    _ = arena;
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
-    for (nl.hints, 0..) |h, i| {
+    const order = try hints.applyOrder(arena, nl.hints);
+    defer arena.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
         if (h.verb != .upright and h.verb != .bridge) continue;
         verdicts[i] = for (h.args) |name| {
             const d = (nl.device(name) orelse break reject(.unknown_name)).index();
@@ -143,9 +181,11 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
 
 /// `face <dev> <end> up|down`: which of a vertical device's ends is up.
 pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32, verdicts: []?Verdict) Allocator.Error!void {
-    _ = arena;
     const c = &nl.graph;
-    for (nl.hints, 0..) |h, i| {
+    const order = try hints.applyOrder(arena, nl.hints);
+    defer arena.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
         if (h.verb != .face or h.args.len != 3) continue;
         const dir = h.args[2];
         const up = std.mem.eql(u8, dir, "up");
@@ -183,7 +223,10 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     // The valid lines' constraints, by hint: `[a, b, eq]`.
     const own = try arena.alloc([]const [3]u32, nl.hints.len);
     @memset(own, &.{});
-    for (nl.hints, 0..) |h, i| {
+    const order = try hints.applyOrder(arena, nl.hints);
+    defer arena.free(order);
+    for (order) |i| {
+        const h = nl.hints[i];
         if (h.verb != .row and h.verb != .above) continue;
         if (h.args.len < 2) {
             verdicts[i] = reject(.bad_args);
@@ -191,9 +234,10 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         var devs: std.ArrayList(u32) = .empty;
         var spans: usize = 0;
-        const bad: ?hints.Code = for (h.args) |name| {
+        const bad: ?hints.Code = each: for (h.args, 0..) |name, k| {
             const d = (nl.device(name) orelse break .unknown_name).index();
             if (!drawn[d]) break .not_placeable;
+            for (h.args[0..k]) |seen| if (std.mem.eql(u8, seen, name)) break :each .bad_args;
             if (form[d] != .vertical) {
                 if (h.verb != .row) break .not_placeable;
                 spans += 1;
@@ -251,8 +295,9 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     var edges: std.ArrayList([2]u32) = .empty;
     const bridge_row = try arena.alloc(u32, n);
     @memset(bridge_row, none);
-    // Bridges, later lines last so they win; each mate takes the image row.
-    for (nl.hints, 0..) |h, i| {
+    // Bridges, the preferred line last so it wins; each mate takes the image row.
+    for (try hints.applyOrder(arena, nl.hints)) |i| {
+        const h = nl.hints[i];
         if (h.verb != .row or verdicts[i] == null or verdicts[i].?.state != .honoured) continue;
         var first: u32 = none;
         for (h.args) |name| {
@@ -288,7 +333,7 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     const n = c.edgeCount();
-    // Later lines win: apply in file order, then mirror onto unnamed mates.
+    // The preferred line wins: applied last. Then mirror onto unnamed mates.
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .face) continue;
         if (verdicts[i] != null) continue; // an end's, or rejected

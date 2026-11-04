@@ -188,9 +188,14 @@ pub const Netlist = struct {
     models: std.StringHashMapUnmanaged([]const u8),
     /// Every `.subckt` definition, in file order.
     defs: []const Subckt,
-    /// The grouping hints of the deck drawn (the first source's top level),
-    /// in file order.
+    /// The `*@` lines of the deck drawn (the first source's top level), in
+    /// file order.
     hints: []const hints.Hint,
+    /// Per hint: what became of it, for the lines the parser owns (`kind`,
+    /// `expand`); null for the rest.
+    verdicts: []const ?hints.Verdict,
+    /// Per device: the model type a `*@ kind` line gives it, else null.
+    kind_type: []const ?[]const u8,
 
     /// The definition a `subckt` block device instantiates.
     pub fn defOf(self: *const Netlist, e: EdgeId) ?*const Subckt {
@@ -213,6 +218,7 @@ pub const Netlist = struct {
     /// its `.model` card, else the model name itself when it names a type
     /// (`M1 d g s b nmos`). Null for a device with no model.
     pub fn modelType(self: *const Netlist, e: EdgeId) ?[]const u8 {
+        if (self.kind_type.len > 0) if (self.kind_type[e.index()]) |t| return t;
         const k = self.graph.edges.items(.kind)[e.index()];
         switch (k) {
             .bjt, .mosfet, .jfet, .mesfet, .diode => {},
@@ -263,12 +269,29 @@ pub fn parse(gpa: Allocator, sources: []const []const u8, diag: ?*Diagnostic) Er
     var p: Pass = .{ .gpa = gpa, .arena = arena, .sources = sources, .texts = texts, .fields = &fields, .diag = diag };
 
     try p.collectModels();
+    const top_hints = if (texts.len > 0) try hints.collect(arena, texts[0]) else &.{};
+    const verdicts = try arena.alloc(?hints.Verdict, top_hints.len);
+    @memset(verdicts, null);
+    p.top_hints = top_hints;
+    p.verdicts = verdicts;
 
     var graph = try p.buildGraph();
     errdefer graph.deinit(gpa);
+    const kind_type = try arena.alloc(?[]const u8, graph.edgeCount());
+    @memset(kind_type, null);
+    // `kind` lines, the preferred one on a device applied last.
+    const apply = try hints.applyOrder(arena, top_hints);
+    for (apply) |i| if (top_hints[i].verb == .kind) {
+        verdicts[i] = kindLine(&graph, &p.device_ids, top_hints[i], kind_type);
+    };
+    for (top_hints, verdicts) |h, *v| switch (h.verb) {
+        .expand => if (v.* == null) {
+            v.* = .{ .state = .rejected, .code = if (h.args.len != 1) .bad_args else .unknown_name };
+        },
+        else => {},
+    };
 
     const analyses = try p.collectAnalyses(graph.edges.items(.kind));
-    const top_hints = if (texts.len > 0) try hints.collect(arena, texts[0]) else &.{};
 
     return .{
         .arena = arena_state,
@@ -281,6 +304,8 @@ pub fn parse(gpa: Allocator, sources: []const []const u8, diag: ?*Diagnostic) Er
         .models = p.models,
         .defs = p.defs.items,
         .hints = top_hints,
+        .verdicts = verdicts,
+        .kind_type = kind_type,
     };
 }
 
@@ -329,6 +354,34 @@ fn pdkPrimitive(master: []const u8, nodes: usize) ?DeviceKind {
     return null;
 }
 
+/// Applies a `*@ kind <dev> nmos|pmos|npn|pnp|res|cap|block` line: the
+/// device becomes that kind (a transistor of three or four pins, a two-pin
+/// resistor or capacitor, or a block), its model type the one named.
+fn kindLine(graph: *Circuit.Graph, device_ids: *const std.StringHashMapUnmanaged(EdgeId), h: hints.Hint, kind_type: []?[]const u8) hints.Verdict {
+    if (h.args.len != 2) return .{ .state = .rejected, .code = .bad_args };
+    const e = device_ids.get(h.args[0]) orelse return .{ .state = .rejected, .code = .unknown_name };
+    const pins = graph.members(e).len;
+    const word = h.args[1];
+    const Want = struct { name: []const u8, kind: DeviceKind, lo: usize, hi: usize };
+    const table = [_]Want{
+        .{ .name = "nmos", .kind = .mosfet, .lo = 3, .hi = 4 },
+        .{ .name = "pmos", .kind = .mosfet, .lo = 3, .hi = 4 },
+        .{ .name = "npn", .kind = .bjt, .lo = 3, .hi = 4 },
+        .{ .name = "pnp", .kind = .bjt, .lo = 3, .hi = 4 },
+        .{ .name = "res", .kind = .resistor, .lo = 2, .hi = 2 },
+        .{ .name = "cap", .kind = .capacitor, .lo = 2, .hi = 2 },
+        .{ .name = "block", .kind = .subckt, .lo = 1, .hi = std.math.maxInt(usize) },
+    };
+    const w = for (table) |t| {
+        if (eql(t.name, word)) break t;
+    } else return .{ .state = .rejected, .code = .bad_args };
+    if (pins < w.lo or pins > w.hi) return .{ .state = .rejected, .code = .bad_args };
+    graph.edges.items(.kind)[e.index()] = w.kind;
+    if (w.kind != .subckt) graph.edges.items(.def)[e.index()] = no_def;
+    kind_type[e.index()] = if (w.kind == .mosfet or w.kind == .bjt) w.name else null;
+    return .{ .state = .honoured, .code = .ok };
+}
+
 const Pass = struct {
     gpa: Allocator,
     arena: Allocator,
@@ -344,6 +397,10 @@ const Pass = struct {
     net_ids: std.StringHashMapUnmanaged(VertexId) = .empty,
     device_ids: std.StringHashMapUnmanaged(EdgeId) = .empty,
     tokens: std.ArrayList([]const u8) = .empty,
+    /// The deck's top-level `*@` lines, for `expand <instance>`, and their
+    /// verdicts.
+    top_hints: []const hints.Hint = &.{},
+    verdicts: []?hints.Verdict = &.{},
 
     /// Records where a card failed. Because `texts[i]` is a byte-for-byte
     /// lowercase copy of `sources[i]`, the same offset finds the original.
@@ -549,7 +606,16 @@ const Pass = struct {
         for (actual, nets) |n, *o| o.* = if (frame) |fr| try fr.net(self.arena, n) else try self.arena.dupe(u8, n);
         const xname = if (frame) |fr| try std.fmt.allocPrint(self.arena, "{s}.{s}", .{ fr.path, f[0] }) else try self.arena.dupe(u8, f[0]);
 
-        if (kind == .subckt and self.defs.items[def_id].expand) {
+        // A top-level `*@ expand <instance>` line flattens this one.
+        const asked: ?usize = if (frame == null and kind == .subckt) for (self.top_hints, 0..) |h, k| {
+            if (h.verb == .expand and h.args.len == 1 and eql(h.args[0], f[0])) break k;
+        } else null else null;
+        if (asked) |k| self.verdicts[k] = if (self.defs.items[def_id].body.len > 0)
+            .{ .state = .honoured, .code = .ok }
+        else
+            .{ .state = .rejected, .code = .not_placeable };
+        const flatten = kind == .subckt and (self.defs.items[def_id].expand or (asked != null and self.defs.items[def_id].body.len > 0));
+        if (flatten) {
             const def = self.defs.items[def_id];
             const depth = if (frame) |fr| fr.depth + 1 else 1;
             if (depth > max_depth) return error.SubcircuitTooDeep;

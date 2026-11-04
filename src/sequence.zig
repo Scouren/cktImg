@@ -16,7 +16,7 @@
 //! - `Check.holds(ck: Check, lines: []const u32) Allocator.Error!bool`: the admission test `hints.conflict` calls
 //! - `pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Sequence`
 //! - `pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x: []i32) Allocator.Error!void`
-//! - `pub fn bridges(gpa: Allocator, nl: *const Netlist, s: *const Sequence, bridge_row: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`
+//! - `pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -185,14 +185,16 @@ pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x
 }
 
 /// Sets each bridge a `row` line names on its row, and each bridge an
-/// `order` line places strictly between its neighbours' x, on a free cell;
-/// a bridge with no free cell there stays, its line relaxed.
-pub fn bridges(gpa: Allocator, nl: *const Netlist, s: *const Sequence, bridge_row: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void {
+/// `order` line places strictly between its neighbours' x, on a free cell,
+/// in canonical order (`by_rank`); a bridge with no free cell there stays,
+/// its line relaxed.
+pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void {
     const n = x.len;
     var taken: std.AutoHashMapUnmanaged([2]i32, void) = .empty;
     defer taken.deinit(gpa);
     for (0..n) |d| if (drawn[d]) try taken.put(gpa, .{ x[d], y[d] }, {});
-    for (0..n) |b| {
+    assert(by_rank.len == n);
+    for (by_rank) |b| {
         if (!drawn[b] or form[b] == .vertical) continue;
         const r = bridge_row[b];
         const nb = s.between[b];
@@ -219,7 +221,6 @@ pub fn bridges(gpa: Allocator, nl: *const Netlist, s: *const Sequence, bridge_ro
         }
         try taken.put(gpa, .{ x[b], y[b] }, {});
     }
-    _ = nl;
 }
 
 // ---- private ----

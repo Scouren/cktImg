@@ -192,3 +192,7 @@ test {
 test {
     _ = @import("steering.zig");
 }
+
+test {
+    _ = @import("lines.zig");
+}

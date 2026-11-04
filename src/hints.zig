@@ -16,6 +16,7 @@
 //! - `pub fn read(line: []const u8) ?Read`
 //! - `pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint`
 //! - `pub fn admitOrder(arena: Allocator, list: []const Hint) Allocator.Error![]const u32`
+//! - `pub fn applyOrder(gpa: Allocator, list: []const Hint) Allocator.Error![]const u32`
 //! - `pub fn conflict(gpa: Allocator, arena: Allocator, check: anytype, admitted: []const u32, new: u32, code: Code) Allocator.Error!Verdict`
 //! - `pub fn int(word: []const u8) ?i32`
 
@@ -213,6 +214,16 @@ pub fn admitOrder(arena: Allocator, list: []const Hint) Allocator.Error![]const 
         }
     }
     assert(at == list.len);
+    return out;
+}
+
+/// The order lines that set one value are applied in, the least preferred
+/// first, so the line `admitOrder` puts first is the one left standing.
+/// The caller frees the result.
+pub fn applyOrder(gpa: Allocator, list: []const Hint) Allocator.Error![]const u32 {
+    const order = try admitOrder(gpa, list);
+    const out = @constCast(order);
+    std.mem.reverse(u32, out);
     return out;
 }
 

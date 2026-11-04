@@ -121,7 +121,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
 
     const verdicts = try arena.alloc(?hints.Verdict, nl.hints.len);
     @memset(verdicts, null);
-    try classify(gpa, nl, roles, st, drawn, form);
+    try classify(gpa, nl, roles, st, drawn, form, verdicts);
     try relations.forms(arena, nl, drawn, form, verdicts);
     try ends(gpa, nl, roles, drawn, form, upper, lower);
     try relations.ends(arena, nl, drawn, form, upper, lower, verdicts);
@@ -184,7 +184,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
         mated = mated or (m.* != none and drawn[d] and form[d] == .vertical);
     }
     try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, if (mated) 0 else null, x, y);
-    try sequence.bridges(gpa, nl, &seq, rel.bridge_row, drawn, form, x, y, verdicts);
+    try sequence.bridges(gpa, &seq, rel.bridge_row, devices_by_rank, drawn, form, x, y, verdicts);
     gates(nl, roles, st, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, verdicts);
@@ -246,18 +246,19 @@ fn isRail(r: Role) bool {
     return r == .supply or r == .sink;
 }
 
-/// Drawn: not a driver and with pins. Vertical: a transistor, a two-pin
+/// Drawn: not a driver (unless a `driver` line says) and with pins. Vertical: a transistor, a two-pin
 /// device on a rail, or one in series (each of its nets holds one other
 /// channel element); capacitors only on a rail; never a two-pin device
 /// between two nets the symmetry swaps, which straddles the axis, nor a
 /// device whose current path is shorted (a MOS dummy: no current flows).
-fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form) !void {
+fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     assert(drawn.len == c.edgeCount());
     for (drawn, 0..) |*dr, d| {
         dr.* = c.members(EdgeId.from(d)).len > 0 and !sch.isDriver(c, roles, @intCast(d));
     }
+    try relations.drivers(gpa, nl, drawn, verdicts);
     // Channel elements on each net: transistor channel ends, two-pin pins.
     const count = try gpa.alloc(u32, c.vertexCount());
     defer gpa.free(count);

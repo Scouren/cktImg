@@ -14,7 +14,7 @@
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Contents:
-//! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed) Allocator.Error![]const Verdict`
+//! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
 //! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, rung: u8) Allocator.Error![]const []const u8`
 //! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role) !void`
 
@@ -31,6 +31,7 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
 const relations = @import("relations.zig");
+const netlines = @import("netlines.zig");
 
 const Library = library.Library;
 const Netlist = netlist.Netlist;
@@ -42,16 +43,45 @@ const Skeleton = skeleton.Skeleton;
 const Verdict = hints.Verdict;
 
 /// What became of each of `nl`'s hints: the verdict of the stage that owns
-/// it, `rejected` for a verb none takes yet; with `p`, an honoured line
-/// `p` does not show is `relaxed`, `not_drawn`.
-pub fn verdicts(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed) Allocator.Error![]const Verdict {
+/// it (the parser, the structure, the skeleton, the net lines), `role` and
+/// `class` judged here (`class` with `lib`), `rejected` for a verb none
+/// takes yet. Of lines setting one value (a device's gate side, a net's
+/// style, ...), the preferred stands and the rest are dropped, blocked by
+/// it. With `p`, an honoured line `p` does not show is `relaxed`:
+/// `no_room` for a `wire` or `port` that fell back to names, else
+/// `not_drawn`, a bug.
+pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict {
     assert(st.verdicts.len == nl.hints.len and sk.verdicts.len == nl.hints.len);
+    const drawn = try arena.alloc(?Verdict, nl.hints.len);
+    @memset(drawn, null);
+    _ = try netlines.read(arena, nl, roles, drawn);
     const out = try arena.alloc(Verdict, nl.hints.len);
-    for (out, nl.hints, st.verdicts, sk.verdicts) |*v, h, a, b| {
-        v.* = a orelse b orelse .{ .state = .rejected, .code = if (h.verb == .unknown) .unknown_verb else .not_built };
-        if (v.state != .honoured) continue;
-        const drawing = p orelse continue;
-        if (checks.drawnAs(drawing, nl, h) == false) v.* = .{ .state = .relaxed, .code = .not_drawn };
+    for (out, nl.hints, nl.verdicts, st.verdicts, sk.verdicts, drawn) |*v, h, a, b, c, d| {
+        v.* = a orelse b orelse c orelse d orelse own(nl, roles, h, p, lib);
+        // A net no device drawn in the circuit touches (an apart driver's
+        // alone) has nothing for a net line to draw.
+        const on_net = h.verb == .label or h.verb == .wire or h.verb == .port;
+        if (v.state == .honoured and on_net and !inCircuit(nl, sk, nl.net(h.args[0]).?.index())) v.* = .{ .state = .rejected, .code = .not_placeable };
+    }
+    // Lines setting one value: the preferred one stands, the rest give way.
+    const order = try hints.admitOrder(arena, nl.hints);
+    for (order, 0..) |i, k| {
+        if (out[i].state != .honoured) continue;
+        const mine = slot(nl.hints[i]) orelse continue;
+        const by = for (order[0..k]) |j| {
+            if (out[j].state != .honoured) continue;
+            const theirs = slot(nl.hints[j]) orelse continue;
+            if (theirs.family == mine.family and std.mem.eql(u8, theirs.target, mine.target)) break j;
+        } else continue;
+        out[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{by}), .alone = try arena.dupe(bool, &.{true}) };
+    }
+    // What still stands, checked against the drawing. A wire or port with
+    // no room falls back to names, as it may.
+    const drawing = p orelse return out;
+    for (out, nl.hints) |*v, h| {
+        if (v.state != .honoured or checks.drawnAs(drawing, nl, h) != false) continue;
+        const may = h.verb == .wire or h.verb == .port;
+        v.* = .{ .state = .relaxed, .code = if (may) .no_room else .not_drawn };
     }
     return out;
 }
@@ -162,7 +192,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
 
     try w.writeAll("  \"requests\": [");
-    for (nl.hints, try verdicts(a, nl, &st, &sk, p), 0..) |h, v, i| {
+    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
         try w.print("{{ \"line\": {d}, \"text\": ", .{h.line});
         try std.json.Stringify.value(h.text, .{}, w);
@@ -200,6 +230,64 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
 }
 
 // ---- private ----
+
+/// The verdict of a line no stage owns: `role` against the roles drawn
+/// with, `class` against the library and the drawing; any other verb is
+/// one the engine does not take yet.
+fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed, lib: ?*const Library) Verdict {
+    const reject = struct {
+        fn f(code: hints.Code) Verdict {
+            return .{ .state = .rejected, .code = code };
+        }
+    }.f;
+    switch (h.verb) {
+        .role => {
+            if (h.args.len != 2) return reject(.bad_args);
+            const net = nl.net(h.args[0]) orelse return reject(.unknown_name);
+            const role = sch.roleWord(h.args[1]) orelse return reject(.bad_args);
+            return if (roles[net.index()] == role) .{ .state = .honoured, .code = .ok } else .{ .state = .relaxed, .code = .conflict };
+        },
+        .class => {
+            if (h.args.len != 2) return reject(.bad_args);
+            _ = nl.device(h.args[0]) orelse return reject(.unknown_name);
+            const l = lib orelse return .{ .state = .honoured, .code = .ok };
+            const id = l.find(h.args[1]) orelse return reject(.unknown_name);
+            const drawing = p orelse return .{ .state = .honoured, .code = .ok };
+            // Taken only when it has the terminals of the class it replaces.
+            for (drawing.dev_name, drawing.dev_class) |n, k| if (std.mem.eql(u8, n, h.args[0])) {
+                return if (k == id) .{ .state = .honoured, .code = .ok } else reject(.bad_args);
+            };
+            return .{ .state = .honoured, .code = .ok };
+        },
+        .unknown => return reject(.unknown_verb),
+        else => return reject(.not_built),
+    }
+}
+
+/// The value a line sets, when one line can override another: its kind of
+/// value and what it is set on.
+fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
+    if (h.args.len == 0) return null;
+    const family: u8 = switch (h.verb) {
+        .face => if (h.args.len == 3 and (std.mem.eql(u8, h.args[2], "up") or std.mem.eql(u8, h.args[2], "down"))) 1 else 2,
+        .upright, .bridge => 3,
+        .driver => 4,
+        .label, .wire => 5,
+        .port => 6,
+        .rail => 7,
+        .role => 8,
+        .class => 9,
+        .kind => 10,
+        else => return null,
+    };
+    return .{ .family = family, .target = h.args[0] };
+}
+
+/// Whether a device the skeleton draws has a pin on `net`.
+fn inCircuit(nl: *const Netlist, sk: *const Skeleton, net: u32) bool {
+    for (nl.graph.incident(netlist.VertexId.from(net))) |e| if (sk.drawn[e.index()]) return true;
+    return false;
+}
 
 fn isFet(kind: netlist.DeviceKind) bool {
     return switch (kind) {
