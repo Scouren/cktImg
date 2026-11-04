@@ -127,8 +127,13 @@ gives each a verdict (`hints.Verdict`): honoured, relaxed, dropped (with
   rungs 1 and 2 as lines; the deck plus them, under `grouping off`, draws
   the same picture, every line honoured.
 - Rungs 3 to 5 (`cell`, `at`, `refdes`, `via`, `route`) are rejected
-  `not_built`. The Schemify import carries the `group` lines into the deck
-  of the cell it lays out, under that deck's device names.
+  `not_built`.
+- **Schemify.** The import hands the engine each device under the
+  designer's name (the card's letter before it when it starts with another,
+  so nothing depends on the order of the instances), carries every line of
+  a subckt into its cell with its device and net names mapped, and logs each
+  line the engine does not honour with its verdict and the designer's line
+  numbers.
 
 ### Symmetry
 

@@ -10,6 +10,7 @@ Added:
 - The report's `requests`: each line's verdict, every honoured one checked against the drawing; `cktimg-json --decisions 1|2` prints the engine's decisions as lines, and a deck plus them draws the same picture (#15).
 - A ground bar (`*@ rail 0 bar`) (#15).
 - Every golden figure drawn in full with 21 rung 1 and 2 lines (#15).
+- The Schemify import carries every `*@` line of a subckt into its cell, hands the engine the designer's device names (so a cell no longer depends on the order of its instances), and logs each line the engine does not honour with the designer's line numbers (#16).
 
 Fixed:
 
@@ -17,7 +18,7 @@ Fixed:
 
 Measured:
 
-- `cktimg.wasm` is 459,957 bytes (cap 550 KB).
+- `cktimg.wasm` is 467,716 bytes (cap 550 KB).
 
 ## 2.0.0 (2026-11-04)
 

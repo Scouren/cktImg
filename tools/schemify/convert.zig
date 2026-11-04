@@ -110,6 +110,7 @@ pub const Converter = struct {
         const drawn = try layout.draw(c.gpa, a, &c.lib, &c.deck, &c.rec, cell, &c.budget);
         if (drawn.fallback) |why| try c.out.warnings.append(a, try a.print("{s}: drawn with labels only ({s})", .{ stem, why }));
         if (drawn.strays > 0) try c.out.warnings.append(a, try a.print("{s}: the engine left {d} pins unconnected; labelled", .{ stem, drawn.strays }));
+        for (drawn.notes.items) |note| try c.out.warnings.append(a, try a.print("{s}: {s}", .{ stem, note }));
         const s = &c.out.stats;
         s.cells += 1;
         s.devices += @intCast(drawn.x.items.len);
