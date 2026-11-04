@@ -78,15 +78,21 @@ pub const Converter = struct {
     /// Parses and recognizes `text`, read from project-relative `source` (which seeds the
     /// ids and names the bench); no cell is drawn yet. `text` must outlive `a`'s use.
     pub fn init(gpa: Allocator, a: Allocator, source: []const u8, text: []const u8) Allocator.Error!Converter {
+        return initLibs(gpa, a, source, text, &.{});
+    }
+
+    /// `init` with the project's library cells an `X` of an undefined subckt may call
+    /// (`calls` lists the names to look up); `libs` must outlive `a`'s use.
+    pub fn initLibs(gpa: Allocator, a: Allocator, source: []const u8, text: []const u8, libs: []const recognize.LibCell) Allocator.Error!Converter {
         const deck = try spice.parse(a, text);
-        var rec = try recognize.recognize(a, &deck);
+        var rec = try recognize.recognize(a, &deck, libs);
         var out: Conversion = .{};
         try out.warnings.appendSlice(a, deck.warnings);
         try hints.check(a, &deck, &out.warnings);
         try out.warnings.appendSlice(a, rec.warnings.items);
         const lib = try layout.library(gpa, a, &rec, &out.warnings);
         const file = source[if (mem.lastIndexOfScalar(u8, source, '/')) |i| i + 1 else 0..];
-        const base = file[0 .. mem.lastIndexOfScalar(u8, file, '.') orelse file.len];
+        const base = title(&deck) orelse file[0 .. mem.lastIndexOfScalar(u8, file, '.') orelse file.len];
         const bench = try recognize.uniqueStem(a, base, &rec.taken);
         var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .deck = deck, .rec = rec, .lib = lib, .bench = bench, .out = out };
         var has_top = deck.devs(0).len() > 0;
@@ -137,6 +143,33 @@ pub const Converter = struct {
         return c.out;
     }
 };
+
+/// The top level's `.title` text, which names the bench when there is one.
+fn title(deck: *const spice.Deck) ?[]const u8 {
+    for (deck.code, deck.code_cell) |text, cc| {
+        if (cc != 0 or text.len < 7 or !std.ascii.eqlIgnoreCase(text[0..6], ".title")) continue;
+        const line = text[6 .. mem.indexOfScalar(u8, text, '\n') orelse text.len];
+        if (!std.ascii.isWhitespace(text[6])) continue;
+        const t = mem.trim(u8, line, spice.ws);
+        if (t.len > 0) return t;
+    }
+    return null;
+}
+
+/// The subckt names `X` cards of `text` call that it does not define, each once (first
+/// spelling), in card order: the cells `Converter.initLibs` may find in the project's
+/// libraries.
+pub fn calls(a: Allocator, text: []const u8) Allocator.Error![]const []const u8 {
+    const deck = try spice.parse(a, text);
+    var out: ArrayList([]const u8) = .empty;
+    for (deck.dev_sub) |sub| {
+        if (sub.len == 0 or deck.findCell(sub) != null) continue;
+        for (out.items) |x| {
+            if (std.ascii.eqlIgnoreCase(x, sub)) break;
+        } else try out.append(a, sub);
+    }
+    return out.items;
+}
 
 /// Converts SPICE netlist `text`, read from project-relative `source`. Deterministic: equal
 /// arguments give equal bytes, natively and in the wasm guest.
@@ -200,4 +233,37 @@ test "a bench placed apart from its subckt refers to it through the library" {
     const flat = try run(a, deck, "");
     for (flat.files.items) |f| if (mem.endsWith(u8, f.name, ".shbench"))
         try testing.expect(mem.indexOf(u8, f.bytes, " ./rcdiv\n") != null);
+}
+
+test "an X of a library cell instantiates it, its parameters flowing in by name" {
+    // Oracle: the vendor-kit import (miniproj2): `Xm0 … vnfet w=w l=l` in a subckt with
+    // parameters, `lib vkit` holding `vnfet` (pins d g s b, string params). The netlist
+    // spec renders `{w}` as the specialized value in every dialect, so no `.param` shim and
+    // no generated verbatim leaf may appear.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const deck = ".title tb_nmos_switch\n.lib /k/kit_models.lib tt\n.param wn=80n\n" ++
+        ".subckt nmos_switch a b g bulk PARAMS: w=80n l=20n\nXm0 a g b bulk vnfet w=w l=l\n.ends nmos_switch\n" ++
+        "X1 x y gn vdd nmos_switch w=wn l=20n\nVx x 0 0.4\nVg gn 0 0.8\nVb vdd 0 0.8\nVy y 0 0\n.dc Vx 0 1 0.1\n";
+    try testing.expectEqualStrings("vnfet", (try calls(a, deck))[0]);
+    const cell = "schemify 1 shprim\n\npin d inout 40 0\npin g inout 40 20\npin s inout 40 40\npin b inout 40 60\n\n" ++
+        "param w \"\"\n  kind string\nparam l \"\"\n  kind string\n\nrect -20 -10 20 70\n";
+    const lib = (try place.libCell(a, "vkit", "vnfet", cell)).?;
+    try testing.expectEqual(recognize.Body{ -20, -10, 40, 70 }, lib.body);
+    var c: Converter = try .initLibs(testing.allocator, a, "nmos_switch.spice", deck, &.{lib});
+    defer c.deinit();
+    while (c.cellsLeft() > 0) try c.step();
+    const out = try c.finish();
+    var names: ArrayList(u8) = .empty;
+    for (out.files.items) |f| try names.print(a, "{s} ", .{f.name});
+    try testing.expectEqualStrings("nmos_switch.shcomp tb_nmos_switch.shbench ", names.items);
+    const sub = out.files.items[0].bytes;
+    try testing.expect(mem.indexOf(u8, sub, " vkit:vnfet\n") != null);
+    try testing.expect(mem.indexOf(u8, sub, "\n  name m0\n  w {w}\n  l {l}\n") != null);
+    try testing.expect(mem.indexOf(u8, sub, ".param") == null);
+    // Card text that names a parameter still gets the shim, in bare form.
+    const verbatim = ".subckt r2 a b PARAMS: k=2\nR1 a b {k*1k}\n.ends\nX1 x 0 r2\n";
+    const v = try convert(testing.allocator, a, "r2.sp", verbatim);
+    try testing.expect(mem.indexOf(u8, v.files.items[0].bytes, "text \".param k={k}\"") != null);
 }

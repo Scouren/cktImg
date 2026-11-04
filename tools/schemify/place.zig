@@ -5,7 +5,7 @@
 //! beside the referencing file and `lib:cell` only at a library's top, so a reference that
 //! crosses directories names the library whose `path` is the target's directory.
 //!
-//! Contents: `pub const Place` (`parse`, `dirOf`, `ref`), `fn globMatch`.
+//! Contents: `pub const Place` (`parse`, `dirOf`, `ref`), `pub fn libCell`, `fn globMatch`.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -13,6 +13,8 @@ const ArrayList = std.ArrayList;
 const assert = std.debug.assert;
 const mem = std.mem;
 const testing = std.testing;
+const recognize = @import("recognize.zig");
+const spice = @import("spice.zig");
 
 /// The header's `place` attributes and the local `lib` rows of a project manifest. Empty (the default) puts every
 /// file in one directory, so every reference is `./cell`.
@@ -90,7 +92,61 @@ pub const Place = struct {
     }
 };
 
+/// Library cell `name` of library `lib` from its file `text` (`.shprim` or `.shcomp`): its
+/// pins in file order (port order; an `alias` pin is a second position, not a port), their
+/// directions, its parameters and kinds, and as body the box around its pins and `rect`s.
+/// `null` when the file is not a cell or has no pin. Slices borrow `text`.
+// ponytail: unquoted names only, like `Place.parse`; a bus pin `D[3:0]` reads as one pin.
+pub fn libCell(a: Allocator, lib: []const u8, name: []const u8, text: []const u8) Allocator.Error!?recognize.LibCell {
+    if (!mem.startsWith(u8, text, "schemify 1 shprim") and !mem.startsWith(u8, text, "schemify 1 shcomp")) return null;
+    var pins: ArrayList(recognize.Pin) = .empty;
+    var params: ArrayList(recognize.LibParam) = .empty;
+    var body: ?recognize.Body = null;
+    // What the last record was, for its attributes.
+    var last: enum { other, pin, param } = .other;
+    var lines = mem.splitScalar(u8, text, '\n');
+    var rows: u32 = 0;
+    while (lines.next()) |line| : (rows += 1) {
+        if (rows == records_max) break;
+        var f = mem.tokenizeAny(u8, line, " \t\r");
+        const word = f.next() orelse continue;
+        if (line[0] == ' ' or line[0] == '\t') {
+            if (last == .pin and mem.eql(u8, word, "alias")) _ = pins.pop();
+            if (last == .param and mem.eql(u8, word, "kind")) params.items[params.items.len - 1].string = if (f.next()) |k| mem.eql(u8, k, "string") or mem.eql(u8, k, "choice") else false;
+            continue;
+        }
+        last = .other;
+        if (mem.eql(u8, word, "pin")) {
+            const n = f.next() orelse continue;
+            const dir = std.meta.stringToEnum(spice.Dir, f.next() orelse continue) orelse continue;
+            const x = std.fmt.parseInt(i32, f.next() orelse continue, 10) catch continue;
+            const y = std.fmt.parseInt(i32, f.next() orelse continue, 10) catch continue;
+            try pins.append(a, .{ .name = n, .x = x, .y = y, .dir = dir });
+            body = grow(body, .{ x, y, x, y });
+            last = .pin;
+        } else if (mem.eql(u8, word, "param")) {
+            try params.append(a, .{ .name = f.next() orelse continue, .string = false });
+            last = .param;
+        } else if (mem.eql(u8, word, "rect")) {
+            var r: recognize.Body = @splat(0);
+            var got: u32 = 0;
+            while (got < 4) : (got += 1) r[got] = std.fmt.parseInt(i32, f.next() orelse break, 10) catch break;
+            if (got == 4) body = grow(body, .{ @min(r[0], r[2]), @min(r[1], r[3]), @max(r[0], r[2]), @max(r[1], r[3]) });
+        }
+    }
+    if (pins.items.len == 0) return null;
+    return .{ .lib = lib, .name = name, .pins = pins.items, .body = body.?, .params = params.items };
+}
+
 // ---- private ----
+
+/// Records of a library cell file read before the rest is ignored (a PDK cell has ~100).
+const records_max = 4096;
+
+fn grow(b: ?recognize.Body, r: recognize.Body) recognize.Body {
+    const o = b orelse return r;
+    return .{ @min(o[0], r[0]), @min(o[1], r[1]), @max(o[2], r[2]), @max(o[3], r[3]) };
+}
 
 /// Whether `glob` (`*` any run, `?` one byte, else literal) matches all of `name`. One
 /// backtrack point at a time: O(glob × name) at worst.

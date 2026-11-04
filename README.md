@@ -30,7 +30,10 @@ source needs [Zig 0.17.0](https://ziglang.org/download/) (`nix develop` pins it)
 ### 1. As a Schemify plugin
 
 Import a netlist as editable Schemify cells: one `.shcomp` per `.subckt`, a
-`.shbench` for the top level, each device mapped onto a Schemify `core` cell.
+`.shbench` for the top level (named after `.title` when the deck has one), each
+device mapped onto a Schemify `core` cell. An `X` of a subckt the deck does not
+define becomes an instance of that cell in one of the project's `lib … path`
+libraries (a PDK's devices) when one holds it.
 
 Add the package to your Schemify config (`init.lua`), or to a project's own init
 file to make it a project plugin:

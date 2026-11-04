@@ -6,7 +6,9 @@
 //! ```text
 //! command        → fs_read(schemify.project)                    manifest
 //! io_done(man.)  → its `place`/`lib` rows → fs_read(path)        read
-//! io_done(read)  → parse + recognize → timer 0                  draw
+//! io_done(read)  → each undefined `X` subckt → fs_read(<lib dir>/<name>.shprim|.shcomp)
+//!                                                               cells (none: straight on)
+//! io_done(cell)  → … all answered → parse + recognize → timer 0 draw
 //! timer          → draw one cell → timer 0 … last cell → fs_read(each output name ×3 kinds)
 //!                                                               probe (refuse to overwrite)
 //! io_done(probe) → … all answered → fs_write(each new file)      write
@@ -80,11 +82,15 @@ const cards_max = 200;
 
 const gpa = std.heap.wasm_allocator;
 
-/// What a handle in flight stands for: the manifest read, the netlist read, the probe of
-/// `probes[i]`, or the write of `files[i]`.
-const Op = union(enum) { manifest, read, probe: u32, write: u32 };
+/// What a handle in flight stands for: the manifest read, the netlist read, the read of
+/// library cell file `cells[i]`, the probe of `probes[i]`, or the write of `files[i]`.
+const Op = union(enum) { manifest, read, cell: u32, probe: u32, write: u32 };
 const Flight = struct { handle: u32, op: Op };
 const Probe = struct { path: []const u8, file: u32 };
+/// A library file an `X` may call: `lib`'s `<dir>/<name>.<ext>`, and its bytes once read.
+const CellFile = struct { lib: []const u8, name: []const u8, path: []const u8, bytes: ?[]const u8 = null };
+/// Which list `pump` issues: library cell reads, output probes, or writes.
+const Phase = enum { cells, probes, writes };
 
 /// One import, from the command to the last completion. Everything lives in `arena`.
 const Job = struct {
@@ -96,6 +102,13 @@ const Job = struct {
     /// Where the host puts bare file names (the manifest's `place` and `lib` rows); empty
     /// for a netlist in a subdirectory, whose files are written beside it.
     place: cktimg.place.Place = .{},
+    /// The manifest's rows wherever the netlist is: its `lib` rows name the libraries an
+    /// `X` of an undefined subckt is looked up in.
+    libs: cktimg.place.Place = .{},
+    /// The netlist text, kept from its read until the library cells are in.
+    text: []const u8 = "",
+    cells: ArrayList(CellFile) = .empty,
+    phase: Phase = .cells,
     /// The conversion while its cells are drawn, one per timer event.
     conv: ?cktimg.Converter = null,
     files: []const cktimg.OutFile = &.{},
@@ -225,7 +238,8 @@ fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.
         .manifest => {
             // No manifest (E_GONE): nothing is placed. A netlist in a subdirectory writes
             // paths, which the host never places.
-            if (status >= 0 and job.dir.len == 0) job.place = try .parse(a, try a.dupe(u8, bytes));
+            if (status >= 0) job.libs = try .parse(a, try a.dupe(u8, bytes));
+            if (job.dir.len == 0) job.place = job.libs;
             const h = schemify.fsRead(job.source) catch |e| {
                 logf(out, .@"error", "cannot read {s}: {t}{s}", .{ job.source, e, hint(e) });
                 return false;
@@ -249,15 +263,21 @@ fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.
                 return false;
             }
             // The event's bytes are reused after it returns; the deck borrows the text.
-            const text = try a.dupe(u8, bytes);
-            job.conv = try .init(gpa, a, job.source, text);
-            job.conv.?.place = job.place;
-            if (job.conv.?.cellsLeft() == 0) {
-                logf(out, .warn, "{s}: no subckt or top-level card to import", .{job.source});
-                return false;
+            job.text = try a.dupe(u8, bytes);
+            for (try cktimg.calls(a, job.text)) |name| {
+                if (mem.indexOfAny(u8, name, "/\\:") != null or mem.startsWith(u8, name, ".")) continue;
+                for (job.libs.lib_name.items, job.libs.lib_dir.items) |lib, dir| for ([_][]const u8{ "shprim", "shcomp" }) |ext| {
+                    const path = if (dir.len == 0) try a.print("{s}.{s}", .{ name, ext }) else try a.print("{s}/{s}.{s}", .{ dir, name, ext });
+                    try job.cells.append(a, .{ .lib = lib, .name = name, .path = path });
+                };
             }
-            out.timer(job.serial, 0);
-            return true;
+            if (job.cells.items.len == 0) return convert(job, out);
+            return pump(job, out);
+        },
+        .cell => |i| {
+            if (status >= 0) job.cells.items[i].bytes = try a.dupe(u8, bytes);
+            if (job.issued < job.cells.items.len or job.in_flight.items.len > 0) return pump(job, out);
+            return convert(job, out);
         },
         .probe => |i| {
             if (status >= 0) job.exists[job.probes.items[i].file] = true;
@@ -270,6 +290,11 @@ fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.
                 return false;
             }
             for (job.exists, 0..) |e, k| if (!e) try job.writes.append(a, @intCast(k));
+            if (job.writes.items.len == 0) {
+                out.log(.info, job.summary);
+                return false;
+            }
+            job.phase = .writes;
             job.issued = 0;
             return pump(job, out);
         },
@@ -283,6 +308,27 @@ fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.
             return false;
         },
     }
+}
+
+/// Parses and recognizes the netlist with the library cells read (the first file found per
+/// subckt name, in `lib` row order), then starts drawing.
+fn convert(job: *Job, out: *Out) Allocator.Error!bool {
+    const a = job.arena.allocator();
+    var libs: ArrayList(cktimg.recognize.LibCell) = .empty;
+    for (job.cells.items) |f| {
+        const bytes = f.bytes orelse continue;
+        for (libs.items) |l| {
+            if (mem.eql(u8, l.name, f.name)) break;
+        } else if (try cktimg.place.libCell(a, f.lib, f.name, bytes)) |l| try libs.append(a, l);
+    }
+    job.conv = try .initLibs(gpa, a, job.source, job.text, libs.items);
+    job.conv.?.place = job.place;
+    if (job.conv.?.cellsLeft() == 0) {
+        logf(out, .warn, "{s}: no subckt or top-level card to import", .{job.source});
+        return false;
+    }
+    out.timer(job.serial, 0);
+    return true;
 }
 
 /// Draws the job's next cell (a timer event); after the last one starts the probes.
@@ -319,23 +365,31 @@ fn probe(job: *Job, conv: cktimg.Conversion, out: *Out) Allocator.Error!bool {
     job.files = conv.files.items;
     job.exists = try a.alloc(bool, job.files.len);
     @memset(job.exists, false);
+    job.phase = .probes;
+    job.issued = 0;
     return pump(job, out);
 }
 
-/// Issues queued probes or writes up to `window` in flight; false after a refused request
-/// (logged).
+/// Issues the phase's queued reads, probes or writes up to `window` in flight; false after
+/// a refused request (logged).
 fn pump(job: *Job, out: *Out) Allocator.Error!bool {
     const a = job.arena.allocator();
     assert(job.in_flight.items.len <= window);
-    const writing = job.writes.items.len > 0;
-    const total = if (writing) job.writes.items.len else job.probes.items.len;
+    const total = switch (job.phase) {
+        .cells => job.cells.items.len,
+        .probes => job.probes.items.len,
+        .writes => job.writes.items.len,
+    };
     while (job.issued < total and job.in_flight.items.len < window) {
-        const k = if (writing) job.writes.items[job.issued] else 0;
-        const op: Op = if (writing) .{ .write = k } else .{ .probe = @intCast(job.issued) };
-        const issued = if (writing)
-            schemify.fsWrite(try outPath(job, job.files[k].name), job.files[k].bytes)
-        else
-            schemify.fsRead(job.probes.items[job.issued].path);
+        const i: u32 = @intCast(job.issued);
+        const op: Op, const issued = switch (job.phase) {
+            .cells => .{ .{ .cell = i }, schemify.fsRead(job.cells.items[i].path) },
+            .probes => .{ .{ .probe = i }, schemify.fsRead(job.probes.items[i].path) },
+            .writes => blk: {
+                const k = job.writes.items[i];
+                break :blk .{ .{ .write = k }, schemify.fsWrite(try outPath(job, job.files[k].name), job.files[k].bytes) };
+            },
+        };
         const handle = issued catch |e| {
             if (e == error.Space and job.in_flight.items.len > 0) break; // resume on the next completion
             logf(out, .@"error", "{s}: I/O refused: {t}{s}", .{ job.source, e, hint(e) });
