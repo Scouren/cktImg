@@ -184,3 +184,7 @@ test {
 test {
     _ = @import("sketch.zig");
 }
+
+test {
+    _ = @import("report.zig");
+}

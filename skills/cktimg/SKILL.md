@@ -16,14 +16,18 @@ what it recognizes. Work from the top and **descend** one rung only for a
    `vb*`/`bias*`; matched devices numbered side by side (`M1`/`M2`); one
    `.subckt` per block. Done when `cktimg-json deck.sp d.json` exits 0.
 
-2. **Draw at rung 0**, no hints: `cktimg-json --svg d.svg deck.sp d.json`.
-   Done when you hold `d.svg` and `d.json`.
+2. **Draw at rung 0**, no hints:
+   `cktimg-json --svg d.svg --report r.json deck.sp d.json`. Done when you
+   hold `d.svg`, `d.json` and `r.json`.
 
-3. **Review against [CHECKLIST.md](CHECKLIST.md).** Read `d.json` first:
-   each device's `pos` (y grows down; equal y is one row, equal x one
-   column; names starting `_` are the rail and port symbols cktImg drew),
-   its `pins` and their nets, and `labels` (the nets drawn as names). Then
-   look at the image (`magick -density 110 d.svg d.png` when you read PNG).
+3. **Review against [CHECKLIST.md](CHECKLIST.md).** Read `r.json` first:
+   `gates` must be empty (a finding is a cktImg bug: report it with the
+   deck); `grid` lists each lattice row top down, each device `name@column`;
+   `decisions` the groups cktImg chose, as `*@ group` lines; `metrics` the
+   crossings, bends and nets drawn as names. Then `d.json`: each device's
+   `pos` (y grows down; names starting `_` are the rail and port symbols
+   cktImg drew), its `pins` and their nets. Then look at the image
+   (`magick -density 110 d.svg d.png` when you read PNG).
    Done when every checklist item is *ok* or carries a complaint naming its
    devices or nets ("`m3` and `m4` in different rows").
 
@@ -40,13 +44,18 @@ what it recognizes. Work from the top and **descend** one rung only for a
 | rung | you change | how | for a complaint like |
 |---|---|---|---|
 | 0 names | net and device names | the names in step 1 | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
-| 1 meaning | the groups cktImg recognizes | `*@ group pair\|mirror\|stack\|cross <devices>`, `*@ nogroup <devices>`, `*@ grouping off` | matched devices not side by side; a stack not one column; a device pulled into the wrong group |
+| 1 meaning | the groups cktImg recognizes | `*@ group pair\|mirror\|bank\|stack\|cross <devices>`, `*@ nogroup <devices>`, `*@ grouping off` | matched devices not side by side; a stack not one column; a device pulled into the wrong group |
 | style | lengths for every drawing of the project | a `lint.zon` with `.{ .layout = .{ .stack = 1.5, .terminal = 2 } }`, passed as `--config lint.zon` | crowded or sprawling |
 
 Rows, left-to-right order, cells, coordinates and routes cannot be pinned
 yet: hand a complaint only they would fix to the user as open.
 
 ## Reference
+
+- **Decisions.** Each `decisions` line, pasted into the deck, holds that
+  group; edit one (its kind, its devices) to change it. The deck plus all of
+  them and `*@ grouping off` draws the same picture, so start a rung-1 fix
+  from them.
 
 - **Hints** (`*@` lines) sit at the deck's top level. Inside a `.subckt`
   they are that subckt's: the Schemify import carries them into its cell

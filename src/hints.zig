@@ -1,7 +1,7 @@
 //! The grouping hints of a deck (issue #7), in the `*@` style of the
 //! block-side directives:
 //!
-//!     *@ group pair m1 m2        (also mirror, stack, cross)
+//!     *@ group pair m1 m2        (also mirror, bank, stack, cross)
 //!     *@ nogroup m9              out of every group
 //!     *@ grouping off            no recognized groups, the hinted ones only
 //!
@@ -18,7 +18,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const eql = std.ascii.eqlIgnoreCase;
 
-pub const Verb = enum { pair, mirror, stack, cross, nogroup, off };
+pub const Verb = enum { pair, mirror, bank, stack, cross, nogroup, off };
 
 pub const Hint = struct {
     verb: Verb,
@@ -46,7 +46,7 @@ pub fn read(line: []const u8) ?Read {
     const word = it.next() orelse return null;
     const verb: Verb = if (eql(word, "group")) kind: {
         const kind = it.next() orelse return null;
-        inline for (.{ Verb.pair, .mirror, .stack, .cross }) |v| {
+        inline for (.{ Verb.pair, .mirror, .bank, .stack, .cross }) |v| {
             if (eql(kind, @tagName(v))) break :kind v;
         }
         return null;

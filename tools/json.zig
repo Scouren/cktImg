@@ -2,13 +2,15 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
 //! pin positions passes its own, so every wire ends on its pins. `--target` adds a `"target"` block that maps each device's class to
 //! the backend's symbol and pin order (docs/TARGETS.md); `--svg` also draws
-//! the placement, headless, with the gallery's renderer.
+//! the placement, headless, with the gallery's renderer; `--report` writes the
+//! decision report (`src/report.zig`): the checks' findings, scores, the
+//! engine's decisions as `*@` lines and the lattice rows.
 //!
 //! Two things a subcircuit library file needs and SPICE does not give it:
 //! a file whose first line is `.subckt` has no title line, so the file name
@@ -36,6 +38,8 @@ const usage =
     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
     \\                    add a "target" block to the document
     \\  --svg <path>      also draw the placed schematic as SVG
+    \\  --report <path>   also write the decision report: findings, scores, the
+    \\                    engine's decisions as *@ lines, the lattice rows
     \\  -h, --help        this message
     \\
     \\Exit status: 0 written; 1 bad command line, netlist, config, symbols or manifest
@@ -50,6 +54,7 @@ const Options = struct {
     symbols: ?[]const u8 = null,
     target: ?[]const u8 = null,
     svg: ?[]const u8 = null,
+    report: ?[]const u8 = null,
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -101,6 +106,18 @@ pub fn main(init: std.process.Init) !void {
         const pic = try svg.alloc(gpa, &placed, &lib, .{});
         defer gpa.free(pic);
         cwd.writeFile(io, .{ .sub_path = path, .data = pic }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
+    }
+
+    if (opts.report) |path| {
+        // Parsing and roles are pure: the same sources give the netlist
+        // `place` drew.
+        var nl = try np.netlist.parse(gpa, srcs, null);
+        defer nl.deinit(gpa);
+        const roles = try np.guessRoles(gpa, &nl);
+        defer gpa.free(roles);
+        var rw: Writer.Allocating = .init(arena);
+        try np.report.write(gpa, &rw.writer, &placed, &lib, &nl, roles);
+        cwd.writeFile(io, .{ .sub_path = path, .data = rw.written() }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
     }
 
     // The rails and ports the layout added have no name; a consumer that
@@ -274,7 +291,7 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
             std.debug.print("{s}", .{usage});
             return null;
         }
-        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else null;
+        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else null;
         if (slot) |s| {
             i += 1;
             if (i >= argv.len) fatal("{s} needs a path", .{a});

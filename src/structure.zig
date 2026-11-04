@@ -371,13 +371,14 @@ fn hints(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []co
             held[e.index()] = true;
             taken[e.index()] = true;
         },
-        .pair, .mirror, .stack, .cross => {},
+        .pair, .mirror, .bank, .stack, .cross => {},
     };
     var members: std.ArrayList(u32) = .empty;
     defer members.deinit(gpa);
     for (nl.hints) |h| {
         const kind: BlockKind = switch (h.verb) {
             .pair => .pair,
+            .bank => .bank,
             .mirror => .mirror,
             .stack => .stack,
             .cross => .cross,

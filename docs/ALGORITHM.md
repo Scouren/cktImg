@@ -83,7 +83,7 @@ The deck's own word overrides recognition (issue #7), in the `*@` style of the
 block-side directives:
 
 ```spice
-*@ group pair M1 M2        (also mirror, stack, cross)
+*@ group pair M1 M2        (also mirror, bank, stack, cross)
 *@ nogroup M9
 *@ grouping off
 ```
@@ -344,6 +344,7 @@ cell, every cell the Schemify import hands the engine, 150 random netlists
 - **dots exactly where a net's wires meet**: three or more arms, or a net
   crossing itself, and nowhere else (`support.dots`, which counts the arms
   itself);
+  these three are `checks.find`, which `cktimg-json --report` lists;
 - **no wire touches another net's point** (a pin, a MOS body, a wire's end or
   bend, a label);
 - **one picture per circuit:** the same deck draws the same picture; every
@@ -370,7 +371,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the three forms…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |
 | result | `tests/api.zig`: the tiers agree, `Placed` is well-formed and loses no device, every net is one piece, no wire on another net's point, leads, generated boxes, subcircuit blocks; `tests/abi_test.c`: the C ABI |

@@ -297,7 +297,7 @@ of the port-side directives: at the top level of the deck drawn, or inside a
 `.subckt` for the Schemify import, which carries them into that cell.
 
 ```spice
-*@ group pair M1 M2        (also mirror, stack, cross)
+*@ group pair M1 M2        (also mirror, bank, stack, cross)
 *@ group stack M5 M7
 *@ nogroup M9
 *@ grouping off
@@ -416,7 +416,7 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
