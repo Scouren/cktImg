@@ -125,6 +125,8 @@ pub const Schematic = struct {
     nodes: std.MultiArrayList(Node) = .empty,
     pins: std.MultiArrayList(Pin) = .empty,
     /// Per net: drawn with labels.
+    /// Per device, the side a `*@ refdes` line puts its name on; empty for none.
+    refdes: []const ?Side = &.{},
     labeled: []bool = &.{},
     /// Each node's point, in the target's units.
     xy: [][2]f32 = &.{},

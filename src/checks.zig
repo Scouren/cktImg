@@ -9,7 +9,7 @@
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
-//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool`
+//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -19,6 +19,7 @@ const placed = @import("placed.zig");
 const netlist = @import("netlist.zig");
 const hints = @import("hints.zig");
 const relations = @import("relations.zig");
+const pinned = @import("pinned.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -231,7 +232,7 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
 /// end, `label` a name on the net and `wire` none, `port` a port symbol
 /// past the net's pins on that side. Null for a line the drawing cannot
 /// show (a group, the symmetry).
-pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool {
+pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool {
     switch (h.verb) {
         .row, .above, .order => {
             var prev: ?Pt = null;
@@ -300,11 +301,57 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool {
             }
             return false;
         },
+        .at => {
+            const d = deviceIn(p, h.args[0]) orelse return false;
+            var buf: [1]Pt = undefined;
+            const want = scaled(h.args[1..3], unit, &buf) orelse return false;
+            if (!p.dev_pos[d].eql(want[0])) return false;
+            if (h.args.len == 4) if (pinned.orientWord(h.args[3])) |o| return std.meta.eql(o, p.dev_orient[d]);
+            return true;
+        },
+        .route, .via => {
+            const net = netIn(p, h.args[0]) orelse return false;
+            var buf: [64]Pt = undefined;
+            const pts = scaled(h.args[1..], unit, &buf) orelse return false;
+            for (pts, 0..) |at, k| {
+                if (!onWire(p, net, at)) return false;
+                if (h.verb == .via or k == 0) continue;
+                // Every point of the segment from the last one on the net.
+                const prev = pts[k - 1];
+                const step: Pt = .{ .x = std.math.sign(at.x - prev.x), .y = std.math.sign(at.y - prev.y) };
+                var q = prev;
+                while (!q.eql(at)) : (q = q.add(step)) if (!onWire(p, net, q)) return false;
+            }
+            return true;
+        },
         else => return null,
     }
 }
 
 // ---- private ----
+
+/// `x y` pairs of symbol units, in drawing units, into `buf`; null for a
+/// malformed or too long list.
+fn scaled(words: []const []const u8, unit: i32, buf: []Pt) ?[]const Pt {
+    const n = words.len / 2;
+    if (n == 0 or n > buf.len) return null;
+    const u: f64 = @floatFromInt(unit);
+    for (buf[0..n], 0..) |*q, k| {
+        const x = std.fmt.parseFloat(f64, words[2 * k]) catch return null;
+        const y = std.fmt.parseFloat(f64, words[2 * k + 1]) catch return null;
+        if (!std.math.isFinite(x) or !std.math.isFinite(y) or @abs(x) > 1e6 or @abs(y) > 1e6) return null;
+        q.* = .{ .x = @intFromFloat(@round(x * u)), .y = @intFromFloat(@round(y * u)) };
+    }
+    return buf[0..n];
+}
+
+fn onWire(p: *const Placed, net: u32, at: Pt) bool {
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        if (Rect.fromCorners(a, b).contains(at)) return true;
+    };
+    return false;
+}
 
 /// Whether the named devices' pins on `net` are one piece by its wires
 /// alone (names aside). ponytail: a pin against every wire end, quadratic.
@@ -330,13 +377,23 @@ fn wired(p: *const Placed, net: u32) bool {
         changed = false;
         for (0..n) |i| for (0..n) |j| {
             if (group[i] == group[j] or !(buf[i].x == buf[j].x and buf[i].y == buf[j].y)) continue;
-            const lo = @min(group[i], group[j]);
-            for (group[0..n]) |*x| if (x.* == group[i] or x.* == group[j]) {
+            const gi = group[i];
+            const gj = group[j];
+            const lo = @min(gi, gj);
+            for (group[0..n]) |*x| if (x.* == gi or x.* == gj) {
                 x.* = lo;
             };
             changed = true;
         };
     }
+    // One pin, or none, is joined already.
+    var count: usize = 0;
+    for (0..p.deviceCount()) |d| {
+        if (p.dev_name[d].len == 0) continue;
+        const a, const b = p.pinRange(d);
+        for (a..b) |pin| count += @intFromBool(p.pin_net[pin] == net);
+    }
+    if (count <= 1) return true;
     var piece: ?u16 = null;
     for (0..p.deviceCount()) |d| {
         if (p.dev_name[d].len == 0) continue;

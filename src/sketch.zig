@@ -26,6 +26,7 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const wires = @import("wires.zig");
 const netlines = @import("netlines.zig");
+const pinned = @import("pinned.zig");
 const hints = @import("hints.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
@@ -79,27 +80,74 @@ pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.La
 // ---- private ----
 
 fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+    // The deck's drawing lines; their verdicts are the report's to give.
+    const sa = s.arena.allocator();
+    const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
+    @memset(scratch, null);
+    const ats = try pinned.read(sa, nl, s.lib.unit, sk.drawn, scratch);
+    s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk);
     const len = Lengths.of(layout, s.lib.unit);
     const geo = try coordinates(gpa, s, nl, sk, len);
     defer gpa.free(geo.xs);
     defer gpa.free(geo.ys);
+    try keepAts(gpa, s, nl, sk, geo, ats);
     var xy: std.ArrayList([2]f32) = .empty;
-    try placeDevices(s, nl, sk, geo, &xy);
+    try placeDevices(s, nl, sk, geo, ats, &xy);
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    // The deck's net lines; their verdicts are the report's to give.
-    const sa = s.arena.allocator();
-    const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
-    @memset(scratch, null);
-    const lines = try netlines.read(sa, nl, s.roles, scratch);
+    const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
     try wires.wire(gpa, s, &xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, &lines);
     s.xy = xy.items;
     try noConnects(gpa, s);
     assert(s.xy.len == s.nodes.len);
+}
+
+/// Keeps each `at` whose symbol, at its place and turn, overlaps no other
+/// drawn device's (the preferred of two `at` devices stays), and turns the
+/// kept ones; drops the rest (`ats[d] = null`). The report says which.
+fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo, ats: []?pinned.At) !void {
+    const n = nl.graph.edgeCount();
+    const info = s.devices.slice();
+    const boxes = try gpa.alloc(Rect, n);
+    defer gpa.free(boxes);
+    const order = try hints.admitOrder(gpa, nl.hints);
+    defer gpa.free(order);
+    for (0..n) |d| {
+        if (!sk.drawn[d]) continue;
+        const bbox = s.lib.at(info.items(.class)[d]).bbox();
+        boxes[d] = if (ats[d]) |a|
+            (a.orient orelse info.items(.orient)[d]).applyRect(bbox).translate(a.origin)
+        else
+            info.items(.orient)[d].applyRect(bbox).translate((Pt{ .x = geo.xs[@intCast(sk.x[d])], .y = geo.ys[@intCast(sk.y[d])] }).sub(info.items(.grid)[d]));
+    }
+    // The least preferred `at` gives way first.
+    var k = order.len;
+    while (k > 0) {
+        k -= 1;
+        if (nl.hints[order[k]].verb != .at) continue;
+        const d = (nl.device(nl.hints[order[k]].args[0]) orelse continue).index();
+        const a = ats[d] orelse continue;
+        if (a.line != order[k]) continue;
+        for (0..n) |e| {
+            if (e == d or !sk.drawn[e] or !boxes[d].intersects(boxes[e])) continue;
+            ats[d] = null;
+            break;
+        }
+    }
+    for (0..n) |d| {
+        const o = (ats[d] orelse continue).orient orelse continue;
+        for ([_]sch.Orientation{ .vertical, .horizontal }) |form| for ([_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } }) |f| {
+            if (!std.meta.eql(Orient.flipped(if (form == .vertical) .left else .r0, f[0], f[1]), o)) continue;
+            info.items(.orientation)[d] = form;
+            info.items(.flip_x)[d] = f[0];
+            info.items(.flip_y)[d] = f[1];
+        };
+    }
+    sch.settleDevices(s, &nl.graph);
 }
 
 fn isTransistor(kind: netlist.DeviceKind) bool {
@@ -263,13 +311,17 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
 /// whose terminal is off its device's line for that side (an op-amp's
 /// second input) gets a copy node on its own line, so no two pins of one
 /// side meet at one point.
-fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo, xy: *std.ArrayList([2]f32)) !void {
+fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo, ats: []const ?pinned.At, xy: *std.ArrayList([2]f32)) !void {
     const a = s.arena.allocator();
     const c = &nl.graph;
     const info = s.devices.slice();
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d]) continue;
-        const at: [2]f32 = .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
+        // An `at` line's origin, else the lattice's point.
+        const at: [2]f32 = if (ats[d]) |p|
+            toF(p.origin.add(info.items(.grid)[d]))
+        else
+            .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
         const node = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = none });
         try xy.append(a, at);
         const class = s.lib.at(info.items(.class)[d]);

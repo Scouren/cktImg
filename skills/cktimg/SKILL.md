@@ -24,7 +24,7 @@ one rung only for a **complaint** the rung above cannot fix.
 
 4. **Fix each complaint on the highest rung that fixes it** (the ladder):
    change the names, add the line (start from the matching one in
-   `cktimg-json --decisions 2 deck.sp`), or set the length; redraw. Done
+   `cktimg-json --decisions 4 deck.sp`), or set the length; redraw. Done
    when every complaint is gone or is open (no rung here fixes it), and
    every line you wrote is `honoured` in `r.json`'s `requests` (Lines,
    below).
@@ -40,10 +40,13 @@ one rung only for a **complaint** the rung above cannot fix.
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
 | 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between); `face <dev> g left\|right`, `face <dev> <pin> up`; `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each`, `first <nets>` | the parts are right, their arrangement is not |
+| 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
+| 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
+| 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
 | style | lengths for every drawing of the project | a `lint.zon` with `.{ .layout = .{ .stack = 1.5, .terminal = 2 } }`, passed as `--config lint.zon` | crowded or sprawling |
 
-A complaint about cells, coordinates or routes is open: those rungs are
-still to come.
+Descend to rungs 3 to 5 for one device or net at a time: a cell or place
+on a device overrides the relations on it.
 
 ## Reference
 
@@ -57,14 +60,16 @@ still to come.
   Then `d.json`: each device's `pos` (y grows down; names starting `_` are
   the rail and port symbols cktImg drew), its `pins` and their nets. Then
   the image (`magick -density 110 d.svg d.png` when you read PNG).
-- **Decisions.** `--decisions 2` (and the report's `decisions`) states the
-  engine's choices as lines; a pasted line holds that choice, an edited one
-  changes it. The deck plus every line and `*@ grouping off` draws the same
-  picture.
+- **Decisions.** `--decisions 4` (and the report's `decisions`) states the
+  engine's choices as lines, cells and places as `weak` stays; a pasted line
+  holds that choice, an edited one changes it. The deck plus every line and
+  `*@ grouping off` draws the same picture.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
   `weak` one (a stay). `requests` gives each line a state: `honoured`;
-  `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`,
+  `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`
+  `guarantee` (an `at`, `route` or `via` that would break the drawing);
+  `dropped`,
   `blocked_by` the lines it cannot hold with (`alone`: deleting that one
   admits it), so delete or change a blocker; `rejected` (malformed, or a
   name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.

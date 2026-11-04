@@ -62,6 +62,8 @@ pub const Placed = struct {
     /// Where the class's origin sits.
     dev_pos: []const Pt,
     dev_orient: []const Orient,
+    /// The side a `*@ refdes` line puts the device's name on, or null.
+    dev_refdes: []const ?Side = &.{},
     /// Pins of device d: `dev_pin0[d] .. dev_pin0[d + 1]`, in SPICE node order.
     dev_pin0: []const u32,
 
@@ -226,6 +228,20 @@ const Builder = struct {
             }
         }
         try b.islands();
+    }
+
+    /// Each device's `refdes` side, found by name (the drawing lists its
+    /// devices in its own order).
+    fn refdes(b: *Builder) ![]const ?Side {
+        const out = try b.a().alloc(?Side, b.names.items.len);
+        @memset(out, null);
+        if (b.s.refdes.len == 0) return out;
+        for (b.names.items, out) |name, *o| {
+            if (name.len == 0) continue;
+            const e = b.nl.device(name) orelse continue;
+            o.* = b.s.refdes[e.index()];
+        }
+        return out;
     }
 
     /// A netlist device: every card pin, placed on its class terminal.
@@ -410,6 +426,8 @@ const Builder = struct {
         try net_seg.append(al, @intCast(seg_pt.items.len - 1));
         const nets = try al.alloc([:0]const u8, b.s.net_name.len);
         for (nets, b.s.net_name) |*d, n| d.* = try al.dupeSentinel(u8, n, 0);
+        // Before the arena is copied into the result.
+        const name_sides = try b.refdes();
         return .{
             .arena = b.arena,
             .dev_name = b.names.items,
@@ -417,6 +435,7 @@ const Builder = struct {
             .dev_value = b.values.items,
             .dev_pos = b.pos.items,
             .dev_orient = b.orients.items,
+            .dev_refdes = name_sides,
             .dev_pin0 = b.pin0.items,
             .pin_net = b.pin_net.items,
             .pin_xy = b.pin_xy.items,

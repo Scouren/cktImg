@@ -119,6 +119,11 @@ fn run(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8, lines: []c
     return .{ .nl = nl, .roles = roles, .st = st, .sk = sk, .p = p, .v = v };
 }
 
+/// `v` drawing units in symbol units.
+fn fu(v: i32, unit: i32) f64 {
+    return @as(f64, @floatFromInt(v)) / @as(f64, @floatFromInt(unit));
+}
+
 fn expectState(v: np.hints.Verdict, state: np.hints.State, code: np.hints.Code) !void {
     if (v.state != state or v.code != code) std.debug.print("got {t} {t}\n", .{ v.state, v.code });
     try std.testing.expectEqual(state, v.state);
@@ -278,13 +283,74 @@ test "lines: label names a net, wire wires one, port and rail set their symbols"
     try std.testing.expect(one.symbols("0") < each.symbols("0"));
 }
 
-test "lines: a malformed line, an unknown name or verb, and a rung not built yet are rejected" {
+test "lines: a malformed line, an unknown name or verb are rejected" {
     var f = try Fixture.init();
     defer f.deinit();
-    const r = try run(f.arena(), f.lib, ota, "*@ frobnicate m1\n*@ above m1 m99\n*@ face m1 g sideways\n*@ cell m1 2 4\n*@ rail vout bar\n");
+    const r = try run(f.arena(), f.lib, ota, "*@ frobnicate m1\n*@ above m1 m99\n*@ face m1 g sideways\n*@ route f 1 2 3\n*@ rail vout bar\n*@ at m1 2 x\n");
     try expectState(r.verdict("*@ frobnicate m1"), .rejected, .unknown_verb);
     try expectState(r.verdict("*@ above m1 m99"), .rejected, .unknown_name);
     try expectState(r.verdict("*@ face m1 g sideways"), .rejected, .bad_args);
-    try expectState(r.verdict("*@ cell m1 2 4"), .rejected, .not_built);
+    try expectState(r.verdict("*@ route f 1 2 3"), .rejected, .bad_args);
     try expectState(r.verdict("*@ rail vout bar"), .rejected, .not_placeable);
+    try expectState(r.verdict("*@ at m1 2 x"), .rejected, .bad_args);
+}
+
+test "lines: cell puts a device on its cell, the device there moves aside, and the later of two lines on one cell wins" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    // M5's cell and M3's, in the frame the lines use.
+    const m3 = base.nl.device("m3").?.index();
+    const m5 = base.nl.device("m5").?.index();
+    const c3: [2]i32 = .{ base.sk.x[m3] + base.sk.origin[0], base.sk.y[m3] + base.sk.origin[1] };
+    const line = try std.fmt.allocPrint(f.arena(), "*@ cell m5 {d} {d}\n", .{ c3[0], c3[1] });
+    const r = try run(f.arena(), f.lib, ota, line);
+    try expectState(r.verdict(line[0 .. line.len - 1]), .honoured, .ok);
+    try std.testing.expectEqual(c3[0], r.sk.x[m5] + r.sk.origin[0]);
+    try std.testing.expectEqual(c3[1], r.sk.y[m5] + r.sk.origin[1]);
+    const two = try std.fmt.allocPrint(f.arena(), "*@ cell m1 {d} {d}\n*@ cell m2 {d} {d}\n", .{ c3[0], c3[1], c3[0], c3[1] });
+    const t = try run(f.arena(), f.lib, ota, two);
+    const first = try std.fmt.allocPrint(f.arena(), "*@ cell m1 {d} {d}", .{ c3[0], c3[1] });
+    const second = try std.fmt.allocPrint(f.arena(), "*@ cell m2 {d} {d}", .{ c3[0], c3[1] });
+    try expectState(t.verdict(second), .honoured, .ok);
+    try expectState(t.verdict(first), .dropped, .conflict);
+}
+
+test "lines: at puts a symbol where it says and turns it; one on another symbol is refused; refdes moves a name" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const r = try run(f.arena(), f.lib, ota, "*@ at m5 -10 20 r90\n*@ refdes m1 left\n");
+    try expectState(r.verdict("*@ at m5 -10 20 r90"), .honoured, .ok);
+    try std.testing.expect(r.at("m5").eql(.{ .x = -10 * f.lib.unit, .y = 20 * f.lib.unit }));
+    try std.testing.expectEqual(np.Orient{ .rot = 1 }, r.p.dev_orient[r.device("m5")]);
+    try expectState(r.verdict("*@ refdes m1 left"), .honoured, .ok);
+    // M4 placed on M3's own spot.
+    const base = try run(f.arena(), f.lib, ota, "");
+    const m3 = base.at("m3");
+    const on = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit) });
+    const o = try run(f.arena(), f.lib, ota, on);
+    try expectState(o.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
+    try std.testing.expect(o.at("m4").eql(base.at("m4")));
+}
+
+test "lines: route pins a net's wire from one of its pins; one off its pins is refused; via passes a point" {
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    const u = f.lib.unit;
+    // The tail net: from M5's drain across to below M1's source, then up to it.
+    const d5 = base.pin("m5", 0);
+    const s1 = base.pin("m1", 2);
+    const corner: np.Pt = .{ .x = s1.x, .y = d5.y };
+    const text = try std.fmt.allocPrint(f.arena(), "*@ route p {d:.4},{d:.4} {d:.4},{d:.4} {d:.4},{d:.4}", .{
+        fu(d5.x, u), fu(d5.y, u), fu(corner.x, u), fu(corner.y, u), fu(s1.x, u), fu(s1.y, u),
+    });
+    const r = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ text, "\n" }));
+    try expectState(r.verdict(text), .honoured, .ok);
+    const off = "*@ route p 1000 1000 1000 1001";
+    const o = try run(f.arena(), f.lib, ota, off ++ "\n");
+    try expectState(o.verdict(off), .dropped, .guarantee);
+    const via = try std.fmt.allocPrint(f.arena(), "*@ via vout {d:.4},{d:.4}", .{ fu(base.pin("m4", 0).x, u), fu(base.pin("m4", 0).y, u) });
+    const w = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ via, "\n" }));
+    try expectState(w.verdict(via), .honoured, .ok);
 }

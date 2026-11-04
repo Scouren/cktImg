@@ -113,7 +113,7 @@ try cktimg.report.write(gpa, &w, &placed, &lib, &nl, roles);      // the decisio
 `*@` line's verdict (`report.verdicts`: honoured, relaxed, dropped with the
 lines that blocked it, or rejected; each honoured one checked against the
 drawing), scores (crossings, bends, the nets drawn as names), the engine's
-decisions on rungs 1 and 2 as the `*@` lines that state them
+decisions on rungs 1 to 4 as the `*@` lines that state them
 (`report.decisions`), and each lattice row. A deck plus its decisions, under
 `*@ grouping off`, draws the same picture.
 

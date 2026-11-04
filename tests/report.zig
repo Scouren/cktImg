@@ -24,7 +24,7 @@ fn drawn(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8) ![]const
     return aw.written();
 }
 
-test "report: a deck plus its exported decisions, rungs 1 and 2, recognition off, draws the same picture" {
+test "report: a deck plus its exported decisions, rungs 1 to 4, recognition off, draws the same picture" {
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -40,9 +40,11 @@ test "report: a deck plus its exported decisions, rungs 1 and 2, recognition off
         const roles = try np.guessRoles(arena, &nl);
         const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
         const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
-        try std.testing.expectEqual(st.block_kind.len, (try np.report.decisions(arena, &nl, &st, &sk, 1)).len);
-        for ([_]u8{ 1, 2 }) |rung| {
-            const lines = try np.report.decisions(arena, &nl, &st, &sk, rung);
+        try std.testing.expectEqual(st.block_kind.len, (try np.report.decisions(arena, &nl, &st, &sk, null, lib.unit, 1)).len);
+        const s0 = try np.layout(arena, &nl, roles, lib, .{});
+        const p0 = try np.Placed.init(arena, &s0, &nl);
+        for ([_]u8{ 1, 2, 3, 4 }) |rung| {
+            const lines = try np.report.decisions(arena, &nl, &st, &sk, &p0, lib.unit, rung);
             // After the title line, so no `.end` hides them.
             const title_end = std.mem.indexOfScalar(u8, d[1], '\n').? + 1;
             var deck: std.ArrayList(u8) = .empty;

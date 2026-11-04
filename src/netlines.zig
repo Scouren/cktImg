@@ -8,6 +8,8 @@
 //!     *@ port out right          an input's or output's port side
 //!     *@ rail 0 bar              a rail as one bar, or a symbol per pin
 //!     *@ first n1 n2             wired before the rest, in this order
+//!     *@ route n1 2,0 2,3 5,3    a polyline of the net, in symbol units
+//!     *@ via n1 4,1 4,6          points its wire passes, in order
 //!
 //! A `wire` the canvas cannot draw falls back to names (the report says so);
 //! of two lines setting one net's style, port or rail, the preferred one
@@ -15,7 +17,8 @@
 //!
 //! Contents:
 //! - `pub const Style`, `pub const Rail`, `pub const NetLines = struct`
-//! - `pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, verdicts: []?Verdict) Allocator.Error!NetLines`
+//! - `pub const Route = struct`
+//! - `pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32, verdicts: []?Verdict) Allocator.Error!NetLines`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -28,6 +31,7 @@ const sch = @import("schematic.zig");
 const Netlist = netlist.Netlist;
 const Verdict = hints.Verdict;
 const Side = library.Side;
+const Pt = library.Pt;
 const Role = sch.Role;
 
 pub const Style = enum(u8) {
@@ -44,17 +48,25 @@ pub const Style = enum(u8) {
 
 pub const Rail = enum(u8) { auto, bar, each };
 
+/// A `route` (a polyline of the net, committed whole or not at all, one of
+/// its ends on a pin of the net) or a `via` (points the net's wire passes,
+/// in order), in drawing units.
+pub const Route = struct { net: u32, pts: []const Pt, via: bool, line: u32 };
+
 pub const NetLines = struct {
     style: []const Style,
     port: []const ?Side,
     rail: []const Rail,
     /// Nets to wire first, in order.
     first: []const u32,
+    /// Strongest first.
+    routes: []const Route,
 };
 
 /// Reads the lines; each valid one honoured (the report checks `label`,
 /// `wire` and `port` against the drawing), each invalid one rejected.
-pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, verdicts: []?Verdict) Allocator.Error!NetLines {
+pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32, verdicts: []?Verdict) Allocator.Error!NetLines {
+    assert(unit > 0);
     const n = nl.graph.vertexCount();
     assert(roles.len == n);
     const style = try arena.alloc(Style, n);
@@ -119,7 +131,41 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, verdicts:
         }
         verdicts[i] = .{ .state = .honoured, .code = .ok };
     }
-    return .{ .style = style, .port = port, .rail = rail, .first = first.items };
+    // Routes and vias: `<net> x,y ...` (`x y` pairs once split), Manhattan.
+    var routes: std.ArrayList(Route) = .empty;
+    for (try hints.admitOrder(arena, nl.hints)) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .route and h.verb != .via) continue;
+        const via = h.verb == .via;
+        const net = if (h.args.len > 0) nl.net(h.args[0]) else null;
+        const pairs = if (h.args.len > 0) h.args.len - 1 else 0;
+        if (net == null or pairs % 2 != 0 or pairs / 2 < @as(usize, if (via) 1 else 2)) {
+            verdicts[i] = .{ .state = .rejected, .code = if (h.args.len > 0 and net == null) .unknown_name else .bad_args };
+            continue;
+        }
+        // Rails and inputs are symbols at their pins, never one wire.
+        const r = roles[net.?.index()];
+        if (r == .supply or r == .sink or r == .input) {
+            verdicts[i] = .{ .state = .rejected, .code = .not_placeable };
+            continue;
+        }
+        const pts = try arena.alloc(Pt, pairs / 2);
+        const u: f64 = @floatFromInt(unit);
+        const ok = for (pts, 0..) |*p, k| {
+            const x = std.fmt.parseFloat(f64, h.args[1 + 2 * k]) catch break false;
+            const y = std.fmt.parseFloat(f64, h.args[2 + 2 * k]) catch break false;
+            if (!std.math.isFinite(x) or !std.math.isFinite(y) or @abs(x) > 1e6 or @abs(y) > 1e6) break false;
+            p.* = .{ .x = @intFromFloat(@round(x * u)), .y = @intFromFloat(@round(y * u)) };
+            if (k > 0 and !via and (p.x == pts[k - 1].x) == (p.y == pts[k - 1].y)) break false;
+        } else true;
+        if (!ok) {
+            verdicts[i] = .{ .state = .rejected, .code = .bad_args };
+            continue;
+        }
+        try routes.append(arena, .{ .net = net.?.index(), .pts = pts, .via = via, .line = @intCast(i) });
+        verdicts[i] = .{ .state = .honoured, .code = .ok };
+    }
+    return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items };
 }
 
 // ---- private ----

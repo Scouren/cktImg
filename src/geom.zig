@@ -11,6 +11,7 @@ const placed_mod = @import("placed.zig");
 const Pt = library.Pt;
 const Rect = library.Rect;
 const Orient = library.Orient;
+const Side = library.Side;
 const Library = library.Library;
 const Placed = placed_mod.Placed;
 
@@ -42,8 +43,9 @@ pub fn refdesRect(anchor: Pt, name: []const u8) Rect {
     };
 }
 
-/// One anchor per device for its name: left end of the baseline. Tries
-/// right of the symbol, then above and below that, then the same on the left,
+/// One anchor per device for its name: left end of the baseline. Tries the
+/// side a `*@ refdes` line asks (`Placed.dev_refdes`) first; then right of
+/// the symbol, then above and below that, then the same on the left,
 /// and takes the first spot clear of symbols, wires and names placed so far —
 /// so the answer depends on order, and is computed for all devices at once.
 /// Unnamed devices (the rails and ports the layout added) get their origin.
@@ -72,7 +74,10 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
         const y = p.dev_pos[d].y;
         const right = box.max.x + label_gap;
         const left = box.min.x - label_gap - w;
-        const candidates = [6]Pt{
+        const mid = @divFloor(box.min.x + box.max.x - w, 2);
+        const above: Pt = .{ .x = mid, .y = box.min.y - label_gap - descent };
+        const below: Pt = .{ .x = mid, .y = box.max.y + label_gap + text_h };
+        const auto = [6]Pt{
             .{ .x = right, .y = y },
             .{ .x = right, .y = y - step },
             .{ .x = right, .y = y + step },
@@ -80,8 +85,34 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
             .{ .x = left, .y = y - step },
             .{ .x = left, .y = y + step },
         };
+        // A `refdes` line's side first: its spots, then the rest.
+        var candidates: [9]Pt = undefined;
+        var count: usize = 0;
+        const want: ?Side = if (p.dev_refdes.len > d) p.dev_refdes[d] else null;
+        if (want) |side| switch (side) {
+            .right => for (auto[0..3]) |c| {
+                candidates[count] = c;
+                count += 1;
+            },
+            .left => for (auto[3..6]) |c| {
+                candidates[count] = c;
+                count += 1;
+            },
+            .up => {
+                candidates[count] = above;
+                count += 1;
+            },
+            .down => {
+                candidates[count] = below;
+                count += 1;
+            },
+        };
+        for (auto) |c| {
+            candidates[count] = c;
+            count += 1;
+        }
         var at = candidates[0];
-        for (candidates) |c| {
+        for (candidates[0..count]) |c| {
             const r = refdesRect(c, name);
             for (obstacles.items) |o| {
                 if (o.intersects(r)) break;

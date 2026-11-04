@@ -140,6 +140,9 @@ pub const Code = enum(u8) {
     /// The engine took it, but the finished drawing does not show it: a
     /// bug, caught by `checks.drawnAs`.
     not_drawn,
+    /// It would break a guarantee (a symbol on another, a wire on another
+    /// net's point, a route off its net's pins): refused.
+    guarantee,
     /// A verb on a rung the engine does not take yet.
     not_built,
 };
