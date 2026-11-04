@@ -262,6 +262,20 @@ test "an X of a library cell instantiates it, its parameters flowing in by name"
     try testing.expect(mem.indexOf(u8, sub, " vkit:vnfet\n") != null);
     try testing.expect(mem.indexOf(u8, sub, "\n  name m0\n  w {w}\n  l {l}\n") != null);
     try testing.expect(mem.indexOf(u8, sub, ".param") == null);
+    // `w=wn` names a bench `.param`, so `w` passes SPICE text (a string); `l` is a number.
+    try testing.expect(mem.indexOf(u8, sub, "param w 80n\n  kind string\nparam l 20n\n\n") != null);
+    // An expression over number parameters is one hole Schemify evaluates (miniproj2's
+    // tg_switch: `w=w*2` imported as `{{({w})}}*2`, which renders ngspice braces).
+    const tg = ".subckt tg a b gn gp bn bp PARAMS: w=80n l=20n\nXmn a gn b bn vnfet w=w l=l\n" ++
+        "Xmp b gp a bp vnfet w=w*2 l='l+w/2' nf=2\n.ends\nX1 x y n p 0 vdd tg w=8e-08 l={2*10n}\n";
+    var t: Converter = try .initLibs(testing.allocator, a, "tg.sp", tg, &.{lib});
+    defer t.deinit();
+    while (t.cellsLeft() > 0) try t.step();
+    const tg_out = try t.finish();
+    const cellt = tg_out.files.items[0].bytes;
+    try testing.expect(mem.indexOf(u8, cellt, "param w 80n\nparam l 20n\n\n") != null);
+    try testing.expect(mem.indexOf(u8, cellt, "  w {w*2}\n  l {l+w/2}\n") != null);
+    try testing.expect(mem.indexOf(u8, tg_out.files.items[1].bytes, "  w 8e-08\n  l 2*10n\n") != null);
     // Card text that names a parameter still gets the shim, in bare form.
     const verbatim = ".subckt r2 a b PARAMS: k=2\nR1 a b {k*1k}\n.ends\nX1 x 0 r2\n";
     const v = try convert(testing.allocator, a, "r2.sp", verbatim);

@@ -225,6 +225,14 @@ pub const Recognized = struct {
     /// Per deck cell: its definition re-declares its parameters (`.param k={k}`), because
     /// card text kept verbatim in it names them.
     shim: []const bool = &.{},
+    /// Per deck parameter (`Deck.params_` rows): a number parameter (`numeric`), else a
+    /// string one.
+    number: []const bool = &.{},
+
+    /// Which of cell `c`'s parameters are numbers.
+    pub fn numbers(r: *const Recognized, deck: *const Deck, c: u32) []const bool {
+        return r.number[deck.param_start[c]..deck.param_start[c + 1]];
+    }
 
     pub const none = std.math.maxInt(u32);
 };
@@ -240,6 +248,7 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
         const bp = try boxPins(a, deck, @intCast(c));
         _ = try r.syms.push(a, stem, .sub, .box, bp.pins, bp.body);
     }
+    r.number = try numeric(a, deck);
     const shim = try a.alloc(bool, deck.cells());
     for (shim, 0..) |*x, c| x.* = c > 0 and try needsShim(a, deck, libs, @intCast(c));
     r.shim = shim;
@@ -257,7 +266,7 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
         const devs = deck.devs(c);
         for (devs.lo..devs.hi) |di| {
             const d: u32 = @intCast(di);
-            try device(a, deck, d, deck.params(c), libs, &r);
+            try device(a, deck, d, c, libs, &r);
             try r.parts.over_start.append(a, @intCast(r.parts.over_key.items.len));
             // Instance names are unique per cell (E009): a repeated card name gets a suffix.
             const names = r.parts.inst_name.items;
@@ -467,20 +476,26 @@ pub fn isLiteral(text: []const u8) bool {
 /// node inside `v(…)`/`i(…)`) becomes a hole, wrapped `({k})` inside an expression and
 /// `{{({k})}}` (a SPICE expression) when bare.
 pub fn template(a: Allocator, text: []const u8, params: []const spice.Param) Allocator.Error![]const u8 {
-    return templateIn(a, text, params, 0);
+    return templateIn(a, text, params, 0, false);
+}
+
+/// `template` with every hole a bare `{k}`: the deck's text with each parameter's value
+/// written in, in whatever syntax (quotes, braces) the deck used around it.
+pub fn substitute(a: Allocator, text: []const u8, params: []const spice.Param) Allocator.Error![]const u8 {
+    return templateIn(a, text, params, 0, true);
 }
 
 /// `template` for a parameter value: the whole text is one expression (its outer `{…}`/
 /// `'…'` already stripped by `stripOuter`), so holes are `({k})` throughout.
 pub fn templateExpr(a: Allocator, text: []const u8, params: []const spice.Param) Allocator.Error![]const u8 {
-    return templateIn(a, text, params, 1);
+    return templateIn(a, text, params, 1, false);
 }
 
 fn isWordByte(ch: u8) bool {
     return ascii.isAlphanumeric(ch) or ch == '_';
 }
 
-fn templateIn(a: Allocator, text: []const u8, params: []const spice.Param, depth0: u32) Allocator.Error![]const u8 {
+fn templateIn(a: Allocator, text: []const u8, params: []const spice.Param, depth0: u32, plain: bool) Allocator.Error![]const u8 {
     var out: ArrayList(u8) = try .initCapacity(a, text.len + 8);
     var depth = depth0; // inside {…} or '…'
     var quote = false;
@@ -502,7 +517,9 @@ fn templateIn(a: Allocator, text: []const u8, params: []const spice.Param, depth
                 if (ascii.eqlIgnoreCase(p.name, word)) break p.name;
             } else null;
             if (hit != null and !is_key and !is_call and probe_depth == null) {
-                if (depth > 0 or quote)
+                if (plain)
+                    try out.print(a, "{{{s}}}", .{hit.?})
+                else if (depth > 0 or quote)
                     try out.print(a, "({{{s}}})", .{hit.?})
                 else
                     try out.print(a, "{{{{({{{s}}})}}}}", .{hit.?});
@@ -620,7 +637,9 @@ fn isPmos(a: Allocator, model: []const u8, kind: ?[]const u8) Allocator.Error!bo
 }
 
 /// Recognizes device `d` (in a cell with parameters `params`) and appends its row.
-fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, libs: []const LibCell, r: *Recognized) Allocator.Error!void {
+fn device(a: Allocator, deck: *const Deck, d: u32, cell: u32, libs: []const LibCell, r: *Recognized) Allocator.Error!void {
+    const params = deck.params(cell);
+    const nums = r.numbers(deck, cell);
     const name = deck.dev_name[d];
     const letter = ascii.toLower(name[0]);
     const nodes = deck.netsOf(d).len;
@@ -739,7 +758,7 @@ fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, 
                         continue;
                     };
                     try o.keys.append(a, p.name);
-                    try o.vals.append(a, try libValue(a, t.text[k.?.len + 1 ..], p.string, params));
+                    try o.vals.append(a, try overValue(a, t.text[k.?.len + 1 ..], !p.string, params, nums));
                 }
                 if (name.len > 1) inst_name = name[1..];
                 break :blk try libSymbol(a, l, r);
@@ -754,14 +773,15 @@ fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, 
                 break :blk null;
             }
             const callee = deck.params(c);
+            const callee_nums = r.numbers(deck, c);
             for (toks) |t| {
                 if (ascii.eqlIgnoreCase(t.text, "params:")) continue;
-                const hit: ?[]const u8 = if (keyOf(t.text)) |k| for (callee) |p| {
-                    if (ascii.eqlIgnoreCase(p.name, k)) break p.name;
+                const hit: ?usize = if (keyOf(t.text)) |k| for (callee, 0..) |p, j| {
+                    if (ascii.eqlIgnoreCase(p.name, k)) break j;
                 } else null else null;
-                if (hit) |p| {
-                    try o.keys.append(a, p);
-                    try o.vals.append(a, try templateExpr(a, stripOuter(t.text[keyOf(t.text).?.len + 1 ..]), params));
+                if (hit) |j| {
+                    try o.keys.append(a, callee[j].name);
+                    try o.vals.append(a, try overValue(a, t.text[keyOf(t.text).?.len + 1 ..], callee_nums[j], params, nums));
                 } else try r.warnings.append(a, try a.print("line {d}: {s}: `{s}` is no parameter of {s}; dropped", .{ deck.dev_line[d], name, t.text, deck.dev_sub[d] }));
             }
             if (name.len > 1 and ascii.toLower(name[0]) == 'x') inst_name = name[1..];
@@ -782,15 +802,82 @@ fn device(a: Allocator, deck: *const Deck, d: u32, params: []const spice.Param, 
     try r.parts.inst_name.append(a, inst_name);
 }
 
-/// An override of library cell parameter (a `string` one, else a number) from card value
-/// `v` in a cell with parameters `params`: a lone parameter name is the parameter itself
-/// (`{w}`, `w`), so no dialect's brace or quote syntax reaches the netlist; other text keeps
-/// the deck's spelling with parameter holes (strings) or as the expression (numbers).
-fn libValue(a: Allocator, v: []const u8, string: bool, params: []const spice.Param) Allocator.Error![]const u8 {
-    const bare = stripOuter(v);
-    for (params) |p| if (ascii.eqlIgnoreCase(p.name, bare))
-        return if (string) try a.print("{{{s}}}", .{p.name}) else p.name;
-    return if (string) template(a, v, params) else bare;
+/// An `X` card's override `k=v` of a number parameter (`number`), else a string one, in a
+/// cell with parameters `params` (`nums`: which are numbers). A value Schemify can evaluate
+/// there (a literal, or an expression over number parameters) is that expression, or for a
+/// string the hole around it (`{w*2}`), so the netlist gets its value in every dialect's
+/// syntax; other text is the deck's own spelling with parameter values written in.
+fn overValue(a: Allocator, v: []const u8, number: bool, params: []const spice.Param, nums: []const bool) Allocator.Error![]const u8 {
+    const e = stripOuter(v);
+    if (number) return e; // `numeric` made it a number only if every call evaluates
+    if (isLiteral(e)) return template(a, e, &.{});
+    if (evaluates(e, params, nums)) return a.print("{{{s}}}", .{e});
+    return substitute(a, v, params);
+}
+
+/// Whether Schemify evaluates SPICE expression `e` (outer braces or quotes stripped) in a
+/// cell with parameters `params` (`nums`: which are numbers): a literal, or numbers,
+/// operators and calls over number parameters only.
+// ponytail: SPICE and Schemify share the arithmetic grammar; a deck operator Schemify lacks
+// (`**`) fails the netlist with X-code instead of importing as text.
+fn evaluates(e: []const u8, params: []const spice.Param, nums: []const bool) bool {
+    if (isLiteral(e)) return true;
+    if (e.len == 0 or mem.indexOfAny(u8, e, "{}'\"") != null) return false;
+    var k: usize = 0;
+    while (k < e.len) {
+        const start = (ascii.isAlphabetic(e[k]) or e[k] == '_') and (k == 0 or !(isWordByte(e[k - 1]) or e[k - 1] == '.'));
+        if (!start) {
+            k += 1;
+            continue;
+        }
+        var end = k;
+        while (end < e.len and isWordByte(e[end])) end += 1;
+        const word = e[k..end];
+        const after = mem.trimStart(u8, e[end..], spice.ws);
+        k = end;
+        if (after.len > 0 and after[0] == '(') continue; // a function
+        const known = for (params, nums) |p, n| {
+            if (ascii.eqlIgnoreCase(p.name, word)) break n;
+        } else false;
+        if (!known) return false;
+    }
+    return true;
+}
+
+/// Per deck parameter: a number when its default is a literal and every `X` call's value
+/// for it evaluates in the caller (`evaluates`); otherwise a string, which passes SPICE
+/// text through (`X1 … w=wn` naming a `.param` of the bench). A fixed point: demoting a
+/// parameter can demote the ones its cell passes it to.
+fn numeric(a: Allocator, deck: *const Deck) Allocator.Error![]const bool {
+    const num = try a.alloc(bool, deck.params_.len);
+    for (num, deck.params_) |*n, p| n.* = isLiteral(stripOuter(p.value));
+    var rounds: usize = 0;
+    var changed = true;
+    while (changed) : (rounds += 1) {
+        assert(rounds <= deck.params_.len + 1); // each round demotes one at least
+        changed = false;
+        for (0..deck.cells()) |ci| {
+            const c: u32 = @intCast(ci);
+            const caller = deck.params(c);
+            const caller_nums = num[deck.param_start[c]..deck.param_start[c + 1]];
+            const devs = deck.devs(c);
+            for (devs.lo..devs.hi) |d| {
+                if (ascii.toLower(deck.dev_name[d][0]) != 'x') continue;
+                const k = deck.findCell(deck.dev_sub[d]) orelse continue;
+                const callee = deck.params(k);
+                for (try spice.tokenize(a, deck.dev_rest[d])) |t| {
+                    const key = keyOf(t.text) orelse continue;
+                    for (callee, deck.param_start[k]..) |p, j| if (num[j] and ascii.eqlIgnoreCase(p.name, key) and
+                        !evaluates(stripOuter(t.text[key.len + 1 ..]), caller, caller_nums))
+                    {
+                        num[j] = false;
+                        changed = true;
+                    };
+                }
+            }
+        }
+    }
+    return num;
 }
 
 /// The symbol of library cell `l`, made on first use.

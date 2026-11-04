@@ -219,7 +219,11 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
     if (c > 0) {
         const s = recognize.subSymbol(c);
         try symbol(&w, rec, s);
-        for (params) |p| {
+        for (params, rec.numbers(deck, c)) |p, number| {
+            if (number) {
+                try w.record(.rank1, "param", &.{ p.name, recognize.stripOuter(p.value) });
+                continue;
+            }
             try w.record(.rank1, "param", &.{ p.name, try recognize.templateExpr(a, recognize.stripOuter(p.value), params) });
             try w.attr("kind", &.{"string"});
         }
