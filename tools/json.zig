@@ -2,7 +2,7 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1|2] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
@@ -43,7 +43,7 @@ const usage =
     \\  --svg <path>      also draw the placed schematic as SVG
     \\  --report <path>   also write the decision report: findings, each *@ line's
     \\                    verdict, scores, the engine's decisions, the lattice rows
-    \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 or 2) as
+    \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
     \\                    *@ lines to stdout
     \\  -h, --help        this message
     \\
@@ -117,7 +117,7 @@ pub fn main(init: std.process.Init) !void {
     // Parsing and roles are pure: the same sources give the netlist `place`
     // drew.
     const rung: ?u8 = if (opts.decisions) |word| (std.fmt.parseInt(u8, word, 10) catch 0) else null;
-    if (rung) |r| if (r < 1 or r > 2) fatal("--decisions takes 1 or 2, not '{s}'", .{opts.decisions.?});
+    if (rung) |r| if (r < 1 or r > 4) fatal("--decisions takes 1 to 4, not '{s}'", .{opts.decisions.?});
     if (opts.report != null or rung != null) {
         var nl = try np.netlist.parse(gpa, srcs, null);
         defer nl.deinit(gpa);
@@ -133,7 +133,7 @@ pub fn main(init: std.process.Init) !void {
             const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
             var buf: [64 * 1024]u8 = undefined;
             var sw = std.Io.File.stdout().writerStreaming(io, &buf);
-            for (try np.report.decisions(arena, &nl, &st, &sk, r)) |line| try sw.interface.print("{s}\n", .{line});
+            for (try np.report.decisions(arena, &nl, &st, &sk, &placed, lib.unit, r)) |line| try sw.interface.print("{s}\n", .{line});
             try sw.interface.flush();
             if (opts.out == null) return;
         }

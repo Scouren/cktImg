@@ -124,10 +124,25 @@ gives each a verdict (`hints.Verdict`): honoured, relaxed, dropped (with
   y, an order increasing x, a gate on its side, a net named or wired): a
   claim the drawing does not show is `not_drawn`, a bug the fuzz hunts.
 - **Fixed point.** `report.decisions` writes the engine's decisions on
-  rungs 1 and 2 as lines; the deck plus them, under `grouping off`, draws
-  the same picture, every line honoured.
-- Rungs 3 to 5 (`cell`, `at`, `refdes`, `via`, `route`) are rejected
-  `not_built`.
+  rungs 1 to 4 as lines (cells and places as `weak` stays); the deck plus
+  them, under `grouping off`, draws the same picture, every line honoured.
+  Routes have no export: a net's wires also follow where its ports and
+  names go, which no line states.
+- **Cells, places, wires (rungs 3 to 5).** `cell <dev> <col> <row>`
+  (`cells.zig`) puts a device on a lattice cell in the skeleton's frame
+  before its shift to 0 (`Skeleton.origin`), the device there moving to the
+  nearest free cell of its row, an unnamed mate to the mirror cell; a mate
+  moved off its mirror is a mate no more. `at <dev> <x> <y> [R0..MR270]`
+  (`pinned.zig`) puts the class origin there, in symbol units, and turns
+  it; an `at` whose symbol would overlap another is dropped (`guarantee`).
+  `refdes` sets the side `geom.refdesAnchors` tries first. `route <net>
+  <pts>` commits a polyline of the net before any pattern, whole or not at
+  all, one of its ends on a pin of the net, each pin it passes made a point
+  of it; `via <net> <pts>` runs from the net's top-left pin through each
+  point in turn. The router then grows the net's other pins from that wire
+  (`routes.attach`); mirrored routing leaves such nets alone. A cell or
+  place on a device displaces a relation on it, which the report drops,
+  blocked by it.
 - **Schemify.** The import hands the engine each device under the
   designer's name (the card's letter before it when it starts with another,
   so nothing depends on the order of the instances), carries every line of

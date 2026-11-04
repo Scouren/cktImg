@@ -104,6 +104,13 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             return o.rank[x] < o.rank[y];
         }
     }.lt);
+    // Pinned routes and vias claim their room before anything else.
+    const routed = try gpa.alloc(bool, n_nets);
+    defer gpa.free(routed);
+    @memset(routed, false);
+    for (lines.routes) |r| {
+        if (try pinned(&c, r, pins_of[r.net].items)) routed[r.net] = true;
+    }
     // The `first` nets lead, in their order.
     var lead: usize = 0;
     for (lines.first) |net| {
@@ -123,6 +130,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         if (pins.len == 0) continue;
         const axis2: ?i32 = if (mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
         const style = lines.style[net];
+        if (routed[net]) {
+            // The router joins its other pins to the pinned wire.
+            if (s.roles[net] == .bias) try named.append(gpa, net);
+            continue;
+        }
         if (style == .label) {
             for (pins) |p| try c.labelAt(p);
             s.labeled[net] = true;
@@ -142,6 +154,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         }
     }
     try routes.draw(&c, waiting.items, pins_of, mirror);
+    try joinRouted(&c, routed, pins_of);
     // On its top-left pin, so card order changes nothing.
     for (named.items) |net| if (!s.labeled[net]) {
         var best = pins_of[net].items[0];
@@ -156,6 +169,105 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
 }
 
 // ---- private ----
+
+/// Draws route or via `r` of a net with pins `pins`, whole or not at all: a
+/// route must end on one of the pins; a via runs from the net's top-left pin
+/// through each point in turn (an L each way), skipping one it cannot reach.
+/// Whether anything was drawn.
+fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
+    if (pins.len == 0) return false;
+    if (!r.via) {
+        const ends = for (pins) |p| {
+            const at = pinAt(c.s, p);
+            if (at.eql(r.pts[0]) or at.eql(r.pts[r.pts.len - 1])) break true;
+        } else false;
+        if (!ends) return false;
+        const cp = c.save();
+        if (!try commitThrough(c, r.net, pins, r.pts)) {
+            c.restore(cp);
+            return false;
+        }
+        return true;
+    }
+    var from = pinAt(c.s, pins[0]);
+    for (pins) |p| {
+        const at = pinAt(c.s, p);
+        if (at.y < from.y or (at.y == from.y and at.x < from.x)) from = at;
+    }
+    var drew = false;
+    for (r.pts) |to| {
+        if (to.eql(from)) continue;
+        const reached = for ([_]Pt{ .{ .x = to.x, .y = from.y }, .{ .x = from.x, .y = to.y } }) |corner| {
+            const path: []const Pt = if (corner.eql(from) or corner.eql(to)) &.{ from, to } else &.{ from, corner, to };
+            const cp = c.save();
+            if (try commitThrough(c, r.net, pins, path)) break true;
+            c.restore(cp);
+        } else false;
+        if (!reached) continue;
+        from = to;
+        drew = true;
+    }
+    return drew;
+}
+
+/// Commits polyline `pts` of `net`, each of its pins the polyline passes
+/// made a point of it (a pin joins a wire only at a point), in pieces of six
+/// points at most. False when a piece does not fit; the caller restores.
+fn commitThrough(c: *Canvas, net: u32, pins: []const u32, pts: []const Pt) !bool {
+    var all: std.ArrayList(Pt) = .empty;
+    defer all.deinit(c.gpa);
+    for (pts, 0..) |b, k| {
+        if (k > 0) {
+            const a = pts[k - 1];
+            // The pins strictly inside a..b, in order along it.
+            const step: Pt = .{ .x = std.math.sign(b.x - a.x), .y = std.math.sign(b.y - a.y) };
+            var q = a.add(step);
+            var guard: usize = 0;
+            while (!q.eql(b)) : (q = q.add(step)) {
+                guard += 1;
+                assert(guard <= 1 << 24);
+                for (pins) |p| if (pinAt(c.s, p).eql(q)) {
+                    try all.append(c.gpa, q);
+                    break;
+                };
+            }
+        }
+        try all.append(c.gpa, b);
+    }
+    var k: usize = 0;
+    while (k + 1 < all.items.len) {
+        const end = @min(k + 5, all.items.len - 1);
+        if (!try c.commit(net, all.items[k .. end + 1])) return false;
+        k = end;
+    }
+    return true;
+}
+
+/// Each net a route or via drew: its pins off that wire joined to it by
+/// the router (`routes.attach`), its port if an output.
+fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u32)) !void {
+    const gpa = c.gpa;
+    var off: std.ArrayList(u32) = .empty;
+    defer off.deinit(gpa);
+    for (routed, 0..) |r, net| {
+        if (!r) continue;
+        off.clearRetainingCapacity();
+        var anchor: ?u32 = null;
+        for (pins_of[net].items) |p| {
+            if (onNet(c, @intCast(net), pinAt(c.s, p))) {
+                anchor = anchor orelse p;
+            } else try off.append(gpa, p);
+        }
+        // A route ends on a pin and a via starts at one: some pin is on it.
+        try routes.attach(c, @intCast(net), off.items, anchor.?);
+    }
+}
+
+/// Whether `at` lies on one of `net`'s wires.
+fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
+    for (c.segs.items) |g| if (g.net == net and Rect.fromCorners(g.a, g.b).contains(at)) return true;
+    return false;
+}
 
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
 /// trunk); false, with nothing drawn, when it does not fit (or for `route`):

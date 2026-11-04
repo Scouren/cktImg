@@ -380,11 +380,20 @@ commands real, and grows a rung at a time.
 6. **Rungs 3 to 5**: pinned coordinates and routes through `Canvas.commit`
    (§5), mirrored routing by the union of blockages (§6), forced cells with
    stays (§2), then channel growth for `wire` (§3), the largest change.
+   Built: `cell` with stays, `at`, `refdes`, `route` and `via` through
+   `Canvas.commit`, rung 3 and 4 exports with their fixed point, mirrored
+   routing leaving pinned nets alone. Not built: the union of blockages
+   (§6) and channel growth (§3). Measured first: of the 25 bias nets the
+   golden and textbook decks draw as names, a `wire` line wires 1 by its
+   patterns, and growing every stack and series length (×1.5, ×2.25) wires
+   none, so the room a wire lacks is not spacing; §3's targeted cuts are
+   the next step when a deck needs one.
 7. **The plugin** (built): the designer's device names in the engine deck (ends its
    instance-order dependence), every hint and role carried through.
 8. **The skill grows** a rung per slice: `skills/cktimg/` shipped in #9 for
-   names, group hints and the `lint.zon` lengths; the draft in
-   [skill/](skill/) is where it is headed.
+   names, group hints and the `lint.zon` lengths, and grew with each slice
+   to rungs 0 to 5, `requests` and `--decisions`; the draft in
+   [skill/](skill/) stays as the research record.
 
 ## 9. How we will know
 

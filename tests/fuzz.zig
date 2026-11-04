@@ -1,7 +1,7 @@
 //! Random small netlists through the whole pipeline (`zig build fuzz`, in
 //! CI): every layout ends, every net is one piece as a netlister reads it,
 //! no wire touches another net's point, and the cards reversed draw the same
-//! picture. Each deck carries random `*@` lines of rungs 1 and 2 (steering):
+//! picture. Each deck carries random `*@` lines of rungs 1 to 5 (steering):
 //! every line gets a verdict, and none the engine honoured is missing from
 //! the drawing. Reports how many netlists name a net instead of wiring it,
 //! and the smallest one.
@@ -119,7 +119,7 @@ fn draw(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: n
     return .{ .p = try np.Placed.init(a, &s, &nl), .labeled = labeled, .nl = nl, .roles = roles, .st = st, .sk = sk };
 }
 
-/// Up to four `*@` lines of rungs 1 and 2, on devices `r0`..`m<devices>` (a
+/// Up to four `*@` lines of rungs 1 to 5, on devices `r0`..`m<devices>` (a
 /// name the deck lacks is fine: it is rejected) and on `nets`.
 fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []const u8) !void {
     const letters = "rcm";
@@ -135,7 +135,11 @@ fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []c
         const net = nets[r.intRangeLessThan(usize, 0, nets.len)];
         if (r.boolean() and r.boolean()) try w.writeAll("*@ weak ");
         if (w.buffered().len > 0 and w.buffered()[w.buffered().len - 1] != ' ') try w.writeAll("*@ ");
-        switch (r.intRangeAtMost(u32, 0, 15)) {
+        const x0 = r.intRangeAtMost(i32, -4, 14);
+        const y0 = r.intRangeAtMost(i32, -2, 12);
+        const x1 = r.intRangeAtMost(i32, -4, 14);
+        const y1 = r.intRangeAtMost(i32, -2, 12);
+        switch (r.intRangeAtMost(u32, 0, 20)) {
             0 => try w.print("above {s} {s} {s}\n", .{ &a, &b, &c }),
             1 => try w.print("row {s} {s}\n", .{ &a, &b }),
             2 => try w.print("order {s} {s} {s}\n", .{ &a, &b, &c }),
@@ -151,6 +155,11 @@ fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []c
             12 => try w.print("rail {s} {s}\n", .{ net, if (r.boolean()) "bar" else "each" }),
             13 => try w.print("first {s}\n", .{net}),
             14 => try w.print("role {s} {s}\n", .{ net, if (r.boolean()) "bias" else "output" }),
+            15 => try w.print("cell {s} {d} {d}\n", .{ &a, x0, y0 }),
+            16 => try w.print("at {s} {d} {d} {s}\n", .{ &a, x0, y0, if (r.boolean()) "r0" else "mr90" }),
+            17 => try w.print("refdes {s} {s}\n", .{ &a, if (r.boolean()) "left" else "below" }),
+            18 => try w.print("route {s} {d},{d} {d},{d} {d},{d}\n", .{ net, x0, y0, x1, y0, x1, y1 }),
+            19 => try w.print("via {s} {d},{d}\n", .{ net, x0, y0 }),
             else => try w.print("nogroup {s}\n", .{&a}),
         }
     }

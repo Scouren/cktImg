@@ -10,15 +10,17 @@ Added:
 - The report's `requests`: each line's verdict, every honoured one checked against the drawing; `cktimg-json --decisions 1|2` prints the engine's decisions as lines, and a deck plus them draws the same picture (#15).
 - A ground bar (`*@ rail 0 bar`) (#15).
 - Every golden figure drawn in full with 21 rung 1 and 2 lines (#15).
+- Steering rungs 3 to 5: `cell` (in the skeleton's own frame, a displaced device moving aside, a mate to the mirror cell), `at` and `refdes`, `route` and `via` (committed whole, the router joining the rest of the net to them); `--decisions 3|4` with its fixed point (#17).
 - The Schemify import carries every `*@` line of a subckt into its cell, hands the engine the designer's device names (so a cell no longer depends on the order of its instances), and logs each line the engine does not honour with the designer's line numbers (#16).
 
 Fixed:
 
+- The report's `wire` check mis-grouped a net's wire pieces and called a one-pin net unwired, so a wired net could read `no_room` (#17).
 - An output port whose stub does not fit is named at the net's top-left pin, not its first in card order, so the cards' order no longer moves it (found by the line fuzz) (#15).
 
 Measured:
 
-- `cktimg.wasm` is 467,716 bytes (cap 550 KB).
+- `cktimg.wasm` is 485,783 bytes (cap 550 KB).
 
 ## 2.0.0 (2026-11-04)
 

@@ -15,6 +15,8 @@
 //! Contents:
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void`
+//! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
+//! - `pub fn port(c: *Canvas, net: u32) !void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -73,6 +75,38 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
     }
 }
 
+/// Joins each of `pins` to `net`'s wires drawn so far (a pinned route),
+/// the nearest first; a pin no path reaches gets a name, as does `anchor`
+/// (a pin on those wires) so the names join them; then an output's port.
+pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void {
+    var failed: std.ArrayList(u32) = .empty;
+    defer failed.deinit(c.gpa);
+    if (pins.len > 0) _ = try joinFrom(c, net, pins, null, true, &failed);
+    try finish(c, net, anchor, failed.items);
+}
+
+/// An output's port out from the topmost of its wires' outermost points,
+/// on the drawing's nearer side; nothing for any other net.
+pub fn port(c: *Canvas, net: u32) !void {
+    if (c.s.roles[net] == .output) {
+        var lo: i32 = std.math.maxInt(i32);
+        var hi: i32 = std.math.minInt(i32);
+        for (c.segs.items) |g| if (g.net == net) {
+            lo = @min(lo, @min(g.a.x, g.b.x));
+            hi = @max(hi, @max(g.a.x, g.b.x));
+        };
+        if (lo <= hi) {
+            const right = lo + hi >= c.middle2();
+            const edge = if (right) hi else lo;
+            var from: ?Pt = null;
+            for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
+                if (e.x == edge and (from == null or above(e, from.?))) from = e;
+            };
+            try c.port(net, from.?, if (right) .right else .left);
+        }
+    }
+}
+
 // ---- private ----
 
 /// Joins `pins` by maze, the pin nearest a joined one next; returns the
@@ -80,6 +114,12 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
 /// path reached to `failed`. With `half`, every pin is routed, to the net's
 /// wires or to the axis at x = `half`, never right of it.
 fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, failed: *std.ArrayList(u32)) !usize {
+    return joinFrom(c, net, pins, half, false, failed);
+}
+
+/// `join`; with `onto`, every pin is routed to the net's wires already
+/// drawn (none starts the tree).
+fn joinFrom(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed: *std.ArrayList(u32)) !usize {
     const s = c.s;
     const gpa = c.gpa;
     assert(pins.len >= 1);
@@ -91,17 +131,17 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, failed: *std.ArrayL
     for (pins, 0..) |p, i| if (above(pinAt(s, p), pinAt(s, pins[first]))) {
         first = i;
     };
-    if (half == null) joined[first] = true;
+    if (half == null and !onto) joined[first] = true;
     const sides = s.pins.items(.side);
-    var wired = false;
-    for (0..pins.len - @intFromBool(half == null)) |_| {
+    var wired = onto;
+    for (0..pins.len - @intFromBool(half == null and !onto)) |_| {
         var pick: ?usize = null;
         var pick_d: u32 = std.math.maxInt(u32);
         for (pins, joined, 0..) |p, j, i| if (!j) {
             const at = pinAt(s, p);
             var d = nearest(s, pins, joined, at);
             if (half) |h| d = @min(d, @abs(h - at.x));
-            if (d < pick_d or (d == pick_d and above(at, pinAt(s, pins[pick.?])))) {
+            if (pick == null or d < pick_d or (d == pick_d and above(at, pinAt(s, pins[pick.?])))) {
                 pick = i;
                 pick_d = d;
             }
@@ -230,23 +270,7 @@ fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []con
 /// on the drawing's nearer side; labels at the pins in `failed` and, when
 /// any, at `first`.
 fn finish(c: *Canvas, net: u32, first: u32, failed: []const u32) !void {
-    if (c.s.roles[net] == .output) {
-        var lo: i32 = std.math.maxInt(i32);
-        var hi: i32 = std.math.minInt(i32);
-        for (c.segs.items) |g| if (g.net == net) {
-            lo = @min(lo, @min(g.a.x, g.b.x));
-            hi = @max(hi, @max(g.a.x, g.b.x));
-        };
-        if (lo <= hi) {
-            const right = lo + hi >= c.middle2();
-            const edge = if (right) hi else lo;
-            var from: ?Pt = null;
-            for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-                if (e.x == edge and (from == null or above(e, from.?))) from = e;
-            };
-            try c.port(net, from.?, if (right) .right else .left);
-        }
-    }
+    try port(c, net);
     if (failed.len == 0) return;
     for (failed) |p| try c.labelAt(p);
     try c.labelAt(first);

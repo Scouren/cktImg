@@ -9,13 +9,13 @@
 //!   reported relaxed, `not_drawn`: a bug.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
-//!   rungs 1 and 2; a deck plus these lines, under `*@ grouping off`, draws
-//!   the same picture.
+//!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
+//!   lines, under `*@ grouping off`, draws the same picture.
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Contents:
 //! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
-//! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, rung: u8) Allocator.Error![]const []const u8`
+//! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8`
 //! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role) !void`
 
 const std = @import("std");
@@ -32,6 +32,8 @@ const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
 const relations = @import("relations.zig");
 const netlines = @import("netlines.zig");
+const pinned = @import("pinned.zig");
+const geom = @import("geom.zig");
 
 const Library = library.Library;
 const Netlist = netlist.Netlist;
@@ -54,7 +56,10 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     assert(st.verdicts.len == nl.hints.len and sk.verdicts.len == nl.hints.len);
     const drawn = try arena.alloc(?Verdict, nl.hints.len);
     @memset(drawn, null);
-    _ = try netlines.read(arena, nl, roles, drawn);
+    const unit = if (lib) |l| l.unit else 1;
+    _ = try netlines.read(arena, nl, roles, unit, drawn);
+    _ = try pinned.read(arena, nl, unit, sk.drawn, drawn);
+    _ = try pinned.sides(arena, nl, drawn);
     const out = try arena.alloc(Verdict, nl.hints.len);
     for (out, nl.hints, nl.verdicts, st.verdicts, sk.verdicts, drawn) |*v, h, a, b, c, d| {
         v.* = a orelse b orelse c orelse d orelse own(nl, roles, h, p, lib);
@@ -75,23 +80,63 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         } else continue;
         out[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{by}), .alone = try arena.dupe(bool, &.{true}) };
     }
+    // A cell as the skeleton holds it, in the frame the line uses.
+    for (out, nl.hints) |*v, h| {
+        if (v.state != .honoured or h.verb != .cell) continue;
+        const d = nl.device(h.args[0]).?.index();
+        const at: [2]i32 = .{ sk.x[d] + sk.origin[0], sk.y[d] + sk.origin[1] };
+        if (at[0] != hints.int(h.args[1]).? or at[1] != hints.int(h.args[2]).?) v.* = .{ .state = .relaxed, .code = .not_drawn };
+    }
     // What still stands, checked against the drawing. A wire or port with
-    // no room falls back to names, as it may.
+    // no room falls back to names, as it may; a place, route or via a
+    // guarantee refuses is not drawn.
     const drawing = p orelse return out;
     for (out, nl.hints) |*v, h| {
-        if (v.state != .honoured or checks.drawnAs(drawing, nl, h) != false) continue;
-        const may = h.verb == .wire or h.verb == .port;
-        v.* = .{ .state = .relaxed, .code = if (may) .no_room else .not_drawn };
+        if (v.state != .honoured or checks.drawnAs(drawing, nl, h, unit) != false) continue;
+        // A cell or place on one of its devices is the more exact line: it
+        // stands, and this one gives way to it.
+        if (try placedBy(arena, nl, out, h)) |by| {
+            v.* = .{ .state = .dropped, .code = .conflict, .blocked_by = by, .alone = try arena.alloc(bool, by.len) };
+            @memset(@constCast(v.alone), true);
+            continue;
+        }
+        v.* = switch (h.verb) {
+            .wire, .port => .{ .state = .relaxed, .code = .no_room },
+            .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
+            else => .{ .state = .relaxed, .code = .not_drawn },
+        };
+    }
+    // A name where a `refdes` line asks, when there is room.
+    const l = lib orelse return out;
+    const anchors = try geom.refdesAnchors(arena, drawing, l);
+    for (out, nl.hints) |*v, h| {
+        if (v.state != .honoured or h.verb != .refdes) continue;
+        const d = for (drawing.dev_name, 0..) |n, k| {
+            if (std.mem.eql(u8, n, h.args[0])) break k;
+        } else continue;
+        const box = drawing.deviceRect(l, d);
+        const r = geom.refdesRect(anchors[d], h.args[0]);
+        const there = switch (drawing.dev_refdes[d].?) {
+            .left => r.max.x <= box.min.x,
+            .right => r.min.x >= box.max.x,
+            .up => r.max.y <= box.min.y,
+            .down => r.min.y >= box.max.y,
+        };
+        if (!there) v.* = .{ .state = .relaxed, .code = .no_room };
     }
     return out;
 }
 
-/// The engine's decisions on rungs 1 to `rung` (1 or 2) as the `*@` lines
+/// The engine's decisions on rungs 1 to `rung` (1 to 4) as the `*@` lines
 /// that state them: each block a `group` line (a stack top to bottom); then
 /// each two-pin device's form, each column device's upper end and gate
 /// side, each lattice row's devices, the rows top down and the columns left
-/// to right.
-pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, rung: u8) Allocator.Error![]const []const u8 {
+/// to right; then each drawn device's cell, as a `weak` stay in the frame
+/// `cell` lines use; then, from the drawing `p` (in units of `unit`), each
+/// drawn device's place and turn, a `weak` stay too.
+pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8 {
+    assert(rung >= 1 and rung <= 4);
+    assert(unit > 0);
     const c = &nl.graph;
     const names = c.edges.items(.name);
     const kinds = c.edges.items(.kind);
@@ -167,6 +212,17 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
         cols += 1;
     }
     if (cols >= 2) try out.append(arena, across.items);
+    if (rung < 3) return out.items;
+    for (0..n) |d| if (sk.drawn[d]) {
+        try out.append(arena, try std.fmt.allocPrint(arena, "*@ weak cell {s} {d} {d}", .{ names[d], sk.x[d] + sk.origin[0], sk.y[d] + sk.origin[1] }));
+    };
+    if (rung < 4) return out.items;
+    const drawing = p orelse return out.items;
+    for (drawing.dev_name, drawing.dev_pos, drawing.dev_orient) |name, pos, o| {
+        const e = (if (name.len > 0) nl.device(name) else null) orelse continue;
+        if (!sk.drawn[e.index()]) continue;
+        try out.append(arena, try std.fmt.allocPrint(arena, "*@ weak at {s} {s} {s} {s}{d}", .{ name, try units(arena, pos.x, unit), try units(arena, pos.y, unit), if (o.mirror) "MR" else "R", @as(u16, o.rot) * 90 }));
+    }
     return out.items;
 }
 
@@ -217,7 +273,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
         try netName(w, p, @intCast(n));
     }
     try w.writeAll("] },\n  \"decisions\": [");
-    const lines = try decisions(a, nl, &st, &sk, 2);
+    const lines = try decisions(a, nl, &st, &sk, p, lib.unit, 4);
     for (lines, 0..) |line, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
         try std.json.Stringify.value(line, .{}, w);
@@ -230,6 +286,13 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
 }
 
 // ---- private ----
+
+/// `v` drawing units as symbol units: whole, or to four places (exact for
+/// any unit under 5000).
+fn units(arena: Allocator, v: i32, unit: i32) ![]const u8 {
+    if (@mod(v, unit) == 0) return std.fmt.allocPrint(arena, "{d}", .{@divExact(v, unit)});
+    return std.fmt.allocPrint(arena, "{d:.4}", .{@as(f64, @floatFromInt(v)) / @as(f64, @floatFromInt(unit))});
+}
 
 /// The verdict of a line no stage owns: `role` against the roles drawn
 /// with, `class` against the library and the drawing; any other verb is
@@ -278,9 +341,31 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
         .role => 8,
         .class => 9,
         .kind => 10,
+        .at => 11,
+        .refdes => 12,
+        .cell => 13,
         else => return null,
     };
     return .{ .family = family, .target = h.args[0] };
+}
+
+/// The honoured `cell` and `at` lines that name a device `h` names, when
+/// `h` is a relation they can displace; null for none.
+fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
+    switch (h.verb) {
+        .row, .above, .order, .face => {},
+        else => return null,
+    }
+    var by: std.ArrayList(u32) = .empty;
+    for (nl.hints, out, 0..) |g, v, i| {
+        if ((g.verb != .cell and g.verb != .at) or v.state != .honoured or g.args.len == 0) continue;
+        const names = if (h.verb == .face) h.args[0..1] else h.args;
+        for (names) |name| if (std.mem.eql(u8, name, g.args[0])) {
+            try by.append(arena, @intCast(i));
+            break;
+        };
+    }
+    return if (by.items.len == 0) null else by.items;
 }
 
 /// Whether a device the skeleton draws has a pin on `net`.

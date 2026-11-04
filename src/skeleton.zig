@@ -48,6 +48,7 @@ const bridges = @import("bridges.zig");
 const relations = @import("relations.zig");
 const sequence = @import("sequence.zig");
 const mates = @import("mates.zig");
+const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
@@ -75,6 +76,9 @@ pub const Skeleton = struct {
     y: []const i32,
     /// Twice the x of the axis mated devices mirror about, if any.
     axis2: ?i32,
+    /// Where cell (0, 0) is in the frame `cell` lines use (before the cells
+    /// shift to start at 0): add it to a cell to get that frame's.
+    origin: [2]i32,
     /// Per deck hint: what became of it, for the lines this stage owns
     /// (`upright`, `bridge`, `face`, `row`, `above`); null for the rest.
     verdicts: []const ?hints.Verdict,
@@ -185,14 +189,17 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     }
     try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, if (mated) 0 else null, x, y);
     try sequence.bridges(gpa, &seq, rel.bridge_row, devices_by_rank, drawn, form, x, y, verdicts);
+    try cells.apply(gpa, arena, nl, drawn, mate, x, y, verdicts);
+    mated = false;
+    for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
     gates(nl, roles, st, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, verdicts);
-    const shift = normalize(drawn, x, y);
+    const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
-    const axis2: ?i32 = if (mated and mirrored) -2 * shift else null;
+    const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;
     if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
-    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .axis2 = axis2, .verdicts = verdicts };
+    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
 }
 
 /// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
@@ -574,15 +581,15 @@ fn expectDistinctCells(gpa: Allocator, drawn: []const bool, x: []const i32, y: [
     };
 }
 
-/// Shifts every cell so the smallest x and y are 0; returns the x shift.
-fn normalize(drawn: []const bool, x: []i32, y: []i32) i32 {
+/// Shifts every cell so the smallest x and y are 0; returns the shift.
+fn normalize(drawn: []const bool, x: []i32, y: []i32) [2]i32 {
     var mx: i32 = std.math.maxInt(i32);
     var my: i32 = std.math.maxInt(i32);
     for (drawn, x, y) |dr, px, py| if (dr) {
         mx = @min(mx, px);
         my = @min(my, py);
     };
-    if (mx == std.math.maxInt(i32)) return 0;
+    if (mx == std.math.maxInt(i32)) return .{ 0, 0 };
     for (x, y) |*px, *py| {
         px.* -= mx;
         py.* -= my;
@@ -591,5 +598,5 @@ fn normalize(drawn: []const bool, x: []i32, y: []i32) i32 {
         assert(px >= 0);
         assert(py >= 0);
     };
-    return mx;
+    return .{ mx, my };
 }

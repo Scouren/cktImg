@@ -303,6 +303,9 @@ line per decision, at the top level of the deck drawn:
 *@ order RD1 M1 M5 M2      columns left to right
 *@ face M3 g left          a gate's side, or which end is up
 *@ label vb1               names, not a wire; wire, port, rail, first
+*@ cell M5 2 4             a lattice cell
+*@ at M5 6 4.5 R90         exact coordinates and turn; refdes M5 left
+*@ route n1 2,0 2,3 5,3    a net's exact wire; via n1 4,1 passes a point
 *@ weak row M5 M6          a stay: kept unless a strong line needs the room
 ```
 
@@ -311,10 +314,11 @@ honoured, relaxed, dropped (with the stronger lines that blocked it) or
 rejected, and checks every honoured line against the finished drawing. Lines
 never break the drawing's guarantees: a line that would is refused. A
 later line beats an earlier one, a strong one a `weak` one, and every line
-beats what the engine would decide. `--decisions 2` prints the engine's own
-decisions as these lines; a deck plus them draws the same picture.
+beats what the engine would decide. `--decisions 4` prints the engine's own
+decisions as these lines (cells and places as `weak` stays); a deck plus
+them draws the same picture.
 [`docs/research/vocabulary.md`](docs/research/vocabulary.md) has every
-verb; cells, coordinates and routes (rungs 3 to 5) are still to come. In a
+verb. In a
 `.subckt`, the lines are that cell's for the Schemify import, which logs
 each one the engine does not honour.
 
@@ -426,7 +430,7 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1|2] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
