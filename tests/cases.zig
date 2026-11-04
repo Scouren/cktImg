@@ -188,3 +188,11 @@ test {
 test {
     _ = @import("report.zig");
 }
+
+test {
+    _ = @import("steering.zig");
+}
+
+test {
+    _ = @import("lines.zig");
+}

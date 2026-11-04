@@ -23,6 +23,7 @@
 //! - `pub const none: u32`
 //! - `pub const BlockKind = enum(u8) { pair, cross, mirror, bank, stack }`
 //! - `pub const Structure = struct`, `Structure.members(s: *const Structure, b: usize) []const u32`
+//! - `Pins.holds(p: Pins, lines: []const u32) Allocator.Error!bool`: the admission test `hints.conflict` calls
 //! - `pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role) Allocator.Error!Structure`
 //! - `pub fn nameLess(a: []const u8, b: []const u8) bool`
 //! - `pub fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) Allocator.Error![]u32`
@@ -33,6 +34,7 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const symmetry = @import("symmetry.zig");
+const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -40,6 +42,7 @@ const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
 const Role = sch.Role;
 const Polarity = symmetry.Polarity;
+const Verdict = hints.Verdict;
 
 /// No mate: the circuit has no symmetry.
 pub const none = symmetry.none;
@@ -77,6 +80,11 @@ pub const Structure = struct {
     /// a stack's top to bottom, any other's in canonical order.
     block_start: []const u32,
     block_devices: []const u32,
+    /// `*@ symmetry off`: no mates, not even a block's.
+    symmetry_off: bool,
+    /// Per deck hint: what became of it, for the lines this stage owns
+    /// (grouping, `symmetric`, `axis`, `symmetry off`); null for the rest.
+    verdicts: []const ?Verdict,
 
     pub fn members(s: *const Structure, b: usize) []const u32 {
         assert(b + 1 < s.block_start.len);
@@ -120,6 +128,27 @@ const BlockList = struct {
     }
 };
 
+/// The admission test for `symmetric` and `axis` lines: a symmetry swaps
+/// every pair they name. Each test leaves its result in the mate tables.
+const Pins = struct {
+    gpa: Allocator,
+    nl: *const Netlist,
+    roles: []const Role,
+    device_rank: []const u32,
+    net_rank: []const u32,
+    /// By hint: the pair a line names.
+    pin: []symmetry.Pin,
+    device_mate: []u32,
+    net_mate: []u32,
+
+    pub fn holds(p: Pins, lines: []const u32) Allocator.Error!bool {
+        var pins: std.ArrayList(symmetry.Pin) = .empty;
+        defer pins.deinit(p.gpa);
+        for (lines) |i| try pins.append(p.gpa, p.pin[i]);
+        return symmetry.find(p.gpa, p.nl, p.roles, p.device_rank, p.net_rank, pins.items, p.device_mate, p.net_mate);
+    }
+};
+
 /// Asserts that `roles` has one entry per net.
 pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role) Allocator.Error!Structure {
     const g = &nl.graph;
@@ -128,7 +157,9 @@ pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []co
     const net_rank = try rankByName(arena, gpa, g.vertices.items(.name));
     const device_mate = try arena.alloc(u32, g.edgeCount());
     const net_mate = try arena.alloc(u32, g.vertexCount());
-    try symmetry.find(gpa, nl, roles, device_rank, net_rank, device_mate, net_mate);
+    const verdicts = try arena.alloc(?Verdict, nl.hints.len);
+    @memset(verdicts, null);
+    const off = try mates(gpa, arena, nl, roles, device_rank, net_rank, device_mate, net_mate, verdicts);
     var out: Structure = .{
         .device_rank = device_rank,
         .net_rank = net_rank,
@@ -137,9 +168,11 @@ pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []co
         .block_kind = &.{},
         .block_start = &.{},
         .block_devices = &.{},
+        .symmetry_off = off,
+        .verdicts = verdicts,
     };
     for (device_rank) |r| assert(r < device_rank.len);
-    try blocks(gpa, arena, nl, roles, device_rank, net_rank, &out);
+    try blocks(gpa, arena, nl, roles, device_rank, net_rank, verdicts, &out);
     assert(out.block_start.len == out.block_kind.len + 1);
     assert(out.block_devices.len <= 2 * g.edgeCount());
     return out;
@@ -211,7 +244,7 @@ fn digitsEnd(s: []const u8, start: usize) usize {
 /// (a device joins one of these at most), then stacks; each kind in
 /// canonical order of devices or nets, so the list does not depend on the
 /// order of the cards.
-fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, out: *Structure) !void {
+fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, verdicts: []?Verdict, out: *Structure) !void {
     const c = &nl.graph;
     const devices = c.edgeCount();
     assert(device_rank.len == devices);
@@ -228,7 +261,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     var list: BlockList = .{};
     // Hints first: a hinted group stands as written, a device kept out of
     // groups is in none, and `grouping off` leaves the hinted ones only.
-    const hinted = try hints(gpa, arena, nl, device_rank, taken, &list);
+    const hinted = try groupLines(gpa, arena, nl, device_rank, taken, &list, verdicts);
     defer gpa.free(hinted.held);
     const recognize = !hinted.off;
 
@@ -349,49 +382,80 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     out.block_devices = list.devices.items;
 }
 
-/// The deck's grouping hints: each hinted group added to `list` with its
-/// known devices no earlier hint took (a pair or a cross-coupled pair of two
-/// exactly), its members `taken` (a stack's: `held` from recognized
-/// stacks); a device `*@ nogroup` names `taken` and `held`. `off`: the deck
+/// The deck's grouping lines: each group added to `list` (in file order)
+/// with its known devices no stronger line took (a pair or a cross-coupled
+/// pair of two exactly), its members `taken` (a stack's: `held` from
+/// recognized stacks); a device `*@ nogroup` names `taken` and `held`.
+/// Lines are admitted later first (`hints.admitOrder`). `off`: the deck
 /// turns recognition off.
-fn hints(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []const u32, taken: []bool, list: *BlockList) !struct { off: bool, held: []bool } {
+fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []const u32, taken: []bool, list: *BlockList, verdicts: []?Verdict) !struct { off: bool, held: []bool } {
     const n = taken.len;
     assert(device_rank.len == n);
+    assert(verdicts.len == nl.hints.len);
     const held = try gpa.alloc(bool, n);
     errdefer gpa.free(held);
     @memset(held, false);
     const nogroup = try gpa.alloc(bool, n);
     defer gpa.free(nogroup);
     @memset(nogroup, false);
+    // The line that took or held each device, for `blocked_by`.
+    const by = try gpa.alloc([2]u32, n);
+    defer gpa.free(by);
+    @memset(by, .{ none, none });
     var off = false;
-    for (nl.hints) |h| switch (h.verb) {
-        .off => off = true,
-        .nogroup => for (h.devices) |name| if (nl.device(name)) |e| {
-            nogroup[e.index()] = true;
-            held[e.index()] = true;
-            taken[e.index()] = true;
+    for (nl.hints, 0..) |h, i| switch (h.verb) {
+        .off => {
+            off = true;
+            verdicts[i] = .{ .state = .honoured, .code = .ok };
         },
-        .pair, .mirror, .bank, .stack, .cross => {},
+        .nogroup => {
+            var known: usize = 0;
+            for (h.args) |name| if (nl.device(name)) |e| {
+                nogroup[e.index()] = true;
+                held[e.index()] = true;
+                taken[e.index()] = true;
+                by[e.index()] = .{ @intCast(i), @intCast(i) };
+                known += 1;
+            };
+            verdicts[i] = if (known == h.args.len and known > 0) .{ .state = .honoured, .code = .ok } else if (known > 0) .{ .state = .relaxed, .code = .unknown_name } else .{ .state = .rejected, .code = if (h.args.len == 0) .bad_args else .unknown_name };
+        },
+        else => {},
     };
+    const got = try gpa.alloc(?[]const u32, nl.hints.len);
+    defer gpa.free(got);
+    @memset(got, null);
     var members: std.ArrayList(u32) = .empty;
     defer members.deinit(gpa);
-    for (nl.hints) |h| {
-        const kind: BlockKind = switch (h.verb) {
-            .pair => .pair,
-            .bank => .bank,
-            .mirror => .mirror,
-            .stack => .stack,
-            .cross => .cross,
-            .nogroup, .off => continue,
-        };
+    var blockers: std.ArrayList(u32) = .empty;
+    defer blockers.deinit(gpa);
+    for (try hints.admitOrder(arena, nl.hints)) |i| {
+        const h = nl.hints[i];
+        const kind = blockKind(h.verb) orelse continue;
+        const side: usize = @intFromBool(kind == .stack);
         members.clearRetainingCapacity();
-        for (h.devices) |name| {
-            const d = (nl.device(name) orelse continue).index();
+        blockers.clearRetainingCapacity();
+        var unknown = false;
+        for (h.args) |name| {
+            const d = (nl.device(name) orelse {
+                unknown = true;
+                continue;
+            }).index();
             const busy = if (kind == .stack) held[d] else taken[d];
-            if (busy or nogroup[d] or std.mem.indexOfScalar(u32, members.items, d) != null) continue;
-            try members.append(gpa, d);
+            if (busy or nogroup[d]) {
+                const b = by[d][side];
+                if (std.mem.indexOfScalar(u32, blockers.items, b) == null) try blockers.append(gpa, b);
+                continue;
+            }
+            if (std.mem.indexOfScalar(u32, members.items, d) == null) try members.append(gpa, d);
         }
-        if (members.items.len < 2 or ((kind == .pair or kind == .cross) and members.items.len != 2)) continue;
+        const two = kind == .pair or kind == .cross;
+        if (members.items.len < 2 or (two and members.items.len != 2)) {
+            verdicts[i] = if (blockers.items.len > 0 and !(two and members.items.len > 2))
+                .{ .state = .dropped, .code = .taken, .blocked_by = try arena.dupe(u32, blockers.items), .alone = try alone(arena, blockers.items.len) }
+            else
+                .{ .state = .rejected, .code = if (unknown) .unknown_name else .bad_args };
+            continue;
+        }
         // In rank order, as recognition lists them; a stack top to bottom as
         // written. ponytail: insertion sort, quadratic, for the handful of
         // names a hint gives; `std.mem.sort` costs the plugin 8 KB more.
@@ -402,11 +466,99 @@ fn hints(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []co
         }.lt);
         for (members.items) |d| {
             if (kind == .stack) held[d] = true else taken[d] = true;
+            by[d][side] = @intCast(i);
         }
-        try list.add(arena, kind, members.items);
+        got[i] = try arena.dupe(u32, members.items);
+        verdicts[i] = if (blockers.items.len > 0)
+            .{ .state = .relaxed, .code = .taken, .blocked_by = try arena.dupe(u32, blockers.items), .alone = try alone(arena, blockers.items.len) }
+        else if (unknown) .{ .state = .relaxed, .code = .unknown_name } else .{ .state = .honoured, .code = .ok };
     }
+    for (nl.hints, got) |h, ms| if (ms) |m| try list.add(arena, blockKind(h.verb).?, m);
     for (nogroup, taken) |g, t| assert(!g or t);
     return .{ .off = off, .held = held };
+}
+
+fn blockKind(v: hints.Verb) ?BlockKind {
+    return switch (v) {
+        .pair => .pair,
+        .bank => .bank,
+        .mirror => .mirror,
+        .stack => .stack,
+        .cross => .cross,
+        else => null,
+    };
+}
+
+/// Each member of a conflict that, deleted alone, admits the line: every
+/// one, where each blocker took devices of its own.
+fn alone(arena: Allocator, len: usize) ![]const bool {
+    const out = try arena.alloc(bool, len);
+    @memset(out, true);
+    return out;
+}
+
+/// The symmetry under the deck's `symmetric`, `axis` and `symmetry off`
+/// lines, filling both mate tables and each such line's verdict. Lines are
+/// admitted strongest first, each when a symmetry still swaps every pair
+/// admitted with it; a line no symmetry takes is dropped, its preferred
+/// conflict (Junker) in `blocked_by`. Returns whether `symmetry off` holds.
+fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, device_mate: []u32, net_mate: []u32, verdicts: []?Verdict) !bool {
+    const order = try hints.admitOrder(arena, nl.hints);
+    var off: ?u32 = null;
+    for (order) |i| if (nl.hints[i].verb == .symmetry_off) {
+        off = off orelse i;
+        verdicts[i] = .{ .state = .honoured, .code = .ok };
+    };
+    const check: Pins = .{ .gpa = gpa, .nl = nl, .roles = roles, .device_rank = device_rank, .net_rank = net_rank, .pin = try arena.alloc(symmetry.Pin, nl.hints.len), .device_mate = device_mate, .net_mate = net_mate };
+    var admitted: std.ArrayList(u32) = .empty;
+    defer admitted.deinit(gpa);
+    for (order) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .symmetric and h.verb != .axis) continue;
+        check.pin[i] = pinOf(nl, h) catch |err| {
+            verdicts[i] = .{ .state = .rejected, .code = if (err == error.Unknown) .unknown_name else .bad_args };
+            continue;
+        };
+        if (off) |o| {
+            verdicts[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{o}), .alone = try alone(arena, 1) };
+            continue;
+        }
+        try admitted.append(gpa, i);
+        if (try check.holds(admitted.items)) {
+            verdicts[i] = .{ .state = .honoured, .code = .ok };
+            continue;
+        }
+        _ = admitted.pop();
+        var v = try hints.conflict(gpa, arena, check, admitted.items, i, .conflict);
+        if (v.blocked_by.len == 0) v.code = .asymmetric;
+        verdicts[i] = v;
+    }
+    if (off != null) {
+        @memset(device_mate, none);
+        @memset(net_mate, none);
+        return true;
+    }
+    const found = try check.holds(admitted.items);
+    assert(found or admitted.items.len == 0);
+    return false;
+}
+
+/// The pair a `symmetric a b` line swaps, or the one an `axis x` line fixes:
+/// two devices or two nets.
+fn pinOf(nl: *const Netlist, h: hints.Hint) error{ Unknown, Malformed }!symmetry.Pin {
+    const want: usize = if (h.verb == .axis) 1 else 2;
+    if (h.args.len != want) return error.Malformed;
+    const a = h.args[0];
+    const b = h.args[want - 1];
+    if (nl.device(a)) |x| {
+        const y = nl.device(b) orelse return if (nl.net(b) == null) error.Unknown else error.Malformed;
+        return .{ .net = false, .a = x.index(), .b = y.index() };
+    }
+    if (nl.net(a)) |x| {
+        const y = nl.net(b) orelse return if (nl.device(b) == null) error.Unknown else error.Malformed;
+        return .{ .net = true, .a = x.index(), .b = y.index() };
+    }
+    return error.Unknown;
 }
 
 fn transistor(nl: *const Netlist, d: u32) ?Fet {

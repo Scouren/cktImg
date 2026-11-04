@@ -373,7 +373,10 @@ commands real, and grows a rung at a time.
 5. **Rungs 1 and 2**: admission with preferred conflicts first
    (algorithms.md §1), then every verb, the honoured-or-reported checker,
    random hints in the fuzz, and the 30 lines of figures.md as the
-   acceptance test.
+   acceptance test. Built: every rung-1 and rung-2 verb, the report's
+   `requests` checked against the drawing, `--decisions 2` with its fixed
+   point, random lines in the fuzz; every golden figure in full with 21
+   lines, none on rung 3 (`tests/steering.zig`).
 6. **Rungs 3 to 5**: pinned coordinates and routes through `Canvas.commit`
    (§5), mirrored routing by the union of blockages (§6), forced cells with
    stays (§2), then channel growth for `wire` (§3), the largest change.

@@ -2,6 +2,23 @@
 
 One line per change, citing its issue or pull request. Numbers are measured.
 
+## Unreleased
+
+Added:
+
+- Steering rungs 1 and 2: every verb of docs/research/vocabulary.md on those rungs (`symmetric`, `axis`, `symmetry off`, `role`, `driver`, `class`, `kind`, `expand`; `above`, `row`, `order`, `face`, `upright`, `bridge`, `label`, `wire`, `port`, `rail`, `first`) and the `weak` prefix. Lines are admitted strongest first, a conflicting one dropped with its preferred conflict (#15).
+- The report's `requests`: each line's verdict, every honoured one checked against the drawing; `cktimg-json --decisions 1|2` prints the engine's decisions as lines, and a deck plus them draws the same picture (#15).
+- A ground bar (`*@ rail 0 bar`) (#15).
+- Every golden figure drawn in full with 21 rung 1 and 2 lines (#15).
+
+Fixed:
+
+- An output port whose stub does not fit is named at the net's top-left pin, not its first in card order, so the cards' order no longer moves it (found by the line fuzz) (#15).
+
+Measured:
+
+- `cktimg.wasm` is 459,957 bytes (cap 550 KB).
+
 ## 2.0.0 (2026-11-04)
 
 Breaking:

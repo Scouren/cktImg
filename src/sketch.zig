@@ -25,6 +25,8 @@ const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const wires = @import("wires.zig");
+const netlines = @import("netlines.zig");
+const hints = @import("hints.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
@@ -89,7 +91,12 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, &xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank);
+    // The deck's net lines; their verdicts are the report's to give.
+    const sa = s.arena.allocator();
+    const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
+    @memset(scratch, null);
+    const lines = try netlines.read(sa, nl, s.roles, scratch);
+    try wires.wire(gpa, s, &xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, &lines);
     s.xy = xy.items;
     try noConnects(gpa, s);
     assert(s.xy.len == s.nodes.len);

@@ -81,6 +81,8 @@ pub const Canvas = struct {
     /// terminals.
     segs: std.ArrayList(maze.Wire) = .empty,
     points: std.ArrayList(maze.Mark) = .empty,
+    /// Per net, the side a `*@ port` line puts its port on; empty for none.
+    port_side: []const ?Side = &.{},
 
     /// How much was drawn, to go back to.
     pub const Checkpoint = struct { segs: usize, points: usize, routes: usize, nodes: usize };
@@ -169,19 +171,27 @@ pub const Canvas = struct {
     }
 
     /// An output's port on a stub out from `from` toward `side`. When the
-    /// stub does not fit, a label at `from`, or at the net's first pin when
+    /// stub does not fit, a label at `from`, or at the net's top-left pin when
     /// `from` is where another net's wire crosses (a label there would join
     /// the two).
     pub fn port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void {
         assert(c.s.roles[net] == .output);
-        const end = stepPt(from, side, c.len.terminal);
+        const toward = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
+        const end = stepPt(from, toward, c.len.terminal);
         if (try c.commit(net, &.{ from, end })) {
-            try c.leaf(.terminal, net, end, side.opposite());
+            try c.leaf(.terminal, net, end, toward.opposite());
         } else if (c.fits(net, from, from)) {
-            try c.leaf(.label, net, from, side.opposite());
+            try c.leaf(.label, net, from, toward.opposite());
         } else {
-            const first = std.mem.indexOfScalar(u32, c.s.pins.items(.net), net).?;
-            try c.labelAt(@intCast(first));
+            // The net's top-left pin: by place, so card order changes nothing.
+            var first: ?u32 = null;
+            for (c.s.pins.items(.net), 0..) |n, p| {
+                if (n != net) continue;
+                const a = pinAt(c.s, @intCast(p));
+                const b = if (first) |f| pinAt(c.s, f) else a;
+                if (first == null or a.y < b.y or (a.y == b.y and a.x < b.x)) first = @intCast(p);
+            }
+            try c.labelAt(first.?);
         }
     }
 

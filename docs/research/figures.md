@@ -16,6 +16,14 @@ deck's rows and gate sides. Each set below was run through them, scored, and
 checked against the invariants. Removing any one line breaks the score or an
 invariant, so none is redundant.
 
+## Measured
+
+Built (steering slice 5), the engine draws all 14 in full with 21 lines,
+all on rungs 1 and 2: folded_cascode needs 4 `face` lines rather than 8 (each
+mirrors onto its mate), and `row M1 Rc Cc` and `order M7 R3 M1` reach
+two_stage_pmos and cmfb_two_stage without `cell`. Every line is honoured and
+none is redundant (`tests/steering.zig`).
+
 ## The lines
 
 Six decks already match their figure: `ota_5t`, `fd_two_stage`,

@@ -9,17 +9,22 @@
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
+//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const placed = @import("placed.zig");
+const netlist = @import("netlist.zig");
+const hints = @import("hints.zig");
+const relations = @import("relations.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
 const Library = library.Library;
 const Placed = placed.Placed;
+const Netlist = netlist.Netlist;
 
 pub const Rule = enum {
     /// A net in more than one piece; `other` is how many.
@@ -217,5 +222,150 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
     }
     for (p.junctions, 0..) |j, i| for (p.junctions[i + 1 ..]) |k| {
         if (j.x == k.x and j.y == k.y) try out.append(gpa, .{ .rule = .dot_twice, .net = placed.no_net, .at = j, .other = 2 });
+    };
+}
+
+/// Whether `p` draws what line `h` of `nl`'s deck asks, read from the
+/// drawing alone (y grows down): `row` one y, `above` y increasing, `order`
+/// x increasing, `face` the pin on that side of its device or its other
+/// end, `label` a name on the net and `wire` none, `port` a port symbol
+/// past the net's pins on that side. Null for a line the drawing cannot
+/// show (a group, the symmetry).
+pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) ?bool {
+    switch (h.verb) {
+        .row, .above, .order => {
+            var prev: ?Pt = null;
+            for (h.args) |name| {
+                const at = p.dev_pos[deviceIn(p, name) orelse return false];
+                if (prev) |q| {
+                    const ok = switch (h.verb) {
+                        .row => at.y == q.y,
+                        .above => at.y > q.y,
+                        else => at.x > q.x,
+                    };
+                    if (!ok) return false;
+                }
+                prev = at;
+            }
+            return true;
+        },
+        .face => {
+            if (h.args.len != 3) return null;
+            const d = deviceIn(p, h.args[0]) orelse return false;
+            const e = (nl.device(h.args[0]) orelse return false).index();
+            const pin = relations.pinIndex(nl, e, h.args[1]) orelse return false;
+            const lo, const hi = p.pinRange(d);
+            if (lo + pin >= hi) return false;
+            const at = p.pin_xy[lo + pin];
+            const o = p.dev_pos[d];
+            const dir = h.args[2];
+            if (std.mem.eql(u8, dir, "left")) return at.x < o.x;
+            if (std.mem.eql(u8, dir, "right")) return at.x > o.x;
+            // An end: above or below the device's other end.
+            const other: u32 = if (isFet(nl, e)) (if (pin == 0) 2 else 0) else (if (pin == 0) 1 else 0);
+            if (lo + other >= hi) return false;
+            const there = p.pin_xy[lo + other];
+            return if (std.mem.eql(u8, dir, "up")) at.y < there.y else at.y > there.y;
+        },
+        .label => {
+            // Named, or nothing in the circuit to name (an apart driver's).
+            const net = netIn(p, h.args[0]) orelse return false;
+            for (p.labels) |l| if (l.net == net) return true;
+            var it = p.segments(net);
+            return it.next() == null;
+        },
+        .wire => return wired(p, netIn(p, h.args[0]) orelse return false),
+        .port => {
+            if (h.args.len != 2) return null;
+            const net = netIn(p, h.args[0]) orelse return false;
+            // A port symbol (an unnamed one-pin device) on the net past
+            // every pin of it the circuit's devices hold.
+            var lo: Pt = .{ .x = std.math.maxInt(i32), .y = std.math.maxInt(i32) };
+            var hi: Pt = .{ .x = std.math.minInt(i32), .y = std.math.minInt(i32) };
+            for (0..p.deviceCount()) |d| {
+                const a, const b = p.pinRange(d);
+                if (p.dev_name[d].len == 0) continue;
+                for (a..b) |pin| if (p.pin_net[pin] == net) {
+                    lo = .{ .x = @min(lo.x, p.pin_xy[pin].x), .y = @min(lo.y, p.pin_xy[pin].y) };
+                    hi = .{ .x = @max(hi.x, p.pin_xy[pin].x), .y = @max(hi.y, p.pin_xy[pin].y) };
+                };
+            }
+            const side = h.args[1];
+            for (0..p.deviceCount()) |d| {
+                const a, const b = p.pinRange(d);
+                if (p.dev_name[d].len != 0 or b - a != 1 or p.pin_net[a] != net) continue;
+                const at = p.dev_pos[d];
+                const past = if (std.mem.eql(u8, side, "left")) at.x < lo.x else if (std.mem.eql(u8, side, "right")) at.x > hi.x else if (std.mem.eql(u8, side, "top")) at.y < lo.y else at.y > hi.y;
+                if (past) return true;
+            }
+            return false;
+        },
+        else => return null,
+    }
+}
+
+// ---- private ----
+
+/// Whether the named devices' pins on `net` are one piece by its wires
+/// alone (names aside). ponytail: a pin against every wire end, quadratic.
+fn wired(p: *const Placed, net: u32) bool {
+    var buf: [256]Pt = undefined;
+    var group: [256]u16 = undefined;
+    var n: usize = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| {
+        // A polyline is one piece: its points share the first one's group.
+        const g: u16 = @intCast(n);
+        for (poly) |at| {
+            if (n == buf.len) return true; // too big to judge here: no claim
+            buf[n] = at;
+            group[n] = g;
+            n += 1;
+        }
+    }
+    // Pieces meeting at a point (or a point on another's run) join.
+    var changed = true;
+    var rounds: usize = 0;
+    while (changed and rounds <= n) : (rounds += 1) {
+        changed = false;
+        for (0..n) |i| for (0..n) |j| {
+            if (group[i] == group[j] or !(buf[i].x == buf[j].x and buf[i].y == buf[j].y)) continue;
+            const lo = @min(group[i], group[j]);
+            for (group[0..n]) |*x| if (x.* == group[i] or x.* == group[j]) {
+                x.* = lo;
+            };
+            changed = true;
+        };
+    }
+    var piece: ?u16 = null;
+    for (0..p.deviceCount()) |d| {
+        if (p.dev_name[d].len == 0) continue;
+        const a, const b = p.pinRange(d);
+        for (a..b) |pin| {
+            if (p.pin_net[pin] != net) continue;
+            const g = for (0..n) |k| {
+                if (buf[k].x == p.pin_xy[pin].x and buf[k].y == p.pin_xy[pin].y) break group[k];
+            } else return false;
+            if (piece != null and piece.? != g) return false;
+            piece = g;
+        }
+    }
+    return true;
+}
+
+fn netIn(p: *const Placed, name: []const u8) ?u32 {
+    for (p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
+    return null;
+}
+
+fn deviceIn(p: *const Placed, name: []const u8) ?usize {
+    for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return d;
+    return null;
+}
+
+fn isFet(nl: *const Netlist, e: u32) bool {
+    return switch (nl.graph.edges.items(.kind)[e]) {
+        .mosfet, .bjt, .jfet, .mesfet => true,
+        else => false,
     };
 }

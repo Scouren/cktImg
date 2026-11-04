@@ -3,14 +3,19 @@
 //! next one.
 //!
 //! - `gates`: every finding of `checks.find`; none is the guarantee.
+//! - `requests`: each `*@` line of the deck, by line number: honoured,
+//!   relaxed, dropped or rejected, why, and the lines that blocked it. An
+//!   honoured line the finished drawing does not show (`checks.drawnAs`) is
+//!   reported relaxed, `not_drawn`: a bug.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
-//!   those the deck can already take (`*@ group`, rung 1); a deck plus these
-//!   lines draws the same picture.
+//!   rungs 1 and 2; a deck plus these lines, under `*@ grouping off`, draws
+//!   the same picture.
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Contents:
-//! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure) Allocator.Error![]const []const u8`
+//! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
+//! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, rung: u8) Allocator.Error![]const []const u8`
 //! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role) !void`
 
 const std = @import("std");
@@ -24,18 +29,72 @@ const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
+const hints = @import("hints.zig");
+const relations = @import("relations.zig");
+const netlines = @import("netlines.zig");
 
 const Library = library.Library;
 const Netlist = netlist.Netlist;
+const EdgeId = netlist.EdgeId;
 const Placed = placed.Placed;
 const Role = sch.Role;
 const Structure = structure.Structure;
+const Skeleton = skeleton.Skeleton;
+const Verdict = hints.Verdict;
 
-/// Each block of `st` as the `*@ group` line that states it, in the order
-/// recognition lists them (a stack's members top to bottom), so the lines
-/// read back give the same blocks in the same order.
-pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure) Allocator.Error![]const []const u8 {
-    const names = nl.graph.edges.items(.name);
+/// What became of each of `nl`'s hints: the verdict of the stage that owns
+/// it (the parser, the structure, the skeleton, the net lines), `role` and
+/// `class` judged here (`class` with `lib`), `rejected` for a verb none
+/// takes yet. Of lines setting one value (a device's gate side, a net's
+/// style, ...), the preferred stands and the rest are dropped, blocked by
+/// it. With `p`, an honoured line `p` does not show is `relaxed`:
+/// `no_room` for a `wire` or `port` that fell back to names, else
+/// `not_drawn`, a bug.
+pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict {
+    assert(st.verdicts.len == nl.hints.len and sk.verdicts.len == nl.hints.len);
+    const drawn = try arena.alloc(?Verdict, nl.hints.len);
+    @memset(drawn, null);
+    _ = try netlines.read(arena, nl, roles, drawn);
+    const out = try arena.alloc(Verdict, nl.hints.len);
+    for (out, nl.hints, nl.verdicts, st.verdicts, sk.verdicts, drawn) |*v, h, a, b, c, d| {
+        v.* = a orelse b orelse c orelse d orelse own(nl, roles, h, p, lib);
+        // A net no device drawn in the circuit touches (an apart driver's
+        // alone) has nothing for a net line to draw.
+        const on_net = h.verb == .label or h.verb == .wire or h.verb == .port;
+        if (v.state == .honoured and on_net and !inCircuit(nl, sk, nl.net(h.args[0]).?.index())) v.* = .{ .state = .rejected, .code = .not_placeable };
+    }
+    // Lines setting one value: the preferred one stands, the rest give way.
+    const order = try hints.admitOrder(arena, nl.hints);
+    for (order, 0..) |i, k| {
+        if (out[i].state != .honoured) continue;
+        const mine = slot(nl.hints[i]) orelse continue;
+        const by = for (order[0..k]) |j| {
+            if (out[j].state != .honoured) continue;
+            const theirs = slot(nl.hints[j]) orelse continue;
+            if (theirs.family == mine.family and std.mem.eql(u8, theirs.target, mine.target)) break j;
+        } else continue;
+        out[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{by}), .alone = try arena.dupe(bool, &.{true}) };
+    }
+    // What still stands, checked against the drawing. A wire or port with
+    // no room falls back to names, as it may.
+    const drawing = p orelse return out;
+    for (out, nl.hints) |*v, h| {
+        if (v.state != .honoured or checks.drawnAs(drawing, nl, h) != false) continue;
+        const may = h.verb == .wire or h.verb == .port;
+        v.* = .{ .state = .relaxed, .code = if (may) .no_room else .not_drawn };
+    }
+    return out;
+}
+
+/// The engine's decisions on rungs 1 to `rung` (1 or 2) as the `*@` lines
+/// that state them: each block a `group` line (a stack top to bottom); then
+/// each two-pin device's form, each column device's upper end and gate
+/// side, each lattice row's devices, the rows top down and the columns left
+/// to right.
+pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, rung: u8) Allocator.Error![]const []const u8 {
+    const c = &nl.graph;
+    const names = c.edges.items(.name);
+    const kinds = c.edges.items(.kind);
     var out: std.ArrayList([]const u8) = .empty;
     for (st.block_kind, 0..) |k, b| {
         var line: std.ArrayList(u8) = .empty;
@@ -43,7 +102,71 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure) All
         for (st.members(b)) |d| try line.print(arena, " {s}", .{names[d]});
         try out.append(arena, line.items);
     }
-    assert(out.items.len == st.block_kind.len);
+    if (rung < 2) return out.items;
+    const n = c.edgeCount();
+    // Forms of the two-pin devices.
+    for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
+        var line: std.ArrayList(u8) = .empty;
+        try line.appendSlice(arena, if (f == .vertical) "*@ upright" else "*@ bridge");
+        const empty = line.items.len;
+        for (0..n) |d| {
+            const pins = c.members(EdgeId.from(d));
+            if (!sk.drawn[d] or sk.form[d] != f or !relations.twoPin(kinds[d]) or pins.len < 2 or pins[0] == pins[1]) continue;
+            try line.print(arena, " {s}", .{names[d]});
+        }
+        if (line.items.len > empty) try out.append(arena, line.items);
+    }
+    // Ends and gate sides.
+    for (0..n) |d| {
+        if (!sk.drawn[d] or sk.form[d] != .vertical) continue;
+        const pins = c.members(EdgeId.from(d));
+        const up = for (pins, 0..) |net, k| {
+            if (net.index() == sk.upper[d]) break k;
+        } else unreachable;
+        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} up", .{ names[d], try relations.pinName(arena, kinds[d], @intCast(up)) }));
+        if (!isFet(kinds[d]) or pins.len < 3) continue;
+        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} {s}", .{ names[d], try relations.pinName(arena, kinds[d], 1), if (sk.gate_right[d]) "right" else "left" }));
+    }
+    // Rows: each one's devices left to right, then one of each top down.
+    const order = try columnDevices(arena, sk);
+    std.mem.sort(u32, order, sk, struct {
+        fn lt(k: *const Skeleton, a: u32, b: u32) bool {
+            return if (k.y[a] != k.y[b]) k.y[a] < k.y[b] else k.x[a] < k.x[b];
+        }
+    }.lt);
+    var downs: std.ArrayList(u8) = .empty;
+    try downs.appendSlice(arena, "*@ above");
+    var rows: usize = 0;
+    var at: usize = 0;
+    while (at < order.len) {
+        var end = at + 1;
+        while (end < order.len and sk.y[order[end]] == sk.y[order[at]]) end += 1;
+        if (end - at >= 2) {
+            var line: std.ArrayList(u8) = .empty;
+            try line.appendSlice(arena, "*@ row");
+            for (order[at..end]) |d| try line.print(arena, " {s}", .{names[d]});
+            try out.append(arena, line.items);
+        }
+        try downs.print(arena, " {s}", .{names[order[at]]});
+        rows += 1;
+        at = end;
+    }
+    if (rows >= 2) try out.append(arena, downs.items);
+    // Columns: the top device of each, left to right.
+    std.mem.sort(u32, order, sk, struct {
+        fn lt(k: *const Skeleton, a: u32, b: u32) bool {
+            return if (k.x[a] != k.x[b]) k.x[a] < k.x[b] else k.y[a] < k.y[b];
+        }
+    }.lt);
+    var across: std.ArrayList(u8) = .empty;
+    try across.appendSlice(arena, "*@ order");
+    var cols: usize = 0;
+    for (order, 0..) |d, i| {
+        if (i > 0 and sk.x[order[i - 1]] == sk.x[d]) continue;
+        try across.print(arena, " {s}", .{names[d]});
+        cols += 1;
+    }
+    if (cols >= 2) try out.append(arena, across.items);
     return out.items;
 }
 
@@ -68,6 +191,20 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     }
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
 
+    try w.writeAll("  \"requests\": [");
+    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
+        try w.writeAll(if (i == 0) "\n    " else ",\n    ");
+        try w.print("{{ \"line\": {d}, \"text\": ", .{h.line});
+        try std.json.Stringify.value(h.text, .{}, w);
+        try w.print(", \"state\": \"{t}\", \"code\": \"{t}\", \"blocked_by\": [", .{ v.state, v.code });
+        for (v.blocked_by, v.alone, 0..) |b, solo, k| {
+            if (k > 0) try w.writeAll(", ");
+            try w.print("{{ \"line\": {d}, \"alone\": {} }}", .{ nl.hints[b].line, solo });
+        }
+        try w.writeAll("] }");
+    }
+    try w.writeAll(if (nl.hints.len == 0) "],\n" else "\n  ],\n");
+
     try w.print("  \"metrics\": {{ \"crossings\": {d}, \"bends\": {d}, \"labelled\": [", .{ crossings(p), bends(p) });
     var first = true;
     for (0..p.netCount()) |n| {
@@ -80,11 +217,12 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
         try netName(w, p, @intCast(n));
     }
     try w.writeAll("] },\n  \"decisions\": [");
-    for (try decisions(a, nl, &st), 0..) |line, i| {
+    const lines = try decisions(a, nl, &st, &sk, 2);
+    for (lines, 0..) |line, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
         try std.json.Stringify.value(line, .{}, w);
     }
-    try w.writeAll(if (st.block_kind.len == 0) "],\n" else "\n  ],\n");
+    try w.writeAll(if (lines.len == 0) "],\n" else "\n  ],\n");
 
     try w.writeAll("  \"grid\": [");
     try grid(a, w, nl, &sk);
@@ -92,6 +230,78 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
 }
 
 // ---- private ----
+
+/// The verdict of a line no stage owns: `role` against the roles drawn
+/// with, `class` against the library and the drawing; any other verb is
+/// one the engine does not take yet.
+fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed, lib: ?*const Library) Verdict {
+    const reject = struct {
+        fn f(code: hints.Code) Verdict {
+            return .{ .state = .rejected, .code = code };
+        }
+    }.f;
+    switch (h.verb) {
+        .role => {
+            if (h.args.len != 2) return reject(.bad_args);
+            const net = nl.net(h.args[0]) orelse return reject(.unknown_name);
+            const role = sch.roleWord(h.args[1]) orelse return reject(.bad_args);
+            return if (roles[net.index()] == role) .{ .state = .honoured, .code = .ok } else .{ .state = .relaxed, .code = .conflict };
+        },
+        .class => {
+            if (h.args.len != 2) return reject(.bad_args);
+            _ = nl.device(h.args[0]) orelse return reject(.unknown_name);
+            const l = lib orelse return .{ .state = .honoured, .code = .ok };
+            const id = l.find(h.args[1]) orelse return reject(.unknown_name);
+            const drawing = p orelse return .{ .state = .honoured, .code = .ok };
+            // Taken only when it has the terminals of the class it replaces.
+            for (drawing.dev_name, drawing.dev_class) |n, k| if (std.mem.eql(u8, n, h.args[0])) {
+                return if (k == id) .{ .state = .honoured, .code = .ok } else reject(.bad_args);
+            };
+            return .{ .state = .honoured, .code = .ok };
+        },
+        .unknown => return reject(.unknown_verb),
+        else => return reject(.not_built),
+    }
+}
+
+/// The value a line sets, when one line can override another: its kind of
+/// value and what it is set on.
+fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
+    if (h.args.len == 0) return null;
+    const family: u8 = switch (h.verb) {
+        .face => if (h.args.len == 3 and (std.mem.eql(u8, h.args[2], "up") or std.mem.eql(u8, h.args[2], "down"))) 1 else 2,
+        .upright, .bridge => 3,
+        .driver => 4,
+        .label, .wire => 5,
+        .port => 6,
+        .rail => 7,
+        .role => 8,
+        .class => 9,
+        .kind => 10,
+        else => return null,
+    };
+    return .{ .family = family, .target = h.args[0] };
+}
+
+/// Whether a device the skeleton draws has a pin on `net`.
+fn inCircuit(nl: *const Netlist, sk: *const Skeleton, net: u32) bool {
+    for (nl.graph.incident(netlist.VertexId.from(net))) |e| if (sk.drawn[e.index()]) return true;
+    return false;
+}
+
+fn isFet(kind: netlist.DeviceKind) bool {
+    return switch (kind) {
+        .mosfet, .bjt, .jfet, .mesfet => true,
+        else => false,
+    };
+}
+
+/// The drawn column devices.
+fn columnDevices(arena: Allocator, sk: *const Skeleton) ![]u32 {
+    var out: std.ArrayList(u32) = .empty;
+    for (sk.drawn, sk.form, 0..) |dr, f, d| if (dr and f == .vertical) try out.append(arena, @intCast(d));
+    return out.items;
+}
 
 fn netName(w: *Writer, p: *const Placed, n: u32) Writer.Error!void {
     if (n >= p.netCount()) return w.writeAll("null");

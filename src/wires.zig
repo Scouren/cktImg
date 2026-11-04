@@ -17,10 +17,14 @@
 //!   `routes.zig` after every pattern.
 //!
 //! Nets go rails and nets driven from outside first, then by name, so the
-//! drawing does not depend on card order.
+//! drawing does not depend on card order. The deck's net lines
+//! (`netlines.zig`) come first: `first` nets lead, `label` names a net,
+//! `wire` wires it by the pattern named (names where none fits), `port`
+//! sets a port's side and `rail` a rail's bar (ground too) or a symbol per
+//! pin.
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -30,6 +34,8 @@ const sch = @import("schematic.zig");
 const canvas = @import("canvas.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
+const netlines = @import("netlines.zig");
+const NetLines = netlines.NetLines;
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -65,10 +71,12 @@ const Line = struct {
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
 /// pins drawn on their symbol with no wire.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
+    assert(lines.style.len == s.net_name.len);
     var c = try Canvas.init(gpa, s, xy, len, boxes, hidden);
     defer c.deinit();
+    c.port_side = lines.port;
     const n_nets = s.net_name.len;
     const pins_of = try gpa.alloc(std.ArrayList(u32), n_nets);
     defer {
@@ -96,31 +104,85 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             return o.rank[x] < o.rank[y];
         }
     }.lt);
+    // The `first` nets lead, in their order.
+    var lead: usize = 0;
+    for (lines.first) |net| {
+        const at = std.mem.indexOfScalar(u32, order, net).?;
+        std.mem.copyBackwards(u32, order[lead + 1 .. at + 1], order[lead..at]);
+        order[lead] = net;
+        lead += 1;
+    }
     var waiting: std.ArrayList(u32) = .empty;
     defer waiting.deinit(gpa);
+    // Bias nets a line wires: each named once, as a gate line is, so its
+    // wire joins the source drawn apart under that name.
+    var named: std.ArrayList(u32) = .empty;
+    defer named.deinit(gpa);
     for (order) |net| {
         const pins = pins_of[net].items;
         if (pins.len == 0) continue;
         const axis2: ?i32 = if (mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
+        const style = lines.style[net];
+        if (style == .label) {
+            for (pins) |p| try c.labelAt(p);
+            s.labeled[net] = true;
+            continue;
+        }
         switch (s.roles[net]) {
-            .sink, .input => for (pins) |p| try terminal(&c, p),
-            .supply => try supply(&c, pins),
-            .bias => try bias(&c, net, pins),
-            .internal, .output => if (!try ladder(&c, net, pins, axis2) and !try trunk(&c, net, pins)) try waiting.append(gpa, net),
+            .sink => if (lines.rail[net] == .bar) try bar(&c, pins, .down) else for (pins) |p| try terminal(&c, p, null),
+            .input => for (pins) |p| try terminal(&c, p, lines.port[net]),
+            .supply => if (lines.rail[net] == .each) {
+                for (pins) |p| try terminal(&c, p, null);
+            } else try bar(&c, pins, .up),
+            .bias => if (style == .auto) try bias(&c, net, pins) else {
+                if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
+                try named.append(gpa, net);
+            },
+            .internal, .output => if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net),
         }
     }
     try routes.draw(&c, waiting.items, pins_of, mirror);
+    // On its top-left pin, so card order changes nothing.
+    for (named.items) |net| if (!s.labeled[net]) {
+        var best = pins_of[net].items[0];
+        for (pins_of[net].items) |p| {
+            const a = pinAt(s, p);
+            const b = pinAt(s, best);
+            if (a.y < b.y or (a.y == b.y and a.x < b.x)) best = p;
+        }
+        try c.labelAt(best);
+    };
     assert(xy.items.len == s.nodes.len);
 }
 
 // ---- private ----
 
+/// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
+/// trunk); false, with nothing drawn, when it does not fit (or for `route`):
+/// the router takes the net.
+fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
+    // One pin: nothing to route; its port, if any, as by default.
+    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk(c, net, pins);
+    return switch (style) {
+        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk(c, net, pins),
+        .ladder => try ladder(c, net, pins, axis2),
+        .trunk => try trunk(c, net, pins),
+        .route => false,
+        .label => unreachable,
+    };
+}
+
 /// A rail's, input's or output's symbol one gap out from the pin, on a
-/// stub; a label there if the stub would touch something.
-fn terminal(c: *Canvas, p: u32) !void {
+/// stub (toward `want` when a `port` line asks and the stub fits); a label
+/// there if the stub would touch something.
+fn terminal(c: *Canvas, p: u32, want: ?Side) !void {
     const at = pinAt(c.s, p);
     const side = c.s.pins.items(.side)[p];
     const net = c.s.pins.items(.net)[p];
+    if (want) |w| if (w != side) {
+        const out = stepPt(at, w, c.len.terminal);
+        if (try c.commit(net, &.{ at, out })) return c.leaf(.terminal, net, out, w.opposite());
+    };
     const end = stepPt(at, side, if (c.rails[net]) c.len.rail else c.len.terminal);
     if (try c.commit(net, &.{ at, end })) {
         try c.leaf(.terminal, net, end, side.opposite());
@@ -130,25 +192,25 @@ fn terminal(c: *Canvas, p: u32) !void {
     }
 }
 
-/// Supply pins facing up: stubs to a bar a gap above the highest, one
-/// symbol on each unbroken run of the bar at its middle stub. Any other
-/// supply pin: a symbol of its own.
-fn supply(c: *Canvas, pins: []const u32) !void {
+/// Rail pins facing `out` (up for a supply, down for ground): stubs to a
+/// bar a gap past the outermost, one symbol on each unbroken run of the bar
+/// at its middle stub. Any other pin: a symbol of its own.
+fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
     const s = c.s;
     const gpa = c.gpa;
+    assert(out == .up or out == .down);
     var ups: std.ArrayList(u32) = .empty;
     defer ups.deinit(gpa);
-    var top: i32 = std.math.maxInt(i32);
+    var top: i32 = if (out == .up) std.math.maxInt(i32) else std.math.minInt(i32);
     for (pins) |p| {
-        if (s.pins.items(.side)[p] != .up) continue;
+        if (s.pins.items(.side)[p] != out) continue;
         try ups.append(gpa, p);
-        top = @min(top, pinAt(s, p).y);
+        top = if (out == .up) @min(top, pinAt(s, p).y) else @max(top, pinAt(s, p).y);
     }
-    for (pins) |p| if (s.pins.items(.side)[p] != .up or ups.items.len < 2) try terminal(c, p);
+    for (pins) |p| if (s.pins.items(.side)[p] != out or ups.items.len < 2) try terminal(c, p, null);
     if (ups.items.len < 2) return;
-    assert(top != std.math.maxInt(i32));
     const net = s.pins.items(.net)[ups.items[0]];
-    const bar = top - c.len.rail;
+    const y_bar = if (out == .up) top - c.len.rail else top + c.len.rail;
     std.mem.sort(u32, ups.items, s, struct {
         fn lt(sc: *Schematic, x: u32, y: u32) bool {
             return pinAt(sc, x).x < pinAt(sc, y).x;
@@ -159,10 +221,10 @@ fn supply(c: *Canvas, pins: []const u32) !void {
     defer on_bar.deinit(gpa);
     for (ups.items) |p| {
         const at = pinAt(s, p);
-        if (try c.commit(net, &.{ at, .{ .x = at.x, .y = bar } })) {
+        if (try c.commit(net, &.{ at, .{ .x = at.x, .y = y_bar } })) {
             try on_bar.append(gpa, p);
         } else {
-            try terminal(c, p);
+            try terminal(c, p, null);
         }
     }
     if (on_bar.items.len == 0) return;
@@ -175,11 +237,11 @@ fn supply(c: *Canvas, pins: []const u32) !void {
         const joined = !last and blk: {
             const x0 = pinAt(s, q).x;
             const x1 = pinAt(s, on_bar.items[i + 1]).x;
-            break :blk x0 == x1 or try c.commit(net, &.{ .{ .x = x0, .y = bar }, .{ .x = x1, .y = bar } });
+            break :blk x0 == x1 or try c.commit(net, &.{ .{ .x = x0, .y = y_bar }, .{ .x = x1, .y = y_bar } });
         };
         if (joined) continue;
         const mid = pinAt(s, on_bar.items[(run + i) / 2]);
-        try c.leaf(.terminal, net, .{ .x = mid.x, .y = bar }, .down);
+        try c.leaf(.terminal, net, .{ .x = mid.x, .y = y_bar }, out.opposite());
         run = i + 1;
     }
 }
