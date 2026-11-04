@@ -391,8 +391,9 @@ commands real, and grows a rung at a time.
 7. **The plugin** (built): the designer's device names in the engine deck (ends its
    instance-order dependence), every hint and role carried through.
 8. **The skill grows** a rung per slice: `skills/cktimg/` shipped in #9 for
-   names, group hints and the `lint.zon` lengths; the draft in
-   [skill/](skill/) is where it is headed.
+   names, group hints and the `lint.zon` lengths, and grew with each slice
+   to rungs 0 to 5, `requests` and `--decisions`; the draft in
+   [skill/](skill/) stays as the research record.
 
 ## 9. How we will know
 

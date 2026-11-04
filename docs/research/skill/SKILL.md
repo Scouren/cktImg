@@ -3,11 +3,11 @@ name: cktimg
 description: Schematics from SPICE netlists with cktImg. Use when the user wants a circuit or netlist drawn as a schematic (SVG, TikZ, Schemify cells), or a cktImg drawing changed.
 ---
 
-<!-- DRAFT (docs/research/steering.md): written against the steering
-interface before it exists, so the interface fits its caller. `--report`
-landed in #13 (gates, metrics, rung-1 `group` decisions, grid); rungs 2 to 5,
-`requests` and `--decisions` are proposals. Ships as skills/cktimg/ once the
-slices land. -->
+<!-- RESEARCH RECORD (docs/research/steering.md): the draft written against
+the steering interface before it existed, so the interface would fit its
+caller. Shipped, revised, as skills/cktimg/ (rungs 0 to 5, `requests`,
+`--decisions 1-4`); `--help-hints` and a rung-5 export were not built. Read
+skills/cktimg/ for the tool as it is. -->
 
 cktImg lays a netlist out the way a textbook draws it, and guarantees the
 drawing is clean: every net one piece, no wire on another net's pin, no
