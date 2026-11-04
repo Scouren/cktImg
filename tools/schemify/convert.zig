@@ -29,6 +29,7 @@ pub const spice = @import("spice.zig");
 pub const recognize = @import("recognize.zig");
 pub const layout = @import("layout.zig");
 pub const emit = @import("emit.zig");
+pub const place = @import("place.zig");
 const hints = @import("hints.zig");
 pub const OutFile = emit.OutFile;
 
@@ -68,6 +69,10 @@ pub const Converter = struct {
     todo: ArrayList(u32) = .empty,
     bench: []const u8,
     budget: u32 = layout.drawn_devices_max,
+    /// Where the host puts the files (the project's `place` and `lib` rows), which decides
+    /// how cells refer to each other; empty: all beside each other, `./cell` throughout.
+    /// Set before the first `step`.
+    place: place.Place = .{},
     out: Conversion = .{},
 
     /// Parses and recognizes `text`, read from project-relative `source` (which seeds the
@@ -118,7 +123,7 @@ pub const Converter = struct {
         s.markers += @intCast(drawn.mark.items.len);
         s.nets_multi += drawn.nets_multi;
         s.nets_wired += drawn.nets_wired;
-        try c.out.files.append(a, try emit.cellFile(a, c.source, &c.deck, &c.rec, cell, stem, &drawn));
+        try c.out.files.append(a, try emit.cellFile(a, c.source, &c.deck, &c.rec, cell, stem, &drawn, &c.place, &c.out.warnings));
         assert(s.nets_wired <= s.nets_multi);
     }
 
@@ -147,6 +152,7 @@ test {
     _ = recognize;
     _ = layout;
     _ = emit;
+    _ = place;
 }
 
 const testing = std.testing;
@@ -160,4 +166,38 @@ test "an rc deck becomes one bench" {
     const text = out.files.items[0].bytes;
     try testing.expect(mem.indexOf(u8, text, "core:res") != null);
     try testing.expect(mem.indexOf(u8, text, "| .tran 1u 1m") != null);
+}
+
+test "a bench placed apart from its subckt refers to it through the library" {
+    // Oracle: Schemify's resolution (netlist spec §1): `./cell` beside the file, `lib:cell`
+    // at a library's top. AMTemplate's rows put the bench in test/, the cell in schematics/.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const deck = "* rcdiv\n.subckt rcdiv in out gnd\nR1 in out 1k\nR2 out gnd 1k\nC1 out gnd 1p\n.ends\nV1 in 0 DC 1\nX1 in out 0 rcdiv\n.op\n";
+    const run = struct {
+        fn bench(a_: Allocator, text: []const u8, rows: []const u8) Allocator.Error!Conversion {
+            var c: Converter = try .init(testing.allocator, a_, "rcdiv.sp", text);
+            defer c.deinit();
+            c.place = try .parse(a_, rows);
+            while (c.cellsLeft() > 0) try c.step();
+            return c.finish();
+        }
+    }.bench;
+    const rows = "schemify 1 project\n  root ../..\n\nlib blk path schematics\n\nplace *.shbench test\nplace *.shcomp schematics\n";
+    const placed = try run(a, deck, rows);
+    const tb = for (placed.files.items) |f| {
+        if (mem.endsWith(u8, f.name, ".shbench")) break f.bytes;
+    } else unreachable;
+    try testing.expect(mem.indexOf(u8, tb, " blk:rcdiv\n") != null);
+    try testing.expect(mem.indexOf(u8, tb, "./rcdiv") == null);
+    // Without a library at schematics/ the cell is unreachable: `./` and a note naming it.
+    const unlisted = try run(a, deck, "schemify 1 project\n\nplace *.shbench test\n");
+    var noted = false;
+    for (unlisted.warnings.items) |w| noted = noted or mem.indexOf(u8, w, "no `lib … path` names it") != null;
+    try testing.expect(noted);
+    // No rows: everything beside the netlist, as before.
+    const flat = try run(a, deck, "");
+    for (flat.files.items) |f| if (mem.endsWith(u8, f.name, ".shbench"))
+        try testing.expect(mem.indexOf(u8, f.bytes, " ./rcdiv\n") != null);
 }

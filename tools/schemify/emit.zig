@@ -19,6 +19,7 @@ const layout = @import("layout.zig");
 const Deck = spice.Deck;
 const Recognized = recognize.Recognized;
 const Drawn = layout.Drawn;
+const Place = @import("place.zig").Place;
 
 /// One output file.
 pub const OutFile = struct {
@@ -203,11 +204,14 @@ const Writer = struct {
     }
 };
 
-/// Writes deck cell `c` (0: the bench, else a component) as file `stem`.
-pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const Recognized, c: u32, stem: []const u8, drawn: *const Drawn) Allocator.Error!OutFile {
+/// Writes deck cell `c` (0: the bench, else a component) as file `stem`, its references
+/// as `place` puts the files; a cell it cannot reach adds a note to `warnings`.
+pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const Recognized, c: u32, stem: []const u8, drawn: *const Drawn, place: *const Place, warnings: *ArrayList([]const u8)) Allocator.Error!OutFile {
     const devs = deck.devs(c);
     assert(drawn.x.items.len == devs.len());
     const kind = if (c == 0) "shbench" else "shcomp";
+    const file = try a.print("{s}.{s}", .{ stem, kind });
+    const refs: Refs = .{ .a = a, .rec = rec, .place = place, .from = file, .warnings = warnings };
     var w: Writer = try .init(a, kind, source, stem);
     if (c > 0) try w.headerAttr("prefix", "X");
     try w.headerAttr("provenance", try a.print("cktimg {s}", .{source}));
@@ -224,7 +228,7 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
     }
     for (devs.lo..devs.hi, 0..) |d, i| {
         const s = rec.parts.sym.items[d];
-        try w.record(.inst, "inst", &.{try rec.syms.cellref(a, s)});
+        try w.record(.inst, "inst", &.{try refs.of(s)});
         try w.attr("at", &.{ try a.print("{d}", .{drawn.x.items[i]}), try a.print("{d}", .{drawn.y.items[i]}), layout.orient_words[drawn.orient.items[i]] });
         try w.attr("name", &.{try recognize.pinName(a, rec.parts.inst_name.items[d])});
         const o = rec.parts.overrides(@intCast(d));
@@ -276,7 +280,7 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
         const x = @divFloor(b[0], 10) * 10;
         var y = @divFloor(b[3] + 300, 10) * 10 + 10;
         for (texts.items, 0..) |text, n| {
-            try w.record(.inst, "inst", &.{try rec.syms.cellref(a, s)});
+            try w.record(.inst, "inst", &.{try refs.of(s)});
             try w.attr("at", &.{ try a.print("{d}", .{x}), try a.print("{d}", .{y}), "R0" });
             try w.attr("name", &.{try a.print("code{d}", .{n})});
             try w.attr("text", &.{text});
@@ -285,8 +289,28 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
             y += 60;
         }
     }
-    return w.finish(try a.print("{s}.{s}", .{ stem, kind }), false);
+    return w.finish(file, false);
 }
+
+/// One cell file's references ([`recognize.Symbols.cellref`]), with a note per cell it
+/// cannot reach.
+const Refs = struct {
+    a: Allocator,
+    rec: *const Recognized,
+    place: *const Place,
+    from: []const u8,
+    warnings: *ArrayList([]const u8),
+
+    fn of(r: *const Refs, s: u32) Allocator.Error![]const u8 {
+        if (try r.rec.syms.cellref(r.a, s, r.place, r.from)) |ref| return ref;
+        const stem = r.rec.syms.stem.items[s];
+        const note = try r.a.print("{s}: `place` puts {s} in another directory and no `lib … path` names it; `./{s}` will not resolve (add a lib for that directory)", .{ r.from, stem, stem });
+        for (r.warnings.items) |w| {
+            if (mem.eql(u8, w, note)) break;
+        } else try r.warnings.append(r.a, note);
+        return r.a.print("./{s}", .{stem});
+    }
+};
 
 /// Writes generated leaf symbol `s` (`.shprim`): its pins, one string parameter and a
 /// SPICE impl that re-emits the card (`{name} {pins} {args}`, or the leaf's own template),

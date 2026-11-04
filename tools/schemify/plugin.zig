@@ -4,7 +4,8 @@
 //! through inverted I/O (plugin ABI §5) and timers, one phase per event:
 //!
 //! ```text
-//! command        → fs_read(path)                                read
+//! command        → fs_read(schemify.project)                    manifest
+//! io_done(man.)  → its `place`/`lib` rows → fs_read(path)        read
 //! io_done(read)  → parse + recognize → timer 0                  draw
 //! timer          → draw one cell → timer 0 … last cell → fs_read(each output name ×3 kinds)
 //!                                                               probe (refuse to overwrite)
@@ -79,9 +80,9 @@ const cards_max = 200;
 
 const gpa = std.heap.wasm_allocator;
 
-/// What a handle in flight stands for: the read, the probe of `probes[i]`, or the write of
-/// `files[i]`.
-const Op = union(enum) { read, probe: u32, write: u32 };
+/// What a handle in flight stands for: the manifest read, the netlist read, the probe of
+/// `probes[i]`, or the write of `files[i]`.
+const Op = union(enum) { manifest, read, probe: u32, write: u32 };
 const Flight = struct { handle: u32, op: Op };
 const Probe = struct { path: []const u8, file: u32 };
 
@@ -92,6 +93,9 @@ const Job = struct {
     serial: u32,
     source: []const u8,
     dir: []const u8,
+    /// Where the host puts bare file names (the manifest's `place` and `lib` rows); empty
+    /// for a netlist in a subdirectory, whose files are written beside it.
+    place: cktimg.place.Place = .{},
     /// The conversion while its cells are drawn, one per timer event.
     conv: ?cktimg.Converter = null,
     files: []const cktimg.OutFile = &.{},
@@ -188,7 +192,7 @@ fn start(path: []const u8, out: *Out) void {
         if (std.ascii.endsWithIgnoreCase(path, e)) break true;
     } else false;
     if (!known) logf(out, .warn, "{s}: not a .sp/.cir/.spice file; importing anyway", .{path});
-    const h = schemify.fsRead(path) catch |e| return logf(out, .@"error", "cannot read {s}: {t}{s}", .{ path, e, hint(e) });
+    const h = schemify.fsRead("schemify.project") catch |e| return logf(out, .@"error", "cannot read schemify.project: {t}{s}", .{ e, hint(e) });
     var arena: std.heap.ArenaAllocator = .init(gpa);
     const a = arena.allocator();
     const source = a.dupe(u8, path) catch return logf(out, .@"error", "out of memory", .{});
@@ -199,7 +203,7 @@ fn start(path: []const u8, out: *Out) void {
         .dir = source[0 .. mem.lastIndexOfScalar(u8, source, '/') orelse 0],
     };
     jobs +%= 1;
-    job.in_flight.append(a, .{ .handle = h, .op = .read }) catch return logf(out, .@"error", "out of memory", .{});
+    job.in_flight.append(a, .{ .handle = h, .op = .manifest }) catch return logf(out, .@"error", "out of memory", .{});
     job_slot = job;
 }
 
@@ -218,6 +222,17 @@ fn codeName(status: i32) []const u8 {
 fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.Error!bool {
     const a = job.arena.allocator();
     switch (op) {
+        .manifest => {
+            // No manifest (E_GONE): nothing is placed. A netlist in a subdirectory writes
+            // paths, which the host never places.
+            if (status >= 0 and job.dir.len == 0) job.place = try .parse(a, try a.dupe(u8, bytes));
+            const h = schemify.fsRead(job.source) catch |e| {
+                logf(out, .@"error", "cannot read {s}: {t}{s}", .{ job.source, e, hint(e) });
+                return false;
+            };
+            try job.in_flight.append(a, .{ .handle = h, .op = .read });
+            return true;
+        },
         .read => {
             if (status < 0) {
                 logf(out, .@"error", "cannot read {s}: {s}", .{ job.source, codeName(status) });
@@ -236,6 +251,7 @@ fn step(job: *Job, op: Op, status: i32, bytes: []const u8, out: *Out) Allocator.
             // The event's bytes are reused after it returns; the deck borrows the text.
             const text = try a.dupe(u8, bytes);
             job.conv = try .init(gpa, a, job.source, text);
+            job.conv.?.place = job.place;
             if (job.conv.?.cellsLeft() == 0) {
                 logf(out, .warn, "{s}: no subckt or top-level card to import", .{job.source});
                 return false;
