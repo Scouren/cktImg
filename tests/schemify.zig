@@ -114,11 +114,62 @@ test "a subckt's grouping hints reach the engine under its device names" {
     var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena.deinit();
     const a = arena.allocator();
-    // M3 and M4 are written m2 and m3 for the engine: recognized a mirror,
+    // The engine's deck keeps the designer's names: recognized a mirror,
     // hinted a pair.
-    try std.testing.expectEqual(.mirror, try blockOf(std.testing.allocator, a, try otaWith(a, ""), "m2", "m3"));
-    try std.testing.expectEqual(.pair, try blockOf(std.testing.allocator, a, try otaWith(a, "*@ group pair M4 M3\n"), "m2", "m3"));
-    try std.testing.expectEqual(null, try blockOf(std.testing.allocator, a, try otaWith(a, "*@ grouping off\n"), "m2", "m3"));
+    try std.testing.expectEqual(.mirror, try blockOf(std.testing.allocator, a, try otaWith(a, ""), "m3", "m4"));
+    try std.testing.expectEqual(.pair, try blockOf(std.testing.allocator, a, try otaWith(a, "*@ group pair M4 M3\n"), "m3", "m4"));
+    try std.testing.expectEqual(null, try blockOf(std.testing.allocator, a, try otaWith(a, "*@ grouping off\n"), "m3", "m4"));
+}
+
+test "every line reaches the engine, and one it does not honour is a log line citing the designer's lines" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const text = try otaWith(a, "*@ above M5 M1\n*@ above M1 M5\n*@ label X\n");
+    var conv = try cktimg.Converter.init(std.testing.allocator, a, "ota.sp", text);
+    defer conv.deinit();
+    const cell = conv.deck.findCell("ota").?;
+    const deck = try cktimg.layout.cellDeck(a, &conv.deck, &conv.rec, cell, try cktimg.layout.netNames(a, &conv.deck, cell));
+    try std.testing.expect(std.mem.indexOf(u8, deck, "*@ above m5 m1\n") != null);
+    var nl = try np.netlist.parse(a, &.{deck}, null);
+    try std.testing.expectEqual(3, nl.hints.len);
+    try std.testing.expect(nl.device(nl.hints[0].args[0]) != null);
+    try std.testing.expect(nl.net(nl.hints[2].args[0]) != null);
+    const out = try cktimg.convert(std.testing.allocator, a, "ota.sp", text);
+    // Lines 5 and 6 of the file: the earlier gives way to the later.
+    var cited: usize = 0;
+    for (out.warnings.items) |w| cited += @intFromBool(std.mem.indexOf(u8, w, "line 5: `*@ above m5 m1` dropped (cycle), blocked by line 6") != null);
+    if (cited != 1) for (out.warnings.items) |w| std.debug.print("{s}\n", .{w});
+    try std.testing.expectEqual(1, cited);
+}
+
+test "a cell draws the same with its instances in another order" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const body = "M1 x inp tail vss nch\nM2 out inn tail vss nch\nM3 x x vdd vdd pch\nM4 out x vdd vdd pch\nM5 tail vb vss vss nch\n";
+    const reversed = "M5 tail vb vss vss nch\nM4 out x vdd vdd pch\nM3 x x vdd vdd pch\nM2 out inn tail vss nch\nM1 x inp tail vss nch\n";
+    const head = "* ota\n.model nch nmos level=1\n.model pch pmos level=1\n.subckt ota inp inn out vdd vss vb\n";
+    var placesOf: [2][]const u8 = undefined;
+    for ([_][]const u8{ body, reversed }, 0..) |cards, k| {
+        const text = try std.mem.concat(a, u8, &.{ head, cards, ".ends\n" });
+        var conv = try cktimg.Converter.init(std.testing.allocator, a, "ota.sp", text);
+        defer conv.deinit();
+        const cell = conv.deck.findCell("ota").?;
+        const deck = try cktimg.layout.cellDeck(a, &conv.deck, &conv.rec, cell, try cktimg.layout.netNames(a, &conv.deck, cell));
+        var nl = try np.netlist.parse(a, &.{deck}, null);
+        const s = try np.layout(a, &nl, try np.guessRoles(a, &nl), &conv.lib, .{});
+        const p = try np.Placed.init(a, &s, &nl);
+        var lines: std.ArrayList([]const u8) = .empty;
+        for (p.dev_name, p.dev_pos) |n, at| if (n.len > 0) try lines.append(a, try std.fmt.allocPrint(a, "{s} {d} {d}", .{ n, at.x, at.y }));
+        std.mem.sort([]const u8, lines.items, {}, struct {
+            fn lt(_: void, x: []const u8, y: []const u8) bool {
+                return std.mem.lessThan(u8, x, y);
+            }
+        }.lt);
+        placesOf[k] = try std.mem.join(a, "\n", lines.items);
+    }
+    try std.testing.expectEqualStrings(placesOf[0], placesOf[1]);
 }
 
 test "a hint naming a device the subckt lacks is a log line naming it, and the rest imports" {

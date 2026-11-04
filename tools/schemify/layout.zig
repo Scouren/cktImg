@@ -28,6 +28,7 @@ const engine = @import("NetlistParser");
 const spice = @import("spice.zig");
 const recognize = @import("recognize.zig");
 const hints = @import("hints.zig");
+const names_ = @import("names.zig");
 const Deck = spice.Deck;
 const Range = spice.Range;
 const Recognized = recognize.Recognized;
@@ -194,6 +195,8 @@ pub const Drawn = struct {
     fallback: ?[]const u8 = null,
     /// Pins the engine left with neither a wire nor a name (an engine bug); each got a label.
     strays: u32 = 0,
+    /// One line per `*@` line of the cell the engine did not honour: its verdict.
+    notes: ArrayList([]const u8) = .empty,
 
     fn addMark(out: *Drawn, a: Allocator, at: P, net: u32, orient: u8) Allocator.Error!void {
         try out.mark.append(a, .{ .at = at, .net = net, .orient = orient });
@@ -252,22 +255,11 @@ pub fn netNames(a: Allocator, deck: *const Deck, c: u32) Allocator.Error![]const
     return out;
 }
 
-/// `text` with every byte the engine's tokenizer would treat specially turned into a
-/// space: the words of a source specification (`dc 0 ac 1 pulse 0 1 …`) survive, so the
-/// engine can tell a signal source from a supply.
-fn plainWords(a: Allocator, text: []const u8) Allocator.Error![]const u8 {
-    const out = try a.dupe(u8, text);
-    for (out) |*ch| if (!ascii.isAlphanumeric(ch.*) and mem.indexOfScalar(u8, "._+-", ch.*) == null) {
-        ch.* = ' ';
-    };
-    return out;
-}
-
 /// The SPICE deck the engine places for cell `c`: a title, a `.subckt b<s>` stub per box
-/// symbol the cell uses, then one card per device in deck order (`<letter><row>`, so the
-/// names are unique and the engine's device names give the cell's rows), then the cell's
-/// grouping hints under those names. Node-less devices have nothing to lay out and are
-/// left out (`draw` places them).
+/// symbol the cell uses, then one card per device in deck order, each under the name
+/// `names.deviceNames` gives it (the designer's, so nothing depends on the order of the
+/// instances), then the cell's `*@` lines with their names mapped likewise. Node-less
+/// devices have nothing to lay out and are left out (`draw` places them).
 pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) Allocator.Error![]const u8 {
     const syms = &rec.syms;
     var text: ArrayList(u8) = .empty;
@@ -285,35 +277,16 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
         for (1..syms.pins(s).len + 1) |k| try text.print(a, " p{d}", .{k});
         try text.appendSlice(a, "\n.ends\n");
     }
-    // The card letter each device is written with, 0 for none.
-    const cards = try a.alloc(u8, devs.len());
-    @memset(cards, 0);
+    const dev_names = try names_.deviceNames(a, deck, rec, c);
     for (devs.lo..devs.hi, 0..) |d, i| {
         const nets = deck.netsOf(@intCast(d));
         if (nets.len == 0) continue;
-        const s = rec.parts.sym.items[d];
-        const letter = ascii.toLower(deck.dev_name[d][0]);
-        const card: u8, const tail: []const u8 = switch (syms.family.items[s]) {
-            .two => switch (letter) {
-                'r', 'c', 'l', 'd' => .{ letter, "" },
-                'v', 'i' => .{ letter, try plainWords(a, deck.dev_rest[d]) },
-                else => .{ 'b', "v=0" },
-            },
-            .nmos => .{ 'm', "nmos" },
-            .pmos => .{ 'm', "pmos" },
-            .npn => .{ 'q', "npn" },
-            .pnp => .{ 'q', "pnp" },
-            .vcxs => .{ if (letter == 'g') 'g' else 'e', "1" },
-            .vsw => .{ 's', "sw" },
-            .tline => .{ 't', "z0=50 td=1n" },
-            .box => .{ 'x', try a.print("b{d}", .{s}) },
-        };
-        cards[i] = card;
-        try text.print(a, "{c}{d}", .{ card, i });
+        const card = try names_.cardOf(a, deck, rec, @intCast(d));
+        try text.appendSlice(a, dev_names[i]);
         for (nets) |n| try text.print(a, " {s}", .{names[n]});
-        try text.print(a, " {s}\n", .{tail});
+        try text.print(a, " {s}\n", .{card.tail});
     }
-    try hints.write(a, &text, deck, c, cards);
+    try hints.write(a, &text, deck, c, dev_names, names);
     return text.items;
 }
 
@@ -356,6 +329,7 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
     };
     defer placed.deinit();
     budget.* -= wired_devs;
+    try hints.notes(gpa, a, &out.notes, deck, c, text, &placed, lib);
     try translate(a, &out, &placed, lib, deck, rec, c, names);
     try placeFree(a, &out, deck, rec, c);
     assert(out.x.items.len == devs.len());
@@ -420,14 +394,14 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     };
     const local: Local = .{ .ids = &ids, .p = placed };
     // The engine lists a driver island's source after the symbols it added, so devices are
-    // matched by name: `<letter><row>` (see `cellDeck`), the added symbols unnamed.
+    // matched by name (`names.deviceNames`), the added symbols unnamed.
+    var rows: std.StringHashMapUnmanaged(u32) = .empty;
+    for (try names_.deviceNames(a, deck, rec, c), 0..) |name, r| if (name.len > 0) try rows.putNoClobber(a, name, @intCast(r));
     const at_row = try a.alloc(u32, n);
     @memset(at_row, none);
     var added: ArrayList(u32) = .empty;
     for (0..placed.deviceCount()) |i| {
-        const name = placed.dev_name[i];
-        const row = if (name.len > 1) std.fmt.parseInt(u32, name[1..], 10) catch null else null;
-        if (row) |r| {
+        if (rows.get(placed.dev_name[i])) |r| {
             assert(r < n and at_row[r] == none);
             at_row[r] = @intCast(i);
         } else try added.append(a, @intCast(i));

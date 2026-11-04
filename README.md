@@ -314,8 +314,9 @@ later line beats an earlier one, a strong one a `weak` one, and every line
 beats what the engine would decide. `--decisions 2` prints the engine's own
 decisions as these lines; a deck plus them draws the same picture.
 [`docs/research/vocabulary.md`](docs/research/vocabulary.md) has every
-verb; cells, coordinates and routes (rungs 3 to 5) are still to come. The
-Schemify import carries the `group` lines into a cell (the rest follow).
+verb; cells, coordinates and routes (rungs 3 to 5) are still to come. In a
+`.subckt`, the lines are that cell's for the Schemify import, which logs
+each one the engine does not honour.
 
 ## Gallery
 

@@ -380,7 +380,7 @@ commands real, and grows a rung at a time.
 6. **Rungs 3 to 5**: pinned coordinates and routes through `Canvas.commit`
    (§5), mirrored routing by the union of blockages (§6), forced cells with
    stays (§2), then channel growth for `wire` (§3), the largest change.
-7. **The plugin**: the designer's device names in the engine deck (ends its
+7. **The plugin** (built): the designer's device names in the engine deck (ends its
    instance-order dependence), every hint and role carried through.
 8. **The skill grows** a rung per slice: `skills/cktimg/` shipped in #9 for
    names, group hints and the `lint.zon` lengths; the draft in

@@ -67,8 +67,9 @@ still to come.
   `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`,
   `blocked_by` the lines it cannot hold with (`alone`: deleting that one
   admits it), so delete or change a blocker; `rejected` (malformed, or a
-  name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it. The
-  Schemify import carries only `group` lines into its cells.
+  name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
+  Inside a `.subckt`, lines are that cell's for the Schemify import, which
+  logs every line it does not honour.
 - **Roles.** A net's name decides its role: supply `vdd*`, ground `0`, `gnd`
   or `vss`, inputs `in*`/`vin*`, outputs `out*`/`vout*`, bias `vb*`/`bias*`.
   A V source from ground makes its net an input when it carries a signal
