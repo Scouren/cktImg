@@ -93,7 +93,10 @@ pub const Converter = struct {
         const lib = try layout.library(gpa, a, &rec, &out.warnings);
         const file = source[if (mem.lastIndexOfScalar(u8, source, '/')) |i| i + 1 else 0..];
         const base = title(&deck) orelse file[0 .. mem.lastIndexOfScalar(u8, file, '.') orelse file.len];
-        const bench = try recognize.uniqueStem(a, base, &rec.taken);
+        // A bench named like a cell it tests (`rcdiv.sp` holding `.subckt rcdiv`) reads
+        // `tb_<name>` rather than `<name>_2`.
+        const named = if (recognize.nameTaken(rec.taken.items, base)) try a.print("tb_{s}", .{base}) else base;
+        const bench = try recognize.uniqueStem(a, named, &rec.taken);
         var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .deck = deck, .rec = rec, .lib = lib, .bench = bench, .out = out };
         var has_top = deck.devs(0).len() > 0;
         for (deck.code_cell) |cc| has_top = has_top or cc == 0;
@@ -280,4 +283,31 @@ test "an X of a library cell instantiates it, its parameters flowing in by name"
     const verbatim = ".subckt r2 a b PARAMS: k=2\nR1 a b {k*1k}\n.ends\nX1 x 0 r2\n";
     const v = try convert(testing.allocator, a, "r2.sp", verbatim);
     try testing.expect(mem.indexOf(u8, v.files.items[0].bytes, "text \".param k={k}\"") != null);
+}
+
+test "a bench named like its subckt is tb_<name>" {
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    // AMTemplate's report: `rcdiv.sp` holding `.subckt rcdiv` wrote `rcdiv_2.shbench`.
+    const deck = "* rcdiv\n.subckt rcdiv in out gnd\nR1 in out 1k\nR2 out gnd 1k\nC1 out gnd 1p\n.ends\nV1 in 0 DC 1\nX1 in out 0 rcdiv\n.op\n";
+    const out = try convert(testing.allocator, arena.allocator(), "rcdiv.sp", deck);
+    var names: [2][]const u8 = undefined;
+    for (out.files.items[0..2], &names) |f, *n| n.* = f.name;
+    try testing.expectEqualStrings("rcdiv.shcomp", names[0]);
+    try testing.expectEqualStrings("tb_rcdiv.shbench", names[1]);
+    // No clash: the file's name, as before.
+    const rc = try convert(testing.allocator, arena.allocator(), "rc.sp", "* rc\nV1 in 0 1\nR1 in out 1k\nC1 out 0 1n\n.op\n");
+    try testing.expectEqualStrings("rc.shbench", rc.files.items[0].name);
+}
+
+test "a driver island's net is joined by name on purpose, not counted unwired" {
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    // AMTemplate's report: the rcdiv import logged "1/2 nets fully wired". The bench's `in`
+    // (V1 to X1) is a driver island (engine rule R3: the source apart, joined by name); the
+    // cell's `out` (R1, R2, C1) is wired.
+    const deck = "* rcdiv\n.subckt rcdiv in out gnd\nR1 in out 1k\nR2 out gnd 1k\nC1 out gnd 1p\n.ends\nV1 in 0 DC 1\nX1 in out 0 rcdiv\n.op\n";
+    const out = try convert(testing.allocator, arena.allocator(), "rcdiv.sp", deck);
+    try testing.expectEqual(1, out.stats.nets_multi);
+    try testing.expectEqual(1, out.stats.nets_wired);
 }
