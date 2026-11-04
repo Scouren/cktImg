@@ -356,7 +356,7 @@ cell, every cell the Schemify import hands the engine, 150 random netlists
 
 **Speed.** The 107 cells of the plugin fixtures lay out in 205 ms in all, the
 longest in 120 ms (`zig build bench`, ReleaseFast; the wire-first layout took
-2245 ms), and the Schemify plugin built on them is 422,709 bytes.
+2245 ms), and the Schemify plugin built on them is 424,118 bytes.
 
 Open, from the recorded scores: the folded cascode's, the StrongARM latch's
 and the wide-swing mirror's above/below orders and gate sides, the Gilbert

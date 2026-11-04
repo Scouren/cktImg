@@ -4,8 +4,9 @@ description: Schematics from SPICE netlists with cktImg. Use when the user wants
 ---
 
 <!-- DRAFT (docs/research/steering.md): written against the steering
-interface before it exists, so the interface fits its caller. Rungs 2 to 5,
-`--report` and `--decisions` are proposals; ships as skills/cktimg/ once the
+interface before it exists, so the interface fits its caller. `--report`
+landed in #13 (gates, metrics, rung-1 `group` decisions, grid); rungs 2 to 5,
+`requests` and `--decisions` are proposals. Ships as skills/cktimg/ once the
 slices land. -->
 
 cktImg lays a netlist out the way a textbook draws it, and guarantees the
