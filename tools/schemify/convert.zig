@@ -69,7 +69,7 @@ pub const Converter = struct {
     todo: ArrayList(u32) = .empty,
     bench: []const u8,
     budget: u32 = layout.drawn_devices_max,
-    /// Where the host puts the files (the project's `place` and `lib` rows), which decides
+    /// Where the host puts the files (the manifest header's `place` and the `lib` rows), which decides
     /// how cells refer to each other; empty: all beside each other, `./cell` throughout.
     /// Set before the first `step`.
     place: place.Place = .{},
@@ -184,7 +184,7 @@ test "a bench placed apart from its subckt refers to it through the library" {
             return c.finish();
         }
     }.bench;
-    const rows = "schemify 1 project\n  root ../..\n\nlib blk path schematics\n\nplace *.shbench test\nplace *.shcomp schematics\n";
+    const rows = "schemify 1 project\n  root ../..\n  place *.shbench test\n  place *.shcomp schematics\n\nlib blk path schematics\n";
     const placed = try run(a, deck, rows);
     const tb = for (placed.files.items) |f| {
         if (mem.endsWith(u8, f.name, ".shbench")) break f.bytes;
@@ -192,7 +192,7 @@ test "a bench placed apart from its subckt refers to it through the library" {
     try testing.expect(mem.indexOf(u8, tb, " blk:rcdiv\n") != null);
     try testing.expect(mem.indexOf(u8, tb, "./rcdiv") == null);
     // Without a library at schematics/ the cell is unreachable: `./` and a note naming it.
-    const unlisted = try run(a, deck, "schemify 1 project\n\nplace *.shbench test\n");
+    const unlisted = try run(a, deck, "schemify 1 project\n  place *.shbench test\n");
     var noted = false;
     for (unlisted.warnings.items) |w| noted = noted or mem.indexOf(u8, w, "no `lib … path` names it") != null;
     try testing.expect(noted);

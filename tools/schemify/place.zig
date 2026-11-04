@@ -1,6 +1,6 @@
 //! Where Schemify puts the import's cells, and so how they refer to each other (Schemify
-//! format spec §4, `place` and `lib`, added 2026-11-04). The host writes a bare cell file
-//! name into the directory of the first `place <glob> <dir>` row whose glob matches it, so a
+//! format spec §4, header `place` and `lib`, added 2026-11-04). The host writes a bare cell
+//! file name into the directory of the first `place <glob> <dir>` attribute whose glob matches it, so a
 //! bench and its components can land in different directories; `./cell` resolves only
 //! beside the referencing file and `lib:cell` only at a library's top, so a reference that
 //! crosses directories names the library whose `path` is the target's directory.
@@ -14,7 +14,7 @@ const assert = std.debug.assert;
 const mem = std.mem;
 const testing = std.testing;
 
-/// The `place` and local `lib` rows of a project manifest. Empty (the default) puts every
+/// The header's `place` attributes and the local `lib` rows of a project manifest. Empty (the default) puts every
 /// file in one directory, so every reference is `./cell`.
 pub const Place = struct {
     /// `place` globs and their directories, in file order; the root is `""`.
@@ -43,20 +43,22 @@ pub const Place = struct {
             if (mem.indexOfScalar(u8, line, '"') != null) continue;
             const indented = line[0] == ' ' or line[0] == '\t';
             if (indented) {
-                // `  subdir <dir>` belongs to the `lib` row above it.
+                // `  subdir <dir>` belongs to the `lib` row above it; `  place <glob> <dir>`
+                // to the header (the only record with that attribute).
                 if (last_lib and mem.eql(u8, word, "subdir")) if (f.next()) |sub| {
                     const d = &p.lib_dir.items[p.lib_dir.items.len - 1];
                     d.* = try join(a, d.*, clean(sub));
+                };
+                if (mem.eql(u8, word, "place")) if (f.next()) |glob| if (f.next()) |dir| {
+                    try p.glob.append(a, glob);
+                    try p.dir.append(a, clean(dir));
                 };
                 continue;
             }
             last_lib = false;
             const x = f.next() orelse continue;
             const y = f.next() orelse continue;
-            if (mem.eql(u8, word, "place")) {
-                try p.glob.append(a, x);
-                try p.dir.append(a, clean(y));
-            } else if (mem.eql(u8, word, "lib") and mem.eql(u8, y, "path")) {
+            if (mem.eql(u8, word, "lib") and mem.eql(u8, y, "path")) {
                 const path = f.next() orelse continue;
                 try p.lib_name.append(a, x);
                 try p.lib_dir.append(a, clean(path));
@@ -148,15 +150,14 @@ test "references cross directories through the library at the target's" {
         \\schemify 1 project
         \\  init project.lua
         \\  root ../..
+        \\  place *.shbench test
+        \\  place *.shcomp schematics
+        \\  place *.shprim .
         \\
         \\lib blk path ./schematics/
         \\lib tech map tech.map
         \\lib pdk path pdks
         \\  subdir sky130
-        \\
-        \\place *.shbench test
-        \\place *.shcomp schematics
-        \\place *.shprim .
         \\
     );
     try testing.expectEqualStrings("test", p.dirOf("rcdiv.shbench"));

@@ -6,7 +6,7 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 Added:
 
-- The Schemify import reads the project's `place` and `lib` rows (Schemify format spec §4, OpenFAT/Schemify#66): a bench the host places apart from its subckt cells refers to them as `<lib>:<cell>` instead of `./<cell>`, and a cell no library reaches from its referrer is a log line naming it.
+- The Schemify import reads the manifest header's `place` attributes and its `lib` rows (Schemify format spec §4, OpenFAT/Schemify#66): a bench the host places apart from its subckt cells refers to them as `<lib>:<cell>` instead of `./<cell>`, and a cell no library reaches from its referrer is a log line naming it.
 
 ## 2.1.0 (2026-11-04)
 
