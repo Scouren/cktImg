@@ -15,6 +15,8 @@ Fixed:
 - A subckt with parameters no longer always gets a `spice_code` instance re-declaring them as `.param k={k}` (ngspice braces, which HSPICE syntax reads as a name). The shim appears only when card text kept verbatim names a parameter, and it is written bare (`.param k=<value>`).
 - An `X` override that is an expression over the caller's parameters (`w=w*2`, `l='l+w/2'`) imported as literal ngspice braces (`{{({w})}}*2`). A subckt parameter with a literal default is now a number parameter, unless some call passes it text Schemify cannot evaluate (`w=wn`, a bench `.param`). An expression over number parameters is one hole Schemify evaluates (`{w*2}` renders `w=1.6e-7` in every dialect).
 - An import whose every file already existed as a shared leaf re-issued its probes instead of finishing.
+- A bench named like a subckt of its netlist (`rcdiv.sp` holding `.subckt rcdiv`) is `tb_rcdiv.shbench`, not `rcdiv_2.shbench`.
+- The import summary no longer counts a driver island's net (engine rule R3: the source drawn apart and joined by name) as a net left unwired: the rcdiv bench reads 1/1 nets fully wired, not 1/2.
 
 ## 2.1.0 (2026-11-04)
 

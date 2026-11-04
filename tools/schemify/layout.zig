@@ -187,7 +187,8 @@ pub const Drawn = struct {
     noconn: ArrayList(P) = .empty,
     /// Bounding box of everything drawn (all zero when empty).
     bounds: [4]i32 = .{ 0, 0, 0, 0 },
-    /// Nets with ≥ 2 device pins that the engine did not draw as a rail.
+    /// Nets with ≥ 2 device pins that the engine did not draw as a rail or join by name on
+    /// purpose (two or more of its terminal symbols: a driver island's, rule R3).
     nets_multi: u32 = 0,
     /// Of those, nets whose pins one tree of wires connects (no label needed).
     nets_wired: u32 = 0,
@@ -444,6 +445,10 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     }
     const rails = try a.alloc(bool, names.len);
     @memset(rails, false);
+    // Terminal symbols per net: the engine splits a driver island's net (R3: the source
+    // apart, left of the circuit) and puts one on each piece, so two mean by name on purpose.
+    const terms = try a.alloc(u32, names.len);
+    @memset(terms, 0);
     for (added.items) |i| {
         const lo, _ = placed.pinRange(i);
         const net = local.of(placed.pin_net[lo]).?; // a terminal symbol sits on a net of the cell
@@ -455,6 +460,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
             .none => unreachable, // the engine adds only terminal symbols
         };
         rails[net] = rails[net] or rail;
+        terms[net] += @intFromBool(!rail);
         const at = placed.pin_xy[lo];
         try out.addMark(a, .{ at.x, at.y }, net, orient);
     }
@@ -493,7 +499,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
         try out.wire.appendSlice(a, try merged(a, net_wires.items));
         wire_of[net] = .{ .lo = start, .hi = @intCast(out.wire.items.len) };
     }
-    for (pin_pts, 0..) |pins, net| if (pins.items.len >= 2 and !rails[net]) {
+    for (pin_pts, 0..) |pins, net| if (pins.items.len >= 2 and !rails[net] and terms[net] < 2) {
         out.nets_multi += 1;
         out.nets_wired += @intFromBool(try wired(a, pins.items, polys[net].items));
     };
