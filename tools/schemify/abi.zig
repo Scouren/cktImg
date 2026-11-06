@@ -1,4 +1,4 @@
-// Vendored from https://github.com/OpenFAT/Schemify at 557ae5075e56b2e3383d9669c7953c644b054ae0,
+// Vendored from https://github.com/OpenFAT/Schemify at 39da966d2ae77d7dbb0325d32c0b80d136f0262e,
 // crates/protocol/abi/sdk/zig/schemify.zig, changed only by Zig 0.17's `zig fmt`. Re-copy it to follow the ABI.
 //! schemify.zig: the Schemify plugin ABI v1 for Zig 0.16 (docs/spec/plugin-abi.md).
 //!
