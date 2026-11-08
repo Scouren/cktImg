@@ -1,6 +1,6 @@
 //! The Schemify plugin (wasm32 only): contributions and the import job, over `convert.zig`.
 //!
-//! `cktimg.import <path>` (File ▸ Import SPICE netlist…, `Ctrl+Shift+I`) runs one job
+//! `netlist.import <path>` (File ▸ Import SPICE netlist…, `Ctrl+Shift+I`) runs one job
 //! through inverted I/O (plugin ABI §5) and timers, one phase per event:
 //!
 //! ```text
@@ -40,34 +40,36 @@ pub const schemify_input_max = 8 << 20;
 
 /// The menu item; the path panel is appended while it is shown.
 const ui =
-    \\node file.cktimg_import item
+    \\node file.netlist_import item
     \\  parent menu.file
     \\  label "Import SPICE netlist…"
-    \\  command cktimg.import
+    \\  command netlist.import
     \\  accel Ctrl+Shift+I
     \\
 ;
 const panel =
-    \\node cktimg.panel panel
+    \\node netlist_import.panel panel
     \\  parent window
-    \\node cktimg.prompt label
-    \\  parent cktimg.panel
+    \\node netlist_import.prompt label
+    \\  parent netlist_import.panel
     \\  label "SPICE netlist to import (project-relative .sp/.cir/.spice path), Enter to convert:"
-    \\node cktimg.path text_input
-    \\  parent cktimg.panel
-    \\  command cktimg.import
-    \\node cktimg.close button
-    \\  parent cktimg.panel
+    \\node netlist_import.path text_input
+    \\  parent netlist_import.panel
+    \\  command netlist.import
+    \\node netlist_import.close button
+    \\  parent netlist_import.panel
     \\  label Close
-    \\  command cktimg.close
+    \\  command netlist.import_close
     \\
 ;
+/// Only the `netlist.*` names are declared (a declared command shows in the palette); the
+/// old `cktimg.import` is still accepted in `onEvent` for existing keymaps and projects.
 const commands =
-    \\command cktimg.import "Import SPICE netlist…"
-    \\command cktimg.close "Close the SPICE import panel"
+    \\command netlist.import "Import SPICE netlist…"
+    \\command netlist.import_close "Close the SPICE import panel"
     \\
 ;
-const keymap = "key Ctrl+Shift+I cktimg.import\n";
+const keymap = "key Ctrl+Shift+I netlist.import\n";
 /// I/O requests kept in flight (the host's queue holds 256 per frame).
 const window = 32;
 /// Warnings echoed to the log per import.
@@ -142,7 +144,7 @@ fn contribute(out: *Out, show_panel: bool) void {
 /// Logs a formatted line at `level`; one too long for the buffer is cut.
 fn logf(out: *Out, level: schemify.Level, comptime fmt: []const u8, args: anytype) void {
     var buf: [2048]u8 = undefined;
-    out.log(level, std.fmt.bufPrint(&buf, "cktimg: " ++ fmt, args) catch buf[0..]);
+    out.log(level, std.fmt.bufPrint(&buf, "netlist-import: " ++ fmt, args) catch buf[0..]);
 }
 
 fn abandon() void {
@@ -153,9 +155,9 @@ fn abandon() void {
 pub fn onEvent(ev: schemify.Event, out: *Out) void {
     switch (ev) {
         .load => contribute(out, false),
-        .command => |c| if (mem.eql(u8, c.name, "cktimg.close")) {
+        .command => |c| if (mem.eql(u8, c.name, "netlist.import_close")) {
             contribute(out, false);
-        } else if (mem.eql(u8, c.name, "cktimg.import")) {
+        } else if (mem.eql(u8, c.name, "netlist.import") or mem.eql(u8, c.name, "cktimg.import")) {
             var path_buf: [1024]u8 = undefined;
             var path: Out = .init(&path_buf);
             var word_buf: [1024]u8 = undefined;
@@ -352,7 +354,7 @@ fn probe(job: *Job, conv: cktimg.Conversion, out: *Out) Allocator.Error!bool {
     const a = job.arena.allocator();
     assert(conv.files.items.len > 0 and job.probes.items.len == 0);
     const s = conv.stats;
-    job.summary = try a.print("cktimg: {s} → {d} files ({d} cells); {d} devices, {d} wires, {d} labels/ports; {d}/{d} nets fully wired; {d} warnings", .{
+    job.summary = try a.print("netlist-import: {s} → {d} files ({d} cells); {d} devices, {d} wires, {d} labels/ports; {d}/{d} nets fully wired; {d} warnings", .{
         job.source, conv.files.items.len, s.cells,      s.devices,               s.wires,
         s.markers,  s.nets_wired,         s.nets_multi, conv.warnings.items.len,
     });

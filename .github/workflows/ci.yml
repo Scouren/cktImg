@@ -84,7 +84,7 @@ jobs:
             gallery/*.svg
             build/latex/figure.pdf
 
-  # The Schemify plugin: Nix gives the flake-pinned Zig the committed cktimg.wasm is
+  # The Schemify plugin: Nix gives the flake-pinned Zig the committed netlist-import.wasm is
   # reproducible under, so the build fails when the committed module differs from its
   # rebuild (a source change without its module): commit the artifact of this run.
   plugin:
@@ -95,13 +95,13 @@ jobs:
       - run: nix develop -c zig build -Dschemify_plugin=true
       - uses: actions/upload-artifact@v4
         with:
-          name: cktimg-wasm
-          path: cktimg.wasm
+          name: netlist-import-wasm
+          path: netlist-import.wasm
           if-no-files-found: error
-      - name: committed cktimg.wasm equals the rebuild, under 550 KB
+      - name: committed netlist-import.wasm equals the rebuild, under 550 KB
         run: |
-          size=$(stat -c%s cktimg.wasm); echo "cktimg.wasm: $size bytes"
+          size=$(stat -c%s netlist-import.wasm); echo "netlist-import.wasm: $size bytes"
           test "$size" -lt $((550 * 1024))
-          [ -z "$(git status --porcelain -- cktimg.wasm)" ] && exit 0
-          echo "::error::cktimg.wasm differs from its rebuild: commit the cktimg-wasm artifact of this run"
+          [ -z "$(git status --porcelain -- netlist-import.wasm)" ] && exit 0
+          echo "::error::netlist-import.wasm differs from its rebuild: commit the netlist-import-wasm artifact of this run"
           exit 1

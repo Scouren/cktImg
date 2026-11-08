@@ -86,5 +86,5 @@ on a device overrides the relations on it.
 - **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
   the drawing and keep every row and column; `src/config.zig` lists each
   with its default.
-- **Schemify:** `schemify cmd --trust <project> cktimg.import n2s/deck.sp`
+- **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way.

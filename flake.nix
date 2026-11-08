@@ -51,7 +51,7 @@
       devShells = forAll (pkgs: {
         default = pkgs.mkShell {
           packages = with pkgs; [
-            # Everything builds with Zig; cktimg.wasm is byte-reproducible under this one.
+            # Everything builds with Zig; netlist-import.wasm is byte-reproducible under this one.
             (zig pkgs)
             # The C ABI is shipped product surface, so the header must keep compiling
             # standalone: cc -std=c99 -Wall -Wextra -pedantic -fsyntax-only include/cktimg.h
@@ -63,7 +63,7 @@
           shellHook = ''
             echo "cktimg: zig $(zig version)"
             echo "  zig build test                         every suite"
-            echo "  zig build -Dschemify_plugin=true       cktimg.wasm (the Schemify plugin)"
+            echo "  zig build -Dschemify_plugin=true       netlist-import.wasm (the Schemify plugin)"
             echo "  zig build gallery -- --svgs out/       draw the textbook circuits"
           '';
         };

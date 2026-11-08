@@ -214,7 +214,7 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
     const refs: Refs = .{ .a = a, .rec = rec, .place = place, .from = file, .warnings = warnings };
     var w: Writer = try .init(a, kind, source, stem);
     if (c > 0) try w.headerAttr("prefix", "X");
-    try w.headerAttr("provenance", try a.print("cktimg {s}", .{source}));
+    try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
     const params = deck.params(c);
     if (c > 0) {
         const s = recognize.subSymbol(c);
@@ -322,12 +322,12 @@ pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32
     const stem = rec.syms.stem.items[s];
     const own = rec.syms.format.items[s];
     const code = s == rec.code_sym;
-    const doc = if (code) "SPICE text kept inside a subckt definition (cktimg plugin)" else "SPICE card re-emitted verbatim (cktimg plugin)";
+    const doc = if (code) "SPICE text kept inside a subckt definition (netlist import)" else "SPICE card re-emitted verbatim (netlist import)";
     const param = if (code) "text" else "args";
     const format = if (code) "{text}" else if (own.len == 0) "{name} {pins} {args}" else own;
     var w: Writer = try .init(a, "shprim", source, stem);
     try w.headerAttr("doc", doc);
-    try w.headerAttr("provenance", try a.print("cktimg {s}", .{source}));
+    try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
     try symbol(&w, rec, s);
     try w.record(.rank1, "param", &.{ param, try recognize.template(a, rec.syms.args_default.items[s], &.{}) });
     try w.attr("kind", &.{"string"});

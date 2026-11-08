@@ -4,6 +4,10 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 ## Unreleased
 
+Changed (Schemify plugin; what users see never names the engine):
+
+- The package is `netlist-import` (`plugin netlist-import path netlist-import.wasm`, was `cktimg`), the command `netlist.import` (was `cktimg.import`, still accepted but no longer declared), the panel's close command `netlist.import_close`, the UI nodes `file.netlist_import` and `netlist_import.*`, and log lines, summaries and the written cells' `provenance` start `netlist-import`. The File menu row stays **Import SPICE netlist…**. `netlist-import.wasm` is 500,118 bytes (cap 550 KB).
+
 Added:
 
 - The Schemify import reads the manifest header's `place` attributes and its `lib` rows (Schemify format spec §4, OpenFAT/Schemify#66): a bench the host places apart from its subckt cells refers to them as `<lib>:<cell>` instead of `./<cell>`, and a cell no library reaches from its referrer is a log line naming it.
