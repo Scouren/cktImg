@@ -71,7 +71,7 @@ engine's lattice: `at` must take any position, not only lattice points
 
 ## Commands
 
-- `cktimg.import <deck> [update]`: as today; with `update`, re-lays out the
+- `netlist.import <deck> [update]`: as today; with `update`, re-lays out the
   cells whose `provenance` names this deck (`tools/schemify/emit.zig:212-213`),
   from the deck, the sidecar, and the cell's positions as stays. Other
   clashes stay refused (`tools/schemify/plugin.zig:246-255`).

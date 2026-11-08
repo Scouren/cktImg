@@ -137,4 +137,4 @@ on a device overrides the relations on it.
   `*@ shelf <columns>|off` says so in one deck.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
-  remains an alias; both names work with older Schemify hosts too.
+  is still accepted but no longer declared, so the palette never lists it.

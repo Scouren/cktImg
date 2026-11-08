@@ -40,7 +40,7 @@ file to make it a project plugin:
 
 ```lua
 schemify.pack.add({
-  { src = "https://github.com/OpenFAT/cktImg", name = "cktimg",
+  { src = "https://github.com/OpenFAT/cktImg", name = "netlist-import",
     grant = { "read_project", "write_project" }, fuel = 100000000000 },
 })
 ```
@@ -53,14 +53,16 @@ netlist…** (`Ctrl+Shift+I`) and type a project-relative path such as
 schemify cmd --trust <project-dir> netlist.import n2s/opamp.sp
 ```
 
-`cktimg.import` remains an alias for configurations using the older command name.
-Both names are registered for compatibility with older Schemify hosts.
+The package is `netlist-import` and its command `netlist.import`: users of
+Schemify never see the engine's name. The command's old name `cktimg.import` is
+still accepted, for existing keymaps and scripts, but is not declared, so the
+command palette does not list it.
 
 The files are written next to the netlist and existing cells are never
 overwritten. `fuel` raises the per-event budget from the default 10^8 so large
 flat cells lay out; at most 200 element cards are imported per netlist.
 
-The repository ships the module prebuilt as `cktimg.wasm`; rebuild it with
+The repository ships the module prebuilt as `netlist-import.wasm`; rebuild it with
 `zig build -Dschemify_plugin=true` (sources in [`tools/schemify/`](tools/schemify)).
 
 ### 2. As a LaTeX package
@@ -507,7 +509,7 @@ zig build                             # libcktimg.a, cktimg.h, cktimg-json, gall
 zig build lib                         # only libcktimg.a + cktimg.h (-Dtarget=wasm32-freestanding works; -Dpic=true for a PIE host)
 zig build lib -Dzon_config=false      # C ABI without the ZON parser (smaller wasm)
 zig build -Dlatex_renderer=true       # also cktimg-tex and the TikZ emitter
-zig build -Dschemify_plugin=true      # also cktimg.wasm, the Schemify plugin (written to the repository root)
+zig build -Dschemify_plugin=true      # also netlist-import.wasm, the Schemify plugin (written to the repository root)
 zig build test                        # library, algorithm, API, C ABI and Schemify-import tests
 zig build gallery -- --svgs out/      # the gallery as SVG
 zig build fuzz                        # 4000 random netlists through the pipeline
@@ -524,7 +526,7 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 | `tools/site/` | The public site: `build.py` (static pages), `fetch.py` and `convert.py` (fill `external/examples`) |
 | `external/examples/` | The Analog Canvas reference circuits, cached: deck, drawing and preview of each |
 | `tools/schemify/` | The Schemify plugin: SPICE reader, cell mapping, layout through the engine, file writer, wasm glue, and Schemify's plugin ABI (`abi.zig`, vendored) |
-| `cktimg.wasm`, `schemify.project` | The built plugin and its package manifest (what `schemify pack` installs) |
+| `netlist-import.wasm`, `schemify.project` | The built plugin and its package manifest (what `schemify pack` installs) |
 | `latex/cktimg.sty` | The LaTeX package |
 | `tests/` | Tests, the bundled symbol set, the SVG renderer and the gallery |
 | `docs/` | API, target manifests, and the layout algorithm |

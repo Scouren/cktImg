@@ -13,7 +13,7 @@ usage: python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]
        (decks default to every fixture in tests/fixtures.zig)
 
 Needs a Schemify build (`schemify`, `spicecmp`) that loads the plugin ABI of
-tools/schemify/abi.zig, and the committed cktimg.wasm. Exit status 1 when a
+tools/schemify/abi.zig, and the committed netlist-import.wasm. Exit status 1 when a
 deck differs, fails, or its refusal is not the one `REFUSED` names.
 """
 import os
@@ -118,7 +118,7 @@ def main():
     work = tempfile.mkdtemp(prefix="cktimg-roundtrip-")
     init = os.path.join(work, "init.lua")
     with open(init, "w") as f:
-        f.write('schemify.pack.add({ { path = "%s", name = "cktimg", '
+        f.write('schemify.pack.add({ { path = "%s", name = "netlist-import", '
                 'grant = { "read_project", "write_project" }, fuel = 100000000000 } })\n' % ROOT)
     subprocess.run([schemify, "-u", init, "pack", "sync"], capture_output=True, check=True)
 
@@ -139,7 +139,7 @@ def main():
         with open(os.path.join(proj, "schemify.project"), "w") as f:
             f.write("schemify 1 project\n")
         shutil.copy(deck, os.path.join(proj, "n2s", base))
-        code, log = run(["cmd", proj, "cktimg.import", "n2s/" + base], proj)
+        code, log = run(["cmd", proj, "netlist.import", "n2s/" + base], proj)
         if code != 0:
             ok = base in REFUSED
             print("REFUSED" if ok else "FAIL", base + ":", REFUSED.get(base, log[-300:]))

@@ -19,7 +19,7 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Shared-query codegen | `nix develop -c zig build test-codegen` (also in `test`) | Runtime-input helper/direct assembly on fixed x86_64_v3 ReleaseFast; identical direct callees, no hidden tail wrappers, accepted static comparison and literal residue mutations. |
 | Random netlists | `nix develop -c zig build fuzz` | 4,000 deterministic cases checking electrical connectivity, shorts, dots, honoured hints and reversed-card determinism. |
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |
-| Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `cktimg.wasm`; size is strictly below 563,200 bytes. |
+| Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `netlist-import.wasm`; size is strictly below 563,200 bytes. |
 | Real editor round trip | `python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]` | Schemify imports, netlists back and compares with `spicecmp`; omitted decks mean the complete fixture list. |
 | Full source corpus | [corpus-scorecard.md](docs/research/corpus-scorecard.md) | Exact source names and hashes, independently measured wire metrics and named structural relations. |
 | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |

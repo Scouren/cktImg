@@ -4,6 +4,10 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 ## Unreleased
 
+Changed (Schemify plugin; what users see never names the engine):
+
+- The package is `netlist-import` (`plugin netlist-import path netlist-import.wasm`, was `cktimg`), the command `netlist.import` (was `cktimg.import`, still accepted but no longer declared), the panel's close command `netlist.import_close`, the UI nodes `file.netlist_import` and `netlist_import.*`, and log lines, summaries and the written cells' `provenance` start `netlist-import`. The File menu row stays **Import SPICE netlist…**.
+
 AnalogGenie pattern study (#8):
 
 - Engine and Schemify: recognize complete AMP/AMP1/CMP/EA contracts as triangles, matching 24 source glyphs and preserving all 130 ordered pins; generic comparators use plain triangles while the explicit ICM family retains its step (#8).
