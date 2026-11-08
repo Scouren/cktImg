@@ -3,7 +3,7 @@
 cktImg: automatic schematics from SPICE netlists, all Zig 0.17. The layout
 engine is `src/` (a Zig package, and a C ABI in `include/cktimg.h`); its front
 ends are in `tools/`: `cktimg-json`, `cktimg-tex`, and the Schemify plugin in
-`tools/schemify/` (built to the committed `cktimg.wasm`). `README.md` is the
+`tools/schemify/` (built to the committed `netlist-import.wasm`). `README.md` is the
 overview.
 
 ## Skills to load first
@@ -145,8 +145,8 @@ same commit.
 ## Building
 
 - Every build runs inside `nix develop -c …`: it pins Zig 0.17, the toolchain
-  `cktimg.wasm` is byte-reproducible under.
-- `zig build -Dschemify_plugin=true` rebuilds `cktimg.wasm`, which is
+  `netlist-import.wasm` is byte-reproducible under.
+- `zig build -Dschemify_plugin=true` rebuilds `netlist-import.wasm`, which is
   committed. Commit it with any change to `src/` or `tools/schemify/`: CI fails
   when the committed module differs from its rebuild, or reaches 550 KB.
 - `zig build test` with `-Dlatex_renderer=false` and `=true` (the option gates
@@ -159,7 +159,7 @@ same commit.
 
 - Every test names its oracle: the independent thing that says the output is
   wrong. The main one is the round trip: an imported fixture, netlisted back
-  through Schemify (`schemify cmd … cktimg.import`, `schemify netlist`) and
+  through Schemify (`schemify cmd … netlist.import`, `schemify netlist`) and
   compared by Schemify's `spicecmp`, is the same circuit.
   `python3 tests/roundtrip.py <schemify-bin-dir>` runs it over every fixture;
   it needs a local Schemify build, and CI does not run it.
@@ -169,5 +169,5 @@ same commit.
 ## Committing
 
 Commit at every green step: the tests above passing, both formatters clean,
-`cktimg.wasm` rebuilt. The message says what changed and in which half. Never
+`netlist-import.wasm` rebuilt. The message says what changed and in which half. Never
 commit red to `main`.

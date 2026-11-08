@@ -32,7 +32,7 @@ pub fn build(b: *std.Build) void {
     const lib_step = b.step("lib", "Build libcktimg.a and install it with include/cktimg.h");
     lib_step.dependOn(&b.addInstallArtifact(static, .{}).step);
     lib_step.dependOn(&b.addInstallFile(b.path("include/cktimg.h"), "include/cktimg.h").step);
-    if (b.option(bool, "schemify_plugin", "Build cktimg.wasm, the Schemify plugin (tools/schemify/), into the repository root") orelse false)
+    if (b.option(bool, "schemify_plugin", "Build netlist-import.wasm, the Schemify plugin (tools/schemify/), into the repository root") orelse false)
         schemifyPlugin(b);
 
     // The tools need an OS (files, a clock); a freestanding target (wasm) gets the library only.
@@ -160,7 +160,7 @@ pub fn build(b: *std.Build) void {
     }
 }
 
-/// cktimg.wasm next to schemify.project (committed; `plugin cktimg path cktimg.wasm`):
+/// netlist-import.wasm next to schemify.project (committed; `plugin netlist-import path netlist-import.wasm`):
 /// wasm32-freestanding, ReleaseSmall, the engine without its C ABI or ZON parser.
 fn schemifyPlugin(b: *std.Build) void {
     const wasm = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding });
@@ -175,7 +175,7 @@ fn schemifyPlugin(b: *std.Build) void {
         .imports = &.{.{ .name = "NetlistParser", .module = engine }},
     });
     const exe = b.addExecutable(.{
-        .name = "cktimg",
+        .name = "netlist-import",
         .root_module = b.createModule(.{
             .root_source_file = b.path("tools/schemify/plugin.zig"),
             .target = wasm,
@@ -191,5 +191,5 @@ fn schemifyPlugin(b: *std.Build) void {
     });
     exe.entry = .disabled; // a plugin has no main
     exe.rdynamic = true; // keep the schemify_* exports
-    b.getInstallStep().dependOn(&b.addInstallFileWithDir(exe.getEmittedBin(), .prefix, "../cktimg.wasm").step);
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(exe.getEmittedBin(), .prefix, "../netlist-import.wasm").step);
 }
