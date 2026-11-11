@@ -180,8 +180,41 @@ fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const 
     if (nl.graph.edgeCount() > 0 or nl.defs.len == 0) return try arena.dupe([]const u8, &.{text});
     const top = nl.defs[nl.defs.len - 1];
     const title_end = std.mem.indexOfScalar(u8, text, '\n') orelse text.len;
+    const rest = text[@min(title_end + 1, text.len)..];
     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
-    return try arena.dupe([]const u8, &.{ body, text[@min(title_end + 1, text.len)..] });
+    const roles = try portRoles(gpa, arena, &.{ body, rest }, top.ports, diag);
+    return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ body, "\n", roles }), rest });
+}
+
+/// `*@ weak role` lines for the top cell's ports whose names say nothing of
+/// their role (R1 leaves them internal): a port only gates hang on is an
+/// input, any other an output. So every port is drawn as one, and a port on
+/// one gate is no dangling pin.
+fn portRoles(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, diag: *np.netlist.Diagnostic) ![]const u8 {
+    var nl = try np.netlist.parse(gpa, sources, diag);
+    defer nl.deinit(gpa);
+    const roles = try np.guessRoles(gpa, &nl);
+    defer gpa.free(roles);
+    const driven = try gpa.alloc(bool, roles.len);
+    defer gpa.free(driven);
+    @memset(driven, false);
+    for (nl.graph.edges.items(.kind), 0..) |kind, d| {
+        const transistor = switch (kind) {
+            .mosfet, .bjt, .jfet, .mesfet => true,
+            else => false,
+        };
+        // A transistor drives its first and third nets; its gate and body listen.
+        for (nl.graph.members(.from(d)), 0..) |net, pin| {
+            if (!transistor or pin == 0 or pin == 2) driven[net.index()] = true;
+        }
+    }
+    var out: Writer.Allocating = .init(arena);
+    for (ports) |port| {
+        const net = nl.net(port) orelse continue;
+        if (roles[net.index()] != .internal) continue;
+        try out.writer.print("*@ weak role {s} {s}\n", .{ port, if (driven[net.index()]) "output" else "input" });
+    }
+    return out.written();
 }
 
 /// A target manifest (docs/TARGETS.md): class → the backend's symbol and
@@ -410,4 +443,31 @@ test "deck: a subcircuit file draws its top cell" {
     try std.testing.expectEqualStrings("cell.spice", nl.title);
     try std.testing.expectEqual(2, nl.graph.edgeCount()); // buf's x1, x2 as blocks
     try std.testing.expectEqualStrings("inv", nl.defOf(nl.device("x1").?).?.name);
+}
+
+test "deck: the top cell's ports that no name gives a role are inputs and outputs" {
+    // Oracle: the cell's own header. `vip` is a port on one gate (R1 knows
+    // `vin*`, not `vip`): drawn as a dangling pin before, an input now; `x`
+    // is driven by a drain, so an output.
+    const gpa = std.testing.allocator;
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    var diag: np.netlist.Diagnostic = .{};
+    const srcs = try deckSources(gpa, arena_state.allocator(), "ota.spice",
+        \\.subckt dut vdd vss vin x vip vb
+        \\M1 n0 vin n1 vss nch
+        \\M2 x vip n1 vss nch
+        \\M3 n1 vb vss vss nch
+        \\M4 x n0 vdd vdd pch
+        \\M5 n0 n0 vdd vdd pch
+        \\.ends dut
+    , &diag);
+    var nl = try np.netlist.parse(gpa, srcs, &diag);
+    defer nl.deinit(gpa);
+    const roles = try np.guessRoles(gpa, &nl);
+    defer gpa.free(roles);
+    try std.testing.expectEqual(np.Role.input, roles[nl.net("vip").?.index()]);
+    try std.testing.expectEqual(np.Role.output, roles[nl.net("x").?.index()]);
+    try std.testing.expectEqual(np.Role.bias, roles[nl.net("vb").?.index()]); // R1's, kept
+    try std.testing.expectEqual(np.Role.internal, roles[nl.net("n1").?.index()]); // no port
 }

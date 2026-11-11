@@ -325,3 +325,34 @@ test "sketch: devices dealt to any cells still draw connected, short-free and do
     };
     try std.testing.expectEqual(0, bad);
 }
+
+test "sketch: a mirror's facing gates are joined by one straight gate line" {
+    // Oracle: the book's figure (Razavi Fig. 5.26(b), the golden `ota_5t`):
+    // the mirror's gate line runs straight from M3's gate to M4's, and the
+    // diode connection taps it. Before, each gate dropped to the drain row.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = for (textbook.all) |c| {
+        if (std.mem.eql(u8, c.name, "ota_5t")) break c.spice;
+    } else unreachable;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const g3 = pinOf(&p, "m3", 1);
+    const g4 = pinOf(&p, "m4", 1);
+    try std.testing.expectEqual(g3.y, g4.y);
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "x")) break i;
+    } else unreachable;
+    // The wire of `x` along the gates' row, between the gates.
+    var covered: i32 = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        if (a.y != g3.y or b.y != g3.y) continue;
+        covered += @max(0, @min(@max(a.x, b.x), @max(g3.x, g4.x)) - @max(@min(a.x, b.x), @min(g3.x, g4.x)));
+    };
+    try std.testing.expectEqual(@as(i32, @intCast(@abs(g4.x - g3.x))), covered);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

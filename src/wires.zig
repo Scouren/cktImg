@@ -456,16 +456,21 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
     const q = @divFloor(c.len.unit, 4);
     const past = pastDevices(c, pins);
     var y_t = tap;
-    for ([_]i32{ tap, tap - q, tap + q, tap - 2 * q, tap + 2 * q, past[0], past[1] }) |track| {
-        y_t = track;
-        lines.clearRetainingCapacity();
-        lo = std.math.maxInt(i32);
-        hi = std.math.minInt(i32);
-        try trunkLines(c.gpa, s, pins, y_t, c.len.unit, column, &lines, &lo, &hi);
-        if (linesFit(c, net, lines.items)) break;
-        if (column) break;
-    }
-    if (!linesFit(c, net, lines.items)) return false;
+    // Facing gates joined by a gate line first (a mirror's, as the book
+    // draws it), then every pin on its own way to the trunk.
+    const fit = fit: for ([_]bool{ true, false }) |rungs| {
+        for ([_]i32{ tap, tap - q, tap + q, tap - 2 * q, tap + 2 * q, past[0], past[1] }) |track| {
+            y_t = track;
+            lines.clearRetainingCapacity();
+            lo = std.math.maxInt(i32);
+            hi = std.math.minInt(i32);
+            const drawn = try trunkLines(c.gpa, s, pins, y_t, c.len.unit, column, rungs, &lines, &lo, &hi);
+            if (rungs and !drawn) break;
+            if (linesFit(c, net, lines.items)) break :fit true;
+            if (column) break;
+        }
+    } else false;
+    if (!fit) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
     if (s.roles[net] != .output) return true;
     // The output's port: out from the outer end of the trunk, or of the
@@ -477,7 +482,10 @@ fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
 
 /// The lines of one trunk at `y_t`: a column's pins joined in order, or each
 /// pin brought to the trunk and the trunk across them; `lo`, `hi` its ends.
-fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, gap: i32, column: bool, lines: *std.ArrayList(Line), lo: *i32, hi: *i32) !void {
+/// With `rungs`, two pins facing each other along a row off the trunk are
+/// joined straight (a gate line) and the line's middle is brought to the
+/// trunk; whether any such line was drawn.
+fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, gap: i32, column: bool, rungs: bool, lines: *std.ArrayList(Line), lo: *i32, hi: *i32) !bool {
     if (column) {
         const sorted = try gpa.dupe(u32, pins);
         defer gpa.free(sorted);
@@ -491,11 +499,41 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, 
         }
         lo.* = pinAt(s, sorted[0]).x;
         hi.* = lo.*;
-        return;
+        return false;
     }
     var ends: std.ArrayList(i32) = .empty;
     defer ends.deinit(gpa);
-    for (pins) |p| {
+    const paired = try gpa.alloc(bool, pins.len);
+    defer gpa.free(paired);
+    @memset(paired, false);
+    const sides = s.pins.items(.side);
+    const q = @max(1, @divFloor(gap, 4));
+    if (rungs) for (pins, 0..) |p, i| {
+        const a = pinAt(s, p);
+        if (sides[p] != .right or a.y == y_t) continue;
+        // The nearest pin facing back along the row.
+        var best: ?usize = null;
+        for (pins, 0..) |o, j| {
+            const b = pinAt(s, o);
+            if (sides[o] != .left or paired[j] or b.y != a.y or b.x <= a.x) continue;
+            if (best == null or b.x < pinAt(s, pins[best.?]).x) best = j;
+        }
+        const j = best orelse continue;
+        const b = pinAt(s, pins[j]);
+        // The middle, on the quarter-unit grid; a line too short has none.
+        const mid: Pt = .{ .x = a.x + @divFloor(@divFloor(b.x - a.x, 2), q) * q, .y = a.y };
+        if (mid.x == a.x) continue;
+        paired[i] = true;
+        paired[j] = true;
+        try lines.append(gpa, .of(&.{ a, mid }));
+        try lines.append(gpa, .of(&.{ mid, b }));
+        try lines.append(gpa, .of(&.{ mid, .{ .x = mid.x, .y = y_t } }));
+        try ends.append(gpa, mid.x);
+        lo.* = @min(lo.*, mid.x);
+        hi.* = @max(hi.*, mid.x);
+    };
+    for (pins, paired) |p, done| {
+        if (done) continue;
         const line = reachTrunk(s, p, y_t, gap);
         // A pin on the trunk already needs no line of its own.
         if (line.len >= 2) try lines.append(gpa, line);
@@ -509,6 +547,7 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, 
     for (ends.items[0 .. ends.items.len - 1], ends.items[1..]) |a, b| {
         if (a != b) try lines.append(gpa, .of(&.{ .{ .x = a, .y = y_t }, .{ .x = b, .y = y_t } }));
     }
+    return std.mem.indexOfScalar(bool, paired, true) != null;
 }
 
 /// A half gap over the top of the pins' devices and under their bottom,
