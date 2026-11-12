@@ -276,7 +276,12 @@ transistor or controlled source that drives their net (a gate before its
 driver, a load before its stage), so stages stand in the order the signal
 passes them, a mirror's reference left of its copies, and a loop is cut
 once; then by span, then by rank. The row is turned so that the columns an
-input reaches stand left of those that drive an output.
+input reaches stand left of those that drive an output. A circuit of parts
+(no transistor, no block) has no stage to tell the signal's way: there a
+source's column is where the signal enters, and with no output named the
+sources stand left of the row's middle (of two parts at different distances
+from the one source, people draw the farther to the right in 90.1% of 1,676
+pairs of the reference drawings).
 
 **Bridges** (`bridges.place`). Two-pin bridges in series (through nets that
 join just the two of them, gates aside) share the slots between the nearest

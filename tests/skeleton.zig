@@ -235,6 +235,29 @@ test "skeleton: a pair's tail stands between the pair's two, not the mirror refe
     try std.testing.expect(ref < @min(m1, m2) or ref > @max(m1, m2));
 }
 
+test "skeleton: a circuit of parts stands with its source on the left, whatever the order of its cards" {
+    // Oracle: the hand drawings, and a metamorphic relation. Of two parts
+    // at different distances from a circuit's one source, people draw the
+    // farther to the right in 90.1% of 1,676 pairs of the 5,263 reference
+    // drawings: an RC ladder's source stands left of its first shunt, and
+    // that left of the second, with the cards in either order. With no
+    // stage to tell the signal's way the row was left as it fell, the
+    // source on the right.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    for ([_][]const u8{
+        "Ladder\n*@ driver v1 inline\nV1 in 0 ac 1\nR1 in a 1k\nC1 a 0 1p\nR2 a b 1k\nC2 b 0 1p\n",
+        "Ladder\n*@ driver v1 inline\nC2 b 0 1p\nR2 a b 1k\nC1 a 0 1p\nR1 in a 1k\nV1 in 0 ac 1\n",
+    }) |deck| {
+        const l = try lay(arena, deck);
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        const x = l.sk.x;
+        try std.testing.expect(x[l.nl.device("v1").?.index()] < x[l.nl.device("c1").?.index()]);
+        try std.testing.expect(x[l.nl.device("c1").?.index()] < x[l.nl.device("c2").?.index()]);
+    }
+}
+
 test "skeleton: a column outside the mirrored core stands on the side of the half it is wired to" {
     // Oracle: a metamorphic relation. A second stage read from the right
     // half's node stands right of the core, and the same stage read from
