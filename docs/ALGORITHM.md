@@ -241,7 +241,15 @@ source, a load on a net of gates) hangs under its net: a row below the lowest
 transistor the net is a gate of, level with a device the net is the upper end
 of; mates hang level. People draw such a part's upper pin below its net in
 72% of 1,642 pins of the 5,263 reference drawings; longest path alone stood
-it on the top row.
+it on the top row. A transistor whose gate is the only gate on the junction
+between two devices of one column takes a row between them, so its gate is
+level with the junction and its wire runs straight into the link (69% of
+1,443 such gates in the reference drawings; beside the lower device the
+wire was a Z of two corners). Two cases keep their row: a transistor of the
+lower device's type on the same rail (two common-source stages on ground:
+people keep them level in 65% of 184), and a mated transistor of the upper
+device's type on the same rail (a fully differential second stage, as the
+book draws it).
 
 **Column order** (`columns.order`). Mated columns are the core: one of each
 pair on the left, its mate mirrored on the right. A column the mates map to

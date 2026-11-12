@@ -1265,3 +1265,30 @@ test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck
         try support.expectConnected(&p, lib);
     }
 }
+
+test "sketch: a gate alone on the junction of a column stands level with it; not beside its own kind on its own rail" {
+    // Oracle: the pins' places alone, and the hand-drawn figure (69% of
+    // 1,443 such gates in the 5,263 reference drawings). A transistor
+    // whose gate hangs on a divider's midpoint stands in a row between the
+    // two resistors: its gate pin lies between their pins on that net, and
+    // the net's wire turns no corner. It stood beside the lower resistor,
+    // the wire a Z of two corners. Two common-source stages on ground stay
+    // level, as people keep them (65% of 184).
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const p = try draw(arena, lib, &.{"Divider\n.model nch nmos level=1\nVDD vdd 0 1.8\nR1 vdd mid 10k\nR2 mid 0 10k\nM1 out mid 0 0 nch\nR3 vdd out 10k\n"}, .{});
+    const gate = pinOf(&p, "m1", 1);
+    try std.testing.expect(gate.y > pinOf(&p, "r1", 1).y and gate.y < pinOf(&p, "r2", 0).y);
+    const mid = for (p.net_name, 0..) |name, n| {
+        if (std.mem.eql(u8, name, "mid")) break n;
+    } else unreachable;
+    try std.testing.expectEqual(0, bends(&p, mid));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    const chain = try draw(arena, lib, &.{"Two stages\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 a in 0 0 nch\nR1 vdd a 10k\nM2 out a 0 0 nch\nR2 vdd out 10k\n"}, .{});
+    try std.testing.expectEqual(pinOf(&chain, "m1", 2).y, pinOf(&chain, "m2", 2).y);
+}
