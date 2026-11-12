@@ -16,9 +16,10 @@
 //! Contents:
 //! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
 //! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8`
-//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role) !void`
+//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void`
 
 const std = @import("std");
+const config = @import("config.zig");
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
 const assert = std.debug.assert;
@@ -226,15 +227,16 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     return out.items;
 }
 
-/// The report on `p`, drawn from `nl` and `roles` with `lib`. The structure
+/// The report on `p`, drawn from `nl` and `roles` with `lib` under `layout`
+/// (the one `p` was laid out with). The structure
 /// and skeleton are worked out again (both are pure), in `gpa`, freed
 /// before this returns.
-pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role) !void {
+pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void {
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
     const a = arena_state.allocator();
     const st = try structure.analyze(a, a, nl, roles);
-    const sk = try skeleton.place(a, a, nl, roles, &st);
+    const sk = try skeleton.place(a, a, nl, roles, &st, .{ .shelf = layout.shelf });
     var found: std.ArrayList(checks.Finding) = .empty;
     try checks.find(a, &found, p, lib);
 

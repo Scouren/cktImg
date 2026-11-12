@@ -63,6 +63,12 @@ pub const Layout = struct {
     /// still wired (`thin.zig`). People seldom draw more than two; the default names
     /// about as many nets as they do.
     cross_max: u32 = 6,
+    /// Device columns a row of the drawing holds before it wraps into rows
+    /// of columns, one under the other (`wrap.zig`); 0 keeps one row. Eight
+    /// is a person's page: drawn so, 5,263 reference circuits are as wide
+    /// as their hand drawings at the median. A deck's `*@ shelf` line says
+    /// otherwise for that deck.
+    shelf: u32 = 8,
 };
 
 /// How the TikZ emitter strokes a drawing.

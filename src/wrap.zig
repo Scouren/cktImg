@@ -12,10 +12,12 @@
 //! drawing as it stands (a stay, `weak at`, aside: relaid, a deck wraps as
 //! it did). The shelves are read off the cells, rows `shelf_gap` apart, so
 //! the engine's own decisions pasted back give the shelves they came from.
-//! `*@ shelf <columns>` sets the shelf's width, `*@ shelf off` keeps one row.
+//! The shelf's width is the layout's (`config.Layout.shelf`, 8 columns; 0
+//! keeps one row); `*@ shelf <columns>` sets it for a deck, `*@ shelf off`
+//! keeps one row.
 //!
 //! Contents:
-//! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
+//! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -32,26 +34,21 @@ const Form = skeleton.Form;
 
 const none: u32 = std.math.maxInt(u32);
 
-/// Device columns a shelf holds unless a `*@ shelf` line says: a row of
-/// more is cut into shelves of equal width, no wider than this where a cut
-/// is allowed. Eight is a person's page: drawn so, the 5,263 reference
-/// circuits are as wide as their hand drawings at the median (1.01).
-const shelf_default = 8;
 /// Lattice rows between one shelf's lowest cell and the next one's top:
 /// two device rows left empty, which no one row of columns has, so rows
 /// that far apart are two shelves wherever the cells come from.
 const shelf_gap = 6;
 
 /// Wraps the cells `x`, `y` of the drawn devices into shelves of at most
-/// eight device columns (or what a `*@ shelf` line says, its verdict into
-/// `verdicts`), and writes each device's shelf to `shelf`: the bands of
-/// rows `shelf_gap` apart, wrapped here or not. `mate` is each device's
-/// mirror image, or `none`: a pair is never parted.
-pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void {
+/// `columns` device columns (0: none; or what a `*@ shelf` line says, its
+/// verdict into `verdicts`), and writes each device's shelf to `shelf`:
+/// the bands of rows `shelf_gap` apart, wrapped here or not. `mate` is
+/// each device's mirror image, or `none`: a pair is never parted.
+pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void {
     const n = nl.graph.edgeCount();
     assert(drawn.len == n and form.len == n and mate.len == n);
     assert(x.len == n and y.len == n and shelf.len == n);
-    try cut(gpa, nl, roles, drawn, form, mate, x, y, verdicts);
+    try cut(gpa, nl, roles, drawn, form, mate, columns, x, y, verdicts);
     // Shelves are read off the cells, so cells a deck's lines pin (the
     // engine's own decisions pasted back) give the shelves they came from.
     const rows = try gpa.alloc(i32, n);
@@ -74,11 +71,11 @@ pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
 // ---- private ----
 
 /// Cuts the row of columns and moves each shelf under the one before.
-fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []i32, y: []i32, verdicts: []?hints.Verdict) Allocator.Error!void {
+fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, verdicts: []?hints.Verdict) Allocator.Error!void {
     const n = nl.graph.edgeCount();
     assert(verdicts.len == nl.hints.len);
     // The deck's `*@ shelf <columns|off>` lines, the preferred one last.
-    var shelf_cols: usize = shelf_default;
+    var shelf_cols: usize = columns;
     const order = try hints.applyOrder(gpa, nl.hints);
     defer gpa.free(order);
     for (order) |i| {

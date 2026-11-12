@@ -291,8 +291,9 @@ devices a `row` or `order` line names together, and a deck with `cell` or
 `at` lines is not wrapped: those are places of the drawing as it stands (a
 `weak at` stay aside: relaid, a deck wraps as it did). The shelves are read
 off the cells, bands of rows six lattice rows apart, so the engine's own
-decisions pasted back give the shelves they came from. `*@ shelf <columns>`
-sets the width, `*@ shelf off` keeps one row.
+decisions pasted back give the shelves they came from. The width is the
+layout's `shelf` key (8; 0 keeps one row); `*@ shelf <columns>` sets it for
+one deck, `*@ shelf off` keeps one row.
 
 **Gates.** Every transistor's gate faces the rest of its gate net, or away
 from the middle when that is a rail or it has none; then a differential
@@ -347,6 +348,7 @@ gets a copy node on its own line.
 | `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
 | `compact` | true | whether the drawing is closed up (below) |
 | `cross_max` | 6 | the most wires of other nets one internal net's wire may cross before the net is cut and joined by name (below) |
+| `shelf` | 8 | device columns a row of the drawing holds before it wraps into rows of columns (Shelves, above); 0 keeps one row; a deck's `*@ shelf` line says otherwise for that deck |
 
 A length moves nothing to another row or column: rows, columns and order are
 the skeleton's (tested by stretching every one). The defaults are a person's

@@ -115,7 +115,7 @@ fn draw(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: n
     var labeled: u32 = 0;
     for (s.labeled) |l| labeled += @intFromBool(l);
     const st = try sch.structure.analyze(a, a, &nl, roles);
-    const sk = try sch.skeleton.place(a, a, &nl, roles, &st);
+    const sk = try sch.skeleton.place(a, a, &nl, roles, &st, .{});
     return .{ .p = try np.Placed.init(a, &s, &nl), .labeled = labeled, .nl = nl, .roles = roles, .st = st, .sk = sk };
 }
 

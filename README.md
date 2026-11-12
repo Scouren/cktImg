@@ -464,8 +464,9 @@ keeps the roomier lattice instead. A net whose wire would cross more than
 each other still wired; `.cross_max = 2`
 is how sparingly a person crosses wires, at the price of more names.
 A row of more than eight device columns wraps into rows, as people draw a
-large circuit, the nets between two rows joined by name; `*@ shelf <columns>`
-in the deck sets the width and `*@ shelf off` keeps one row.
+large circuit, the nets between two rows joined by name; `.layout = .{ .shelf = 12 }`
+sets the width (`0`: one row), and `*@ shelf <columns>` or `*@ shelf off` in a
+deck says so for that deck.
 A file containing only `.subckt` definitions draws its last one, its
 voltage sources in the circuit (`*@ driver <src> apart` sets one apart), and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is

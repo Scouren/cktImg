@@ -107,5 +107,8 @@ on a device overrides the relations on it.
   most other wires one internal net's wire may cross before the net is
   joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
   it for one with too many names; `*@ wire <net>` keeps one net wired.
+  `.shelf` (8) is how many device columns a row holds before the drawing
+  wraps into rows of columns: raise it for a wider page, `0` for one row;
+  `*@ shelf <columns>|off` says so in one deck.
 - **Schemify:** `schemify cmd --trust <project> cktimg.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way.

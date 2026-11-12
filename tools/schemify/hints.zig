@@ -70,7 +70,7 @@ pub fn notes(gpa: Allocator, a: Allocator, out: *ArrayList([]const u8), deck: *c
     var nl = engine.netlist.parse(t, &.{deck_text}, null) catch return;
     const roles = try engine.guessRoles(t, &nl);
     const st = try engine.schematic.structure.analyze(t, t, &nl, roles);
-    const sk = try engine.schematic.skeleton.place(t, t, &nl, roles, &st);
+    const sk = try engine.schematic.skeleton.place(t, t, &nl, roles, &st, .{});
     const verdicts = try engine.report.verdicts(t, &nl, roles, &st, &sk, placed, lib);
     assert(verdicts.len == lines.items.len);
     for (nl.hints, verdicts, lines.items) |h, v, n| {

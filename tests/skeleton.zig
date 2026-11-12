@@ -48,7 +48,7 @@ fn lay(arena: std.mem.Allocator, spice: []const u8) !Laid {
     var nl = try np.netlist.parse(arena, &.{spice}, null);
     const roles = try np.guessRoles(arena, &nl);
     const st = try structure.analyze(arena, arena, &nl, roles);
-    const sk = try skeleton.place(arena, arena, &nl, roles, &st);
+    const sk = try skeleton.place(arena, arena, &nl, roles, &st, .{});
     return .{ .nl = nl, .st = st, .sk = sk };
 }
 

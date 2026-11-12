@@ -41,7 +41,7 @@ test "report: a deck plus its exported decisions, rungs 1 to 4, recognition off,
         const nl = try np.netlist.parse(arena, &.{d[1]}, null);
         const roles = try np.guessRoles(arena, &nl);
         const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-        const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+        const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
         try std.testing.expectEqual(st.block_kind.len, (try np.report.decisions(arena, &nl, &st, &sk, null, lib.unit, 1)).len);
         const s0 = try np.layout(arena, &nl, roles, lib, .{});
         const p0 = try np.Placed.init(arena, &s0, &nl);
@@ -59,7 +59,7 @@ test "report: a deck plus its exported decisions, rungs 1 to 4, recognition off,
             var nl2 = try np.netlist.parse(arena, &.{deck.items}, null);
             const roles2 = try np.guessRoles(arena, &nl2);
             const st2 = try np.schematic.structure.analyze(arena, arena, &nl2, roles2);
-            const sk2 = try np.schematic.skeleton.place(arena, arena, &nl2, roles2, &st2);
+            const sk2 = try np.schematic.skeleton.place(arena, arena, &nl2, roles2, &st2, .{});
             const s2 = try np.layout(arena, &nl2, roles2, lib, .{});
             const p2 = try np.Placed.init(arena, &s2, &nl2);
             var refused: usize = 0;
@@ -97,7 +97,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     const s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     var aw: std.Io.Writer.Allocating = .init(arena);
-    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles);
+    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
     const Doc = struct {
         gates: []const struct { rule: []const u8 },
         metrics: struct { crossings: u32, bends: u32, labelled: []const []const u8 },

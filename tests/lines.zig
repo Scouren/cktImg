@@ -109,7 +109,7 @@ fn run(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8, lines: []c
     var nl = try np.netlist.parse(arena, &.{deck}, null);
     const roles = try np.guessRoles(arena, &nl);
     const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
     const s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     try support.expectConnected(&p, lib);

@@ -140,12 +140,12 @@ pub fn main(init: std.process.Init) !void {
         defer gpa.free(roles);
         if (opts.report) |path| {
             var rw: Writer.Allocating = .init(arena);
-            try np.report.write(gpa, &rw.writer, &placed, &lib, &nl, roles);
+            try np.report.write(gpa, &rw.writer, &placed, &lib, &nl, roles, cfg.layout);
             cwd.writeFile(io, .{ .sub_path = path, .data = rw.written() }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
         }
         if (rung) |r| {
             const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-            const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+            const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{ .shelf = cfg.layout.shelf });
             var buf: [64 * 1024]u8 = undefined;
             var sw = std.Io.File.stdout().writerStreaming(io, &buf);
             for (try np.report.decisions(arena, &nl, &st, &sk, &placed, lib.unit, r)) |line| try sw.interface.print("{s}\n", .{line});
@@ -588,7 +588,7 @@ test "from: a drawing's JSON gives the stays its decisions give" {
     var nl = try np.netlist.parse(arena, &.{deck}, null);
     const roles = try np.guessRoles(arena, &nl);
     const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
     const s = try np.layout(arena, &nl, roles, &lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     var aw: Writer.Allocating = .init(arena);

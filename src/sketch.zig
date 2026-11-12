@@ -67,7 +67,7 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
     const st = try structure.analyze(gpa, a, nl, roles);
-    const sk = try skeleton.place(gpa, a, nl, roles, &st);
+    const sk = try skeleton.place(gpa, a, nl, roles, &st, .{ .shelf = layout.shelf });
     // `place`'s skeletons always hold.
     skeleton.validate(&sk, nl) catch unreachable;
     try drawValid(gpa, &s, nl, layout, &st, &sk);

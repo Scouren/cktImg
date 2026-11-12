@@ -62,7 +62,7 @@ test "steering: each golden figure's lines draw it in full, every line honoured,
         var nl = try np.netlist.parse(arena, &.{spice}, null);
         const roles = try np.guessRoles(arena, &nl);
         const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-        const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+        const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
         for (nl.hints, st.verdicts, sk.verdicts) |h, a, b| {
             const v = a orelse b orelse {
                 std.debug.print("{s}: no stage took `{s}`\n", .{ f.deck, h.text });

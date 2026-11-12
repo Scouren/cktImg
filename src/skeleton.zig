@@ -32,7 +32,8 @@
 //! Contents:
 //! - `pub const Form = enum(u8) { vertical, horizontal }`
 //! - `pub const Skeleton = struct`
-//! - `pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure) Allocator.Error!Skeleton`
+//! - `pub const Options = struct { shelf: u32 = 8 }`
+//! - `pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton`
 //! - `pub const Invalid = error{...}`, `pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void`
 
 const std = @import("std");
@@ -61,6 +62,12 @@ const Structure = structure.Structure;
 const none = structure.none;
 
 pub const Form = enum(u8) { vertical, horizontal };
+
+/// What of the drawing's style (`config.Layout`) decides a cell.
+pub const Options = struct {
+    /// Device columns a row holds before it wraps (`wrap.zig`); 0: one row.
+    shelf: u32 = 8,
+};
 
 /// One entry per device, in card order. A device that is not drawn (a
 /// driver, a card with no pins) has `drawn` false and the rest unspecified.
@@ -111,7 +118,7 @@ const Chain = struct {
 };
 
 /// Asserts that `roles` has one entry per net and `st` comes from `nl`.
-pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure) Allocator.Error!Skeleton {
+pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(roles.len == c.vertexCount());
@@ -201,7 +208,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, verdicts);
     const shelf = try arena.alloc(u32, n);
     @memset(shelf, 0);
-    try wrap.shelves(gpa, nl, roles, drawn, form, mate, x, y, shelf, verdicts);
+    try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
     const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;

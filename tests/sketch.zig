@@ -140,7 +140,7 @@ fn staged(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8) !struct
     const roles = try np.guessRoles(arena, &nl);
     const s = try np.schematic.initDevices(arena, &nl, roles, lib);
     const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-    var sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    var sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
     const x = try arena.dupe(i32, sk.x);
     const y = try arena.dupe(i32, sk.y);
     sk.x = x;
@@ -1231,4 +1231,37 @@ test "sketch: two flat parts in series face each other" {
     for ([_]i32{ c1.x, r3.x }) |x| try std.testing.expect(x > @min(c1_mid, r3_mid) and x < @max(c1_mid, r3_mid));
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck's line says otherwise" {
+    // Oracle: the key's own definition (`config.Layout.shelf`). Twelve
+    // stages in a chain stand in rows of at most `shelf` columns: three
+    // rows of four at 4, one row at 0, and two rows of six where the deck
+    // itself says `*@ shelf 6`. The key is read from a `lint.zon`.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const cfg = try np.config.Config.parse(arena, ".{ .layout = .{ .shelf = 4 } }", null);
+    try std.testing.expectEqual(4, cfg.layout.shelf);
+    for ([_]struct { deck: []const u8, layout: np.config.Layout, rows: usize, widest: usize }{
+        .{ .deck = support.wide_chain, .layout = cfg.layout, .rows = 3, .widest = 4 },
+        .{ .deck = support.wide_chain, .layout = .{ .shelf = 0 }, .rows = 1, .widest = 12 },
+        .{ .deck = support.wide_chain ++ "*@ shelf 6\n", .layout = cfg.layout, .rows = 2, .widest = 6 },
+    }) |case| {
+        const p = try draw(arena, lib, &.{case.deck}, case.layout);
+        // The transistors' rows, and how many stand in each.
+        var rows: std.AutoHashMapUnmanaged(i32, usize) = .empty;
+        for (p.dev_name, p.dev_pos) |name, at| {
+            if (name.len < 2 or name[0] != 'm') continue;
+            const row = try rows.getOrPutValue(arena, at.y, 0);
+            row.value_ptr.* += 1;
+        }
+        try std.testing.expectEqual(case.rows, rows.count());
+        var it = rows.valueIterator();
+        while (it.next()) |count| try std.testing.expect(count.* <= case.widest);
+        try support.expectConnected(&p, lib);
+    }
 }

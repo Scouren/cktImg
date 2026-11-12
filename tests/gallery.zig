@@ -174,7 +174,7 @@ fn cells(arena: std.mem.Allocator, name: []const u8, spice: []const u8) !void {
     var nl = try np.netlist.parse(arena, &.{spice}, null);
     const roles = try np.guessRoles(arena, &nl);
     const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
-    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{});
     var w: i32 = 0;
     var h: i32 = 0;
     for (sk.drawn, sk.x, sk.y) |dr, x, y| if (dr) {
