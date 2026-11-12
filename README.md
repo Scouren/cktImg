@@ -516,7 +516,8 @@ schematics with cktImg: write the deck so its names carry its meaning, draw,
 review the drawing against the book's look, and fix each complaint on the
 highest rung that can (names, then what the circuit means, then where
 things stand to each other, then the `lint.zon` lengths). Link the folder into `~/.claude/skills/` (Claude Code) or your
-agent's skills directory.
+agent's skills directory. [`HINTING.md`](skills/cktimg/HINTING.md) in it is the procedure for
+hinting a drawing to hand-drawn quality with `*@` lines.
 
 ## Documentation
 

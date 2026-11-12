@@ -1,6 +1,6 @@
 ---
 name: cktimg
-description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), or fix a cktImg drawing.
+description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), fix a cktImg drawing, or hint one to hand-drawn quality.
 ---
 
 cktImg lays a netlist out the way a textbook draws it and keeps the drawing
@@ -32,6 +32,10 @@ one rung only for a **complaint** the rung above cannot fix.
 5. **Stop** when the checklist passes, or after three rounds that fixed
    nothing. Hand over the drawing, `r.json`, the deck with its `*@` lines and
    any `lint.zon`, and each open complaint.
+
+A drawing that must stand beside a hand drawing (no crossing or corner a
+person would not draw) goes on from step 5 with
+[HINTING.md](HINTING.md): the intent a netlist does not carry, as lines.
 
 ## The ladder
 

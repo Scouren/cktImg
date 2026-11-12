@@ -126,3 +126,55 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
         try std.testing.expectEqual(1, seen);
     }
 }
+
+test "report: bends counts every corner a reader sees, a trunk drawn in pieces too" {
+    // Oracle: a reference count written as the corpus scorer counts corners
+    // (the ways a net's wire leaves each of its points, as a set): a point
+    // with no pin on it that the wire leaves exactly two ways, not straight
+    // on. The report counted the turns inside one polyline only, so a
+    // trunk's corners, each where two pieces end, read as none (an agent
+    // hinting hand drawings read 0 bends where the scorer counted 4).
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var total: u32 = 0;
+    for (golden.decks) |deck| {
+        var arena_state: std.heap.ArenaAllocator = .init(gpa);
+        defer arena_state.deinit();
+        const arena = arena_state.allocator();
+        var nl = try np.netlist.parse(arena, &.{deck.spice}, null);
+        const roles = try np.guessRoles(arena, &nl);
+        const s = try np.layout(arena, &nl, roles, lib, .{});
+        const p = try np.Placed.init(arena, &s, &nl);
+        var want: u32 = 0;
+        for (0..p.netCount()) |n| {
+            // Each point of the net's wire with the ways out of it: bit 0
+            // left, 1 right, 2 up, 3 down.
+            var ways: std.AutoArrayHashMapUnmanaged([2]i32, u4) = .empty;
+            var it = p.segments(n);
+            while (it.next()) |poly| for (poly) |at| try ways.put(arena, .{ at.x, at.y }, 0);
+            for (ways.keys(), ways.values()) |at, *w| {
+                var jt = p.segments(n);
+                while (jt.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+                    if (at[0] < @min(a.x, b.x) or at[0] > @max(a.x, b.x) or at[1] < @min(a.y, b.y) or at[1] > @max(a.y, b.y)) continue;
+                    if (@min(a.x, b.x) < at[0]) w.* |= 1;
+                    if (@max(a.x, b.x) > at[0]) w.* |= 2;
+                    if (@min(a.y, b.y) < at[1]) w.* |= 4;
+                    if (@max(a.y, b.y) > at[1]) w.* |= 8;
+                };
+                const pinned = for (p.pin_xy, p.pin_net) |q, net| {
+                    if (net == n and q.x == at[0] and q.y == at[1]) break true;
+                } else false;
+                want += @intFromBool(!pinned and (w.* == 5 or w.* == 6 or w.* == 9 or w.* == 10));
+            }
+        }
+        var aw: std.Io.Writer.Allocating = .init(arena);
+        try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
+        const Doc = struct { metrics: struct { bends: u32 } };
+        const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{ .ignore_unknown_fields = true });
+        try std.testing.expectEqual(want, doc.metrics.bends);
+        total += want;
+    }
+    // The figures have corners: the count is not vacuous.
+    try std.testing.expect(total > 0);
+}

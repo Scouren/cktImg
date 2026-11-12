@@ -426,17 +426,37 @@ fn crossings(p: *const Placed) u32 {
     return count;
 }
 
-/// Points where a wire turns.
+/// Corners as a reader counts them: the points with no pin on them that a
+/// net's wire leaves exactly two ways, at a right angle. A T, a crossing of
+/// its own and a straight joint are none; a trunk drawn in pieces has its
+/// corners where two pieces end.
 fn bends(p: *const Placed) u32 {
     var count: u32 = 0;
     for (0..p.netCount()) |n| {
         var it = p.segments(n);
-        while (it.next()) |poly| {
-            if (poly.len < 3) continue;
-            for (poly[0 .. poly.len - 2], poly[1 .. poly.len - 1], poly[2..]) |a, b, c| {
-                count += @intFromBool((a.x == b.x) != (b.x == c.x));
-            }
-        }
+        var li: usize = 0;
+        while (it.next()) |poly| : (li += 1) for (poly, 0..) |at, pi| {
+            // Each point once, where it first stands.
+            var jt = p.segments(n);
+            var lj: usize = 0;
+            const seen = seen: while (jt.next()) |q| : (lj += 1) {
+                if (lj > li) break false;
+                for (q[0..if (lj == li) pi else q.len]) |o| if (o.eql(at)) break :seen true;
+            } else false;
+            if (seen) continue;
+            // The ways out: bit 0 left, 1 right, 2 up, 3 down.
+            var ways: u4 = 0;
+            jt = p.segments(n);
+            while (jt.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
+                if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
+                ways |= @as(u4, @intFromBool(@min(a.x, b.x) < at.x)) | @as(u4, @intFromBool(@max(a.x, b.x) > at.x)) << 1 |
+                    @as(u4, @intFromBool(@min(a.y, b.y) < at.y)) << 2 | @as(u4, @intFromBool(@max(a.y, b.y) > at.y)) << 3;
+            };
+            const on_pin = for (p.pin_xy, p.pin_net) |q, net| {
+                if (net == n and q.eql(at)) break true;
+            } else false;
+            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways & 3 != 0 and ways & 12 != 0);
+        };
     }
     return count;
 }

@@ -341,6 +341,26 @@ test "lines: a port asked along its net's own wire is not drawn back over it" {
     ;
     const r = try run(f.arena(), f.lib, deck, "*@ weak port in top\n*@ weak role 0 bias\n");
     try expectState(r.verdict("*@ weak port in top"), .relaxed, .no_room);
+    // The node between two parts in series is all wire to its left and its
+    // right: its port stands off the line, on no device's pin (in 238 of
+    // 5,263 reference circuits the symbol stood on the next part's pin).
+    const series =
+        \\An output between two parts in series
+        \\C1 vout c1_n 1p
+        \\R1 vout vin 1k
+        \\
+    ;
+    const s = try run(f.arena(), f.lib, series, "*@ role c1_n output\n");
+    try std.testing.expectEqual(1, s.symbols("vout"));
+    try std.testing.expect(!s.labelled("vout"));
+    const net = s.net("vout");
+    for (0..s.p.deviceCount()) |d| {
+        const a, const b = s.p.pinRange(d);
+        if (s.p.dev_name[d].len != 0 or b - a != 1 or s.p.pin_net[a] != net) continue;
+        const at = s.p.pin_xy[a];
+        try std.testing.expect(at.y != s.pin("r1", 0).y or at.y != s.pin("c1", 0).y);
+        for ([_]np.Pt{ s.pin("r1", 0), s.pin("c1", 0) }) |q| try std.testing.expect(!(q.x == at.x and q.y == at.y));
+    }
 }
 
 test "lines: a malformed line, an unknown name or verb are rejected" {
