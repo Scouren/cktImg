@@ -259,7 +259,7 @@ each row as tall as its tallest device, plus a stub where such a pin faces up
 or down (the supply's bar over the top aside). Neighbouring columns stand
 `series` apart and rows `stack` apart; an empty lattice column takes no room,
 but a channel row does, so two stacked devices stand two `stack`s apart plus
-their ports' room. Mirrored columns are as wide as each other, so the drawing
+their ports' room (closing up, below, brings them to one). Mirrored columns are as wide as each other, so the drawing
 keeps the skeleton's symmetry exactly. Every length is rounded up to a whole
 target unit, at least 1, so every coordinate is an integer. A pin whose
 terminal is off its device's line for that side (an op-amp's second input)
@@ -276,9 +276,33 @@ gets a copy node on its own line.
 | `clearance` | 0.25 | the router's room to another net's wire or point |
 | `bend_cost` | 1 | what the router pays for a bend, in wire |
 | `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
+| `compact` | true | whether the drawing is closed up (below) |
 
 A length moves nothing to another row or column: rows, columns and order are
 the skeleton's (tested by stretching every one).
+
+**Closing up** (`compact.zig`, when `compact` is on). The lattice leaves
+room for every wire it might draw, and a drawn circuit needs less: a person
+draws a mirror's two columns a symbol and a half apart. So the circuit is
+wired once on the lattice as a scratch drawing, and its empty room taken
+out by one-dimensional constraint-graph compaction (Lengauer 1990, ch. 10),
+along x toward the mirror axis (the left edge when there is none), then
+along y toward the top. Every coordinate along the axis is a track, and
+what is on one track stays on it; a symbol's tracks move as one, and so
+does a stub with its port, rail symbol or name. Two things that would touch
+sliding past each other keep their order and the smaller of the gap they
+have and `clearance`; a wire between two symbols, bends or junctions keeps
+`tap`; two devices keep their order, and `series` (along x) or `stack`
+(along y) between their symbols. Each track then goes as near the anchor as
+that allows (a longest path, by relaxation), in steps of a quarter unit.
+The two coordinates equally far from the mirror axis are one track, so both
+halves answer the same constraints and the drawing stays mirrored. Only the
+devices' places are kept: the wires are then drawn again on them, through
+the canvas, so every guarantee of §6 holds of the closed drawing as of the
+lattice's. Where two symbols would overlap after closing, the lattice's
+places stand. A deck that places every device itself (`*@ at`) is not
+closed up: its places are already the answer, which is what makes a
+drawing's exported lines draw it again (§6) and a relaid drawing cheap.
 
 **The canvas** (`canvas.zig`) is what is drawn so far, and its `commit` the
 one way to draw a wire. A wire is drawn only where it fits: through no
@@ -419,7 +443,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |

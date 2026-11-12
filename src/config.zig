@@ -51,6 +51,11 @@ pub const Layout = struct {
     bend_cost: f32 = 1.0,
     /// What the router pays to cross another net's wire, in wire.
     cross_cost: f32 = 2.0,
+    /// Whether the drawing is closed up (`compact.zig`): its empty room
+    /// taken out toward the mirror axis and the top, down to `series`
+    /// between columns, `stack` between rows, `tap` of wire between two
+    /// symbols, bends or junctions, and `clearance`.
+    compact: bool = true,
 };
 
 /// How the TikZ emitter strokes a drawing.

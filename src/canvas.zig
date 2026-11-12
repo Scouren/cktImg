@@ -55,7 +55,8 @@ pub const Lengths = struct {
         assert(unit > 0);
         var out: Lengths = undefined;
         out.unit = unit;
-        inline for (@typeInfo(config.Layout).@"struct".field_names) |f| {
+        inline for (@typeInfo(config.Layout).@"struct".field_names, @typeInfo(config.Layout).@"struct".field_types) |f, T| {
+            if (T != f32) continue; // a switch, not a length
             const v: f32 = @field(layout, f);
             assert(v >= 0);
             const scaled = @ceil(v * @as(f32, @floatFromInt(unit)));

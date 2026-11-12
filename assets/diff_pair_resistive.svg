@@ -1,7 +1,7 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="872" height="857" viewBox="0 0 872 857" font-family="Helvetica, Arial, sans-serif">
+<svg xmlns="http://www.w3.org/2000/svg" width="872" height="665" viewBox="0 0 872 665" font-family="Helvetica, Arial, sans-serif">
 <rect width="100%" height="100%" fill="#ffffff"/>
 <g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
-<polyline points="619.2,704.0 619.2,768.0 "/>
+<polyline points="619.2,512.0 619.2,576.0 "/>
 <polyline points="102.4,160.0 102.4,192.0 "/>
 <polyline points="230.4,160.0 230.4,192.0 "/>
 <polyline points="358.4,160.0 358.4,192.0 "/>
@@ -9,55 +9,55 @@
 <polyline points="683.2,128.0 683.2,64.0 "/>
 <polyline points="555.2,64.0 683.2,64.0 "/>
 <polyline points="102.4,96.0 102.4,64.0 "/>
-<polyline points="523.2,480.0 459.2,480.0 "/>
+<polyline points="523.2,288.0 459.2,288.0 "/>
 <polyline points="358.4,96.0 358.4,64.0 "/>
-<polyline points="715.2,480.0 779.2,480.0 "/>
+<polyline points="715.2,288.0 779.2,288.0 "/>
 <polyline points="230.4,96.0 230.4,64.0 "/>
-<polyline points="555.2,192.0 555.2,320.0 "/>
-<polyline points="555.2,320.0 491.2,320.0 "/>
-<polyline points="555.2,320.0 555.2,448.0 "/>
-<polyline points="683.2,192.0 683.2,320.0 "/>
-<polyline points="683.2,320.0 747.2,320.0 "/>
-<polyline points="683.2,320.0 683.2,448.0 "/>
-<polyline points="555.2,512.0 555.2,576.0 "/>
-<polyline points="683.2,512.0 683.2,576.0 "/>
-<polyline points="619.2,640.0 619.2,576.0 "/>
-<polyline points="555.2,576.0 619.2,576.0 "/>
-<polyline points="619.2,576.0 683.2,576.0 "/>
+<polyline points="555.2,192.0 555.2,224.0 "/>
+<polyline points="555.2,224.0 491.2,224.0 "/>
+<polyline points="555.2,224.0 555.2,256.0 "/>
+<polyline points="683.2,192.0 683.2,224.0 "/>
+<polyline points="683.2,224.0 747.2,224.0 "/>
+<polyline points="683.2,224.0 683.2,256.0 "/>
+<polyline points="555.2,320.0 555.2,384.0 "/>
+<polyline points="683.2,320.0 683.2,384.0 "/>
+<polyline points="619.2,448.0 619.2,384.0 "/>
+<polyline points="555.2,384.0 619.2,384.0 "/>
+<polyline points="619.2,384.0 683.2,384.0 "/>
 <polyline points="555.2,128.0 555.2,140.8 "/>
 <polyline points="555.2,179.2 555.2,192.0 "/>
 <polyline points="555.2,140.8 561.6,145.6 548.8,150.4 561.6,155.2 548.8,160.0 561.6,164.8 548.8,169.6 561.6,174.4 555.2,179.2 "/>
 <polyline points="683.2,128.0 683.2,140.8 "/>
 <polyline points="683.2,179.2 683.2,192.0 "/>
 <polyline points="683.2,140.8 689.6,145.6 676.8,150.4 689.6,155.2 676.8,160.0 689.6,164.8 676.8,169.6 689.6,174.4 683.2,179.2 "/>
-<polyline points="555.2,448.0 555.2,467.2 550.4,467.2 "/>
-<polyline points="555.2,512.0 555.2,492.8 550.4,492.8 "/>
-<polyline points="550.4,464.0 550.4,496.0 "/>
-<polyline points="544.0,467.2 544.0,492.8 "/>
-<polyline points="523.2,480.0 544.0,480.0 "/>
-<polyline points="683.2,448.0 683.2,467.2 688.0,467.2 "/>
-<polyline points="683.2,512.0 683.2,492.8 688.0,492.8 "/>
-<polyline points="688.0,464.0 688.0,496.0 "/>
-<polyline points="694.4,467.2 694.4,492.8 "/>
-<polyline points="715.2,480.0 694.4,480.0 "/>
-<polyline points="619.2,640.0 619.2,657.6 "/>
-<polyline points="619.2,686.4 619.2,704.0 "/>
-<circle cx="619.2" cy="672.0" r="14.4" fill="#ffffff"/>
-<polyline points="619.2,664.0 619.2,680.0 "/>
-<polyline points="619.2,681.6 614.4,675.2 624.0,675.2 619.2,681.6 "/>
-<polyline points="604.8,768.0 633.6,768.0 "/>
-<polyline points="609.6,772.8 628.8,772.8 "/>
-<polyline points="616.0,777.6 622.4,777.6 "/>
+<polyline points="555.2,256.0 555.2,275.2 550.4,275.2 "/>
+<polyline points="555.2,320.0 555.2,300.8 550.4,300.8 "/>
+<polyline points="550.4,272.0 550.4,304.0 "/>
+<polyline points="544.0,275.2 544.0,300.8 "/>
+<polyline points="523.2,288.0 544.0,288.0 "/>
+<polyline points="683.2,256.0 683.2,275.2 688.0,275.2 "/>
+<polyline points="683.2,320.0 683.2,300.8 688.0,300.8 "/>
+<polyline points="688.0,272.0 688.0,304.0 "/>
+<polyline points="694.4,275.2 694.4,300.8 "/>
+<polyline points="715.2,288.0 694.4,288.0 "/>
+<polyline points="619.2,448.0 619.2,465.6 "/>
+<polyline points="619.2,494.4 619.2,512.0 "/>
+<circle cx="619.2" cy="480.0" r="14.4" fill="#ffffff"/>
+<polyline points="619.2,472.0 619.2,488.0 "/>
+<polyline points="619.2,489.6 614.4,483.2 624.0,483.2 619.2,489.6 "/>
+<polyline points="604.8,576.0 633.6,576.0 "/>
+<polyline points="609.6,580.8 628.8,580.8 "/>
+<polyline points="616.0,585.6 622.4,585.6 "/>
 <polyline points="540.8,64.0 569.6,64.0 "/>
 <text x="555.2" y="58.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vdd</text>
-<circle cx="779.2" cy="480.0" r="4.8" fill="#ffffff"/>
-<text x="786.2" y="484.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">inn</text>
-<circle cx="459.2" cy="480.0" r="4.8" fill="#ffffff"/>
-<text x="452.2" y="484.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">inp</text>
-<circle cx="491.2" cy="320.0" r="4.8" fill="#ffffff"/>
-<text x="484.2" y="324.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">outn</text>
-<circle cx="747.2" cy="320.0" r="4.8" fill="#ffffff"/>
-<text x="754.2" y="324.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">outp</text>
+<circle cx="779.2" cy="288.0" r="4.8" fill="#ffffff"/>
+<text x="786.2" y="292.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">inn</text>
+<circle cx="459.2" cy="288.0" r="4.8" fill="#ffffff"/>
+<text x="452.2" y="292.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">inp</text>
+<circle cx="491.2" cy="224.0" r="4.8" fill="#ffffff"/>
+<text x="484.2" y="228.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">outn</text>
+<circle cx="747.2" cy="224.0" r="4.8" fill="#ffffff"/>
+<text x="754.2" y="228.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">outp</text>
 <polyline points="102.4,96.0 102.4,113.6 "/>
 <polyline points="102.4,142.4 102.4,160.0 "/>
 <circle cx="102.4" cy="128.0" r="14.4" fill="#ffffff"/>
@@ -92,16 +92,16 @@
 <polyline points="348.8,196.8 368.0,196.8 "/>
 <polyline points="355.2,201.6 361.6,201.6 "/>
 </g>
-<circle cx="555.2" cy="320.0" r="3.8" fill="#1d2330" stroke="none"/>
-<circle cx="683.2" cy="320.0" r="3.8" fill="#1d2330" stroke="none"/>
-<circle cx="619.2" cy="576.0" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="555.2" cy="224.0" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="683.2" cy="224.0" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="619.2" cy="384.0" r="3.8" fill="#1d2330" stroke="none"/>
 <text x="566.4" y="160.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">rd1</text>
 <text x="694.4" y="160.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">rd2</text>
-<text x="560.0" y="480.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
-<text x="720.0" y="460.8" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
-<text x="638.4" y="672.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">iss</text>
+<text x="560.0" y="288.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
+<text x="720.0" y="268.8" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
+<text x="638.4" y="480.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">iss</text>
 <text x="121.6" y="128.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">vdd</text>
 <text x="249.6" y="128.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">vinn</text>
 <text x="377.6" y="128.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">vinp</text>
-<text x="40.0" y="850.8" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">Differential pair, resistive loads</text>
+<text x="40.0" y="658.8" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">Differential pair, resistive loads</text>
 </svg>

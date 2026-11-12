@@ -85,6 +85,8 @@ on a device overrides the relations on it.
   box, and `*@ expand` draws the devices instead.
 - **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
   the drawing and keep every row and column; `src/config.zig` lists each
-  with its default.
+  with its default. The drawing is closed up to those lengths
+  (`.compact = true`, the default); `.compact = false` keeps the roomier
+  lattice, every row and column a full pitch apart.
 - **Schemify:** `schemify cmd --trust <project> cktimg.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way.

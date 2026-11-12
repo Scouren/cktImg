@@ -194,6 +194,45 @@ test "sketch: lengths space the drawing and move nothing to another row or colum
     try std.testing.expectEqual(0, bad);
 }
 
+test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
+    // Oracle: the lattice drawing (`compact` off) of the same deck. Every
+    // two named devices keep their order along x and along y, and the
+    // devices span no more room either way.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var decks: std.ArrayList(struct { []const u8, []const u8 }) = .empty;
+    for (golden.decks) |d| try decks.append(arena, .{ d.name, d.spice });
+    for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
+    var bad: usize = 0;
+    for (decks.items) |d| {
+        const lattice = try placesByName(arena, &try draw(arena, lib, &.{d[1]}, .{ .compact = false }));
+        const close = try placesByName(arena, &try draw(arena, lib, &.{d[1]}, .{ .compact = true }));
+        try std.testing.expectEqual(lattice.len, close.len);
+        var span: [2][2]u32 = @splat(@splat(0));
+        for (lattice, close, 0..) |a, b, i| {
+            try std.testing.expectEqualStrings(a.name, b.name);
+            for (lattice[i + 1 ..], close[i + 1 ..]) |a2, b2| {
+                span[0] = .{ @max(span[0][0], @abs(a.at.x - a2.at.x)), @max(span[0][1], @abs(a.at.y - a2.at.y)) };
+                span[1] = .{ @max(span[1][0], @abs(b.at.x - b2.at.x)), @max(span[1][1], @abs(b.at.y - b2.at.y)) };
+                if (std.math.order(a.at.x, a2.at.x) == std.math.order(b.at.x, b2.at.x) and
+                    std.math.order(a.at.y, a2.at.y) == std.math.order(b.at.y, b2.at.y)) continue;
+                std.debug.print("{s}: {s} and {s} change order\n", .{ d[0], a.name, a2.name });
+                bad += 1;
+            }
+        }
+        if (span[1][0] > span[0][0] or span[1][1] > span[0][1]) {
+            std.debug.print("{s}: closed up {any}, lattice {any}\n", .{ d[0], span[1], span[0] });
+            bad += 1;
+        }
+        if (std.mem.eql(u8, d[0], "ota_5t")) try std.testing.expect(span[1][0] < span[0][0] and span[1][1] < span[0][1]);
+    }
+    try std.testing.expectEqual(0, bad);
+}
+
 test "sketch: `stack` lengthens the wire between stacked devices, `rail` is a ground symbol's stub" {
     // The common-source stage: Rd over M1 on `out`, M1's source on ground.
     const gpa = std.testing.allocator;
@@ -205,21 +244,26 @@ test "sketch: `stack` lengthens the wire between stacked devices, `rail` is a gr
     const deck = for (textbook.all) |c| {
         if (std.mem.eql(u8, c.name, "cs_resistive")) break c.spice;
     } else unreachable;
-    var span_at_1: i32 = 0;
-    for ([_]f32{ 1, 2.5 }) |k| {
-        const p = try draw(arena, lib, &.{deck}, .{ .stack = k, .rail = k });
-        const len: i32 = @intFromFloat(@ceil(k * @as(f32, @floatFromInt(lib.unit))));
-        // Rd's pin on `out` above M1's drain: the rows' room plus `stack`
-        // twice, a channel row standing between two device rows.
-        const span = pinOf(&p, "m1", 0).y - pinOf(&p, "rd", 1).y;
-        if (k == 1) span_at_1 = span else try std.testing.expectEqual(span_at_1 + 2 * (len - lib.unit), span);
-        // M1's source, `rail` above the ground symbol under it.
-        const src = pinOf(&p, "m1", 2);
-        const ground = for (p.dev_name, 0..) |n, d| {
-            const at = p.pin_xy[p.pinRange(d)[0]];
-            if (n.len == 0 and at.x == src.x and at.y > src.y) break at;
-        } else return error.NoGroundSymbol;
-        try std.testing.expectEqual(len, ground.y - src.y);
+    // Closed up, the wire from Rd to M1 is `stack` long. On the lattice
+    // (`compact` off) a channel row stands between the two device rows, so
+    // the wire grows by twice what `stack` does. Oracle: the keys' own
+    // definitions (`config.Layout`), read off the drawing's pins.
+    for ([_]bool{ true, false }) |compact| {
+        var span_at_1: i32 = 0;
+        for ([_]f32{ 1, 2.5 }) |k| {
+            const p = try draw(arena, lib, &.{deck}, .{ .stack = k, .rail = k, .compact = compact });
+            const len: i32 = @intFromFloat(@ceil(k * @as(f32, @floatFromInt(lib.unit))));
+            const span = pinOf(&p, "m1", 0).y - pinOf(&p, "rd", 1).y;
+            if (compact) try std.testing.expectEqual(len, span);
+            if (k == 1) span_at_1 = span else if (!compact) try std.testing.expectEqual(span_at_1 + 2 * (len - lib.unit), span);
+            // M1's source, `rail` above the ground symbol under it.
+            const src = pinOf(&p, "m1", 2);
+            const ground = for (p.dev_name, 0..) |n, d| {
+                const at = p.pin_xy[p.pinRange(d)[0]];
+                if (n.len == 0 and at.x == src.x and at.y > src.y) break at;
+            } else return error.NoGroundSymbol;
+            try std.testing.expectEqual(len, ground.y - src.y);
+        }
     }
 }
 

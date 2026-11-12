@@ -6,6 +6,8 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 Added:
 
+- The drawing is closed up (`.layout` key `compact`, on by default; `src/compact.zig`): its empty room taken out by constraint-graph compaction toward the mirror axis and the top, the wires then drawn again on the closed places. The five-transistor OTA's pair columns stand 140 apart instead of 320 and it is 360 tall instead of 440; no device changes row, column or order. `compact = false` keeps the lattice.
+- A mirror's facing gates are joined by one straight gate line with the diode tap at its middle, and `cktimg-json` draws a top cell's ports that no name gives a role as inputs and outputs.
 - The Schemify import reads the manifest header's `place` attributes and its `lib` rows (Schemify format spec §4, OpenFAT/Schemify#66): a bench the host places apart from its subckt cells refers to them as `<lib>:<cell>` instead of `./<cell>`, and a cell no library reaches from its referrer is a log line naming it.
 - The Schemify import calls a project library's cell for an `X` of a subckt the deck does not define: it reads `<lib dir>/<name>.shprim|.shcomp` for each `lib … path` row and places `<lib>:<name>`, pins in node order and matching `k=v` as overrides (a lone parameter name as `{k}`), instead of a generated verbatim leaf. A vendor-kit kit's `vnfet` from PDK-Manager now netlists in every dialect.
 - The bench is named after the deck's `.title` when it has one (`tb_nmos_switch.shbench`, not `nmos_switch_2.shbench`).

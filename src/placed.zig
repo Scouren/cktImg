@@ -450,6 +450,19 @@ const Builder = struct {
     }
 };
 
+/// The rail or port class a terminal net's symbol is drawn as, if the
+/// library has one.
+pub fn roleClass(s: *const Schematic, net: u32) ?ClassId {
+    const role: library.Role = switch (s.roles[net]) {
+        .supply => .power_rail,
+        .sink => .ground_rail,
+        .input => .input_port,
+        .output => .output_port,
+        .bias, .internal => return null,
+    };
+    return s.lib.findRole(role);
+}
+
 /// The first segment of `poly` that runs through a junction, and the
 /// junction.
 fn findCut(poly: []const Pt, junctions: []const Pt) ?struct { usize, Pt } {
@@ -472,19 +485,6 @@ fn round(p: [2]f32) Pt {
 
 fn toF(p: Pt) [2]f32 {
     return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
-}
-
-/// The rail or port class a terminal net's symbol is drawn as, if the
-/// library has one.
-fn roleClass(s: *const Schematic, net: u32) ?ClassId {
-    const role: library.Role = switch (s.roles[net]) {
-        .supply => .power_rail,
-        .sink => .ground_rail,
-        .input => .input_port,
-        .output => .output_port,
-        .bias, .internal => return null,
-    };
-    return s.lib.findRole(role);
 }
 
 /// Which way a terminal's or label's name runs: away from its wire.

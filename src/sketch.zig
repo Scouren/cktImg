@@ -31,6 +31,7 @@ const hints = @import("hints.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
+const compact = @import("compact.zig");
 const config = @import("config.zig");
 
 const Netlist = netlist.Netlist;
@@ -88,28 +89,74 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk);
     const len = Lengths.of(layout, s.lib.unit);
-    const geo = try coordinates(gpa, s, nl, sk, len);
-    defer gpa.free(geo.xs);
-    defer gpa.free(geo.ys);
-    try keepAts(gpa, s, nl, sk, geo, ats);
+    const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
+    // Each drawn device's point: the lattice's.
+    const n = nl.graph.edgeCount();
+    const at = try gpa.alloc([2]f32, n);
+    defer gpa.free(at);
+    @memset(at, .{ 0, 0 });
+    var placed_all = true;
+    {
+        const geo = try coordinates(gpa, s, nl, sk, len);
+        defer gpa.free(geo.xs);
+        defer gpa.free(geo.ys);
+        for (at, 0..) |*p, d| if (sk.drawn[d]) {
+            p.* = .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
+            placed_all = placed_all and ats[d] != null;
+        };
+    }
     var xy: std.ArrayList([2]f32) = .empty;
-    try placeDevices(s, nl, sk, geo, ats, &xy);
+    // Closed up: the drawing as the engine alone makes it (the deck's `at`,
+    // `route` and `via` lines are in the finished drawing's coordinates, so
+    // they wait), squeezed; the devices' places there are the placement.
+    // Its wires are scaffolding: the real ones are drawn below, on the
+    // canvas, so every guarantee holds by construction.
+    if (layout.compact and !placed_all) {
+        const no_ats = try gpa.alloc(?pinned.At, n);
+        defer gpa.free(no_ats);
+        @memset(no_ats, null);
+        var own = lines;
+        own.routes = &.{};
+        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, &xy);
+        try compact.squeeze(gpa, s, len, try drawnAxis2(gpa, s, sk));
+        const boxes = try deviceBoxes(gpa, s, nl, sk);
+        defer gpa.free(boxes);
+        const clear = clear: for (boxes, 0..) |a, i| {
+            for (boxes[i + 1 ..]) |b| if (a.intersects(b)) break :clear false;
+        } else true;
+        // ponytail: an overlap after the squeeze keeps the lattice's places.
+        if (clear) for (at, 0..) |*p, d| if (sk.drawn[d]) {
+            p.* = s.xy[s.deviceNode(@intCast(d)).?];
+        };
+        s.nodes.shrinkRetainingCapacity(0);
+        s.pins.shrinkRetainingCapacity(0);
+        s.routes.clearRetainingCapacity();
+        xy.clearRetainingCapacity();
+        s.xy = &.{};
+        @memset(s.labeled, false);
+    }
+    try keepAts(gpa, s, nl, sk, at, ats);
+    try wireUp(gpa, s, nl, sk, st, len, at, ats, &lines, &xy);
+    try noConnects(gpa, s);
+    assert(s.xy.len == s.nodes.len);
+}
+
+/// The devices at `at` (an `at` line's place first), then every net wired.
+fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, xy: *std.ArrayList([2]f32)) !void {
+    try placeDevices(s, nl, sk, at, ats, xy);
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
-    try wires.wire(gpa, s, &xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, &lines);
+    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines);
     s.xy = xy.items;
-    try noConnects(gpa, s);
-    assert(s.xy.len == s.nodes.len);
 }
 
 /// Keeps each `at` whose symbol, at its place and turn, overlaps no other
 /// drawn device's (the preferred of two `at` devices stays), and turns the
 /// kept ones; drops the rest (`ats[d] = null`). The report says which.
-fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo, ats: []?pinned.At) !void {
+fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, at: []const [2]f32, ats: []?pinned.At) !void {
     const n = nl.graph.edgeCount();
     const info = s.devices.slice();
     const boxes = try gpa.alloc(Rect, n);
@@ -122,7 +169,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
         boxes[d] = if (ats[d]) |a|
             (a.orient orelse info.items(.orient)[d]).applyRect(bbox).translate(a.origin)
         else
-            info.items(.orient)[d].applyRect(bbox).translate((Pt{ .x = geo.xs[@intCast(sk.x[d])], .y = geo.ys[@intCast(sk.y[d])] }).sub(info.items(.grid)[d]));
+            info.items(.orient)[d].applyRect(bbox).translate(toPt(at[d]).sub(info.items(.grid)[d]));
     }
     // The least preferred `at` gives way first.
     var k = order.len;
@@ -311,17 +358,14 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
 /// whose terminal is off its device's line for that side (an op-amp's
 /// second input) gets a copy node on its own line, so no two pins of one
 /// side meet at one point.
-fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, geo: Geo, ats: []const ?pinned.At, xy: *std.ArrayList([2]f32)) !void {
+fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, places: []const [2]f32, ats: []const ?pinned.At, xy: *std.ArrayList([2]f32)) !void {
     const a = s.arena.allocator();
     const c = &nl.graph;
     const info = s.devices.slice();
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d]) continue;
-        // An `at` line's origin, else the lattice's point.
-        const at: [2]f32 = if (ats[d]) |p|
-            toF(p.origin.add(info.items(.grid)[d]))
-        else
-            .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
+        // An `at` line's origin, else the layout's point.
+        const at: [2]f32 = if (ats[d]) |p| toF(p.origin.add(info.items(.grid)[d])) else places[d];
         const node = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = none });
         try xy.append(a, at);
         const class = s.lib.at(info.items(.class)[d]);
@@ -358,6 +402,24 @@ fn drawnMirror(s: *const Schematic, sk: *const Skeleton, st: *const structure.St
         axis2 = a;
     }
     return if (axis2) |a| .{ .axis2 = a, .net_mate = st.net_mate } else null;
+}
+
+/// Twice the x the skeleton's mirrored columns stand about in the drawing,
+/// when every pair of them agrees (an `at` line may move one off it); else
+/// null. The skeleton mirrors a pair's columns even where the circuit has
+/// no symmetry of its own (a mirror load), which `drawnMirror` asks for.
+fn drawnAxis2(gpa: Allocator, s: *const Schematic, sk: *const Skeleton) !?i32 {
+    const a2 = sk.axis2 orelse return null;
+    const x = try gpa.alloc(?i32, sk.drawn.len);
+    defer gpa.free(x);
+    for (x, 0..) |*v, d| v.* = if (sk.drawn[d]) toPt(s.xy[s.deviceNode(@intCast(d)).?]).x else null;
+    var axis2: ?i32 = null;
+    for (x, 0..) |xd, d| for (x[d..], d..) |xe, e| {
+        if (xd == null or xe == null or sk.x[d] + sk.x[e] != a2) continue;
+        if (axis2 != null and axis2.? != xd.? + xe.?) return null;
+        axis2 = xd.? + xe.?;
+    };
+    return axis2;
 }
 
 /// The points of pins `Placed` draws on their symbol with no wire (a MOS

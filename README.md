@@ -445,6 +445,10 @@ them, as the lint rules are set:
 ```zon
 .{ .layout = .{ .stack = 1.5, .terminal = 2 }, .rules = .{ .no_ground = .err } }
 ```
+
+The drawing is closed up to those lengths, as a person draws it: columns
+`series` apart, stacked devices `stack` apart. `.layout = .{ .compact = false }`
+keeps the roomier lattice instead.
 A file containing only `.subckt` definitions draws its last one, and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is
 described in `src/json.zig`.
