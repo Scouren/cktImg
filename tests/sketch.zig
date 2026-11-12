@@ -1315,3 +1315,32 @@ test "sketch: a shelf with rows of the whole left empty in it is still one shelf
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: a chain of parts into a gate stands on the gate's row, the part on the gate's net next to the gate" {
+    // Oracle: the pins' places alone. An input reaches a gate through a
+    // capacitor and a resistor in series; no channel ends on the gate's
+    // net, so the chain takes the gate's row, and the resistor, which is on
+    // that net, stands next to the gate: its pin level with the gate and
+    // between the gate and the capacitor, the wire straight. The chain
+    // stood over the top row, and it started from the input's end
+    // whichever end the column was on.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "Input chain\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 a g 0 0 nch\nR1 vdd a 10k\nM2 out a 0 0 nch\nR2 vdd out 10k\n" ++
+        "C1 in x 1p\nR3 x g 1k\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const gate = pinOf(&p, "m1", 1);
+    const r3 = pinOf(&p, "r3", 1);
+    const c1 = pinOf(&p, "c1", 1);
+    try std.testing.expectEqual(gate.y, r3.y);
+    try std.testing.expect(@abs(gate.x - r3.x) < @abs(gate.x - c1.x));
+    const g = for (p.net_name, 0..) |name, n| {
+        if (std.mem.eql(u8, name, "g")) break n;
+    } else unreachable;
+    try std.testing.expectEqual(0, bends(&p, g));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

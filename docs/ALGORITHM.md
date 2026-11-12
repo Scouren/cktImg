@@ -277,10 +277,14 @@ input reaches stand left of those that drive an output.
 **Bridges** (`bridges.place`). Two-pin bridges in series (through nets that
 join just the two of them, gates aside) share the slots between the nearest
 columns of the chain's two end nets, in order, at the first end's tap row, or
-under the drawing when a column between runs through that row. A chain whose
+under the drawing when a column between runs through that row. Where no
+channel ends on either end net, the chain takes the row of the one gate an
+end net is on, its wire straight into the gate (people draw a flat part
+level with the gate it joins in 597 of 1,198 such nets of the 5,263
+reference drawings). A chain whose
 tips stand on one column (or one end on none) stands beside it: toward the
 axis when an end net lies on it, else toward an input's side or away from the
-axis. Any other bridge (an op-amp) stands midway between the nearest
+axis; the member whose tip is on that column stands next to it. Any other bridge (an op-amp) stands midway between the nearest
 columns of its first and its last net that is no rail: its input and its
 output, as a subcircuit lists its ports (not the supply an op-amp's first
 port is on). A chain whose mate stands already mirrors it; taken slots
