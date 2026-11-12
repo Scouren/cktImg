@@ -110,7 +110,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
             var t_hi: i32 = std.math.minInt(i32);
             const drawn = try trunkLines(c.gpa, s, pins, track, c.len.unit, column, rungs, &tried, &t_lo, &t_hi);
             if (rungs and !drawn) break;
-            const count = cost(c, pins, tried.items);
+            const count = cost(c, pins, tried.items, fewest);
             if (count < fewest and linesFit(c, net, tried.items)) take: {
                 const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
                 if (needs_end and t_free == null) break :take;
@@ -137,7 +137,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
             var t_lo: i32 = std.math.maxInt(i32);
             var t_hi: i32 = std.math.minInt(i32);
             try uprightLines(c.gpa, s, pins, x_t, c.len.unit, &tried, &t_lo, &t_hi);
-            const count = cost(c, pins, tried.items);
+            const count = cost(c, pins, tried.items, fewest);
             if (count >= fewest or !linesFit(c, net, tried.items)) continue;
             std.mem.swap(std.ArrayList(Line), &lines, &tried);
             fewest = count;
@@ -198,13 +198,16 @@ fn freeEnd(c: *const Canvas, net: u32, pins: []const u32, lo: i32, hi: i32, y_t:
 
 /// What a net's lines cost, as the router counts a path: their length and
 /// `bend_cost` a corner; more than any track costs when a line ends on
-/// nothing (`corners`).
-fn cost(c: *const Canvas, pins: []const u32, lines: []const Line) i64 {
+/// nothing (`corners`). `under` is the cost to beat: at that length or
+/// more the length alone is returned.
+fn cost(c: *const Canvas, pins: []const u32, lines: []const Line, under: i64) i64 {
     var length: i64 = 0;
     for (lines) |*l| {
         const pts = l.slice();
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| length += @abs(a.x - b.x) + @abs(a.y - b.y);
     }
+    // No cheaper than the track in hand: its corners are not counted.
+    if (length >= under) return length;
     return length + @as(i64, c.len.bend_cost) * (corners(c.s, pins, lines) orelse return std.math.maxInt(i64));
 }
 
