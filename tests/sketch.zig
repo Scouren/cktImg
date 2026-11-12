@@ -1208,3 +1208,27 @@ test "sketch: a block stands between the columns of its input and its output, wh
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: two flat parts in series face each other" {
+    // Oracle: the places alone. A coupling capacitor and a gate resistor in
+    // series through a net that joins just the two stand on one row; each
+    // one's pin on that net lies between the two parts' centres, so one
+    // straight wire joins them. Turned by the mean column of its far net,
+    // each faced away, and the wire went round both with four corners.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "Input chain\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 a g 0 0 nch\nR1 vdd a 10k\nM2 out a 0 0 nch\nR2 vdd out 10k\n" ++
+        "C1 in x 1p\nR3 x g 1k\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const c1 = pinOf(&p, "c1", 1);
+    const r3 = pinOf(&p, "r3", 0);
+    const c1_mid = @divFloor(pinOf(&p, "c1", 0).x + c1.x, 2);
+    const r3_mid = @divFloor(pinOf(&p, "r3", 1).x + r3.x, 2);
+    try std.testing.expectEqual(c1.y, r3.y);
+    for ([_]i32{ c1.x, r3.x }) |x| try std.testing.expect(x > @min(c1_mid, r3_mid) and x < @max(c1_mid, r3_mid));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

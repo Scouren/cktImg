@@ -311,7 +311,11 @@ MOSFET drawn drain right, gate up, source left stands drain up, gate left,
 source down), then the first of the four flips that puts its upper end up
 and its gate on the skeleton's side. A bridge takes its class as drawn, its
 first pin on the side where its first net's other devices stand (by their
-mean column).
+mean column). Two things come first: a pin on a net the bridge shares with
+one other flat part of its row faces that part (two parts in series are one
+line: people draw 52.7% of 1,397 such pairs so, and the mean of a far outer
+net turned one end for end in 201), and a bridge with one pin alone on its
+net (a port's) turns the other pin toward that pin's net.
 
 | id | pattern | rule | example | test |
 |----|---------|------|---------|------|
