@@ -32,6 +32,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const symmetry = @import("symmetry.zig");
 const hints = @import("hints.zig");
@@ -93,7 +94,16 @@ pub const Structure = struct {
     }
 };
 
-/// A transistor's three main terminals' nets.
+/// The device table's transistors, in the order one gate net's groups of a
+/// polarity are listed. Narrowing: MOSFETs first; the table's own order
+/// (`DeviceKind`'s) has them last.
+const transistors = [_]DeviceKind{ .mosfet, .bjt, .jfet, .mesfet };
+comptime {
+    for (std.enums.values(DeviceKind)) |k| assert(device.isTransistor(k) == (std.mem.indexOfScalar(DeviceKind, &transistors, k) != null));
+}
+
+/// The nets of a transistor's path (`drain` and `source`, its two ends in
+/// card order) and of its gate.
 const Fet = struct {
     drain: u32,
     gate: u32,
@@ -313,7 +323,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     defer group.deinit(gpa);
     if (recognize) for (nets_by_rank) |n| {
         if (isRail(roles[n])) continue;
-        for ([_]Polarity{ .n, .p, .other }) |pol| for ([_]DeviceKind{ .mosfet, .bjt, .jfet, .mesfet }) |kind| {
+        for ([_]Polarity{ .n, .p, .other }) |pol| for (transistors) |kind| {
             group.clearRetainingCapacity();
             var diode = false;
             for (by_rank) |d| {
@@ -395,10 +405,9 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
     const held = try gpa.alloc(bool, n);
     errdefer gpa.free(held);
     @memset(held, false);
-    const nogroup = try gpa.alloc(bool, n);
-    defer gpa.free(nogroup);
-    @memset(nogroup, false);
-    // The line that took or held each device, for `blocked_by`.
+    // Busy by side: a stack holds its devices (1), any other group takes
+    // them (0), `nogroup` both; and the line that did, for `blocked_by`.
+    const busy = [2][]bool{ taken, held };
     const by = try gpa.alloc([2]u32, n);
     defer gpa.free(by);
     @memset(by, .{ none, none });
@@ -411,9 +420,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
         .nogroup => {
             var known: usize = 0;
             for (h.args) |name| if (nl.device(name)) |e| {
-                nogroup[e.index()] = true;
-                held[e.index()] = true;
-                taken[e.index()] = true;
+                for (busy) |flags| flags[e.index()] = true;
                 by[e.index()] = .{ @intCast(i), @intCast(i) };
                 known += 1;
             };
@@ -440,8 +447,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
                 unknown = true;
                 continue;
             }).index();
-            const busy = if (kind == .stack) held[d] else taken[d];
-            if (busy or nogroup[d]) {
+            if (busy[side][d]) {
                 const b = by[d][side];
                 if (std.mem.indexOfScalar(u32, blockers.items, b) == null) try blockers.append(gpa, b);
                 continue;
@@ -465,7 +471,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
             }
         }.lt);
         for (members.items) |d| {
-            if (kind == .stack) held[d] = true else taken[d] = true;
+            busy[side][d] = true;
             by[d][side] = @intCast(i);
         }
         got[i] = try arena.dupe(u32, members.items);
@@ -474,7 +480,10 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
         else if (unknown) .{ .state = .relaxed, .code = .unknown_name } else .{ .state = .honoured, .code = .ok };
     }
     for (nl.hints, got) |h, ms| if (ms) |m| try list.add(arena, blockKind(h.verb).?, m);
-    for (nogroup, taken) |g, t| assert(!g or t);
+    for (by, taken, held) |b, t, h| {
+        assert(b[0] == none or t);
+        assert(b[1] == none or h);
+    }
     return .{ .off = off, .held = held };
 }
 
@@ -565,18 +574,15 @@ fn transistor(nl: *const Netlist, d: u32) ?Fet {
     assert(d < nl.graph.edgeCount());
     const e = EdgeId.from(d);
     const kind = nl.graph.edges.items(.kind)[d];
-    switch (kind) {
-        .mosfet, .jfet, .mesfet, .bjt => {},
-        else => return null,
-    }
+    const gate = device.of(kind).gate orelse return null;
+    const path = device.of(kind).path.?;
     const pins = nl.graph.members(e);
-    if (pins.len < 3) return null;
+    if (pins.len <= @max(gate, path[1])) return null;
     assert(pins[0].index() < nl.graph.vertexCount());
-    // BJT pins are c b e: the same places as d g s.
     return .{
-        .drain = pins[0].index(),
-        .gate = pins[1].index(),
-        .source = pins[2].index(),
+        .drain = pins[path[0]].index(),
+        .gate = pins[gate].index(),
+        .source = pins[path[1]].index(),
         .polarity = symmetry.polarity(nl.modelType(e)),
         .kind = kind,
     };

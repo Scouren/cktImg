@@ -48,15 +48,13 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
             verdicts[i] = reject(.not_placeable);
             continue;
         }
-        const col = hints.int(h.args[1]) orelse {
+        const col = hints.int(h.args[1]);
+        const row = hints.int(h.args[2]);
+        if (col == null or row == null) {
             verdicts[i] = reject(.bad_args);
             continue;
-        };
-        const row = hints.int(h.args[2]) orelse {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        };
-        want[i] = .{ .d = @intCast(d), .at = .{ col, row } };
+        }
+        want[i] = .{ .d = @intCast(d), .at = .{ col.?, row.? } };
         named[d] = true;
     }
     // The line that fixed each device, and the cells taken.
@@ -84,14 +82,10 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
         try put(gpa, &at, drawn, x, y, m, image);
         fixed[m] = i;
     }
-    // Mates a line moved off their mirror are mates no more.
+    // Mates a line moved off their mirror are mates no more; a device on
+    // the axis is its own mate, its mirror cell its own at x = 0.
     for (mate, 0..) |*m, d| {
-        if (m.* == none) continue;
-        if (m.* == d) {
-            if (x[d] != 0) m.* = none;
-            continue;
-        }
-        if (x[d] + x[m.*] == 0) continue;
+        if (m.* == none or @as(i64, x[d]) + x[m.*] == 0) continue;
         mate[m.*] = none;
         m.* = none;
     }

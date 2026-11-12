@@ -27,6 +27,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 
 const Netlist = netlist.Netlist;
@@ -186,19 +187,24 @@ fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role) !Graph {
     return .{ .devices = devices, .off = off, .to = to, .label = label };
 }
 
-/// Pins a device has no order between (a resistor's, a switch's) share a
-/// label; a transistor's d, g, s, b each have their own.
+/// A pin's label, from the device table: its place among the pins its kind
+/// tells apart. A path's two ends share one unless told apart (a resistor's
+/// and a switch's share, a diode's do not); a pin past the last told apart
+/// (a control pair's second, a transistor's body, else the path's second
+/// end) shares that one's; a box's ports each have their own.
+///
+/// Narrowing: each family keeps the numbers it had (`first`), F and H a
+/// box's (the general form: a source's 11 and 12). The place alone refines
+/// the same classes, kinds starting in colours of their own; but the
+/// numbers order the colours, and so which of equal symmetries is met first.
 fn pinLabel(kind: DeviceKind, pin: usize) u8 {
     const p: u8 = @intCast(@min(pin, 200));
-    return switch (kind) {
-        .mosfet, .jfet, .mesfet => @as(u8, @min(p, 3)),
-        .bjt => 4 + @as(u8, @min(p, 3)),
-        .resistor, .capacitor, .inductor => 8,
-        .vswitch, .cswitch => if (p < 2) 8 else 9 + @as(u8, @min(p - 2, 1)),
-        .vsource, .isource, .diode => 11 + @as(u8, @min(p, 1)),
-        .vcvs, .vccs => 13 + @as(u8, @min(p, 3)),
-        else => 32 + p,
-    };
+    const k = device.of(kind);
+    const path = k.path orelse return 32 + p;
+    if (kind == .cccs or kind == .ccvs) return 32 + p;
+    const first: u8 = if (k.gate != null) (if (kind == .bjt) 4 else 0) else if (!k.polar) 8 else if (k.control == null) 11 else 13;
+    const last = if (k.control) |c| c + 1 else path[1] + @intFromBool(k.gate != null);
+    return first + (@min(p, last) -| @intFromBool(!k.polar));
 }
 
 /// Devices by kind, polarity and pin count; nets by role. Colours are the
@@ -443,6 +449,9 @@ fn movesSignal(s: *const Search, sigma: []const u32) bool {
     return false;
 }
 
+/// The devices `sigma` moves that are not sources. Narrowing: voltage
+/// sources only; the device table's sources (`device.of(kind).source`) are
+/// also I, E, G, F and H, which count here.
 fn movedDevices(s: *const Search, sigma: []const u32) u32 {
     assert(sigma.len == s.g.vertices());
     const kinds = s.nl.graph.edges.items(.kind);

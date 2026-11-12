@@ -19,7 +19,7 @@
 //! - `pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void`
 //! - `pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32, verdicts: []?Verdict) Allocator.Error!void`
 //! - `pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Relations`
-//! - `pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, verdicts: []?Verdict) Allocator.Error!bool`
+//! - `pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, left_end: []skeleton.End, verdicts: []?Verdict) Allocator.Error!bool`
 //! - `pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32`
 //! - `pub fn twoPin(kind: DeviceKind) bool`
 //! - `pub fn pinName(arena: Allocator, kind: DeviceKind, k: u32) Allocator.Error![]const u8`
@@ -28,9 +28,11 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
+const sequence = @import("sequence.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -144,8 +146,7 @@ pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?V
         }).index();
         // Apart, a source stands upright between its net's symbol and
         // ground: only a two-pin source is drawn so.
-        const kind = c.edges.items(.kind)[d];
-        const source = (kind == .vsource or kind == .isource) and c.members(EdgeId.from(d)).len == 2;
+        const source = device.of(c.edges.items(.kind)[d]).source == .independent and c.members(EdgeId.from(d)).len == 2;
         if (c.members(EdgeId.from(d)).len == 0 or (apart and !source)) {
             verdicts[i] = reject(.not_placeable);
             continue;
@@ -155,8 +156,8 @@ pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?V
     }
 }
 
-/// `upright <dev>` and `bridge <dev>`: a drawn transistor, or a two-pin
-/// device on two nets, stands in a column or bridges.
+/// `upright <dev>` and `bridge <dev>`: a drawn device whose path joins two
+/// nets stands in a column or bridges; one with a gate stands only.
 pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -168,11 +169,9 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         verdicts[i] = for (h.args) |name| {
             const d = (nl.device(name) orelse break reject(.unknown_name)).index();
             const pins = c.members(EdgeId.from(d));
-            const ok = drawn[d] and switch (kinds[d]) {
-                .mosfet, .bjt, .jfet, .mesfet => h.verb == .upright and pins.len >= 3 and pins[0].index() != pins[2].index(),
-                else => twoPin(kinds[d]) and pins.len >= 2 and pins[0].index() != pins[1].index(),
-            };
-            if (!ok) break reject(.not_placeable);
+            const path = device.of(kinds[d]).path orelse break reject(.not_placeable);
+            const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
+            if (!drawn[d] or !takes or pins.len <= path[1] or pins[path[0]] == pins[path[1]]) break reject(.not_placeable);
         } else if (h.args.len == 0) reject(.bad_args) else honoured;
         if (verdicts[i].?.state != .honoured) continue;
         for (h.args) |name| form[nl.device(name).?.index()] = if (h.verb == .upright) .vertical else .horizontal;
@@ -361,17 +360,16 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
             verdicts[i] = reject(.unknown_name);
             continue;
         };
-        // A flat part: one of its two ends on that side.
+        // A flat part: one of its two ends on that side. Narrowing: by its
+        // pin count, as `sketch.fits` turns it; the device model's flat part
+        // (`device.isPart`, an end of its path) also takes a four-pin switch
+        // and leaves out a two-port box.
         if (drawn[d] and form[d] == .horizontal and c.members(EdgeId.from(d)).len == 2) {
             left_end[d] = if ((pin == 0) != right) .first else .second;
             verdicts[i] = honoured;
             continue;
         }
-        const side_pin = switch (kinds[d]) {
-            .mosfet, .bjt, .jfet, .mesfet => pin == 1,
-            else => false,
-        };
-        if (!drawn[d] or form[d] != .vertical or !side_pin) {
+        if (!drawn[d] or form[d] != .vertical or pin != (device.of(kinds[d]).gate orelse none)) {
             verdicts[i] = reject(.not_placeable);
             continue;
         }
@@ -388,11 +386,7 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     for (0..n) |d| {
         const m = mate[d];
         if (m == none or m == d or !drawn[d] or form[d] != .vertical) continue;
-        const gated = switch (kinds[d]) {
-            .mosfet, .bjt, .jfet, .mesfet => true,
-            else => false,
-        };
-        if (gated and gate_right[m] == gate_right[d] and before[m] != before[d]) return false;
+        if (device.isTransistor(kinds[d]) and gate_right[m] == gate_right[d] and before[m] != before[d]) return false;
     }
     return true;
 }
@@ -403,41 +397,29 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
 pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32 {
     const c = &nl.graph;
     const pins = c.members(EdgeId.from(d));
-    for (terminals(c.edges.items(.kind)[d]), 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
+    for (device.of(c.edges.items(.kind)[d]).names, 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
     if (hints.int(word)) |k| if (k >= 1 and k <= pins.len) return @intCast(k - 1);
     const net = nl.net(word) orelse return null;
     for (pins, 0..) |p, k| if (p == net) return @intCast(k);
     return null;
 }
 
-/// A device of `kind` that `upright` and `bridge` take: two pins the
-/// current passes through.
+/// A device of `kind` that `upright` and `bridge` take: a part
+/// (`device.isPart`), two pins the current passes through. Narrowing: no
+/// controlled source (E, G, F, H), which the general form admits.
 pub fn twoPin(kind: DeviceKind) bool {
-    return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .diode, .vswitch, .cswitch => true,
-        else => false,
-    };
+    return device.isPart(kind) and device.of(kind).source != .controlled;
 }
 
 /// The name `pinIndex` reads for pin `k` of a device of `kind`: its
 /// terminal's, else its number from 1.
 pub fn pinName(arena: Allocator, kind: DeviceKind, k: u32) Allocator.Error![]const u8 {
-    const names = terminals(kind);
+    const names = device.of(kind).names;
     if (k < names.len) return names[k];
     return std.fmt.allocPrint(arena, "{d}", .{k + 1});
 }
 
 // ---- private ----
-
-fn terminals(kind: DeviceKind) []const []const u8 {
-    return switch (kind) {
-        .mosfet, .jfet, .mesfet => &.{ "d", "g", "s", "b" },
-        .bjt => &.{ "c", "b", "e", "s" },
-        .resistor, .capacitor, .inductor, .diode, .vswitch, .cswitch => &.{ "a", "b" },
-        .vsource, .isource => &.{ "p", "n" },
-        else => &.{},
-    };
-}
 
 fn reject(code: hints.Code) Verdict {
     return .{ .state = .rejected, .code = code };
@@ -452,7 +434,7 @@ fn namedFace(nl: *const Netlist, verdicts: []const ?Verdict, d: u32) bool {
 }
 
 /// Whether equalities and edges (`[a, b, 1]`, `[a, b, 0]`) over `n` devices
-/// admit levels: no edge within a class, no cycle among classes (Kahn).
+/// admit levels: no edge within a class, no cycle among classes.
 fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool {
     const class = try gpa.alloc(u32, n);
     defer gpa.free(class);
@@ -463,27 +445,12 @@ fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool
         const b = r.find(k[1]);
         if (a != b) class[a] = b;
     };
-    const indeg = try gpa.alloc(u32, n);
-    defer gpa.free(indeg);
-    @memset(indeg, 0);
+    // The rows' order among the classes is an order like the columns'.
+    var edges: std.ArrayList([2]u32) = .empty;
+    defer edges.deinit(gpa);
     for (cs) |k| if (k[2] == 0) {
         if (r.find(k[0]) == r.find(k[1])) return false;
-        indeg[r.find(k[1])] += 1;
+        try edges.append(gpa, .{ r.find(k[0]), r.find(k[1]) });
     };
-    var queue: std.ArrayList(u32) = .empty;
-    defer queue.deinit(gpa);
-    for (0..n) |d| if (r.find(@intCast(d)) == d and indeg[d] == 0) try queue.append(gpa, @intCast(d));
-    var done: usize = 0;
-    while (queue.pop()) |k| {
-        done += 1;
-        for (cs) |e| if (e[2] == 0 and r.find(e[0]) == k) {
-            const t = r.find(e[1]);
-            indeg[t] -= 1;
-            if (indeg[t] == 0) try queue.append(gpa, t);
-        };
-    }
-    var classes: usize = 0;
-    for (0..n) |d| classes += @intFromBool(r.find(@intCast(d)) == d);
-    assert(done <= classes);
-    return done == classes;
+    return sequence.acyclic(gpa, n, edges.items);
 }

@@ -21,6 +21,7 @@
 //! - `pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Sequence`
 //! - `pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x: []i32) Allocator.Error!void`
 //! - `pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`
+//! - `pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -52,8 +53,6 @@ pub const Sequence = struct {
         if (s.left.len == 0) return false;
         const tu = top(above, u);
         const tl = top(above, l);
-        var nodes: std.ArrayList(u32) = .empty;
-        defer nodes.deinit(gpa);
         var edges: std.ArrayList([2]u32) = .empty;
         defer edges.deinit(gpa);
         for (s.left) |e| {
@@ -63,9 +62,8 @@ pub const Sequence = struct {
             if (cb == tl) cb = tu;
             if (ca == cb) return true;
             try edges.append(gpa, .{ ca, cb });
-            for ([_]u32{ ca, cb }) |k| if (std.mem.indexOfScalar(u32, nodes.items, k) == null) try nodes.append(gpa, k);
         }
-        return !try acyclic(gpa, nodes.items, edges.items);
+        return !try acyclic(gpa, above.len, edges.items);
     }
 };
 
@@ -75,16 +73,13 @@ pub const Sequence = struct {
 const Check = struct {
     gpa: Allocator,
     own: []const []const u32,
-    form: []const Form,
 
     pub fn holds(ck: Check, lines: []const u32) Allocator.Error!bool {
         var edges: std.ArrayList([2]u32) = .empty;
         defer edges.deinit(ck.gpa);
-        for (lines) |i| {
-            // Bridges count too: one placed between two columns orders them.
-            for (ck.own[i][0 .. ck.own[i].len - 1], ck.own[i][1..]) |a, b| try edges.append(ck.gpa, .{ a, b });
-        }
-        return devicesAcyclic(ck.gpa, std.math.maxInt(u32), edges.items);
+        // Bridges count too: one placed between two columns orders them.
+        for (lines) |i| try neighbours(ck.gpa, ck.own[i], &edges);
+        return acyclic(ck.gpa, std.math.maxInt(u32), edges.items);
     }
 };
 
@@ -110,13 +105,13 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         own[i] = devs.items;
     }
-    const check: Check = .{ .gpa = gpa, .own = own, .form = form };
+    const check: Check = .{ .gpa = gpa, .own = own };
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
-    var pairs: std.ArrayList([2]u32) = .empty;
-    const placed_by = try arena.alloc(u32, n);
-    @memset(placed_by, none);
-    var images: std.ArrayList(struct { line: u32, devices: []const u32 }) = .empty;
+    // What states pairs: each admitted line, then each one's mirror image.
+    const Stated = struct { line: u32, devices: []const u32 };
+    var stated: std.ArrayList(Stated) = .empty;
+    var images: std.ArrayList(Stated) = .empty;
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         if (nl.hints[i].verb != .order or verdicts[i] != null) continue;
         try admitted.append(gpa, i);
@@ -127,7 +122,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         verdicts[i] = .{ .state = .honoured, .code = .ok };
         const line = own[i];
-        try neighbours(arena, form, line, &pairs, placed_by, i);
+        try stated.append(arena, .{ .line = i, .devices = line });
         // The mirror image, reversed, where every device has a mate.
         const image = try arena.alloc(u32, line.len);
         const whole = for (line, 0..) |d, k| {
@@ -140,21 +135,26 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     }
     // The images after every line, the strongest line's first: a line
     // admitted later stands, and the image that would close a cycle with
-    // it goes.
-    for (images.items) |image| {
+    // it goes (a line closes none: it was admitted). What stands names its
+    // bridges.
+    try stated.appendSlice(arena, images.items);
+    var pairs: std.ArrayList([2]u32) = .empty;
+    const placed_by = try arena.alloc(u32, n);
+    @memset(placed_by, none);
+    for (stated.items) |s| {
         const before = pairs.items.len;
-        for (image.devices[0 .. image.devices.len - 1], image.devices[1..]) |a, b| try pairs.append(arena, .{ a, b });
-        if (!try devicesAcyclic(gpa, n, pairs.items)) {
+        try neighbours(arena, s.devices, &pairs);
+        if (!try acyclic(gpa, n, pairs.items)) {
             pairs.shrinkRetainingCapacity(before);
             continue;
         }
-        for (image.devices) |d| if (form[d] != .vertical) {
-            placed_by[d] = image.line;
+        for (s.devices) |d| if (form[d] != .vertical) {
+            placed_by[d] = s.line;
         };
     }
-    assert(try devicesAcyclic(gpa, n, pairs.items));
+    assert(try acyclic(gpa, n, pairs.items));
     const left = try columnEdges(gpa, arena, form, pairs.items);
-    assert(try devicesAcyclic(gpa, n, left));
+    assert(try acyclic(gpa, n, left));
     return .{ .left = left, .pairs = pairs.items, .placed_by = placed_by };
 }
 
@@ -207,11 +207,12 @@ pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_r
     defer taken.deinit(gpa);
     for (0..n) |d| if (drawn[d]) try taken.put(gpa, .{ x[d], y[d] }, {});
     assert(by_rank.len == n);
-    // The last cell each bridge may take, one left of whatever a line puts
-    // after it; and how many bridges a line puts before it in a row.
+    // The last cell each device may take: a column device's own, a bridge's
+    // one left of whatever a line puts after it; and how many bridges a
+    // line puts before it in a row.
     const hi = try gpa.alloc(i32, n);
     defer gpa.free(hi);
-    @memset(hi, std.math.maxInt(i32) / 2);
+    for (hi, form, x) |*h, f, cx| h.* = if (f == .vertical) cx else std.math.maxInt(i32) / 2;
     const depth = try gpa.alloc(u32, n);
     defer gpa.free(depth);
     @memset(depth, 0);
@@ -219,9 +220,8 @@ pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_r
         var changed = false;
         for (s.pairs) |e| {
             if (form[e[0]] == .vertical) continue;
-            const cap = (if (form[e[1]] == .vertical) x[e[1]] else hi[e[1]]) - 1;
-            if (cap < hi[e[0]]) {
-                hi[e[0]] = cap;
+            if (hi[e[1]] - 1 < hi[e[0]]) {
+                hi[e[0]] = hi[e[1]] - 1;
                 changed = true;
             }
             if (form[e[1]] != .vertical and depth[e[1]] <= depth[e[0]]) {
@@ -269,6 +269,36 @@ pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_r
     }
 }
 
+/// Whether `edges` (`[a, b]`: a before b) hold together as an order: they
+/// close no cycle (Kahn). The one test of the columns' lines and, among the
+/// rows' classes, of `relations`'. Asserts that the edges name at most `n`
+/// nodes. Quadratic in the edges, a deck's handful.
+pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool {
+    var list: std.ArrayList(u32) = .empty;
+    defer list.deinit(gpa);
+    for (edges) |e| for (e) |d| if (std.mem.indexOfScalar(u32, list.items, d) == null) try list.append(gpa, d);
+    const nodes = list.items;
+    assert(nodes.len <= n);
+    const indeg = try gpa.alloc(u32, nodes.len);
+    defer gpa.free(indeg);
+    @memset(indeg, 0);
+    for (edges) |e| indeg[std.mem.indexOfScalar(u32, nodes, e[1]).?] += 1;
+    var queue: std.ArrayList(u32) = .empty;
+    defer queue.deinit(gpa);
+    for (indeg, 0..) |d, k| if (d == 0) try queue.append(gpa, @intCast(k));
+    var done: usize = 0;
+    while (queue.pop()) |k| {
+        done += 1;
+        for (edges) |e| if (e[0] == nodes[k]) {
+            const t = std.mem.indexOfScalar(u32, nodes, e[1]).?;
+            indeg[t] -= 1;
+            if (indeg[t] == 0) try queue.append(gpa, @intCast(t));
+        };
+    }
+    assert(done <= nodes.len);
+    return done == nodes.len;
+}
+
 // ---- private ----
 
 fn top(above: []const u32, d0: u32) u32 {
@@ -281,14 +311,10 @@ fn top(above: []const u32, d0: u32) u32 {
     return d;
 }
 
-/// Each two neighbours of `line` as a pair, and its bridges as named by
-/// line `i`.
-fn neighbours(arena: Allocator, form: []const Form, line: []const u32, pairs: *std.ArrayList([2]u32), placed_by: []u32, i: u32) !void {
+/// Each two neighbours of `line` as a pair "left of".
+fn neighbours(gpa: Allocator, line: []const u32, pairs: *std.ArrayList([2]u32)) !void {
     assert(line.len >= 2);
-    for (line[0 .. line.len - 1], line[1..]) |a, b| try pairs.append(arena, .{ a, b });
-    for (line) |d| if (form[d] != .vertical) {
-        placed_by[d] = i;
-    };
+    for (line[0 .. line.len - 1], line[1..]) |a, b| try pairs.append(gpa, .{ a, b });
 }
 
 /// The "left of" edges among column devices: each to every column device
@@ -325,34 +351,4 @@ fn separated(s: *const Sequence, column_of: []const u32, a: u32, b: u32) bool {
         if ((ca == a and cb == b) or (ca == b and cb == a)) return true;
     }
     return false;
-}
-
-/// Whether `edges` over `nodes` have no cycle (Kahn).
-fn acyclic(gpa: Allocator, nodes: []const u32, edges: []const [2]u32) !bool {
-    const indeg = try gpa.alloc(u32, nodes.len);
-    defer gpa.free(indeg);
-    @memset(indeg, 0);
-    for (edges) |e| indeg[std.mem.indexOfScalar(u32, nodes, e[1]).?] += 1;
-    var queue: std.ArrayList(u32) = .empty;
-    defer queue.deinit(gpa);
-    for (indeg, 0..) |d, k| if (d == 0) try queue.append(gpa, @intCast(k));
-    var done: usize = 0;
-    while (queue.pop()) |k| {
-        done += 1;
-        for (edges) |e| if (e[0] == nodes[k]) {
-            const t = std.mem.indexOfScalar(u32, nodes, e[1]).?;
-            indeg[t] -= 1;
-            if (indeg[t] == 0) try queue.append(gpa, @intCast(t));
-        };
-    }
-    assert(done <= nodes.len);
-    return done == nodes.len;
-}
-
-fn devicesAcyclic(gpa: Allocator, n: usize, edges: []const [2]u32) !bool {
-    var nodes: std.ArrayList(u32) = .empty;
-    defer nodes.deinit(gpa);
-    for (edges) |e| for (e) |d| if (std.mem.indexOfScalar(u32, nodes.items, d) == null) try nodes.append(gpa, d);
-    assert(nodes.items.len <= n);
-    return acyclic(gpa, nodes.items, edges);
 }

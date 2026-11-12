@@ -67,7 +67,7 @@ fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, colum
         if (form[a] != .vertical or form[z] != .vertical or column_of[a] == column_of[z]) continue;
         if (mate[a] != none or mate[z] != none) continue;
         // Up the two columns, then down.
-        for ([_]bool{ true, false }) |up| {
+        for ([_][]const u32{ above, below }) |next| {
             a = ms[0];
             z = ms[1];
             var steps: usize = 0;
@@ -75,8 +75,8 @@ fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, colum
                 if (mate[a] != none and mate[a] != z) break;
                 mate[a] = z;
                 mate[z] = a;
-                a = if (up) above[a] else below[a];
-                z = if (up) above[z] else below[z];
+                a = next[a];
+                z = next[z];
                 if (a != none and z != none and (mate[a] != none or mate[z] != none)) break;
             }
         }
