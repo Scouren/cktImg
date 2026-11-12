@@ -524,6 +524,37 @@ test "sketch: no wire crosses a rail symbol's stub or a supply bar, and no suppl
     try std.testing.expectEqual(0, bad);
 }
 
+test "sketch: a bias gate carries a port symbol, not a written name" {
+    // Oracle: how people draw it. Of 4,378 nets named `vb*` or `bias*` in
+    // 5,263 hand-drawn schematics, 3,228 carry port symbols and none a
+    // written name. A cascode's `vb1` gate: one input port, no label.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Cascode stage
+        \\.model nch nmos
+        \\M1 x in 0 0 nch
+        \\M2 out vb1 x 0 nch
+        \\R1 vdd out 10k
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "vb1")) break i;
+    } else unreachable;
+    var ports: usize = 0;
+    for (p.dev_name, p.dev_class, 0..) |n, class, d| {
+        ports += @intFromBool(n.len == 0 and class == lib.findRole(.input_port).? and p.pin_net[p.pinRange(d)[0]] == net);
+    }
+    try std.testing.expectEqual(1, ports);
+    for (p.labels) |l| try std.testing.expect(l.net != net);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the

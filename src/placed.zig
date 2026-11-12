@@ -456,9 +456,9 @@ pub fn roleClass(s: *const Schematic, net: u32) ?ClassId {
     const role: library.Role = switch (s.roles[net]) {
         .supply => .power_rail,
         .sink => .ground_rail,
-        .input => .input_port,
+        .input, .bias => .input_port,
         .output => .output_port,
-        .bias, .internal => return null,
+        .internal => return null,
     };
     return s.lib.findRole(role);
 }

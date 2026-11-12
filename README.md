@@ -284,7 +284,7 @@ cktImg draws an analog circuit the way the textbook prints it.
 | Matched devices side by side | A differential pair, a current mirror, a cross-coupled pair, and every pair of devices the symmetry maps onto each other share a row wherever the circuit allows. |
 | Symmetric circuits drawn symmetric | A left-right symmetry found from the connectivity (not the names) is drawn as an exact mirror image about a vertical axis. What the symmetry maps to itself (a tail, a common-mode node) sits on the axis. |
 | Signal left to right | Inputs enter as ports from the outside and outputs leave at the edge. A stage with no mirror image sits right of the core when it reaches an output, left of it otherwise. |
-| Wires, not labels | Folds, gate lines, feedback and common-mode loops and cross-couplings are wired. A bias line from outside is a named wire between two facing gates of one row, and a label at each gate otherwise; any other net is a label only where its wire cannot be drawn without running through a device or touching another net. |
+| Wires, not labels | Folds, gate lines, feedback and common-mode loops and cross-couplings are wired. A bias line from outside is a named wire between two facing gates of one row, and an input port at each gate otherwise; any other net is a label only where its wire cannot be drawn without running through a device or touching another net. |
 | One picture per circuit | The drawing depends on the circuit, not on the order of its cards. |
 
 It is made in the order a person draws: find the structure (pairs, mirrors,
