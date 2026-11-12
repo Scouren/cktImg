@@ -13,6 +13,7 @@
 //! - `pub const Canvas = struct`, `Canvas.Checkpoint`
 //! - `Canvas.init(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark) Allocator.Error!Canvas`, `Canvas.deinit(c: *Canvas) void`
 //! - `Canvas.commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool`, `Canvas.fits(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
+//! - `Canvas.wall(c: *Canvas) void`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
 //! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`
 //! - `Canvas.middle2(c: *const Canvas) i32`
@@ -159,6 +160,7 @@ pub const Canvas = struct {
         for (c.segs.items) |g| {
             if (g.net == net) continue;
             const q = Rect.fromCorners(g.a, g.b);
+            if (g.wall and r.intersects(q)) return false;
             // An end of ours on their wire, or one of theirs on ours.
             if (q.contains(a) or q.contains(b) or r.contains(g.a) or r.contains(g.b)) return false;
             // Overlap along one line.
@@ -184,6 +186,15 @@ pub const Canvas = struct {
         assert(s.xy.len == s.nodes.len);
         _ = try s.addPin(.{ .home = node, .side = faces, .net = net, .device = none, .index = 0 });
         try c.points.append(c.gpa, .{ .at = at, .net = net });
+    }
+
+    /// Makes the wire piece drawn last a wall, which no other net's wire
+    /// crosses: the stub between a rail pin and its symbol (a person's
+    /// symbol sits on its pin; 3 of 16,030 such stubs in 5,263 hand-drawn
+    /// schematics are crossed). Asserts a piece was drawn.
+    pub fn wall(c: *Canvas) void {
+        assert(c.segs.items.len > 0);
+        c.segs.items[c.segs.items.len - 1].wall = true;
     }
 
     /// A label on a stub from pin `p`, or on the pin when the stub does not

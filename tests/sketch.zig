@@ -435,6 +435,71 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: no wire crosses a rail symbol's stub, and no supply stub is longer than two units" {
+    // Oracle: how people draw it. In 5,263 hand-drawn schematics 3 of the
+    // 16,030 rail stubs of half a unit or less are crossed by a wire, and
+    // 97% of 9,149 upright supply runs are no longer than two units: a pin
+    // farther from the bar carries a symbol of its own.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var decks: std.ArrayList(struct { []const u8, []const u8 }) = .empty;
+    for (golden.decks) |d| try decks.append(arena, .{ d.name, d.spice });
+    for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
+    // A block under a mirror: its supply pin stands four units below the bar.
+    try decks.append(arena, .{
+        "low_supply_pin",
+        \\Mirror over a block whose supply pin stands low
+        \\.model nch nmos
+        \\.model pch pmos
+        \\.subckt amp inp inn out vdd vss
+        \\M1 out inp vss vss nch
+        \\M2 out inn vdd vdd pch
+        \\.ends
+        \\M1 a g vdd vdd pch
+        \\M2 b g vdd vdd pch
+        \\R1 a c 1k
+        \\R2 b d 1k
+        \\R3 c 0 1k
+        \\R4 d 0 1k
+        \\X1 c d g vdd 0 amp
+        \\
+    });
+    const rails = [_]?np.ClassId{ lib.findRole(.power_rail), lib.findRole(.ground_rail) };
+    const stub: i32 = @intFromFloat(@ceil((np.config.Layout{}).rail * @as(f32, @floatFromInt(lib.unit))));
+    var bad: usize = 0;
+    for (decks.items) |d| {
+        const p = try draw(arena, lib, &.{d[1]}, .{});
+        for (p.dev_name, p.dev_class, 0..) |name, class, dev| {
+            if (name.len != 0 or (class != rails[0] and class != rails[1])) continue;
+            const net = p.pin_net[p.pinRange(dev)[0]];
+            var it = p.segments(net);
+            while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+                if (a.x != b.x) continue;
+                const len = @max(a.y, b.y) - @min(a.y, b.y);
+                if (class == rails[0] and len > 2 * lib.unit) {
+                    std.debug.print("{s}: {s} has a stub of {d}\n", .{ d[0], p.net_name[net], len });
+                    bad += 1;
+                }
+                if (len > stub) continue;
+                for (0..p.netCount()) |m| {
+                    if (m == net) continue;
+                    var other = p.segments(m);
+                    while (other.next()) |q| for (q[0 .. q.len - 1], q[1..]) |u, v| {
+                        if (u.y != v.y or u.y <= @min(a.y, b.y) or u.y >= @max(a.y, b.y) or a.x <= @min(u.x, v.x) or a.x >= @max(u.x, v.x)) continue;
+                        std.debug.print("{s}: {s} crosses a stub of {s}\n", .{ d[0], p.net_name[m], p.net_name[net] });
+                        bad += 1;
+                    };
+                }
+            };
+        }
+    }
+    try std.testing.expectEqual(0, bad);
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the

@@ -16,7 +16,7 @@
 //! and may end on the axis.
 //!
 //! Contents:
-//! - `pub const Wire = struct { a: Pt, b: Pt, net: u32 }`
+//! - `pub const Wire = struct`
 //! - `pub const Mark = struct { at: Pt, net: u32 }`
 //! - `pub const Pin = struct { at: Pt, side: Side }`
 //! - `pub const Query = struct`
@@ -32,7 +32,13 @@ const Rect = library.Rect;
 const Side = library.Side;
 
 /// A straight wire of one net.
-pub const Wire = struct { a: Pt, b: Pt, net: u32 };
+pub const Wire = struct {
+    a: Pt,
+    b: Pt,
+    net: u32,
+    /// No other net's path crosses it (a rail symbol's stub).
+    wall: bool = false,
+};
 /// A point of one net: a pin, a wire's end or bend, a label, a terminal.
 pub const Mark = struct { at: Pt, net: u32 };
 /// A pin and the side its wire leaves by.
@@ -400,6 +406,7 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
     for (q.wires) |w| {
         const rail = w.net < q.rails.len and q.rails[w.net];
         if (w.net == q.net) ownWire(g, w) else otherWire(g, w, q.clear, if (rail) .rail else .signal);
+        if (w.net != q.net and w.wall) closeAlong(g, w);
     }
     for (q.marks) |m| {
         if (m.net != q.net) {
@@ -470,6 +477,16 @@ fn otherWire(g: Grid, w: Wire, clear: i32, kind: Cross) void {
             if (g.ys[j] >= r.min.y and g.ys[j] <= r.max.y) g.v_other[k] = @fromBackingInt(@intCast(@max(@backingInt(g.v_other[k]), @backingInt(kind))));
         }
     }
+}
+
+/// A wall: every grid point on it is closed.
+fn closeAlong(g: Grid, w: Wire) void {
+    const r = Rect.fromCorners(w.a, w.b);
+    const rows = [2]usize{ std.sort.lowerBound(i32, g.ys, r.min.y, order), std.sort.upperBound(i32, g.ys, r.max.y, order) };
+    const cols = [2]usize{ std.sort.lowerBound(i32, g.xs, r.min.x, order), std.sort.upperBound(i32, g.xs, r.max.x, order) };
+    for (rows[0]..rows[1]) |j| for (cols[0]..cols[1]) |i| {
+        g.closed[j * g.width() + i] = true;
+    };
 }
 
 /// The grid points nearer than `clear` to another net's point.
