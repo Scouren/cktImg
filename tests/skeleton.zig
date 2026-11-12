@@ -190,7 +190,7 @@ test "skeleton: a column only a bridge joins to the rest stands beside the colum
     defer arena_state.deinit();
     const arena = arena_state.allocator();
     const l = try lay(arena, "coupled load\n.model qnpn npn\nVCC vcc 0 9\nQ1 c1 b1 0 qnpn\nRC1 vcc c1 1k\nQ2 c2 c1 0 qnpn\nRC2 vcc c2 1k\n" ++
-        "Q3 c3 c2 0 qnpn\nRC3 vcc c3 1k\nQ4 c4 c3 0 qnpn\nRC4 vcc c4 1k\nC3 c1 n9 1u\nRL n9 0 10k\n");
+        "Q3 c3 c2 0 qnpn\nRC3 vcc c3 1k\nQ4 c4 c3 0 qnpn\nRC4 vcc c4 1k\nC3 c1 n9 1u\nRL n9 0 10k\n*@ bridge c3\n");
     errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
     const rl = l.sk.x[l.nl.device("rl").?.index()];
     const q1 = l.sk.x[l.nl.device("q1").?.index()];

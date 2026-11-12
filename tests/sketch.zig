@@ -1066,6 +1066,7 @@ test "sketch: a trunk is the cheapest track that fits, not the first" {
         \\R3 vo 0 20k
         \\Vi vin 0 1
         \\*@ driver vi inline
+        \\*@ bridge c1 r1 c2
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
@@ -1372,4 +1373,26 @@ test "sketch: a pair's halves close over the tail between them" {
     try std.testing.expect(2 * @abs(m2.x - m1.x) <= 5 * lib.unit);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: a flat part that cannot be wired straight stands upright; a line of the deck keeps it flat" {
+    // Oracle: the hand drawings and the pins' places. A stage's feedback
+    // resistor joins the collector's node and the base: no row holds a pin
+    // of both, so flat it is wired round corners; people stand such a part
+    // upright (62% of those between a channel's node and a gate in the
+    // 5,263 reference drawings). Upright, its two pins share a column, and
+    // `*@ bridge r1` lays it flat again.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck = "Stage\n.model qnpn npn\nI1 vcc c 0.5m\nQ1 c b e 0 qnpn\nR1 c b 200k\nR2 e 0 200\n";
+    const p = try draw(arena, lib, &.{deck}, .{});
+    try std.testing.expectEqual(pinOf(&p, "r1", 0).x, pinOf(&p, "r1", 1).x);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    const flat = try draw(arena, lib, &.{deck ++ "*@ bridge r1\n"}, .{});
+    try std.testing.expectEqual(pinOf(&flat, "r1", 0).y, pinOf(&flat, "r1", 1).y);
 }

@@ -9,7 +9,7 @@ whole layout is one pass, with no relayout rounds.
 |---|---|---|
 | 1. Roles | `schematic.zig` | a role per net |
 | 2. Structure | `structure.zig`, `symmetry.zig`, `hints.zig` | a canonical order, blocks, the left-right symmetry |
-| 3. Skeleton | `skeleton.zig`, `levels.zig`, `columns.zig`, `span.zig`, `bridges.zig`, `wrap.zig` | each device's cell on a lattice, its form and gate side |
+| 3. Skeleton | `skeleton.zig`, `forms.zig`, `levels.zig`, `columns.zig`, `span.zig`, `bridges.zig`, `wrap.zig` | each device's cell on a lattice, its form and gate side |
 | 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `trunk.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
@@ -197,7 +197,21 @@ another rail: an emitter's degeneration resistor), or a current source; a
 capacitor only on a rail. The two-pin devices are R, C, L, D, V and I
 cards, switches, and the current-controlled sources (F, H: their control is
 a source's name, and people draw every controlled source as a two-pin
-source). Anything else is **horizontal**, a **bridge**
+source).
+
+A flat part is there to join two pins on one row. So once the skeleton is
+laid, a bridge between two nets that both hold an upright device's pin, of
+which not both have such a pin level with it within a device column,
+**stands upright** after all, and the skeleton is laid once more
+(`forms.crooked`): flat, its wire would turn a corner at the end that is
+not level (the wire leaves both pins of a flat part straight for 44.9% of
+4,443 in the 5,263 reference drawings; for 12.6% of the 6,171 the first lay
+set flat), and people stand 55% to 62% of the parts between two such nets
+upright. A part with a net no upright device is on (an input's, an
+output's, a block's) stays flat, as people draw it; so do a part a line of
+the deck names, one between two nets the symmetry swaps, two mated parts
+that meet (sense resistors across the axis), and every part of a circuit
+with no transistor and no block. Anything else is **horizontal**, a **bridge**
 between columns. A two-pin device between two nets the symmetry swaps
 (it straddles the axis) bridges, and so does a device whose current path is
 shorted (a MOS dummy).

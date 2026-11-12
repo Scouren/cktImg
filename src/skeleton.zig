@@ -6,7 +6,7 @@
 //! lattice columns apart and device rows two apart, so a channel lies
 //! between any two: taps, bridges and wires go there.
 //!
-//! - A device is vertical when it is a transistor, sits on a rail, or is in
+//! - (`forms.zig`) A device is vertical when it is a transistor, sits on a rail, or is in
 //!   series (alone with one other channel element on each of its nets);
 //!   a capacitor only on a rail. Anything else bridges, as does a two-pin
 //!   device between two nets the symmetry swaps (it straddles the axis).
@@ -52,14 +52,16 @@ const mates = @import("mates.zig");
 const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
+const forms = @import("forms.zig");
 
 const Netlist = netlist.Netlist;
-const DeviceKind = netlist.DeviceKind;
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
 const Role = sch.Role;
 const Structure = structure.Structure;
 const none = structure.none;
+const isTransistor = forms.isTransistor;
+const isRail = forms.isRail;
 
 pub const Form = enum(u8) { vertical, horizontal };
 
@@ -119,6 +121,50 @@ const Chain = struct {
 
 /// Asserts that `roles` has one entry per net and `st` comes from `nl`.
 pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton {
+    const first = try lay(gpa, arena, nl, roles, st, opts, null);
+    // A flat part that cannot be wired straight stands upright, and the
+    // skeleton is laid once more (`crooked`).
+    const stood = try gpa.alloc(bool, nl.graph.edgeCount());
+    defer gpa.free(stood);
+    if (!forms.crooked(nl, roles, st, &first, spread, stood)) return first;
+    return lay(gpa, arena, nl, roles, st, opts, stood);
+}
+
+/// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
+/// it: one entry per device, drawn devices on distinct cells of the lattice
+/// (x and y at least 0), and each vertical device's upper and lower ends two
+/// distinct nets it touches. `place`'s own skeletons always pass.
+pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
+    const c = &nl.graph;
+    const n = c.edgeCount();
+    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len, sk.shelf.len }) |len| {
+        if (len != n) return error.WrongLength;
+    }
+    for (0..n) |d| {
+        if (!sk.drawn[d]) continue;
+        if (sk.x[d] < 0 or sk.y[d] < 0) return error.OffLattice;
+        for (d + 1..n) |e| {
+            if (sk.drawn[e] and sk.x[e] == sk.x[d] and sk.y[e] == sk.y[d]) return error.CellTaken;
+        }
+        if (sk.form[d] != .vertical) continue;
+        const up = sk.upper[d];
+        const low = sk.lower[d];
+        if (up == low or up >= c.vertexCount() or low >= c.vertexCount()) return error.BadEnds;
+        var has_up = false;
+        var has_low = false;
+        for (c.members(EdgeId.from(d))) |net| {
+            has_up = has_up or net.index() == up;
+            has_low = has_low or net.index() == low;
+        }
+        if (!has_up or !has_low) return error.BadEnds;
+    }
+}
+
+// ---- private ----
+
+/// The skeleton with the forms `classify` gives, and the devices `stood`
+/// marks (if any) upright all the same.
+fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options, stood: ?[]const bool) Allocator.Error!Skeleton {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(roles.len == c.vertexCount());
@@ -136,9 +182,12 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
 
     const verdicts = try arena.alloc(?hints.Verdict, nl.hints.len);
     @memset(verdicts, null);
-    try classify(gpa, nl, roles, st, drawn, form, verdicts);
+    try forms.classify(gpa, nl, roles, st, drawn, form, verdicts);
     try relations.forms(arena, nl, drawn, form, verdicts);
-    try ends(gpa, nl, roles, drawn, form, upper, lower);
+    if (stood) |up| for (up, form, drawn) |u, *f, dr| {
+        if (u and dr) f.* = .vertical;
+    };
+    try forms.ends(gpa, nl, roles, drawn, form, upper, lower);
     try relations.ends(arena, nl, drawn, form, upper, lower, verdicts);
     const rel = try relations.rows(gpa, arena, nl, st, drawn, form, verdicts);
     const seq = try sequence.read(gpa, arena, nl, st, drawn, form, verdicts);
@@ -214,186 +263,6 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;
     if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
     return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .shelf = shelf, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
-}
-
-/// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
-/// it: one entry per device, drawn devices on distinct cells of the lattice
-/// (x and y at least 0), and each vertical device's upper and lower ends two
-/// distinct nets it touches. `place`'s own skeletons always pass.
-pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
-    const c = &nl.graph;
-    const n = c.edgeCount();
-    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len, sk.shelf.len }) |len| {
-        if (len != n) return error.WrongLength;
-    }
-    for (0..n) |d| {
-        if (!sk.drawn[d]) continue;
-        if (sk.x[d] < 0 or sk.y[d] < 0) return error.OffLattice;
-        for (d + 1..n) |e| {
-            if (sk.drawn[e] and sk.x[e] == sk.x[d] and sk.y[e] == sk.y[d]) return error.CellTaken;
-        }
-        if (sk.form[d] != .vertical) continue;
-        const up = sk.upper[d];
-        const low = sk.lower[d];
-        if (up == low or up >= c.vertexCount() or low >= c.vertexCount()) return error.BadEnds;
-        var has_up = false;
-        var has_low = false;
-        for (c.members(EdgeId.from(d))) |net| {
-            has_up = has_up or net.index() == up;
-            has_low = has_low or net.index() == low;
-        }
-        if (!has_up or !has_low) return error.BadEnds;
-    }
-}
-
-// ---- private ----
-
-fn isTransistor(kind: DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
-}
-
-/// A two-pin device the current passes through: its first two pins.
-fn isTwoPin(kind: DeviceKind) bool {
-    return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .cccs, .ccvs, .diode, .vswitch, .cswitch => true,
-        else => false,
-    };
-}
-
-fn isRail(r: Role) bool {
-    return r == .supply or r == .sink;
-}
-
-/// Drawn: not a driver (unless a `driver` line says) and with pins. Vertical: a transistor, a two-pin
-/// device on a rail, one in series (each of its nets holds one other
-/// channel element), one on the way down (one net nearer the supply, the
-/// other nearer the ground), a current source; capacitors only on a rail;
-/// never a two-pin device
-/// between two nets the symmetry swaps, which straddles the axis, nor a
-/// device whose current path is shorted (a MOS dummy: no current flows).
-fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void {
-    const c = &nl.graph;
-    const kinds = c.edges.items(.kind);
-    assert(drawn.len == c.edgeCount());
-    for (drawn, 0..) |*dr, d| {
-        dr.* = c.members(EdgeId.from(d)).len > 0 and !sch.isDriver(c, roles, @intCast(d));
-    }
-    try relations.drivers(gpa, nl, drawn, verdicts);
-    // Channel elements on each net: transistor channel ends, two-pin pins.
-    const count = try gpa.alloc(u32, c.vertexCount());
-    defer gpa.free(count);
-    @memset(count, 0);
-    for (0..c.edgeCount()) |d| {
-        if (!drawn[d]) continue;
-        const pins = c.members(EdgeId.from(d));
-        if (isTransistor(kinds[d]) and pins.len >= 3) {
-            count[pins[0].index()] += 1;
-            count[pins[2].index()] += 1;
-        } else if (isTwoPin(kinds[d]) and kinds[d] != .capacitor and pins.len >= 2) {
-            count[pins[0].index()] += 1;
-            count[pins[1].index()] += 1;
-        }
-    }
-    const from_supply = try railDistance(gpa, nl, roles, drawn, .supply);
-    defer gpa.free(from_supply);
-    const from_ground = try railDistance(gpa, nl, roles, drawn, .sink);
-    defer gpa.free(from_ground);
-    for (form, 0..) |*f, d| {
-        const pins = c.members(EdgeId.from(d));
-        f.* = .horizontal;
-        if (!drawn[d]) continue;
-        if (isTransistor(kinds[d]) and pins.len >= 3) {
-            if (pins[0].index() != pins[2].index()) f.* = .vertical;
-        } else if (isTwoPin(kinds[d]) and pins.len >= 2 and pins[0].index() != pins[1].index()) {
-            const a = pins[0].index();
-            const b = pins[1].index();
-            const on_rail = isRail(roles[a]) or isRail(roles[b]);
-            const series = kinds[d] != .capacitor and count[a] == 2 and count[b] == 2;
-            // On the way down: people stand 262 of 305 such resistors and 18
-            // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
-            // 83 current sources wherever they are.
-            const down = kinds[d] != .capacitor and
-                (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
-                    from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
-            const straddles = a != b and st.net_mate[a] == b;
-            if ((on_rail or series or down or kinds[d] == .isource) and !straddles) f.* = .vertical;
-        }
-    }
-}
-
-/// A transistor's ends from its type (an n-type's drain is its upper end);
-/// a two-pin device's from the rails, else the pin nearer the supply
-/// through channel elements.
-fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32) !void {
-    const c = &nl.graph;
-    const kinds = c.edges.items(.kind);
-    @memset(upper, none);
-    @memset(lower, none);
-    const dist = try railDistance(gpa, nl, roles, drawn, .supply);
-    defer gpa.free(dist);
-    for (0..c.edgeCount()) |d| {
-        if (!drawn[d] or form[d] != .vertical) continue;
-        const e = EdgeId.from(d);
-        const pins = c.members(e);
-        if (isTransistor(kinds[d])) {
-            const p = symmetry.polarity(nl.modelType(e)) == .p;
-            upper[d] = if (p) pins[2].index() else pins[0].index();
-            lower[d] = if (p) pins[0].index() else pins[2].index();
-        } else {
-            const a = pins[0].index();
-            const b = pins[1].index();
-            const a_up = roles[a] == .supply or roles[b] == .sink or
-                (roles[b] != .supply and roles[a] != .sink and dist[a] <= dist[b]);
-            upper[d] = if (a_up) a else b;
-            lower[d] = if (a_up) b else a;
-        }
-        assert(upper[d] != none and lower[d] != none);
-        assert(upper[d] != lower[d]);
-    }
-}
-
-/// Hops from a net of role `from` (a rail) through channel elements
-/// (transistor channels, two-pin devices but capacitors), never through
-/// another rail; `none` where no such way leads.
-fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, from: Role) ![]u32 {
-    const c = &nl.graph;
-    const kinds = c.edges.items(.kind);
-    const dist = try gpa.alloc(u32, c.vertexCount());
-    errdefer gpa.free(dist);
-    @memset(dist, none);
-    var queue: std.ArrayList(u32) = .empty;
-    defer queue.deinit(gpa);
-    for (roles, 0..) |r, net| if (r == from) {
-        dist[net] = 0;
-        try queue.append(gpa, @intCast(net));
-    };
-    var head: usize = 0;
-    while (head < queue.items.len) : (head += 1) {
-        assert(queue.items.len <= dist.len);
-        const v = queue.items[head];
-        if (isRail(roles[v]) and roles[v] != from) continue;
-        for (c.incident(VertexId.from(v))) |e| {
-            const d = e.index();
-            if (!drawn[d] or kinds[d] == .capacitor) continue;
-            const pins = c.members(e);
-            var chan: [2]VertexId = undefined;
-            if (isTransistor(kinds[d]) and pins.len >= 3) {
-                chan = .{ pins[0], pins[2] };
-            } else if (isTwoPin(kinds[d]) and pins.len >= 2) {
-                chan = .{ pins[0], pins[1] };
-            } else continue;
-            // Through the channel only: a gate or a body on `v` is no way.
-            if (chan[0].index() != v and chan[1].index() != v) continue;
-            for (chan) |w| if (dist[w.index()] == none) {
-                dist[w.index()] = dist[v] + 1;
-                try queue.append(gpa, w.index());
-            };
-        }
-    }
-    return dist;
 }
 
 fn byRank(gpa: Allocator, rank: []const u32) ![]u32 {

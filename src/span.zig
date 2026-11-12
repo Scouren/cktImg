@@ -72,6 +72,11 @@ pub fn flowsRight(ctx: Ctx, x: []const i32) bool {
         .mosfet, .bjt, .jfet, .mesfet, .subckt => break false,
         else => {},
     } else true;
+    // Its sources, when it has any in a column, are where the signal
+    // enters, whatever its nets are called.
+    const sourced = parts_only and found: for (0..ctx.cols.count()) |k| {
+        for (ctx.cols.of(k)) |d| if (kinds[d] == .vsource or kinds[d] == .isource) break :found true;
+    } else false;
     var in: [2]i64 = .{ 0, 0 };
     var out: [2]i64 = .{ 0, 0 };
     var all: [2]i64 = .{ 0, 0 };
@@ -79,9 +84,9 @@ pub fn flowsRight(ctx: Ctx, x: []const i32) bool {
         var reads = false;
         var drives = false;
         for (ctx.cols.of(k)) |d| {
-            reads = reads or (parts_only and (kinds[d] == .vsource or kinds[d] == .isource));
+            reads = reads or (sourced and (kinds[d] == .vsource or kinds[d] == .isource));
             for (ctx.nl.graph.members(EdgeId.from(d)), 0..) |net, pin| {
-                reads = reads or ctx.roles[net.index()] == .input;
+                reads = reads or (!sourced and ctx.roles[net.index()] == .input);
                 drives = drives or (ctx.roles[net.index()] == .output and isChannelPin(ctx, d, pin));
             }
         }
