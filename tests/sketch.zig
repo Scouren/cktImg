@@ -101,6 +101,32 @@ fn bends(p: *const np.Placed, n: usize) usize {
     return count;
 }
 
+/// Ends of net `n`'s wire on nothing: no pin, no name, and no other way
+/// out along the wire.
+fn looseEnds(p: *const np.Placed, n: usize) usize {
+    var count: usize = 0;
+    var it = p.segments(n);
+    while (it.next()) |poly| for ([_]np.Pt{ poly[0], poly[poly.len - 1] }) |at| {
+        var held = false;
+        for (p.pin_xy, p.pin_net) |xy, net| held = held or (net == n and xy.x == at.x and xy.y == at.y);
+        for (p.labels) |l| held = held or (l.net == n and l.at.x == at.x and l.at.y == at.y);
+        // The ways out: left, right, up, down.
+        var arms: u4 = 0;
+        var jt = p.segments(n);
+        while (jt.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
+            if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
+            for ([_]np.Pt{ a, b }) |e| {
+                if (e.x < at.x) arms |= 1;
+                if (e.x > at.x) arms |= 2;
+                if (e.y < at.y) arms |= 4;
+                if (e.y > at.y) arms |= 8;
+            }
+        };
+        count += @intFromBool(!held and @popCount(arms) < 2);
+    };
+    return count;
+}
+
 /// Device `name`'s pin `index` in `p`.
 fn pinOf(p: *const np.Placed, name: []const u8, index: u32) np.Pt {
     for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return p.pin_xy[p.pinRange(d)[0] + index];
@@ -1117,4 +1143,21 @@ test "sketch: a circuit of parts with no ground stands on its reference as on gr
     const roles = try np.guessRoles(arena, &nl);
     try std.testing.expectEqual(np.Role.supply, roles[nl.net("v+").?.index()]);
     try std.testing.expectEqual(np.Role.sink, roles[nl.net("v-").?.index()]);
+}
+
+test "sketch: no wire ends on nothing: two pins' ways to a trunk do not run on together past where they meet" {
+    // Oracle: the wire itself. Every end of a net's wire is on a pin, on a
+    // name, or on another piece of the wire. A gate and its resistor met at
+    // one column and both ran on a quarter unit up to a trunk of no length:
+    // a spur, which the trunk's cost took for a free T.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "gate\n.model nch nmos\nM1 vout net0 vin 0 nch\nRD vdd vout 1k\nRG net0 vb 1k\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    for (0..p.netCount()) |n| try std.testing.expectEqual(0, looseEnds(&p, n));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

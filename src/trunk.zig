@@ -197,20 +197,23 @@ fn freeEnd(c: *const Canvas, net: u32, pins: []const u32, lo: i32, hi: i32, y_t:
 }
 
 /// What a net's lines cost, as the router counts a path: their length and
-/// `bend_cost` a corner.
+/// `bend_cost` a corner; more than any track costs when a line ends on
+/// nothing (`corners`).
 fn cost(c: *const Canvas, pins: []const u32, lines: []const Line) i64 {
     var length: i64 = 0;
     for (lines) |*l| {
         const pts = l.slice();
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| length += @abs(a.x - b.x) + @abs(a.y - b.y);
     }
-    return length + @as(i64, c.len.bend_cost) * corners(c.s, pins, lines);
+    return length + @as(i64, c.len.bend_cost) * (corners(c.s, pins, lines) orelse return std.math.maxInt(i64));
 }
 
 /// The corners of a net's lines as a reader counts them: the points its
 /// wire leaves exactly two ways at a right angle, a pin's device one of
 /// the ways. A T, a crossing of its own and a straight joint are none.
-fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) u32 {
+/// Null when a line ends on nothing: two pins' ways to the trunk run
+/// together past where they meet, a spur no wire should have.
+fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) ?u32 {
     var count: u32 = 0;
     for (lines, 0..) |*l, li| for (l.slice(), 0..) |p, pi| {
         // Each point once, where it first stands.
@@ -242,6 +245,7 @@ fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) u32 {
                 }
             }
         }
+        if (@popCount(arms) < 2) return null;
         count += @intFromBool(@popCount(arms) == 2 and arms & 3 != 0 and arms & 12 != 0);
     };
     return count;
