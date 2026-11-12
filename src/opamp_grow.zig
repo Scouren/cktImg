@@ -247,8 +247,7 @@ fn waits(p: *const Placer, net: u32) bool {
 /// it; a place that is taken moves `away` (up or down) by half units.
 fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
     const b = p.blocks[d].?;
-    const two_in = b.n_ins == 2;
-    const turn: opamp.Turn = .r0;
+    const ins = b.ins[0..b.n_ins];
     const pin = try p.arena.alloc(P, b.pins.len);
     var y = y0;
     var top: i32 = 0;
@@ -257,33 +256,29 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
     var origin: P = .{ .x = 0, .y = 0 };
     var room: R = undefined;
     for (0..opamp.tries) |_| {
-        const o = turned(b.pins[b.out].off, turn);
-        origin = .{ .x = x - o.x, .y = y - o.y };
+        origin = .{ .x = x - b.pins[b.out].off.x, .y = y - b.pins[b.out].off.y };
         top = std.math.maxInt(i32);
         bot = std.math.minInt(i32);
         xin = std.math.maxInt(i32);
         for (b.pins, pin) |bp, *at| {
-            const q = turned(bp.off, turn);
-            at.* = .{ .x = origin.x + q.x, .y = origin.y + q.y };
+            at.* = .{ .x = origin.x + bp.off.x, .y = origin.y + bp.off.y };
             // A signal pin keeps half a unit, a wired rail pin its symbol.
             const reach: i32 = if (bp.role == .rail) 75 else 50;
             top = @min(top, at.y - reach);
             bot = @max(bot, at.y + reach);
         }
-        for (b.ins[0..b.n_ins]) |i| xin = @min(xin, pin[i].x);
+        for (ins) |i| xin = @min(xin, pin[i].x);
         room = .{ .x0 = xin + 25, .y0 = top, .x1 = x - 25, .y1 = bot };
         if (p.free(room, gap, 20)) break;
         y += away * 50;
     }
-    try p.add(d, origin.x, origin.y, turn, room);
+    try p.add(d, origin.x, origin.y, .r0, room);
     const onet = b.pins[b.out].net;
     if (p.anch[onet] == null) p.anchor(onet, .{ .x = x, .y = y });
-    // The inputs, upper first as they now stand.
-    var ins = [2]u8{ b.ins[0], b.ins[1] };
-    if (two_in and pin[ins[1]].y < pin[ins[0]].y) std.mem.swap(u8, &ins[0], &ins[1]);
+    // The inputs, upper first (`opamp.place` has them so).
     var in_top: i32 = std.math.maxInt(i32);
     var in_bot: i32 = std.math.minInt(i32);
-    for (ins[0..b.n_ins]) |i| {
+    for (ins) |i| {
         const net = b.pins[i].net;
         in_top = @min(in_top, pin[i].y);
         in_bot = @max(in_bot, pin[i].y);
@@ -291,31 +286,32 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
         const bare = p.on[net].items.len == 0 and p.out_of[net] == none;
         if (p.rail[net] or bare) try p.canvas().wires.append(p.arena, .{ .x0 = pin[i].x - 70, .y0 = pin[i].y - 20, .x1 = pin[i].x - 30, .y1 = pin[i].y + @as(i32, if (p.rail[net]) 75 else 20) });
     }
-    if (two_in and !p.rail[b.pins[ins[1]].net] and b.pins[ins[1]].net != onet) p.flat_shunt[b.pins[ins[0]].net] = true;
-    const Tree = struct { net: u32, at: P, side: i32 };
+    if (ins.len == 2 and !p.rail[b.pins[ins[1]].net] and b.pins[ins[1]].net != onet) p.flat_shunt[b.pins[ins[0]].net] = true;
+    // An input's tree: the upper pin's side is over the block (-1), the
+    // lower pin's under it; `row` its next feedback row on that side.
+    const Tree = struct { net: u32, at: P, side: i32, row: i32 };
     var trees: [2]Tree = undefined;
     var n_trees: usize = 0;
-    for (ins[0..b.n_ins], 0..) |i, k| {
+    for (ins, 0..) |i, k| {
         const net = b.pins[i].net;
         if (p.rail[net] or p.anch[net] != null) continue;
         p.anchor(net, pin[i]);
-        trees[n_trees] = .{ .net = net, .at = pin[i], .side = if (k == 0) -1 else 1 };
+        trees[n_trees] = if (k == 0)
+            .{ .net = net, .at = pin[i], .side = -1, .row = @min(top - 75, in_top - 125) }
+        else
+            .{ .net = net, .at = pin[i], .side = 1, .row = @max(bot + 75, in_bot + 125) };
         n_trees += 1;
         p.pending[net] = true;
     }
     const xc = xin + opamp.roundEven(@as(i64, x - xin) * 43, 2500) * opamp.quarter;
-    // The next feedback row over the block (index 0) and under it (1).
-    var rows = [2]i32{ @min(top - 75, in_top - 125), @max(bot + 75, in_bot + 125) };
-    for (trees[0..n_trees]) |t| {
-        const r = &rows[if (t.side < 0) 0 else 1];
+    for (trees[0..n_trees]) |*t| {
         for (p.on[t.net].items) |l| {
             if (l.other != onet or p.placed[l.part]) continue;
-            const at = try p.put(l.part, .flat, xc, r.*, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
-            r.* = at.y + t.side * 100;
+            const at = try p.put(l.part, .flat, xc, t.row, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
+            t.row = at.y + t.side * 100;
         }
     }
-    for (trees[0..n_trees]) |t| {
-        const r = &rows[if (t.side < 0) 0 else 1];
+    for (trees[0..n_trees]) |*t| {
         for (p.on[t.net].items) |l| {
             var buf: [3]Step = undefined;
             const path = fbPath(p, l.part, t.net, l.other, onet, &buf) orelse continue;
@@ -323,8 +319,8 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
                 // The cell's output is past a series part: feedback from there.
                 _ = try p.put(path[1].part, .flat, x + 100, y, .{ .x = 0, .y = 50 }, p.aOn(path[1].part, onet), gap);
                 p.anchor(l.other, .{ .x = x + 150, .y = y });
-                const at = try p.put(l.part, .flat, xc, r.*, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
-                r.* = at.y + t.side * 100;
+                const at = try p.put(l.part, .flat, xc, t.row, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
+                t.row = at.y + t.side * 100;
                 continue;
             }
             const k: i32 = @intCast(path.len);
@@ -332,7 +328,9 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
             for (path[0 .. path.len - 1]) |s| for (p.on[s.far].items) |h| {
                 hangs = hangs or (p.rail[h.other] and !p.placed[h.part]);
             };
-            var row = r.* - @as(i32, if (hangs and t.side < 0) 200 else 0);
+            // A shunt hangs under its row on either side of the block: over
+            // it the row stands that much higher, under it the next row lower.
+            var row = t.row - @as(i32, if (hangs and t.side < 0) 200 else 0);
             var xs: [3]i32 = undefined;
             for (0..path.len) |i| xs[i] = xc + (6 * @as(i32, @intCast(i)) - 3 * (k - 1)) * opamp.quarter;
             // The whole row moves as one.
@@ -347,7 +345,7 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
                     _ = try p.put(h.part, .down, cx + 75, row + 100, .{ .x = 50, .y = 0 }, p.aOn(h.part, s.far), gap);
                 }
             }
-            r.* = row + t.side * @as(i32, if (t.side < 0 or !hangs) 100 else 250);
+            t.row = row + t.side * @as(i32, if (t.side < 0 or !hangs) 100 else 250);
         }
     }
     // The lower pin's tree first: the upper one's shunts go round it.
@@ -499,13 +497,14 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
 
 /// The first row past every body between two x, on `side` of row `y`.
 fn beyond(p: *Placer, xa: i32, xb: i32, side: i32, y: i32) i32 {
+    // Farther toward `side` is greater in `side * y`, over as under.
     var edge: ?i32 = null;
     for (p.canvas().rects.items) |r| {
         if (!(r.x0 < @max(xa, xb) + 50 and @min(xa, xb) - 50 < r.x1)) continue;
-        edge = if (side < 0) @min(edge orelse r.y0, r.y0) else @max(edge orelse r.y1, r.y1);
+        edge = @max(edge orelse side * r.y0, side * r.y0, side * r.y1);
     }
     const e = edge orelse return y + side * 100;
-    return if (side < 0) opamp.floorQuarter(e - 75) else opamp.ceilQuarter(e + 75);
+    return side * opamp.ceilQuarter(e + 75);
 }
 
 /// Part `d` between nets `net` and `o`, which both have a node: flat in a
@@ -520,21 +519,11 @@ fn close(p: *Placer, d: u32, net: u32, o: u32, side: i32, owner_out: u32) Alloca
         const left = if (n1.x < n2.x) net else o;
         var cx = opamp.roundEven(n1.x + n2.x, 50) * opamp.quarter;
         if (deep) cx = @max(cx, @min(n1.x, n2.x) + 75);
-        const y = beyond(p, n1.x, n2.x, side, if (side < 0) @min(n1.y, n2.y) else @max(n1.y, n2.y));
+        const y = beyond(p, n1.x, n2.x, side, side * @max(side * n1.y, side * n2.y));
         _ = try p.put(d, .flat, cx, y, .{ .x = 0, .y = side * 50 }, p.aOn(d, left), gap);
     } else {
         const top = if (n1.y <= n2.y) net else o;
         const cy = opamp.roundEven(n1.y + n2.y, 50) * opamp.quarter;
         _ = try p.put(d, .down, @min(n1.x, n2.x) - 50, cy, .{ .x = -50, .y = 0 }, p.aOn(d, top), gap);
     }
-}
-
-/// A symbol offset under a turn: mirrored first, then quarter turns.
-fn turned(off: P, turn: opamp.Turn) P {
-    return switch (turn) {
-        .r0 => off,
-        .r90 => .{ .x = -off.y, .y = off.x },
-        .r180 => .{ .x = -off.x, .y = -off.y },
-        .r270 => .{ .x = off.y, .y = -off.x },
-    };
 }

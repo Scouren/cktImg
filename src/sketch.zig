@@ -20,6 +20,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
@@ -49,6 +50,9 @@ const Role = sch.Role;
 const Skeleton = skeleton.Skeleton;
 const Structure = structure.Structure;
 const Lengths = canvas.Lengths;
+const boxAt = canvas.boxAt;
+const toPt = canvas.toPt;
+const toF = canvas.toF;
 const none = sch.none;
 
 /// How often the drawing is wired again after naming the nets that cross
@@ -60,6 +64,9 @@ const Geo = struct {
     xs: []const i32,
     ys: []const i32,
 };
+
+/// A device's four flips, in the order they are tried.
+const flips = [_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } };
 
 /// The stages in one call: the structure (`structure.analyze`), the
 /// skeleton (`skeleton.place`), then `draw`.
@@ -213,11 +220,10 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
     defer gpa.free(order);
     for (0..n) |d| {
         if (!sk.drawn[d]) continue;
-        const bbox = s.lib.at(info.items(.class)[d]).bbox();
         boxes[d] = if (ats[d]) |a|
-            (a.orient orelse info.items(.orient)[d]).applyRect(bbox).translate(a.origin)
+            (a.orient orelse info.items(.orient)[d]).applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(a.origin)
         else
-            info.items(.orient)[d].applyRect(bbox).translate(toPt(at[d]).sub(info.items(.grid)[d]));
+            boxAt(s, d, toPt(at[d]));
     }
     // The least preferred `at` gives way first, and stands where the
     // lattice has it: another `at` may be on that place, and gives way in
@@ -237,7 +243,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
             for (0..n) |e| {
                 if (e == d or !sk.drawn[e] or !boxes[d].intersects(boxes[e])) continue;
                 ats[d] = null;
-                boxes[d] = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(toPt(at[d]).sub(info.items(.grid)[d]));
+                boxes[d] = boxAt(s, d, toPt(at[d]));
                 dropped = true;
                 break;
             }
@@ -245,7 +251,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
     }
     for (0..n) |d| {
         const o = (ats[d] orelse continue).orient orelse continue;
-        for ([_]sch.Orientation{ .vertical, .horizontal }) |form| for ([_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } }) |f| {
+        for ([_]sch.Orientation{ .vertical, .horizontal }) |form| for (flips) |f| {
             if (!std.meta.eql(Orient.flipped(if (form == .vertical) .left else .r0, f[0], f[1]), o)) continue;
             info.items(.orientation)[d] = form;
             info.items(.flip_x)[d] = f[0];
@@ -253,13 +259,6 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
         };
     }
     sch.settleDevices(s, &nl.graph);
-}
-
-fn isTransistor(kind: netlist.DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
 }
 
 /// Kept and driver flags, then each drawn device's flips: the first of the
@@ -282,7 +281,7 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
         if (!sk.drawn[d]) continue;
         const class = s.lib.at(info.items(.class)[d]);
         const base: Orient = if (vertical) .left else .r0;
-        for ([_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } }) |f| {
+        for (flips) |f| {
             if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical)) continue;
             info.items(.flip_x)[d] = f[0];
             info.items(.flip_y)[d] = f[1];
@@ -292,11 +291,15 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     sch.settleDevices(s, c);
 }
 
+/// Whether turn `o` puts drawn device `d` on its line as the drawing's two
+/// orders have it. Upright, the rows': its end on the skeleton's upper net
+/// faces up, and its gate the skeleton's side. Flat, the columns': its
+/// first pin faces left when it is the left end (`firstLeft`).
 fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool) bool {
     assert(sk.drawn[d]);
-    if (vertical) assert(sk.upper[d] != none);
     const pins = nl.graph.members(EdgeId.from(d));
     if (vertical) {
+        assert(sk.upper[d] != none);
         var up = false;
         for (pins, 0..) |net, i| {
             const side = class.side(i, o) orelse continue;
@@ -304,18 +307,24 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
             if (side == .down and net.index() == sk.upper[d] and net.index() != sk.lower[d]) return false;
         }
         if (!up) return false;
-        if (!isTransistor(nl.graph.edges.items(.kind)[d]) or pins.len < 2) return true;
-        const g = class.side(1, o) orelse return true;
+        const gate = device.of(nl.graph.edges.items(.kind)[d]).gate orelse return true;
+        const g = class.side(gate, o) orelse return true;
         return (g == .right) == sk.gate_right[d];
     }
+    // Narrower than the device model's path, and wider: a card of just two
+    // pins is turned, a box of two ports with it; a flat transistor and a
+    // part with its control pair on the card lie as their class is drawn.
     if (pins.len != 2) return true;
     const s0 = class.side(0, o) orelse return true;
+    return (s0 == .left) == firstLeft(nl, sk, d);
+}
+
+/// Whether the first pin of flat device `d`, of two pins, is its left end.
+fn firstLeft(nl: *const Netlist, sk: *const Skeleton, d: u32) bool {
+    const pins = nl.graph.members(EdgeId.from(d));
+    assert(pins.len == 2);
     // A `face` line says which end is left.
-    switch (sk.left_end[d]) {
-        .first => return s0 == .left,
-        .second => return s0 == .right,
-        .auto => {},
-    }
+    if (sk.left_end[d] != .auto) return sk.left_end[d] == .first;
     // A pin on a net it shares with one other flat part of its row faces
     // that part: two parts in series are one line, as people draw them
     // (52.7% of 1,397 such pairs in 5,263 hand-drawn schematics; the mean
@@ -323,7 +332,7 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
     for (pins, 0..) |net, i| {
         const other = seriesNeighbour(nl, sk, net.index(), d) orelse continue;
         if (sk.x[other] == sk.x[d]) continue;
-        return ((i == 0) == (s0 == .left)) == (sk.x[other] < sk.x[d]);
+        return (i == 0) == (sk.x[other] < sk.x[d]);
     }
     // A pin alone on its net (a port's) has no column to face: the other
     // pin faces its net from where the part stands.
@@ -331,9 +340,9 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
         if (!alone(nl, sk, net.index(), d) or alone(nl, sk, pins[1 - i].index(), d)) continue;
         const there = meanX(nl, sk, pins[1 - i].index(), d);
         if (there == 2 * @as(i64, sk.x[d])) break;
-        return ((i == 1) == (s0 == .left)) == (there < 2 * @as(i64, sk.x[d]));
+        return (i == 1) == (there < 2 * @as(i64, sk.x[d]));
     }
-    return (s0 == .left) == (meanX(nl, sk, pins[0].index(), d) <= meanX(nl, sk, pins[1].index(), d));
+    return meanX(nl, sk, pins[0].index(), d) <= meanX(nl, sk, pins[1].index(), d);
 }
 
 /// Whether no drawn device but `d` is on `net`.
@@ -355,6 +364,7 @@ fn seriesNeighbour(nl: *const Netlist, sk: *const Skeleton, net: u32, d: u32) ?u
         other = v;
     }
     const o = other orelse return null;
+    // A part by its card's two pins, as `fits` turns one: not `device.isPart`.
     if (sk.form[o] != .horizontal or sk.y[o] != sk.y[d] or nl.graph.members(EdgeId.from(o)).len != 2) return null;
     return o;
 }
@@ -397,41 +407,35 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
     const cols = room[0..w];
     const rows = room[w..];
     const reach = s.devices.items(.reach);
+    const up = @backingInt(Side.up);
+    const down = @backingInt(Side.down);
     for (0..c.edgeCount()) |d| if (sk.drawn[d]) {
         const r = reach[d];
         const x: usize = @intCast(sk.x[d]);
         const y: usize = @intCast(sk.y[d]);
-        var left = r[@backingInt(Side.left)];
-        var right = r[@backingInt(Side.right)];
+        // What it needs on each side.
+        var need = r;
         // A body reaching farther than `stack` past its pins (a block with
         // pins on its sides only) takes its own room: two such in one
         // column touched, a pin of one on a pin of the other.
-        const info = s.devices.slice();
-        const body = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate((Pt{ .x = 0, .y = 0 }).sub(info.items(.grid)[d]));
-        var up = r[@backingInt(Side.up)];
-        var down = r[@backingInt(Side.down)];
-        if (-body.min.y > up + len.stack) up = -body.min.y;
-        if (body.max.y > down + len.stack) down = body.max.y;
+        const body = boxAt(s, d, .zero);
+        if (-body.min.y > need[up] + len.stack) need[up] = -body.min.y;
+        if (body.max.y > need[down] + len.stack) need[down] = body.max.y;
         for (c.members(EdgeId.from(d)), 0..) |net, i| {
             const side = s.pinSide(@intCast(d), i) orelse continue;
-            switch (s.roles[net.index()]) {
-                .input, .bias, .output => {
-                    if (side == .left) left = r[@backingInt(Side.left)] + len.terminal + len.unit;
-                    if (side == .right) right = r[@backingInt(Side.right)] + len.terminal + len.unit;
-                    if (side == .up) up = r[@backingInt(Side.up)] + len.terminal;
-                    if (side == .down) down = r[@backingInt(Side.down)] + len.terminal;
-                },
-                .sink, .supply => |role| {
-                    if (side == .left) left = r[@backingInt(Side.left)] + len.rail + len.unit;
-                    if (side == .right) right = r[@backingInt(Side.right)] + len.rail + len.unit;
-                    if (side == .down) down = r[@backingInt(Side.down)] + len.rail;
-                    if (side == .up and role == .sink) up = r[@backingInt(Side.up)] + len.rail;
-                },
-                .internal => {},
-            }
+            const role = s.roles[net.index()];
+            // A symbol's stub out from the pin, and a unit for a symbol
+            // beside the device; the supply's bar over the top aside.
+            const stub = switch (role) {
+                .input, .bias, .output => len.terminal,
+                .sink, .supply => len.rail,
+                .internal => continue,
+            };
+            if (role == .supply and side == .up) continue;
+            need[@backingInt(side)] = r[@backingInt(side)] + stub + if (side.isHorizontal()) len.unit else 0;
         }
-        cols[x] = .{ @max(cols[x][0], left), @max(cols[x][1], right) };
-        rows[y] = .{ @max(rows[y][0], up), @max(rows[y][1], down) };
+        cols[x] = .{ @max(cols[x][0], need[@backingInt(Side.left)]), @max(cols[x][1], need[@backingInt(Side.right)]) };
+        rows[y] = .{ @max(rows[y][0], need[up]), @max(rows[y][1], need[down]) };
     };
     // Mirrored columns as wide as each other, so the drawing keeps the
     // skeleton's symmetry exactly.
@@ -484,9 +488,7 @@ fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, places: 
         const o = info.items(.orient)[d];
         const grid = info.items(.grid)[d];
         for (c.members(EdgeId.from(d)), 0..) |net, i| {
-            if (i >= sch.max_pins or i >= class.terminals.len) continue;
-            const side = s.pinSide(@intCast(d), i) orelse continue;
-            if (sch.referencePin(s, @intCast(d), i, net.index())) continue;
+            const side = wiredSide(s, @intCast(d), i, net.index()) orelse continue;
             // The terminal, from the device's grid point.
             const t = o.apply(class.terminals[i].at).sub(grid);
             const across: f32 = @floatFromInt(if (side.isHorizontal()) t.y else t.x);
@@ -500,6 +502,13 @@ fn placeDevices(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, places: 
     }
     assert(xy.items.len == s.nodes.len);
     for (s.pins.items(.home)) |h| assert(h < s.nodes.len);
+}
+
+/// The side pin `i` of device `d`, on `net`, is wired from; null: a pin
+/// `Placed` draws on its symbol with no wire (a MOS body, an op-amp's
+/// reference, a card pin its class lacks).
+fn wiredSide(s: *const Schematic, d: u32, i: usize, net: u32) ?Side {
+    return if (sch.referencePin(s, d, i, net)) null else s.pinSide(d, i);
 }
 
 /// The drawing's mirror: twice the x its mated devices stand about, when
@@ -548,9 +557,7 @@ fn hiddenPins(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *cons
         const class = s.lib.at(info.items(.class)[d]);
         const o = info.items(.orient)[d];
         for (nl.graph.members(EdgeId.from(d)), 0..) |net, i| {
-            const shown = i < sch.max_pins and i < class.terminals.len and s.pinSide(@intCast(d), i) != null and
-                !sch.referencePin(s, @intCast(d), i, net.index());
-            if (shown) continue;
+            if (wiredSide(s, @intCast(d), i, net.index()) != null) continue;
             const at = if (i < class.terminals.len) origin.add(o.apply(class.terminals[i].at)) else origin;
             try out.append(gpa, .{ .at = at, .net = net.index() });
         }
@@ -562,25 +569,14 @@ fn hiddenPins(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *cons
 fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]Rect {
     var out: std.ArrayList(Rect) = .empty;
     errdefer out.deinit(gpa);
-    const info = s.devices.slice();
     for (0..nl.graph.edgeCount()) |d| {
         if (!sk.drawn[d]) continue;
-        const node = s.deviceNode(@intCast(d)).?;
-        const origin = toPt(s.xy[node]).sub(info.items(.grid)[d]);
-        const r = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(origin);
+        const r = boxAt(s, d, toPt(s.xy[s.deviceNode(@intCast(d)).?]));
         assert(r.min.x <= r.max.x and r.min.y <= r.max.y);
         try out.append(gpa, r);
     }
     assert(out.items.len <= nl.graph.edgeCount());
     return out.toOwnedSlice(gpa);
-}
-
-fn toPt(p: [2]f32) Pt {
-    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
-}
-
-fn toF(p: Pt) [2]f32 {
-    return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
 }
 
 /// A no-connect cross on each device pin with no other pin on its net.

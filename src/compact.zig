@@ -32,6 +32,7 @@ const Rect = library.Rect;
 const Side = library.Side;
 const Schematic = sch.Schematic;
 const Lengths = canvas.Lengths;
+const pt = canvas.toPt;
 const none = sch.none;
 
 /// One thing drawn, as the room it takes: a symbol with its name, or one
@@ -277,7 +278,7 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
                 const class = s.lib.at(info.items(.class)[ref]);
                 const o = info.items(.orient)[ref];
                 const origin = at.sub(info.items(.grid)[ref]);
-                box = o.applyRect(class.bbox()).translate(origin);
+                box = canvas.boxAt(s, ref, at);
                 for (class.terminals[0..@min(class.terminals.len, s.device_pin_count[ref])]) |t| {
                     try d.ties.append(arena, .{ at, origin.add(o.apply(t.at)) });
                 }
@@ -355,7 +356,7 @@ fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1
     for (feats) |f| if (f.wire) try g.keep(arena, along(f.r.min, ax), along(f.r.max, ax), len.tap);
     // Device columns (rows) keep their order, and `series` (`stack`)
     // between the symbols of two that stand clear of each other.
-    const room = if (ax == 0) len.series else len.stack;
+    const room = [2]i32{ len.series, len.stack };
     for (d.devices.items, 0..) |da, i| for (d.devices.items[i + 1 ..]) |db| {
         const a, const b = if (along(da.at, ax) <= along(db.at, ax)) .{ da, db } else .{ db, da };
         try g.keep(arena, along(a.at, ax), along(b.at, ax), @divExact(g.quantum, 2));
@@ -367,8 +368,8 @@ fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1
         // (neighbouring columns 1.98 units apart at the mean in 5,263
         // hand-drawn schematics; with `series` between every two, 2.95).
         const beside = @max(across(b.box.min, ax) - across(a.box.max, ax), across(a.box.min, ax) - across(b.box.max, ax));
-        if (beside >= (if (ax == 1) len.series else len.stack)) continue;
-        try g.keep(arena, along(a.box.max, ax), along(b.box.min, ax), room);
+        if (beside >= room[1 - ax]) continue;
+        try g.keep(arena, along(a.box.max, ax), along(b.box.min, ax), room[ax]);
     };
 
     g.solve();
@@ -402,9 +403,5 @@ fn along(p: Pt, ax: u1) i32 {
 }
 
 fn across(p: Pt, ax: u1) i32 {
-    return if (ax == 0) p.y else p.x;
-}
-
-fn pt(p: [2]f32) Pt {
-    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
+    return along(p, 1 - ax);
 }

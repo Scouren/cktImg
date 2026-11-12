@@ -20,14 +20,15 @@
 //! - `pub fn applies(nl: *const Netlist, drawn: []const bool) bool`
 //! - `pub fn steered(nl: *const Netlist) bool`
 //! - `pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At`
-//! - for `opamp_grow.zig`: `pub const none`, `unit`, `quarter`, `tries`; `pub const P`, `R`, `Turn`, `Kind`, `Link`, `PinRole`, `Pin`, `Block`, `Two`, `Canvas`, `Put`
+//! - for `opamp_grow.zig`: `pub const none`, `unit`, `quarter`, `tries`; `pub const P`, `R`, `Kind`, `Link`, `Pin`, `Block`, `Two`, `Canvas`, `Put`
 //! - `pub const Placer = struct`, `Placer.canvas`, `Placer.free`, `Placer.wire`, `Placer.add`, `Placer.anchor`, `Placer.aOn`, `Placer.put`
-//! - `pub fn partRect(kind: Kind, cx: i32, cy: i32, tall: bool) R`, `pub fn ceilQuarter(v: i32) i32`, `pub fn floorQuarter(v: i32) i32`, `pub fn roundEven(num: i64, den: i64) i32`
+//! - `pub fn partRect(kind: Kind, cx: i32, cy: i32, tall: bool) R`, `pub fn ceilQuarter(v: i32) i32`, `pub fn roundEven(num: i64, den: i64) i32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const library = @import("library.zig");
 const pinned = @import("pinned.zig");
@@ -50,11 +51,11 @@ pub const tries = 40;
 
 pub const P = struct { x: i32, y: i32 };
 pub const R = struct { x0: i32, y0: i32, x1: i32, y1: i32 };
-pub const Turn = enum(u8) { r0, r90, r180, r270 };
+/// How a two-pin part lies: flat along the signal, or upright with room
+/// for its rail's symbol under it or over it.
 pub const Kind = enum(u8) { flat, down, up };
 pub const Link = struct { part: u32, other: u32 };
-pub const PinRole = library.PortRole;
-pub const Pin = struct { net: u32, off: P, role: PinRole };
+pub const Pin = struct { net: u32, off: P, role: library.PortRole };
 
 /// An amplifier: its pins, which of them are its inputs (upper first as
 /// drawn) and which its output.
@@ -74,7 +75,7 @@ pub const Canvas = struct {
     link: ?struct { x: i32, net: u32 } = null,
 };
 
-pub const Put = struct { x: i32, y: i32, turn: Turn, canvas: u32 };
+pub const Put = struct { x: i32, y: i32, turn: Orient, canvas: u32 };
 
 /// The placement's working tables, one entry per device or per net.
 pub const Placer = struct {
@@ -119,7 +120,7 @@ pub const Placer = struct {
         try p.canvas().wires.append(p.arena, .{ .x0 = @min(a.x, b.x), .y0 = @min(a.y, b.y), .x1 = @max(a.x, b.x), .y1 = @max(a.y, b.y) });
     }
 
-    pub fn add(p: *Placer, d: u32, x: i32, y: i32, turn: Turn, r: R) Allocator.Error!void {
+    pub fn add(p: *Placer, d: u32, x: i32, y: i32, turn: Orient, r: R) Allocator.Error!void {
         assert(p.at[d] == null);
         p.at[d] = .{ .x = x, .y = y, .turn = turn, .canvas = p.cv };
         try p.canvas().rects.append(p.arena, r);
@@ -149,8 +150,8 @@ pub const Placer = struct {
             cx += step.x;
             cy += step.y;
         }
-        const turn: Turn = if (kind == .flat) (if (node_first) .r0 else .r180) else (if (node_first) .r90 else .r270);
-        try p.add(d, cx, cy, turn, r);
+        const quarters: u2 = if (kind == .flat) (if (node_first) 0 else 2) else (if (node_first) 1 else 3);
+        try p.add(d, cx, cy, .{ .rot = quarters }, r);
         return .{ .x = cx, .y = cy };
     }
 };
@@ -163,22 +164,9 @@ pub fn applies(nl: *const Netlist, drawn: []const bool) bool {
     assert(drawn.len == c.edgeCount());
     var blocks: usize = 0;
     for (c.edges.items(.kind), 0..) |kind, d| {
-        if (!drawn[d]) continue;
-        if (isTwo(kind)) {
-            if (c.members(EdgeId.from(d)).len < 2) return false;
-            continue;
-        }
+        if (!drawn[d] or isTwo(kind)) continue;
         const def = nl.defOf(EdgeId.from(d)) orelse return false;
-        if (kind != .subckt or def.ports.len != c.members(EdgeId.from(d)).len) return false;
-        var ins: usize = 0;
-        var outs: usize = 0;
-        for (def.ports) |name| switch (library.portRole(def.ports, name)) {
-            .other => return false,
-            .out => outs += 1,
-            .inp, .inn, .in => ins += 1,
-            .rail => {},
-        };
-        if (outs != 1 or ins == 0 or ins > 2) return false;
+        if (kind != .subckt or def.ports.len != c.members(EdgeId.from(d)).len or amplifier(def.ports) == null) return false;
         blocks += 1;
     }
     return blocks > 0;
@@ -238,12 +226,14 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         p.rail_up[v] = role == .supply;
         p.port[v] = role == .input or role == .output or role == .bias;
     }
-    for (c.edges.items(.kind), p.source) |kind, *s| s.* = kind == .vsource or kind == .isource;
+    for (c.edges.items(.kind), p.source) |kind, *s| s.* = device.of(kind).source == .independent;
     for (c.edges.items(.kind), 0..) |kind, d| {
         if (!drawn[d]) continue;
         const pins = c.members(EdgeId.from(d));
         if (isTwo(kind)) {
-            const t: Two = .{ .a = pins[0].index(), .b = pins[1].index(), .tall = kind == .vswitch or kind == .cswitch };
+            // Its path's ends; the switch's symbol is the taller one.
+            const path = device.of(kind).path.?;
+            const t: Two = .{ .a = pins[path[0]].index(), .b = pins[path[1]].index(), .tall = kind == .vswitch or kind == .cswitch };
             p.two[d] = t;
             if (t.a != t.b) {
                 try p.on[t.a].append(arena, .{ .part = @intCast(d), .other = t.b });
@@ -254,18 +244,10 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         const def = nl.defOf(EdgeId.from(d)).?;
         const terms = lib.at(classes[d]).terminals;
         if (terms.len != pins.len) return null;
-        var b: Block = .{ .pins = try arena.alloc(Pin, pins.len), .ins = .{ 0, 0 }, .n_ins = 0, .out = 0 };
-        for (pins, def.ports, terms, 0..) |net, name, term, i| {
-            const role = library.portRole(def.ports, name);
-            b.pins[i] = .{ .net = net.index(), .off = .{ .x = @divTrunc(term.at.x * unit, lib.unit), .y = @divTrunc(term.at.y * unit, lib.unit) }, .role = role };
-            switch (role) {
-                .out => b.out = @intCast(i),
-                .inp, .inn, .in => {
-                    b.ins[b.n_ins] = @intCast(i);
-                    b.n_ins += 1;
-                },
-                else => {},
-            }
+        var b = amplifier(def.ports).?;
+        b.pins = try arena.alloc(Pin, pins.len);
+        for (b.pins, pins, def.ports, terms) |*bp, net, name, term| {
+            bp.* = .{ .net = net.index(), .off = .{ .x = @divTrunc(term.at.x * unit, lib.unit), .y = @divTrunc(term.at.y * unit, lib.unit) }, .role = library.portRole(def.ports, name) };
         }
         for (b.ins[0..b.n_ins]) |i| if (b.pins[i].off.x >= b.pins[b.out].off.x) return null;
         // The upper input as drawn first.
@@ -295,13 +277,7 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         shift[k] = .{ .x = dx, .y = dy };
         for (cv.devs.items) |d| {
             const at = p.at[d].?;
-            const orient: Orient = switch (at.turn) {
-                .r0 => .{},
-                .r90 => .{ .rot = 1 },
-                .r180 => .{ .rot = 2 },
-                .r270 => .{ .rot = 3 },
-            };
-            out[d] = .{ .origin = .{ .x = toDrawing(at.x + dx, lib.unit), .y = toDrawing(at.y + dy, lib.unit) }, .orient = orient, .line = none };
+            out[d] = .{ .origin = .{ .x = toDrawing(at.x + dx, lib.unit), .y = toDrawing(at.y + dy, lib.unit) }, .orient = at.turn, .line = none };
         }
         ybase = box.y1 + dy + 150;
     }
@@ -324,11 +300,6 @@ pub fn ceilQuarter(v: i32) i32 {
     return -@divFloor(-v, quarter) * quarter;
 }
 
-/// `v` down to the grid.
-pub fn floorQuarter(v: i32) i32 {
-    return @divFloor(v, quarter) * quarter;
-}
-
 /// `num / den` to the nearest whole, a half to the even one.
 pub fn roundEven(num: i64, den: i64) i32 {
     assert(den > 0);
@@ -340,11 +311,32 @@ pub fn roundEven(num: i64, den: i64) i32 {
 
 // ---- private ----
 
+/// A part this placement takes. Narrower than `device.isPart`: a controlled
+/// source (F, H, E, G) is none, and a circuit with one stays on the lattice.
 fn isTwo(kind: netlist.DeviceKind) bool {
-    return switch (kind) {
-        .resistor, .capacitor, .inductor, .diode, .vsource, .isource, .vswitch, .cswitch => true,
-        else => false,
+    return device.isPart(kind) and device.of(kind).source != .controlled;
+}
+
+/// A block's inputs and its output among `ports`, by their names, its
+/// `pins` still to fill; null when it is no amplifier: one or two inputs,
+/// one output, the rest rails.
+fn amplifier(ports: []const []const u8) ?Block {
+    var b: Block = .{ .pins = &.{}, .ins = .{ 0, 0 }, .n_ins = 0, .out = 0 };
+    var outs: usize = 0;
+    for (ports, 0..) |name, i| switch (library.portRole(ports, name)) {
+        .other => return null,
+        .rail => {},
+        .out => {
+            b.out = @intCast(i);
+            outs += 1;
+        },
+        .inp, .inn, .in => {
+            if (b.n_ins == 2) return null;
+            b.ins[b.n_ins] = @intCast(i);
+            b.n_ins += 1;
+        },
     };
+    return if (outs == 1 and b.n_ins > 0) b else null;
 }
 
 fn toDrawing(v: i32, lib_unit: i32) i32 {

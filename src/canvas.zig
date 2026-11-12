@@ -20,8 +20,10 @@
 //! - `Canvas.save(c: *const Canvas) Checkpoint`, `Canvas.restore(c: *Canvas, cp: Checkpoint) void`
 //! - `pub const Line = struct`, `Line.of(pts: []const Pt) Line`, `Line.push(l: *Line, p: Pt) void`, `Line.slice(l: *const Line) []const Pt`
 //! - `pub fn pinAt(s: *const Schematic, p: u32) Pt`
+//! - `pub fn boxAt(s: *const Schematic, d: usize, at: Pt) Rect`
 //! - `pub fn stepPt(p: Pt, side: Side, d: i32) Pt`
 //! - `pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool`
+//! - `pub fn toPt(p: [2]f32) Pt`, `pub fn toF(p: Pt) [2]f32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -207,9 +209,7 @@ pub const Canvas = struct {
         const at = pinAt(c.s, p);
         const side = c.s.pins.items(.side)[p];
         const net = c.s.pins.items(.net)[p];
-        const end = stepPt(at, side, c.len.label);
-        const stub = try c.commit(net, &.{ at, end });
-        try c.leaf(.label, net, if (stub) end else at, side.opposite());
+        if (!try c.stub(.label, net, at, side, c.len.label)) try c.leaf(.label, net, at, side.opposite());
     }
 
     /// An output's or input's port on a stub out from `from`: toward the
@@ -224,14 +224,12 @@ pub const Canvas = struct {
         const asked = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
         // A stub over the net's own wire is no stub: the symbol would stand
         // on the wire, and a netlister reads the two as apart.
-        const toward = for ([_]Side{ asked, side, .up, .down }) |t| {
+        const free: ?Side = for ([_]Side{ asked, side, .up, .down }) |t| {
             if (!c.along(net, from, t)) break t;
-        } else asked;
-        const end = stepPt(from, toward, c.len.terminal);
-        if (!c.along(net, from, toward) and try c.commit(net, &.{ from, end })) {
-            try c.leaf(.terminal, net, end, toward.opposite());
-        } else if (c.fits(net, from, from)) {
-            try c.leaf(.label, net, from, toward.opposite());
+        } else null;
+        if (free) |t| if (try c.stub(.terminal, net, from, t, c.len.terminal)) return;
+        if (c.fits(net, from, from)) {
+            try c.leaf(.label, net, from, (free orelse asked).opposite());
         } else {
             // The net's top-left pin: by place, so card order changes nothing.
             var first: ?u32 = null;
@@ -243,6 +241,16 @@ pub const Canvas = struct {
             }
             try c.labelAt(first.?);
         }
+    }
+
+    /// A `kind` node at the end of a stub of `d` out from `from` toward
+    /// `side`, which a port, a rail symbol and a name each are; false, with
+    /// nothing drawn, when the stub does not fit.
+    fn stub(c: *Canvas, kind: sch.NodeKind, net: u32, from: Pt, side: Side, d: i32) Allocator.Error!bool {
+        const end = stepPt(from, side, d);
+        if (!try c.commit(net, &.{ from, end })) return false;
+        try c.leaf(kind, net, end, side.opposite());
+        return true;
     }
 
     /// Whether a stub of `terminal` out from `from` toward `side` runs along
@@ -291,6 +299,13 @@ pub fn pinAt(s: *const Schematic, p: u32) Pt {
     return toPt(s.pinPoint(p));
 }
 
+/// Device `d`'s symbol as it is turned (`orient`, `grid`: settled), with
+/// its grid point at `at`.
+pub fn boxAt(s: *const Schematic, d: usize, at: Pt) Rect {
+    const info = s.devices.slice();
+    return info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(at.sub(info.items(.grid)[d]));
+}
+
 /// `d` from `p` toward `side`.
 pub fn stepPt(p: Pt, side: Side, d: i32) Pt {
     assert(d >= 0);
@@ -311,6 +326,16 @@ pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool {
     return true;
 }
 
+/// A node's point (`Schematic.xy`) on the drawing's whole units: the nearest.
+pub fn toPt(p: [2]f32) Pt {
+    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
+}
+
+/// A whole point as `Schematic.xy` and a `Route` hold one.
+pub fn toF(p: Pt) [2]f32 {
+    return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
+}
+
 // ---- private ----
 
 /// An axis-aligned segment runs inside a rectangle somewhere.
@@ -319,14 +344,6 @@ fn crossesInterior(r: Rect, a: Pt, b: Pt) bool {
     assert(a.x == b.x or a.y == b.y);
     const s = Rect.fromCorners(a, b);
     return s.intersects(r) and !(s.min.x == s.max.x and (s.min.x == r.min.x or s.min.x == r.max.x)) and !(s.min.y == s.max.y and (s.min.y == r.min.y or s.min.y == r.max.y));
-}
-
-fn toPt(p: [2]f32) Pt {
-    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
-}
-
-fn toF(p: Pt) [2]f32 {
-    return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
 }
 
 test "lengths: units scale to whole target units, at least 1" {
