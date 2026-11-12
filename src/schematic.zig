@@ -25,6 +25,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const csr = @import("csr.zig");
+const device = @import("device.zig");
 const library = @import("library.zig");
 const forms = @import("forms.zig");
 /// Stage 2 (issue #8): blocks, symmetry and a canonical order.
@@ -208,14 +209,13 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
     for (names, roles, 0..) |name, *r, i| r.* = if (i == 0) .sink else roleFromName(name);
     // A reference comes from outside (R1) unless a transistor's drain or
     // collector makes it here: then it is what the circuit puts out.
-    for (circuit.edges.items(.kind), 0..) |k, d| switch (k) {
-        .mosfet, .bjt, .jfet, .mesfet => {
-            const pins = circuit.members(EdgeId.from(d));
-            const made = if (pins.len > 0) pins[0].index() else 0; // net 0: the sink, never an input
-            if (roles[made] == .input and std.mem.startsWith(u8, names[made], "vref")) roles[made] = .output;
-        },
-        else => {},
-    };
+    for (circuit.edges.items(.kind), 0..) |k, d| {
+        if (!device.isTransistor(k)) continue;
+        const pins = circuit.members(EdgeId.from(d));
+        const upper = device.of(k).path.?[0];
+        const made = if (pins.len > upper) pins[upper].index() else 0; // net 0: the sink, never an input
+        if (roles[made] == .input and library.named(names[made], .net) == .ref) roles[made] = .output;
+    }
 
     const order = try hints.applyOrder(gpa, nl.hints);
     defer gpa.free(order);
@@ -230,15 +230,10 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         const d = nl.device(h.args[0]) orelse continue;
         in_circuit[d.index()] = std.mem.eql(u8, h.args[1], "inline");
     }
-    for (circuit.edges.items(.kind), 0..) |k, d| {
-        if (k != .vsource or in_circuit[d]) continue;
-        const pins = circuit.members(EdgeId.from(d));
-        if (pins.len < 2) continue;
-        const a = pins[0].index();
-        const b = pins[1].index();
-        const driven = if (roles[b] == .sink) a else if (roles[a] == .sink) b else continue;
-        if (roles[driven] != .internal) continue;
-        roles[driven] = if (isSignalSource(nl, @intCast(d))) .input else .bias;
+    for (0..circuit.edgeCount()) |d| {
+        const net = driven(circuit, roles, d) orelse continue;
+        if (in_circuit[d] or roles[net] != .internal) continue;
+        roles[net] = if (isSignalSource(nl, @intCast(d))) .input else .bias;
     }
     // A circuit with no pin on a ground stands on a reference all the same
     // (`reference`), unless a line of the deck names its ground.
@@ -372,17 +367,8 @@ pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void {
 /// R3: a V source from the sink to a supply, input or bias net drives a
 /// terminal net: drawn apart, not in the circuit.
 pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool {
-    if (circuit.edges.items(.kind)[d] != .vsource) return false;
-    const pins = circuit.members(EdgeId.from(d));
-    if (pins.len < 2) return false;
-    const a = roles[pins[0].index()];
-    const b = roles[pins[1].index()];
-    const terminal = struct {
-        fn f(r: Role) bool {
-            return r == .supply or r == .input or r == .bias;
-        }
-    }.f;
-    return (b == .sink and terminal(a)) or (a == .sink and terminal(b));
+    const r = roles[driven(circuit, roles, d) orelse return false];
+    return r == .supply or r == .input or r == .bias;
 }
 
 /// A controlled source's out- on the sink is the op-amp's reference: like a
@@ -407,25 +393,28 @@ fn baseSide(s: *const Schematic, d: u32, o: Orientation, pin: usize) ?Side {
     return s.lib.at(s.devices.items(.class)[d]).side(pin, form(o));
 }
 
+/// R1: a net's role by its name (`library.named`). A reference comes from
+/// outside, as an amplifier's inputs do.
 fn roleFromName(name: []const u8) Role {
-    const eqlAny = struct {
-        fn f(n: []const u8, xs: []const []const u8) bool {
-            for (xs) |x| if (std.mem.eql(u8, n, x)) return true;
-            return false;
-        }
-    }.f;
-    const startsAny = struct {
-        fn f(n: []const u8, xs: []const []const u8) bool {
-            for (xs) |x| if (std.mem.startsWith(u8, n, x)) return true;
-            return false;
-        }
-    }.f;
-    if (eqlAny(name, &.{ "gnd", "vss", "vee", "agnd", "dgnd", "vssa", "gnda", "v-" })) return .sink;
-    if (startsAny(name, &.{ "vdd", "vcc", "avdd", "dvdd" }) or eqlAny(name, &.{ "vpp", "v+" })) return .supply;
-    if (startsAny(name, &.{ "vb", "bias" })) return .bias;
-    if (startsAny(name, &.{ "vin", "in", "vref" })) return .input;
-    if (startsAny(name, &.{ "vout", "out" }) or eqlAny(name, &.{"vo"})) return .output;
-    return .internal;
+    return switch (library.named(name, .net) orelse return .internal) {
+        .supply => .supply,
+        .ground => .sink,
+        .bias => .bias,
+        .ref, .inp, .inn, .in => .input,
+        .out => .output,
+    };
+}
+
+/// R2, R3: the net a V source drives from the sink, its other end; null
+/// for any other device, and for a source with no end on the sink. Only a
+/// voltage source sets a net's potential: a current source drives none.
+fn driven(circuit: *const Circuit.Graph, roles: []const Role, d: usize) ?u32 {
+    if (circuit.edges.items(.kind)[d] != .vsource) return null;
+    const pins = circuit.members(EdgeId.from(d));
+    if (pins.len < 2) return null;
+    const a = pins[0].index();
+    const b = pins[1].index();
+    return if (roles[b] == .sink) a else if (roles[a] == .sink) b else null;
 }
 
 /// The net a circuit of parts with no pin on a ground stands on, or null
@@ -443,15 +432,16 @@ fn reference(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role) Al
     for (roles, 0..) |r, v| {
         if (r == .sink and circuit.incident(csr.VertexId.from(@intCast(v))).len > 0) return null;
     }
-    for (circuit.edges.items(.kind)) |k| switch (k) {
-        .mosfet, .bjt, .jfet, .mesfet => return null,
-        else => {},
-    };
+    for (circuit.edges.items(.kind)) |k| if (device.isTransistor(k)) return null;
     const score = try gpa.alloc(i32, n);
     defer gpa.free(score);
     @memset(score, 0);
     for (circuit.edges.items(.kind), 0..) |k, d| {
         const pins = circuit.members(EdgeId.from(d));
+        // A card of just two pins, whatever its kind: wider than the device
+        // table's parts (`device.isPart`) by a B source and a two-port
+        // block, narrower by a part with a third pin (a body, a control
+        // pair). Which end of a source is its low one the table does not say.
         if (pins.len != 2) continue;
         switch (k) {
             .vsource => score[pins[1].index()] += 2,

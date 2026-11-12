@@ -120,18 +120,17 @@ pub const Config = struct {
                 return cfg;
             },
         };
-        for (tables.names, 0..) |name, i| {
+        // A table of the document is a field of `Config`.
+        outer: for (tables.names, 0..) |name, i| {
             const key = name.get(zoir);
             const node = tables.vals.at(@intCast(i));
-            if (std.mem.eql(u8, key, "layout")) {
-                try patch(Layout, arena, ast, zoir, node, &cfg.layout, &sink);
-            } else if (std.mem.eql(u8, key, "rules")) {
-                try patch(lint.Rules, arena, ast, zoir, node, &cfg.rules, &sink);
-            } else if (std.mem.eql(u8, key, "render")) {
-                try patch(Render, arena, ast, zoir, node, &cfg.render, &sink);
-            } else {
-                try sink.add(lineOfNode(ast, zoir, node), key, .unknown_key);
+            inline for (@typeInfo(Config).@"struct".field_names, @typeInfo(Config).@"struct".field_types) |table, T| {
+                if (std.mem.eql(u8, key, table)) {
+                    try patch(T, arena, ast, zoir, node, &@field(cfg, table), &sink);
+                    continue :outer;
+                }
             }
+            try sink.add(lineOfNode(ast, zoir, node), key, .unknown_key);
         }
         return cfg;
     }

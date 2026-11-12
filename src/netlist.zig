@@ -241,6 +241,10 @@ pub const Netlist = struct {
     }
 };
 
+/// The ground net's name, then its aliases. Global: an expanded body's
+/// ground is the deck's.
+const ground_names = [_][]const u8{ "0", "gnd" };
+
 // ===========================================================================
 // Entry points. `parse` does no I/O; `load` reads files and calls it.
 // ===========================================================================
@@ -459,11 +463,7 @@ const Pass = struct {
                 if (eql(t, "params:") or eql(t, "=") or (i + 1 < f.len and eql(f[i + 1], "="))) break;
                 try ports.append(self.arena, t);
             }
-            const sides = try self.arena.alloc(?PortSide, ports.items.len);
-            @memset(sides, null);
-            const order = try self.arena.alloc(u16, ports.items.len);
-            for (order, 0..) |*o, k| o.* = @intCast(1000 + k);
-            var def: Subckt = .{ .name = f[1], .ports = ports.items, .sides = sides, .order = order, .expand = false, .body = "" };
+            var def = try undirected(self.arena, f[1], ports.items);
             var placed: u16 = 0;
             const body_start = c.pos;
             var body_end = text.len;
@@ -503,9 +503,8 @@ const Pass = struct {
         errdefer b.deinit(self.gpa);
 
         // Ground first, so it is always vertex 0.
-        _ = try b.addVertex(self.gpa, .{ .name = "0" });
-        try self.net_ids.put(self.arena, "0", ground);
-        try self.net_ids.put(self.arena, "gnd", ground);
+        _ = try b.addVertex(self.gpa, .{ .name = ground_names[0] });
+        for (ground_names) |n| try self.net_ids.put(self.arena, n, ground);
 
         var pins: std.ArrayList(VertexId) = .empty; // scratch
         defer pins.deinit(self.gpa);
@@ -530,7 +529,7 @@ const Pass = struct {
         depth: usize,
 
         fn net(fr: *const Frame, arena: Allocator, name: []const u8) Allocator.Error![]const u8 {
-            if (eql(name, "0") or eql(name, "gnd")) return name;
+            for (ground_names) |g| if (eql(name, g)) return name;
             for (fr.formals, fr.actuals) |f, a| if (eql(f, name)) return a;
             return std.fmt.allocPrint(arena, "{s}.{s}", .{ fr.path, name });
         }
@@ -654,14 +653,20 @@ const Pass = struct {
     fn defineOpaque(self: *Pass, master: []const u8, n: usize) Error!u32 {
         const ports = try self.arena.alloc([]const u8, n);
         for (ports, 1..) |*p, k| p.* = try std.fmt.allocPrint(self.arena, "p{d}", .{k});
-        const sides = try self.arena.alloc(?PortSide, n);
-        @memset(sides, null);
-        const order = try self.arena.alloc(u16, n);
-        for (order, 0..) |*o, k| o.* = @intCast(1000 + k);
         const id: u32 = @intCast(self.defs.items.len);
-        try self.defs.append(self.arena, .{ .name = try self.arena.dupe(u8, master), .ports = ports, .sides = sides, .order = order, .expand = false, .body = "" });
+        try self.defs.append(self.arena, try undirected(self.arena, try self.arena.dupe(u8, master), ports));
         try self.def_ids.put(self.arena, self.defs.items[id].name, id);
         return id;
+    }
+
+    /// A definition no directive has touched: no port on a side yet, each
+    /// after every port a directive will place, in port order.
+    fn undirected(arena: Allocator, name: []const u8, ports: []const []const u8) Allocator.Error!Subckt {
+        const sides = try arena.alloc(?PortSide, ports.len);
+        @memset(sides, null);
+        const order = try arena.alloc(u16, ports.len);
+        for (order, 0..) |*o, k| o.* = @intCast(1000 + k);
+        return .{ .name = name, .ports = ports, .sides = sides, .order = order, .expand = false, .body = "" };
     }
 
     fn pinCount(self: *Pass, rule: CardRule, f: []const []const u8) Error!u8 {
@@ -709,7 +714,9 @@ const Pass = struct {
             var cards = Cards.init(text, si == 0);
             while (try cards.next(self.gpa, self.fields)) |f| {
                 if (!isDot(f)) continue;
-                const cmd = std.meta.stringToEnum(Directive, f[0][1..]) orelse continue;
+                // `.hb` is the one analysis ngspice has and `analysis.Kind` leaves out.
+                if (eql(f[0], ".hb")) return self.fail(error.UnsupportedAnalysis, si, &cards, f[0]);
+                const cmd = std.meta.stringToEnum(analysis.Kind, f[0][1..]) orelse continue;
                 const a = parseAnalysis(cmd, f, resolve, self.arena) catch |err|
                     return self.fail(err, si, &cards, f[0]);
                 try list.append(self.arena, a);
@@ -771,8 +778,6 @@ const card_rules: [26]?CardRule = blk: {
 // Analyses
 // ===========================================================================
 
-const Directive = enum { op, dc, ac, disto, noise, pz, sens, tf, tran, pss, sp, hb };
-
 const Resolver = struct {
     nets: *const std.StringHashMapUnmanaged(VertexId),
     devices: *const std.StringHashMapUnmanaged(EdgeId),
@@ -828,11 +833,9 @@ const Cursor = struct {
     }
 };
 
-fn parseAnalysis(cmd: Directive, f: []const []const u8, r: Resolver, arena: Allocator) Error!Analysis {
+fn parseAnalysis(cmd: analysis.Kind, f: []const []const u8, r: Resolver, arena: Allocator) Error!Analysis {
     var c: Cursor = .{ .f = f };
     const a: Analysis = switch (cmd) {
-        .hb => return error.UnsupportedAnalysis,
-
         .op => .op,
 
         .dc => .{ .dc = .{

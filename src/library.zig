@@ -491,45 +491,105 @@ pub const PortRole = enum(u8) { rail, inp, inn, in, out, other };
 
 const netlist_max_pins = 7;
 
+/// What a name says a net is: a rail, a bias line, a reference, an
+/// amplifier's non-inverting, inverting or single input, an output.
+const Named = enum(u8) { supply, ground, bias, ref, inp, inn, in, out };
+
+/// How a reader takes a spelling: not at all, as the whole name, as the
+/// name's start, or as its start with digits alone after it.
+const Match = enum(u8) { no, whole, start, numbered };
+
+/// A reader of `spellings`: a net's role (R1, `schematic.guessRoles`), a
+/// generated block's side for a port (`defaultSide`), a port's role
+/// (`portRole`).
+const Reader = enum(u8) { net, side, role };
+
+/// The one table of what a name says: spellings (one string, a blank
+/// between two: slices of them cost the plugin 135 B), what they name, and
+/// how each `Reader` takes them, in its order. A reader that takes a
+/// spelling `whole`, or not at all, where another takes its `start` is
+/// narrower than the general form, and the drawings stand on it. No reader
+/// takes a name two ways.
+const spellings = [_]struct { []const u8, Named, [3]Match }{
+    .{ "vdd vcc", .supply, .{ .start, .start, .start } },
+    .{ "avdd dvdd", .supply, .{ .start, .start, .no } },
+    .{ "vpp", .supply, .{ .whole, .start, .no } },
+    .{ "v+", .supply, .{ .whole, .no, .no } },
+    .{ "gnd vss vee", .ground, .{ .whole, .start, .start } },
+    .{ "agnd dgnd", .ground, .{ .whole, .start, .no } },
+    .{ "vssa gnda v-", .ground, .{ .whole, .no, .no } },
+    // Net 0 is the ground by its index, whatever it is called.
+    .{ "0", .ground, .{ .no, .whole, .no } },
+    // Only `vb`, `vb1`, … come in from below: a `vbias` port stays left.
+    .{ "vb", .bias, .{ .start, .numbered, .no } },
+    .{ "bias", .bias, .{ .start, .no, .no } },
+    .{ "vref", .ref, .{ .start, .no, .no } },
+    .{ "vin in", .in, .{ .start, .no, .whole } },
+    .{ "a", .in, .{ .no, .no, .whole } },
+    .{ "vip inp in+ vp vin+", .inp, .{ .no, .no, .whole } },
+    .{ "inn in- vn vin-", .inn, .{ .no, .no, .whole } },
+    .{ "vout out", .out, .{ .start, .start, .whole } },
+    .{ "vo", .out, .{ .whole, .whole, .whole } },
+    .{ "o", .out, .{ .no, .whole, .whole } },
+    .{ "y", .out, .{ .no, .no, .whole } },
+    .{ "vop von vo+ vo-", .out, .{ .no, .whole, .no } },
+};
+
 /// What a block's port is by its name alone, among the definition's
 /// `ports`: an amplifier's inputs (`vin` is the inverting one beside a
 /// `vip`, `inp`, `in+`, `vp` or `vin+`), its output, a rail, or anything
 /// else.
 pub fn portRole(ports: []const []const u8, name: []const u8) PortRole {
-    const eq = std.ascii.eqlIgnoreCase;
-    const plus = [_][]const u8{ "vip", "inp", "in+", "vp", "vin+" };
-    const has_plus = found: for (ports) |q| {
-        for (plus) |w| if (eq(q, w)) break :found true;
-    } else false;
-    for ([_][]const u8{ "vdd", "vcc", "vss", "gnd", "vee" }) |w| if (std.ascii.startsWithIgnoreCase(name, w)) return .rail;
-    for (plus) |w| if (eq(name, w)) return .inp;
-    for ([_][]const u8{ "inn", "in-", "vn", "vin-" }) |w| if (eq(name, w)) return .inn;
-    if (eq(name, "vin") and has_plus) return .inn;
-    for ([_][]const u8{ "vin", "in", "a" }) |w| if (eq(name, w)) return .in;
-    for ([_][]const u8{ "vout", "out", "vo", "y", "o" }) |w| if (eq(name, w)) return .out;
-    return .other;
+    if (std.ascii.eqlIgnoreCase(name, "vin")) for (ports) |q| if (named(q, .role) == .inp) return .inn;
+    return switch (named(name, .role) orelse return .other) {
+        .supply, .ground => .rail,
+        .inp => .inp,
+        .inn => .inn,
+        .in => .in,
+        .out => .out,
+        .bias, .ref => .other,
+    };
 }
 
-/// A port's side when no directive names one.
-fn defaultSide(port: []const u8) netlist.PortSide {
-    const starts = struct {
-        fn f(s: []const u8, xs: []const []const u8) bool {
-            for (xs) |x| if (std.mem.startsWith(u8, s, x)) return true;
-            return false;
+/// What `name` says to `reader`, a tag of `spellings`' second column, or
+/// null: nothing. A net's name and a port's are lowercase
+/// (`netlist.parse`); only the `role` reader takes any case.
+pub fn named(name: []const u8, reader: Reader) ?Named {
+    for (spellings) |row| {
+        var words = std.mem.tokenizeScalar(u8, row[0], ' ');
+        while (words.next()) |word| {
+            const head = name[0..@min(name.len, word.len)];
+            // Narrower than the general form, a plain `eql` on names the parser
+            // has lowercased: a port's role alone ignores case, as it always has.
+            const same = if (reader == .role) std.ascii.eqlIgnoreCase(head, word) else std.mem.eql(u8, head, word);
+            if (!same) continue;
+            const rest = name[word.len..];
+            const taken = switch (row[2][@backingInt(reader)]) {
+                .no => false,
+                .whole => rest.len == 0,
+                .start => true,
+                .numbered => for (rest) |ch| {
+                    if (!std.ascii.isDigit(ch)) break false;
+                } else true,
+            };
+            if (taken) return row[1];
         }
-    }.f;
-    if (starts(port, &.{ "vdd", "vcc", "avdd", "dvdd", "vpp" })) return .top;
-    if (starts(port, &.{ "gnd", "vss", "vee", "agnd", "dgnd" }) or std.mem.eql(u8, port, "0")) return .bottom;
-    if (starts(port, &.{ "out", "vout" })) return .right;
-    for ([_][]const u8{ "o", "vo", "vop", "von", "vo+", "vo-" }) |w| if (std.mem.eql(u8, port, w)) return .right;
-    // A bias line comes in from below, as people draw a block's: `vb1` to
-    // `vb3` in 399 of 618 ports of 5,263 hand-drawn schematics, left in 61.
-    if (std.mem.startsWith(u8, port, "vb")) {
-        for (port[2..]) |ch| {
-            if (!std.ascii.isDigit(ch)) break;
-        } else return .bottom;
     }
-    return .left;
+    return null;
+}
+
+/// A port's side when no directive names one, by the two orders: rows
+/// order potential (a supply above, a ground below), columns order signal
+/// (an output leaves right, the rest enters left).
+fn defaultSide(port: []const u8) netlist.PortSide {
+    return switch (named(port, .side) orelse return .left) {
+        .supply => .top,
+        // A bias line comes in from below, as people draw a block's: `vb1` to
+        // `vb3` in 399 of 618 ports of 5,263 hand-drawn schematics, left in 61.
+        .ground, .bias => .bottom,
+        .out => .right,
+        .ref, .inp, .inn, .in => .left,
+    };
 }
 
 /// Slot k of `count` pins across `m` rows: centred, skipping the middle row
@@ -728,6 +788,38 @@ test "library: a generated block has an output named vo on its right and its bia
     try testing.expectEqual(Side.right, c.side(6, .r0).?);
     // The inverting input above the other.
     try testing.expect(c.terminals[5].at.y < c.terminals[4].at.y);
+}
+
+test "library: one table reads a name three ways, each as its own list did" {
+    // Oracle: the three lists `spellings` replaced (R1's names, a block's
+    // sides, a port's roles), read off them by hand where they differ.
+    const cases = [_]struct { []const u8, ?Named, netlist.PortSide, PortRole }{
+        .{ "vdd3", .supply, .top, .rail },
+        .{ "avdd", .supply, .top, .other },
+        .{ "vpp2", null, .top, .other },
+        .{ "v+", .supply, .left, .other },
+        .{ "gnd1", null, .bottom, .rail },
+        .{ "agnd", .ground, .bottom, .other },
+        .{ "v-", .ground, .left, .other },
+        .{ "0", null, .bottom, .other },
+        .{ "vb2", .bias, .bottom, .other },
+        .{ "vbias", .bias, .left, .other },
+        .{ "vref1", .ref, .left, .other },
+        .{ "inp", .in, .left, .inp },
+        .{ "vn", null, .left, .inn },
+        .{ "out2", .out, .right, .other },
+        .{ "von", null, .right, .other },
+        .{ "y", null, .left, .out },
+        .{ "VDD", null, .left, .rail },
+    };
+    for (cases) |c| {
+        try testing.expectEqual(c[1], named(c[0], .net));
+        try testing.expectEqual(c[2], defaultSide(c[0]));
+        try testing.expectEqual(c[3], portRole(&.{}, c[0]));
+    }
+    // `vin` is the inverting input only beside a non-inverting one.
+    try testing.expectEqual(PortRole.inn, portRole(&.{ "vip", "vin" }, "vin"));
+    try testing.expectEqual(PortRole.in, portRole(&.{ "vin", "out" }, "vin"));
 }
 
 test "library: a PDK model name says which MOS it is" {

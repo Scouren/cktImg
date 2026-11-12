@@ -71,14 +71,11 @@ pub const Verb = enum(u8) {
     /// The rung a verb stands on: 1 meaning, 2 relations, 3 cells, 4
     /// geometry, 5 wires; 0 for `unknown`.
     pub fn rung(v: Verb) u8 {
-        if (v == .unknown) return 0;
-        if (@backingInt(v) <= @backingInt(Verb.expand)) return 1;
-        if (@backingInt(v) <= @backingInt(Verb.first)) return 2;
-        return switch (v) {
-            .cell => 3,
-            .at, .refdes => 4,
-            else => 5,
-        };
+        // The last verb of each rung: the enum is in rung order.
+        for ([_]Verb{ .expand, .first, .cell, .refdes, .route }, 1..) |last, r| {
+            if (@backingInt(v) <= @backingInt(last)) return @intCast(r);
+        }
+        return 0;
     }
 };
 
@@ -272,23 +269,17 @@ pub fn int(word: []const u8) ?i32 {
 /// The verb `word` names, reading a second word where the verb has two
 /// (`group pair`, `grouping off`, `symmetry off`).
 fn verbOf(word: []const u8, it: *std.mem.TokenIterator(u8, .any)) Verb {
-    if (eql(word, "group")) {
-        const kind = it.next() orelse return .unknown;
-        inline for (.{ Verb.pair, .mirror, .bank, .stack, .cross }) |v| {
-            if (eql(kind, @tagName(v))) return v;
-        }
-        return .unknown;
-    }
     if (eql(word, "grouping")) return if (eql(it.next() orelse "", "off")) .off else .unknown;
     if (eql(word, "symmetry")) return if (eql(it.next() orelse "", "off")) .symmetry_off else .unknown;
+    const group = eql(word, "group");
+    const tag = if (group) (it.next() orelse return .unknown) else word;
     var buf: [16]u8 = undefined;
-    if (word.len > buf.len) return .unknown;
-    const v = std.meta.stringToEnum(Verb, std.ascii.lowerString(&buf, word)) orelse return .unknown;
-    // Two-word verbs are read above, never by their tag.
-    return switch (v) {
-        .pair, .mirror, .bank, .stack, .cross, .off, .symmetry_off => .unknown,
-        else => v,
-    };
+    if (tag.len > buf.len) return .unknown;
+    const v = std.meta.stringToEnum(Verb, std.ascii.lowerString(&buf, tag)) orelse return .unknown;
+    // The group kinds lead the enum and are read after `group`, nothing else
+    // is; the other two-word verbs are read above, never by their tag.
+    const kind = @backingInt(v) < @backingInt(Verb.nogroup);
+    return if (kind != group or v == .off or v == .symmetry_off) .unknown else v;
 }
 
 test "read: the forms, weak, and what is no verb" {
