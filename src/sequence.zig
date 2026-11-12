@@ -8,8 +8,8 @@
 //! first; a line that closes a cycle is dropped with its preferred conflict.
 //! Devices one line names stand in different columns, so a link the engine
 //! would make between them is not made. A line on mated devices also states
-//! its mirror image (reversed), kept where it fits; the columns' order then
-//! drops the mates it no longer mirrors.
+//! its mirror image (reversed), weighed after every line and kept where it
+//! fits; the columns' order then drops the mates it no longer mirrors.
 //!
 //! Contents:
 //! - `pub const Sequence = struct`, `Sequence.refuses(s: *const Sequence, gpa: Allocator, above: []const u32, u: u32, l: u32) Allocator.Error!bool`
@@ -115,6 +115,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     @memset(between, .{ none, none });
     const placed_by = try arena.alloc(u32, n);
     @memset(placed_by, none);
+    var images: std.ArrayList(struct { line: u32, devices: []const u32 }) = .empty;
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         if (nl.hints[i].verb != .order or verdicts[i] != null) continue;
         try admitted.append(gpa, i);
@@ -135,14 +136,21 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             image[line.len - 1 - k] = m;
         } else true;
         if (!whole or std.mem.eql(u32, image, line)) continue;
+        try images.append(arena, .{ .line = i, .devices = image });
+    }
+    // The images after every line, the strongest line's first: a line
+    // admitted later stands, and the image that would close a cycle with
+    // it goes.
+    for (images.items) |image| {
         const before = left.items.len;
-        try columnEdges(arena, form, image, &left);
+        try columnEdges(arena, form, image.devices, &left);
         if (!try devicesAcyclic(gpa, n, left.items)) {
             left.shrinkRetainingCapacity(before);
             continue;
         }
-        try place(form, image, between, placed_by, i);
+        try place(form, image.devices, between, placed_by, image.line);
     }
+    assert(try devicesAcyclic(gpa, n, left.items));
     return .{ .left = left.items, .between = between, .placed_by = placed_by };
 }
 

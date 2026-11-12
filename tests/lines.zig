@@ -365,6 +365,25 @@ test "lines: a line admitted after another line's mirror image stands, and the i
     try std.testing.expect(r.at("m2").y < r.at("m0").y);
 }
 
+test "lines: an order line admitted after another order line's mirror image stands, and the image goes" {
+    // Oracle: the lines themselves, read off the drawing. `order m0 m1`
+    // also states its image reversed, `order m2 m3`; `order m3 m2` says the
+    // opposite of the image and of no line. Both lines are held, in either
+    // order of the deck. The image stayed, the columns had no order, and
+    // the engine aborted.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const mirrors = "Two mirrors over a pair\n.model nch nmos\n.model pch pmos\nM0 o1 a vdd vdd pch\nM1 a a vdd vdd pch\n" ++
+        "M2 b b vdd vdd pch\nM3 o2 b vdd vdd pch\nM4 b in2 t 0 nch\nM5 a in1 t 0 nch\nI1 t 0 1m\nR1 o1 0 1k\nR2 o2 0 1k\n";
+    for ([_][]const u8{ "*@ order m3 m2\n*@ order m0 m1\n", "*@ order m0 m1\n*@ order m3 m2\n" }) |lines| {
+        const r = try run(f.arena(), f.lib, mirrors, lines);
+        try expectState(r.verdict("*@ order m0 m1"), .honoured, .ok);
+        try expectState(r.verdict("*@ order m3 m2"), .honoured, .ok);
+        try std.testing.expect(r.at("m0").x < r.at("m1").x);
+        try std.testing.expect(r.at("m3").x < r.at("m2").x);
+    }
+}
+
 test "lines: an at that gives way stands on its lattice place, and an at on that place gives way too" {
     // Oracle: the guarantee (no symbol on another), checked by `run`, and
     // the drawing with no line. M4 is put on M3 and gives way; M1 is put
