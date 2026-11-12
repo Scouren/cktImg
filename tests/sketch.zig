@@ -1292,3 +1292,26 @@ test "sketch: a gate alone on the junction of a column stands level with it; not
     const chain = try draw(arena, lib, &.{"Two stages\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 a in 0 0 nch\nR1 vdd a 10k\nM2 out a 0 0 nch\nR2 vdd out 10k\n"}, .{});
     try std.testing.expectEqual(pinOf(&chain, "m1", 2).y, pinOf(&chain, "m2", 2).y);
 }
+
+test "sketch: a shelf with rows of the whole left empty in it is still one shelf" {
+    // Oracle: the wires themselves, as in the shelves' own test. Eight
+    // stages wrap into two shelves of four; the first stage's load is three
+    // resistors deep, so every stage's transistor stands three rows under
+    // its load. In the second shelf the rows between are empty: its stages'
+    // nets are still wires, and only `n4`, which passes from one shelf to
+    // the other, carries names. The empty rows read as a shelf's end, and
+    // `n5` to `n8` were cut.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "Deep first stage\n*@ shelf 4\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 n1 in 0 0 nch\nRA vdd a 1k\nRB a b 1k\nRC b n1 1k\n" ++
+        "M2 n2 n1 0 0 nch\nR2 vdd n2 1k\nM3 n3 n2 0 0 nch\nR3 vdd n3 1k\nM4 n4 n3 0 0 nch\nR4 vdd n4 1k\n" ++
+        "M5 n5 n4 0 0 nch\nR5 vdd n5 1k\nM6 n6 n5 0 0 nch\nR6 vdd n6 1k\nM7 n7 n6 0 0 nch\nR7 vdd n7 1k\nM8 n8 n7 0 0 nch\nR8 vdd n8 1k\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    for (p.labels) |l| try std.testing.expectEqualStrings("n4", p.net_name[l.net]);
+    try std.testing.expect(p.labels.len > 0);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

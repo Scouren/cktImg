@@ -11,7 +11,9 @@
 //! deck with `cell` or `at` lines is not wrapped: those are places of the
 //! drawing as it stands (a stay, `weak at`, aside: relaid, a deck wraps as
 //! it did). The shelves are read off the cells, rows `shelf_gap` apart, so
-//! the engine's own decisions pasted back give the shelves they came from.
+//! the engine's own decisions pasted back give the shelves they came from;
+//! a shelf's rows that only another shelf's columns filled are closed up,
+//! so no two rows of one shelf stand that far apart.
 //! The shelf's width is the layout's (`config.Layout.shelf`, 8 columns; 0
 //! keeps one row); `*@ shelf <columns>` sets it for a deck, `*@ shelf off`
 //! keeps one row.
@@ -134,9 +136,40 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         try starts.append(gpa, col[first]);
     }
     if (starts.items.len == 1) return;
+    const lift = try gpa.alloc(i32, n);
+    defer gpa.free(lift);
+    @memset(lift, 0);
+
+    // A shelf holds a few of the row's columns, so some rows of the whole
+    // are empty in it: closed up, or two of its rows `shelf_gap` apart would
+    // read as two shelves. A gap keeps its parity (device rows even, the
+    // channels between them odd).
+    const count = starts.items.len;
+    const rows = try gpa.alloc(i32, n);
+    defer gpa.free(rows);
+    for (0..count) |s| {
+        var held: usize = 0;
+        for (0..n) |d| if (drawn[d] and shelfOf(starts.items, x[d]) == s) {
+            rows[held] = y[d];
+            held += 1;
+        };
+        std.mem.sort(i32, rows[0..held], {}, std.sort.asc(i32));
+        // Per device, how far up it moves: the room closed above its row.
+        for (0..n) |d| {
+            if (!drawn[d] or shelfOf(starts.items, x[d]) != s) continue;
+            var closed: i32 = 0;
+            for (rows[0..held -| 1], rows[1..held]) |a, b| {
+                if (b > y[d]) break;
+                if (b - a > 2) closed += b - a - 2 + @mod(b - a, 2);
+            }
+            lift[d] = closed;
+        }
+    }
+    for (0..n) |d| if (drawn[d]) {
+        y[d] -= lift[d];
+    };
 
     // Each shelf's top and bottom row, then its place under the one before.
-    const count = starts.items.len;
     const top = try gpa.alloc(i32, count);
     defer gpa.free(top);
     const bottom = try gpa.alloc(i32, count);

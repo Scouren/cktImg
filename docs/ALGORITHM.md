@@ -299,7 +299,9 @@ devices a `row` or `order` line names together, and a deck with `cell` or
 `at` lines is not wrapped: those are places of the drawing as it stands (a
 `weak at` stay aside: relaid, a deck wraps as it did). The shelves are read
 off the cells, bands of rows six lattice rows apart, so the engine's own
-decisions pasted back give the shelves they came from. The width is the
+decisions pasted back give the shelves they came from; rows of the whole
+that are empty in a shelf are closed up in it, so two of its rows never
+stand a shelf's gap apart. The width is the
 layout's `shelf` key (8; 0 keeps one row); `*@ shelf <columns>` sets it for
 one deck, `*@ shelf off` keeps one row.
 
