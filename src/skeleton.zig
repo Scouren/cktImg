@@ -48,6 +48,7 @@ const bridges = @import("bridges.zig");
 const relations = @import("relations.zig");
 const sequence = @import("sequence.zig");
 const mates = @import("mates.zig");
+const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 
@@ -74,6 +75,9 @@ pub const Skeleton = struct {
     /// Its cell; the smallest of each axis is 0.
     x: []const i32,
     y: []const i32,
+    /// The row of columns its cell is in, top 0 (`wrap.zig`): a net between
+    /// two is joined by name.
+    shelf: []const u32,
     /// Twice the x of the axis mated devices mirror about, if any.
     axis2: ?i32,
     /// Where cell (0, 0) is in the frame `cell` lines use (before the cells
@@ -195,11 +199,14 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
     gates(nl, roles, st, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, verdicts);
+    const shelf = try arena.alloc(u32, n);
+    @memset(shelf, 0);
+    try wrap.shelves(gpa, nl, roles, drawn, form, mate, x, y, shelf, verdicts);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
     const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;
     if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
-    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
+    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .shelf = shelf, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
 }
 
 /// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
@@ -209,7 +216,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
 pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
     const c = &nl.graph;
     const n = c.edgeCount();
-    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len }) |len| {
+    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len, sk.shelf.len }) |len| {
         if (len != n) return error.WrongLength;
     }
     for (0..n) |d| {

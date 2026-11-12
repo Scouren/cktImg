@@ -975,3 +975,30 @@ test "sketch: two blocks stacked in one column stand clear, no pin of one on a p
         try std.testing.expect(a.x != b.x or a.y != b.y);
     };
 }
+
+test "sketch: a net between two shelves is joined by name, a shelf's own nets by wire" {
+    // Oracle: the wires themselves. Twelve stages in a chain wrap into two
+    // shelves of six: the one net that passes from the sixth stage to the
+    // seventh carries names and no wire runs from shelf to shelf; every
+    // other stage's net is a wire with no name; nothing crosses.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const p = try draw(arena_state.allocator(), lib, &.{support.wide_chain}, .{});
+    var named: usize = 0;
+    for (p.net_name, 0..) |name, net| {
+        var names: usize = 0;
+        for (p.labels) |l| names += @intFromBool(l.net == net);
+        if (names == 0) continue;
+        named += 1;
+        try std.testing.expectEqualStrings("n6", name);
+    }
+    try std.testing.expectEqual(1, named);
+    try std.testing.expectEqual(0, crossings(&p));
+    // The seventh stage stands under the first six.
+    try std.testing.expect(pinOf(&p, "m7", 0).y > pinOf(&p, "m6", 2).y);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

@@ -31,6 +31,15 @@ const recorded = [golden.decks.len][]const u8{
     "telescopic_se x 0/0 y 6/6 rows 0+0-0 cols 6+0-0 sym 0/0 gates 4/4 labels +[] -[]",
 };
 
+/// Twelve common-source stages in a chain, then a differential pair with
+/// its loads and tail: a row of fifteen columns, a mirrored core among them.
+const wide_deck = "wide\n.model nch nmos level=1\n.model pch pmos level=1\nVDD vdd 0 1.8\n" ++
+    "M1 n1 in 0 0 nch\nR1 vdd n1 1k\nM2 n2 n1 0 0 nch\nR2 vdd n2 1k\nM3 n3 n2 0 0 nch\nR3 vdd n3 1k\n" ++
+    "M4 n4 n3 0 0 nch\nR4 vdd n4 1k\nM5 n5 n4 0 0 nch\nR5 vdd n5 1k\nM6 n6 n5 0 0 nch\nR6 vdd n6 1k\n" ++
+    "M7 n7 n6 0 0 nch\nR7 vdd n7 1k\nM8 n8 n7 0 0 nch\nR8 vdd n8 1k\nM9 n9 n8 0 0 nch\nR9 vdd n9 1k\n" ++
+    "M10 n10 n9 0 0 nch\nR10 vdd n10 1k\nM11 n11 n10 0 0 nch\nR11 vdd n11 1k\nM12 n12 n11 0 0 nch\nR12 vdd n12 1k\n" ++
+    "MA oa n12 t 0 nch\nMB ob ref t 0 nch\nRA vdd oa 1k\nRB vdd ob 1k\nMT t vb 0 0 nch\n";
+
 const Laid = struct { nl: np.netlist.Netlist, st: structure.Structure, sk: skeleton.Skeleton };
 
 // ---- private ----
@@ -188,4 +197,52 @@ test "skeleton: a column only a bridge joins to the rest stands beside the colum
     const q2 = l.sk.x[l.nl.device("q2").?.index()];
     try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[l.nl.device("c3").?.index()]);
     try std.testing.expect(@min(@abs(rl - q1), @abs(rl - q2)) <= 8);
+}
+
+test "skeleton: a row of more than eight columns wraps into shelves, a pair never parted; `*@ shelf` sets the width" {
+    // Oracle: a page as people fill it (their drawings of over 30 devices
+    // are 20 units wide at the median, the one row of columns was 37), and
+    // the cut's own contract: every shelf at most the width asked where a
+    // cut is allowed, each under the one before, the columns of a shelf in
+    // the order they had, a device and its mirror image in one shelf about
+    // one axis. `*@ shelf off` is the one row again.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const flat = try lay(arena, wide_deck ++ "*@ shelf off\n");
+    for (flat.sk.shelf) |s| try std.testing.expectEqual(0, s);
+    try std.testing.expectEqual(.honoured, flat.sk.verdicts[0].?.state);
+    const bad = try lay(arena, wide_deck ++ "*@ shelf wide\n");
+    try std.testing.expectEqual(.rejected, bad.sk.verdicts[0].?.state);
+    for ([_]struct { line: []const u8, cols: usize, shelves: u32 }{
+        .{ .line = "", .cols = 8, .shelves = 2 },
+        .{ .line = "*@ shelf 5\n", .cols = 5, .shelves = 3 },
+    }) |case| {
+        const l = try lay(arena, try std.mem.concat(arena, u8, &.{ wide_deck, case.line }));
+        errdefer std.debug.print("{s}=> {s}\n", .{ case.line, cells(arena, &l) catch "" });
+        const n = l.sk.x.len;
+        var last: u32 = 0;
+        for (0..n) |d| {
+            if (l.sk.drawn[d]) last = @max(last, l.sk.shelf[d]);
+        }
+        try std.testing.expectEqual(case.shelves - 1, last);
+        for (0..n) |a| {
+            if (!l.sk.drawn[a] or l.sk.form[a] != .vertical) continue;
+            // The shelf's width: the distinct columns left of or at `a`.
+            var cols: std.AutoHashMapUnmanaged(i32, void) = .empty;
+            for (0..n) |b| {
+                if (!l.sk.drawn[b] or l.sk.form[b] != .vertical) continue;
+                if (l.sk.shelf[b] == l.sk.shelf[a]) try cols.put(arena, l.sk.x[b], {});
+                // A later shelf stands under an earlier one.
+                if (l.sk.shelf[b] > l.sk.shelf[a]) try std.testing.expect(l.sk.y[b] > l.sk.y[a]);
+                // Within a shelf the columns keep the order of the one row.
+                if (l.sk.shelf[b] == l.sk.shelf[a] and flat.sk.x[a] < flat.sk.x[b]) try std.testing.expect(l.sk.x[a] < l.sk.x[b]);
+            }
+            try std.testing.expect(cols.count() <= case.cols);
+            const m = l.st.device_mate[a];
+            if (m == structure.none or !l.sk.drawn[m]) continue;
+            try std.testing.expectEqual(l.sk.shelf[a], l.sk.shelf[m]);
+            try std.testing.expectEqual(l.sk.axis2.?, l.sk.x[a] + l.sk.x[m]);
+        }
+    }
 }

@@ -30,6 +30,7 @@ when two pins share a net (a diode-connected gate).
 | 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side | — | strong |
 | 2 | `rail <net> bar\|each` | a supply or ground as one bar or a symbol per pin | — | strong |
 | 2 | `first <nets>` | nets wired before the rest, in this order | — | strong |
+| 2 | `shelf <columns>\|off` | how many device columns a row of the drawing holds before it wraps into rows (8); `off`: one row | — | strong |
 | 3 | `cell <dev> <col> <row>` | the lattice cell, in the skeleton's own frame (before it shifts the drawing to start at 0, so moving one device renumbers nothing); a bridge may take any row | distinct cells (I1) | weak |
 | 4 | `at <dev> <x> <y> [R0..MR270]` | coordinates in symbol units (decimals, rounded to the nearest whole target unit: four places are exact for any unit under 5000, so an editor's snapped move reads back exactly), orientation | no symbol overlap (H5); pins clear of other nets | weak |
 | 4 | `refdes <dev> left\|right\|above\|below` | where the device's name goes | clear of symbols and wires | weak |

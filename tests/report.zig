@@ -34,6 +34,8 @@ test "report: a deck plus its exported decisions, rungs 1 to 4, recognition off,
     var decks: std.ArrayList(struct { []const u8, []const u8 }) = .empty;
     for (golden.decks) |d| try decks.append(arena, .{ d.name, d.spice });
     for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
+    // A drawing wrapped into shelves: its cells give its shelves back.
+    try decks.append(arena, .{ "wide_chain", support.wide_chain });
     var bad: usize = 0;
     for (decks.items) |d| {
         const nl = try np.netlist.parse(arena, &.{d[1]}, null);

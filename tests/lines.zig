@@ -393,6 +393,8 @@ test "lines: a deck relaid from its last drawing lays again only what its struct
         // The other half makes the circuit symmetric: the tail moves onto
         // the axis, the first half stays.
         .{ .was = half, .now = ota, .moved = 1 },
+        // A drawing wrapped into shelves wraps as it did: nothing moves.
+        .{ .was = support.wide_chain, .now = support.wide_chain, .moved = 0 },
     }) |c| {
         const was = try run(f.arena(), f.lib, c.was, "");
         const fresh = try run(f.arena(), f.lib, c.now, "");

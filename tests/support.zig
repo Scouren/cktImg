@@ -3,6 +3,7 @@
 //!
 //! Contents:
 //! - `pub const symbols: *const [N:0]u8`
+//! - `pub const wide_chain`
 //! - `pub fn library(gpa: std.mem.Allocator) !*np.Library`
 //! - `pub fn freeLibrary(gpa: std.mem.Allocator, lib: *np.Library) void`
 //! - `pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
@@ -13,6 +14,14 @@ const std = @import("std");
 const np = @import("NetlistParser");
 
 pub const symbols = @embedFile("symbols.zon");
+
+/// Twelve common-source stages in a chain: a row of twelve columns, which
+/// wraps into two shelves of six with the net `n6` between them.
+pub const wide_chain = "chain\n.model nch nmos level=1\nVDD vdd 0 1.8\n" ++
+    "M1 n1 in 0 0 nch\nR1 vdd n1 1k\nM2 n2 n1 0 0 nch\nR2 vdd n2 1k\nM3 n3 n2 0 0 nch\nR3 vdd n3 1k\n" ++
+    "M4 n4 n3 0 0 nch\nR4 vdd n4 1k\nM5 n5 n4 0 0 nch\nR5 vdd n5 1k\nM6 n6 n5 0 0 nch\nR6 vdd n6 1k\n" ++
+    "M7 n7 n6 0 0 nch\nR7 vdd n7 1k\nM8 n8 n7 0 0 nch\nR8 vdd n8 1k\nM9 n9 n8 0 0 nch\nR9 vdd n9 1k\n" ++
+    "M10 n10 n9 0 0 nch\nR10 vdd n10 1k\nM11 n11 n10 0 0 nch\nR11 vdd n11 1k\nM12 out n11 0 0 nch\nR12 vdd out 1k\n";
 
 /// The standard symbol set (`symbols.zon`), on the heap so that schematics
 /// can point at it while their owner moves.

@@ -118,7 +118,9 @@ gives each a verdict (`hints.Verdict`): honoured, relaxed, dropped (with
   mated devices, kept where it fits; a mate an order line moves off its
   mirror is dropped. `label`, `wire [ladder|trunk|route]`, `port`, `rail
   bar|each` and `first` set how a net is drawn (`netlines.zig`): a `wire`
-  with no room falls back to names, reported `no_room`.
+  with no room falls back to names, reported `no_room`. `shelf <columns>`
+  sets how many device columns a row of the drawing holds before it wraps
+  (8), `shelf off` keeps one row (`wrap.zig`).
 - **Checked.** `report.verdicts` gathers every stage's verdicts and tests
   each honoured line on the finished `Placed` (`checks.drawnAs`: a row one
   y, an order increasing x, a gate on its side, a net named or wired): a
@@ -252,6 +254,22 @@ axis when an end net lies on it, else toward an input's side or away from the
 axis. Any other bridge (an op-amp) stands midway between its nets' two
 nearest columns. A chain whose mate stands already mirrors it; taken slots
 move it outward.
+
+**Shelves** (`wrap.shelves`). A row of more than eight device columns (a
+person's page: their drawings of over 30 devices are 20 units wide at the
+median over 5,263 hand-drawn schematics, where one row of columns was 37)
+is cut into shelves of equal width, one under the other. Each cut goes to
+the gap within a third of a shelf of its place that the fewest nets pass
+(rails aside), never between a device and its mirror image: the mirrored
+core stays whole and keeps its x, and every other shelf starts at its left
+edge. An internal net between two shelves is joined by name, each shelf's
+pins of it wired (as a net over the crossing budget is). No cut parts the
+devices a `row` or `order` line names together, and a deck with `cell` or
+`at` lines is not wrapped: those are places of the drawing as it stands (a
+`weak at` stay aside: relaid, a deck wraps as it did). The shelves are read
+off the cells, bands of rows six lattice rows apart, so the engine's own
+decisions pasted back give the shelves they came from. `*@ shelf <columns>`
+sets the width, `*@ shelf off` keeps one row.
 
 **Gates.** Every transistor's gate faces the rest of its gate net, or away
 from the middle when that is a rail or it has none; then a differential
@@ -519,8 +537,8 @@ through a device or touching another net is a label at its pins.
 |------|-------|
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R1 a reference is an input, unless a drain makes it`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…`; `tools/json.zig`: `deck: a top cell's voltage source is a device of the circuit…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
-| skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps`, `skeleton: a resistor on the way down stands upright under the emitter it leaves…`, `skeleton: a column only a bridge joins to the rest stands beside the column the bridge leads to` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units`, `sketch: a bias gate carries a port symbol, not a written name`, `sketch: a bias net's pins standing near each other share one wire and one port`, `sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps`, `skeleton: a resistor on the way down stands upright under the emitter it leaves…`, `skeleton: a column only a bridge joins to the rest stands beside the column the bridge leads to`, `skeleton: a row of more than eight columns wraps into shelves, a pair never parted; `*@ shelf` sets the width` |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units`, `sketch: a bias gate carries a port symbol, not a written name`, `sketch: a bias net's pins standing near each other share one wire and one port`, `sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other`, `sketch: a net between two shelves is joined by name, a shelf's own nets by wire`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |

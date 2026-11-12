@@ -53,6 +53,7 @@ pub const Verb = enum(u8) {
     wire,
     port,
     rail,
+    shelf,
     first,
     cell,
     at,

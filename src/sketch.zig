@@ -154,6 +154,16 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(style);
     var thinned = lines;
     thinned.style = style;
+    // A net between two shelves is joined by name, each shelf's pins wired.
+    for (style, s.roles, 0..) |*sty, role, net| {
+        if (sty.* != .auto or role != .internal) continue;
+        var first: ?u32 = null;
+        for (nl.graph.incident(netlist.VertexId.from(@intCast(net)))) |e| {
+            if (!sk.drawn[e.index()]) continue;
+            if (first == null) first = sk.shelf[e.index()];
+            if (sk.shelf[e.index()] != first.?) sty.* = .cut;
+        }
+    }
     for (0..thin_rounds + 1) |round| {
         try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, &xy);
         const mirror = drawnMirror(s, sk, st);
