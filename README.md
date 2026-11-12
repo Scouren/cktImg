@@ -460,9 +460,10 @@ The drawing is closed up to those lengths, as a person draws it: columns
 `series` apart, stacked devices `stack` apart (half a unit, a person's
 pitch; `.stack = 1, .rail = 1, .terminal = 1, .tap = 1` is roomier). `.layout = .{ .compact = false }`
 keeps the roomier lattice instead. A net whose wire would cross more than
-`cross_max` other wires (6) is joined by name, its pins that stand near
+`cross_max` other wires (3) is joined by name, its pins that stand near
 each other still wired; `.cross_max = 2`
-is how sparingly a person crosses wires, at the price of more names.
+is how sparingly a person crosses wires, at the price of more names, and
+`.cross_max = 6` wires more and names less.
 A row of more than eight device columns wraps into rows, as people draw a
 large circuit, the nets between two rows joined by name; `.layout = .{ .shelf = 12 }`
 sets the width (`0`: one row), and `*@ shelf <columns>` or `*@ shelf off` in a

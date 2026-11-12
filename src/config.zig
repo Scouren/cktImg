@@ -60,9 +60,10 @@ pub const Layout = struct {
     compact: bool = true,
     /// The most wires of other nets (rails aside) one internal net's wire
     /// may cross: a net crossing more is joined by name, its near pins
-    /// still wired (`thin.zig`). People seldom draw more than two; the default names
-    /// about as many nets as they do.
-    cross_max: u32 = 6,
+    /// still wired (`thin.zig`). People seldom draw more than two; three
+    /// writes about as many names as they do (10,492 against their 11,371
+    /// over 5,263 hand-drawn schematics; two writes 12,241).
+    cross_max: u32 = 3,
     /// Device columns a row of the drawing holds before it wraps into rows
     /// of columns, one under the other (`wrap.zig`); 0 keeps one row. Eight
     /// is a person's page: drawn so, 5,263 reference circuits are as wide

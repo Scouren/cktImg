@@ -103,10 +103,10 @@ on a device overrides the relations on it.
   .rail = 1, .terminal = 1` for a roomier drawing). The drawing is closed up
   to those lengths
   (`.compact = true`, the default); `.compact = false` keeps the roomier
-  lattice, every row and column a full pitch apart. `.cross_max` (6) is the
+  lattice, every row and column a full pitch apart. `.cross_max` (3) is the
   most other wires one internal net's wire may cross before the net is
   joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
-  it for one with too many names; `*@ wire <net>` keeps one net wired.
+  it (6) for one with too many names; `*@ wire <net>` keeps one net wired.
   `.shelf` (8) is how many device columns a row holds before the drawing
   wraps into rows of columns: raise it for a wider page, `0` for one row;
   `*@ shelf <columns>|off` says so in one deck.

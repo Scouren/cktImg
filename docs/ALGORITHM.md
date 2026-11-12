@@ -357,7 +357,7 @@ gets a copy node on its own line.
 | `bend_cost` | 1 | what the router, and a trunk choosing its track, pay for a bend, in wire |
 | `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
 | `compact` | true | whether the drawing is closed up (below) |
-| `cross_max` | 6 | the most wires of other nets one internal net's wire may cross before the net is cut and joined by name (below) |
+| `cross_max` | 3 | the most wires of other nets one internal net's wire may cross before the net is cut and joined by name (below); 3 writes about as many names as people do |
 | `shelf` | 8 | device columns a row of the drawing holds before it wraps into rows of columns (Shelves, above); 0 keeps one row; a deck's `*@ shelf` line says otherwise for that deck |
 
 A length moves nothing to another row or column: rows, columns and order are
