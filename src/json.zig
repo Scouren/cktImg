@@ -13,8 +13,11 @@
 //! ```
 //!
 //! `pins` holds one entry per class terminal the card has. `bulk` is there
-//! only when the card has a node past them (a MOS body on a three-terminal
+//! only when the card has one node past them (a MOS body on a three-terminal
 //! symbol): its net, with no point, since the symbol draws no pin for it.
+//! With two or more nodes past them (a dependent source's control pair on a
+//! two-terminal symbol) the device has `"hidden": ["b", "0"]` instead, the
+//! nets in card order.
 //!
 //! Integers only; streamed, nothing allocated.
 
@@ -54,10 +57,18 @@ pub fn write(p: *const Placed, lib: *const Library, w: *Writer) Writer.Error!voi
             try w.writeAll(" }");
         }
         try w.writeAll("]");
-        // ponytail: only the first extra pin is kept; list them all if a class ever lacks two.
-        if (drawn < hi) {
+        // One pin past them is `bulk`; more (a dependent source's two
+        // control nodes) are `hidden`, in card order.
+        if (drawn + 1 == hi) {
             try w.writeAll(", \"bulk\": ");
             try netName(w, p, p.pin_net[drawn]);
+        } else if (drawn < hi) {
+            try w.writeAll(", \"hidden\": [");
+            for (drawn..hi) |pin| {
+                if (pin > drawn) try w.writeAll(", ");
+                try netName(w, p, p.pin_net[pin]);
+            }
+            try w.writeAll("]");
         }
         try w.writeAll(" }");
     }
@@ -149,4 +160,20 @@ test "json: a MOS body past the symbol's terminals is `bulk`, not a pin" {
     const doc = aw.written();
     try std.testing.expect(std.mem.indexOf(u8, doc, "\"bulk\": \"sub\"") != null);
     try std.testing.expect(std.mem.indexOf(u8, doc, "\"term\": \"\"") == null);
+}
+
+test "json: a dependent source's control nodes past its two terminals are `hidden`, in card order" {
+    // Oracle: the card. `Gm c 0 b 0 40m` on a two-terminal symbol draws
+    // `c` and `0`; a reader of the document still needs `b` and `0` to
+    // write the card back.
+    const gpa = std.testing.allocator;
+    var lib = Library.init(gpa);
+    defer lib.deinit();
+    _ = try lib.register(.{ .name = "cisource", .terminals = &.{ .{ .name = "out+", .at = .{ .x = -20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 20, .y = 0 } } } });
+    var p = try @import("root.zig").place(gpa, &.default, &lib, &.{"t\nRpi b 0 1k\nGm c 0 b 0 40m\nRo c 0 1k\n"}, null);
+    defer p.deinit();
+    var aw: Writer.Allocating = .init(gpa);
+    defer aw.deinit();
+    try write(&p, &lib, &aw.writer);
+    try std.testing.expect(std.mem.indexOf(u8, aw.written(), "\"hidden\": [\"b\", \"0\"]") != null);
 }

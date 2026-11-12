@@ -174,9 +174,10 @@ fn writeCircle(w: *Writer, op: []const u8, c: Pt, r: i32) Writer.Error!void {
 
 /// Two-pin classes: the `to[...]` bipole, drawn from pin 0 to pin 1.
 const bipoles = std.StaticStringMap([]const u8).initComptime(.{
-    .{ "res", "R" },      .{ "cap", "C" },     .{ "ind", "L" },
-    .{ "vsource", "V" },  .{ "isource", "I" }, .{ "diode", "D" },
-    .{ "bsource", "cV" }, .{ "ccvs", "cV" },   .{ "cccs", "cI" },
+    .{ "res", "R" },      .{ "cap", "C" },       .{ "ind", "L" },
+    .{ "vsource", "V" },  .{ "isource", "I" },   .{ "diode", "D" },
+    .{ "bsource", "cV" }, .{ "ccvs", "cV" },     .{ "cccs", "cI" },
+    .{ "vcvs", "cV" },    .{ "cisource", "cI" },
 });
 
 /// Node components: the CircuiTikZ shape, and for each class terminal (in

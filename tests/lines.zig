@@ -433,6 +433,25 @@ test "lines: a label on a net a via pins gives way to it" {
     try std.testing.expectEqualSlices(u32, &.{r.line("*@ via out 6,8")}, v.blocked_by);
 }
 
+test "lines: a net only a dependent source's control reads has nothing to name" {
+    // Oracle: the report's contract: `relaxed not_drawn` is kept for the
+    // engine's own faults. A dependent source's control pins are not drawn,
+    // so a net with no other pin in the circuit has no wire and no place
+    // for a name: a `label` on it is refused, as on a net no drawn device
+    // touches (found by `zig build fuzz` once it wrote `G` and `E` cards).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\A transconductor read from outside
+        \\Vin in 0 ac 1
+        \\G1 out 0 in 0 1m
+        \\R1 out 0 1k
+        \\
+    ;
+    const r = try run(f.arena(), f.lib, deck, "*@ label in\n");
+    try expectState(r.verdict("*@ label in"), .rejected, .not_placeable);
+}
+
 test "lines: a malformed line, an unknown name or verb are rejected" {
     var f = try Fixture.init();
     defer f.deinit();

@@ -1539,3 +1539,61 @@ test "sketch: a block stands left of the transistor whose gate it drives" {
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: a dependent source is an upright two-pin part, its control unwired; an ideal amplifier keeps its triangle" {
+    // Oracle: the hand drawings. In the 5,263 reference drawings every one
+    // of 414 voltage-controlled sources has two terminals, 398 of them one
+    // over the other (361 of 377 `G`, 37 of 37 `E`); the control is read off
+    // the element's value. Drawn with four wired pins, the 283 parts-only
+    // circuits holding one crossed 198 wires where their people crossed 11.
+    // An `E` with its low output on ground and a gain of a thousand or more
+    // is the book's ideal amplifier, and keeps its triangle and its wired
+    // inputs.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const model =
+        \\A transistor's small-signal model
+        \\Vi in 0 ac 1
+        \\Rs in b 1k
+        \\Rpi b 0 2.5k
+        \\Gm c 0 b 0 40m
+        \\Ro c 0 100k
+        \\E1 x 0 c 0 1
+        \\Rl x 0 5k
+        \\
+    ;
+    const p = try draw(arena, lib, &.{model}, .{});
+    for ([_][]const u8{ "gm", "e1" }) |name| {
+        const d = for (p.dev_name, 0..) |n, i| {
+            if (std.mem.eql(u8, n, name)) break i;
+        } else unreachable;
+        // Two terminals drawn, one over the other, the first on top.
+        try std.testing.expectEqual(2, lib.at(p.dev_class[d]).terminals.len);
+        try std.testing.expectEqual(pinOf(&p, name, 0).x, pinOf(&p, name, 1).x);
+        try std.testing.expect(pinOf(&p, name, 0).y < pinOf(&p, name, 1).y);
+        // No wire ends on a control pin: the card's third and fourth.
+        const lo, const hi = p.pinRange(d);
+        try std.testing.expectEqual(4, hi - lo);
+    }
+    try std.testing.expectEqual(0, crossings(&p));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    // The book's ideal amplifier: four terminals, its inputs wired.
+    const amp =
+        \\Non-inverting amplifier, ideal op-amp
+        \\Vin in 0 ac 1
+        \\E1 out 0 in fb 1e5
+        \\Rf out fb 10k
+        \\Rg fb 0 1k
+        \\
+    ;
+    const q = try draw(arena, lib, &.{amp}, .{});
+    const e = for (q.dev_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "e1")) break i;
+    } else unreachable;
+    try std.testing.expectEqual(4, lib.at(q.dev_class[e]).terminals.len);
+}

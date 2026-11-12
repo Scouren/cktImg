@@ -26,6 +26,7 @@ const netlist = @import("netlist.zig");
 const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
+const forms = @import("forms.zig");
 const relations = @import("relations.zig");
 const sch = @import("schematic.zig");
 
@@ -251,7 +252,7 @@ fn onRailWith(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind
 /// lower end is on a ground.
 fn isFoot(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize) bool {
     if (!drawn[d] or form[d] != .vertical or isTransistor(kinds[d])) return false;
-    return nl.graph.members(EdgeId.from(d)).len == 2 and roles[lower[d]] == .sink;
+    return (nl.graph.members(EdgeId.from(d)).len == 2 or forms.isDependent(nl, roles, @intCast(d))) and roles[lower[d]] == .sink;
 }
 
 /// Merges the classes of `a` and `b` unless one is above the other.

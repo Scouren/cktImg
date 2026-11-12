@@ -26,6 +26,7 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const csr = @import("csr.zig");
 const library = @import("library.zig");
+const forms = @import("forms.zig");
 /// Stage 2 (issue #8): blocks, symmetry and a canonical order.
 pub const structure = @import("structure.zig");
 /// Stage 3 (issue #8): devices on a lattice of rows and columns.
@@ -288,6 +289,9 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
     for (classes, circuit.edges.items(.kind), 0..) |*c, k, d| {
         const e = EdgeId.from(d);
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
+        // An `E` that is a dependent source, not the book's amplifier: the
+        // library's two-pin `vcvs`, where it has one.
+        if (k == .vcvs and forms.isDependent(nl, roles, @intCast(d))) c.* = lib.find("vcvs") orelse c.*;
     }
     // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
     // class with as many terminals as the one it replaces draws every pin

@@ -40,6 +40,8 @@ try lib.loadZon(arena, symbols_text, &diags);
 
 Which class a device gets is decided by name: `res`, `cap`, `ind`,
 `vsource`, `isource`, `cvsource` (E), `cisource` (G), `ccvs` (H), `cccs` (F),
+`vcvs` (an E that is a dependent source and no ideal amplifier, when the
+library has the class; else `cvsource`),
 `bsource`, `diode`, `npn`, `pnp`, `njfet`, `pjfet`, `mesfet`, `nmos`, `pmos`
 (from the `.model` type), `switch`, `tline`, `urc` (the vocabulary is
 `library.className`; cktImg's names where it has one). Rails and ports are found by role:
@@ -48,7 +50,10 @@ is not registered is drawn as a generated box and reported by lint
 (`unmapped_master`).
 
 A terminal flagged `.hidden` (a MOS bulk) counts for paths but gets no wire; one
-flagged `.ground_ref` (an op-amp's reference) gets none when it is on ground.
+flagged `.ground_ref` (an op-amp's reference) gets none when it is on ground. A card pin past the class's terminals is not drawn at all: a MOS body on a
+three-terminal symbol, the control pair of a `G` or a dependent `E` on a
+two-terminal one (the JSON lists those nets as `bulk`, or `hidden` for two
+or more).
 
 ### 2. Place — the one call
 

@@ -68,7 +68,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         // A net no device drawn in the circuit touches (an apart driver's
         // alone) has nothing for a net line to draw.
         const on_net = h.verb == .label or h.verb == .wire or h.verb == .port;
-        if (v.state == .honoured and on_net and !inCircuit(nl, sk, nl.net(h.args[0]).?.index())) v.* = .{ .state = .rejected, .code = .not_placeable };
+        if (v.state == .honoured and on_net and !inCircuit(nl, sk, p, lib, nl.net(h.args[0]).?.index())) v.* = .{ .state = .rejected, .code = .not_placeable };
     }
     // Lines setting one value: the preferred one stands, the rest give way.
     const order = try hints.admitOrder(arena, nl.hints);
@@ -384,9 +384,25 @@ fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints
     return if (by.items.len == 0) null else by.items;
 }
 
-/// Whether a device the skeleton draws has a pin on `net`.
-fn inCircuit(nl: *const Netlist, sk: *const Skeleton, net: u32) bool {
-    for (nl.graph.incident(netlist.VertexId.from(net))) |e| if (sk.drawn[e.index()]) return true;
+/// Whether a device the skeleton draws has a pin on `net` that its symbol
+/// shows: with the drawing `p` and its library, a pin past the class's
+/// terminals (a dependent source's control pair, a body) or on a hidden one
+/// is none.
+fn inCircuit(nl: *const Netlist, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library, net: u32) bool {
+    const c = &nl.graph;
+    for (c.incident(netlist.VertexId.from(net))) |e| {
+        if (!sk.drawn[e.index()]) continue;
+        const drawing = p orelse return true;
+        const l = lib orelse return true;
+        const name = c.edges.items(.name)[e.index()];
+        const d = for (drawing.dev_name, 0..) |n, i| {
+            if (std.mem.eql(u8, n, name)) break i;
+        } else return true;
+        const terms = l.at(drawing.dev_class[d]).terminals;
+        for (c.members(e), 0..) |pin, k| {
+            if (pin.index() == net and k < terms.len and !terms[k].hidden) return true;
+        }
+    }
     return false;
 }
 

@@ -54,9 +54,13 @@ pub fn main(init: std.process.Init) !void {
             const p = nets[r.intRangeLessThan(usize, 0, nets.len)];
             const q = nets[r.intRangeLessThan(usize, 0, nets.len)];
             const g = nets[r.intRangeLessThan(usize, 0, nets.len)];
-            switch (r.intRangeAtMost(u32, 0, 3)) {
+            switch (r.intRangeAtMost(u32, 0, 5)) {
                 0 => try w.print("R{d} {s} {s} 1k\n", .{ i, p, q }),
                 1 => try w.print("C{d} {s} {s} 1p\n", .{ i, p, q }),
+                // A dependent source, its control pair on two more nets;
+                // an `E` of gain 1e5 from ground is the ideal amplifier.
+                4 => try w.print("G{d} {s} {s} {s} 0 1m\n", .{ i, p, q, g }),
+                5 => try w.print("E{d} {s} {s} {s} {s} {s}\n", .{ i, p, if (r.boolean()) "0" else q, g, q, if (r.boolean()) "1" else "1e5" }),
                 2 => try w.print("M{d} {s} {s} {s} 0 nch\n", .{ i, p, g, q }),
                 else => try w.print("M{d} {s} {s} {s} vdd pch\n", .{ i, p, g, q }),
             }
@@ -122,7 +126,7 @@ fn draw(a: std.mem.Allocator, lib: *np.Library, text: []const u8) !struct { p: n
 /// Up to four `*@` lines of rungs 1 to 5, on devices `r0`..`m<devices>` (a
 /// name the deck lacks is fine: it is rejected) and on `nets`.
 fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []const u8) !void {
-    const letters = "rcm";
+    const letters = "rcmge";
     for (0..r.intRangeAtMost(u32, 0, 4)) |_| {
         const dev = struct {
             fn pick(rr: std.Random, n: u32, ls: []const u8) [2]u8 {

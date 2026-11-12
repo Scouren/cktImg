@@ -15,6 +15,7 @@
 //! - `pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32) !void`
 //! - `pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, column: i32, stood: []bool) bool`
 //! - `pub fn isTransistor(kind: DeviceKind) bool`, `pub fn isTwoPin(kind: DeviceKind) bool`, `pub fn isRail(r: Role) bool`
+//! - `pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -62,7 +63,7 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         if (isTransistor(kinds[d]) and pins.len >= 3) {
             count[pins[0].index()] += 1;
             count[pins[2].index()] += 1;
-        } else if (isTwoPin(kinds[d]) and kinds[d] != .capacitor and pins.len >= 2) {
+        } else if (passes(nl, roles, @intCast(d)) and kinds[d] != .capacitor and pins.len >= 2) {
             count[pins[0].index()] += 1;
             count[pins[1].index()] += 1;
         }
@@ -77,7 +78,7 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         if (!drawn[d]) continue;
         if (isTransistor(kinds[d]) and pins.len >= 3) {
             if (pins[0].index() != pins[2].index()) f.* = .vertical;
-        } else if (isTwoPin(kinds[d]) and pins.len >= 2 and pins[0].index() != pins[1].index()) {
+        } else if (passes(nl, roles, @intCast(d)) and pins.len >= 2 and pins[0].index() != pins[1].index()) {
             const a = pins[0].index();
             const b = pins[1].index();
             const on_rail = isRail(roles[a]) or isRail(roles[b]);
@@ -89,7 +90,10 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
                 (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
                     from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
             const straddles = a != b and st.net_mate[a] == b;
-            if ((on_rail or series or down or kinds[d] == .isource) and !straddles) f.* = .vertical;
+            // A dependent source stands upright wherever it is, as a
+            // current source does: 398 of 414 in those drawings.
+            const source = kinds[d] == .isource or isDependent(nl, roles, @intCast(d));
+            if ((on_rail or series or down or source) and !straddles) f.* = .vertical;
         }
     }
 }
@@ -212,11 +216,34 @@ pub fn isTwoPin(kind: DeviceKind) bool {
     };
 }
 
+/// A voltage-controlled source drawn as a dependent source: a two-pin part,
+/// its control pins no part of where it stands. Every `G`, and an `E` that
+/// is no ideal amplifier (its low output on a ground and a gain of a
+/// thousand or more, `E1 out 0 inp inn 1e5`: the book's op-amp). People
+/// draw each with two terminals (414 of 414 in 5,263 hand-drawn
+/// schematics).
+pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool {
+    const c = &nl.graph;
+    const pins = c.members(EdgeId.from(d));
+    if (pins.len < 2) return false;
+    return switch (c.edges.items(.kind)[d]) {
+        .vccs => true,
+        // An unreadable gain (a parameter) is no number: not an amplifier.
+        .vcvs => !(roles[pins[1].index()] == .sink and @abs(c.edges.items(.value)[d]) >= 1000),
+        else => false,
+    };
+}
+
 pub fn isRail(r: Role) bool {
     return r == .supply or r == .sink;
 }
 
 // ---- private ----
+
+/// A part the current passes through by its first two pins.
+fn passes(nl: *const Netlist, roles: []const Role, d: u32) bool {
+    return isTwoPin(nl.graph.edges.items(.kind)[d]) or isDependent(nl, roles, d);
+}
 
 /// Hops from a net of role `from` (a rail) through channel elements
 /// (transistor channels, two-pin devices but capacitors), never through
@@ -245,7 +272,7 @@ fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: 
             var chan: [2]VertexId = undefined;
             if (isTransistor(kinds[d]) and pins.len >= 3) {
                 chan = .{ pins[0], pins[2] };
-            } else if (isTwoPin(kinds[d]) and pins.len >= 2) {
+            } else if (passes(nl, roles, d) and pins.len >= 2) {
                 chan = .{ pins[0], pins[1] };
             } else continue;
             // Through the channel only: a gate or a body on `v` is no way.
