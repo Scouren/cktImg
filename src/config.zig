@@ -56,6 +56,11 @@ pub const Layout = struct {
     /// between columns, `stack` between rows, `tap` of wire between two
     /// symbols, bends or junctions, and `clearance`.
     compact: bool = true,
+    /// The most wires of other nets (rails aside) one internal net's wire
+    /// may cross: a net crossing more is drawn as names at its pins
+    /// (`thin.zig`). People seldom draw more than two; the default names
+    /// about as many nets as they do.
+    cross_max: u32 = 6,
 };
 
 /// How the TikZ emitter strokes a drawing.

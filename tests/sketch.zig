@@ -37,6 +37,27 @@ fn placesByName(arena: std.mem.Allocator, p: *const np.Placed) ![]const Place {
 }
 
 /// Device `name`'s pin `index` in `p`.
+/// Points where a level wire of one net and an upright wire of another
+/// cross inside both.
+fn crossings(p: *const np.Placed) usize {
+    var count: usize = 0;
+    for (0..p.netCount()) |n| {
+        var h = p.segments(n);
+        while (h.next()) |hp| for (hp[0 .. hp.len - 1], hp[1..]) |a, b| {
+            if (a.y != b.y) continue;
+            for (0..p.netCount()) |m| {
+                if (m == n) continue;
+                var v = p.segments(m);
+                while (v.next()) |vp| for (vp[0 .. vp.len - 1], vp[1..]) |c, d| {
+                    if (c.x != d.x) continue;
+                    count += @intFromBool(c.x > @min(a.x, b.x) and c.x < @max(a.x, b.x) and a.y > @min(c.y, d.y) and a.y < @max(c.y, d.y));
+                };
+            }
+        };
+    }
+    return count;
+}
+
 fn pinOf(p: *const np.Placed, name: []const u8, index: u32) np.Pt {
     for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return p.pin_xy[p.pinRange(d)[0] + index];
     unreachable;
@@ -312,6 +333,35 @@ test "sketch: a ground by any name: transistors on `vss` stand as those on net 0
         try std.testing.expectEqual(pinOf(&zero, name, 0), pinOf(&vss, name, 0));
     }
     try std.testing.expectEqual(pinOf(&vss, "m5", 0).y, pinOf(&vss, "m7", 0).y);
+}
+
+test "sketch: a lower crossing budget names more nets and draws no more crossings" {
+    // Oracle: a metamorphic relation over every deck. Against no budget
+    // (`cross_max` out of reach), a budget of none keeps every name, adds
+    // only names, and crosses no more wires; and on some deck it crosses
+    // fewer, so the key does something.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var fewer: usize = 0;
+    var decks: std.ArrayList([]const u8) = .empty;
+    for (golden.decks) |d| try decks.append(arena, d.spice);
+    for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, c.spice);
+    for (decks.items) |spice| {
+        const free = try draw(arena, lib, &.{spice}, .{ .cross_max = 1000 });
+        const none = try draw(arena, lib, &.{spice}, .{ .cross_max = 0 });
+        try std.testing.expect(crossings(&none) <= crossings(&free));
+        fewer += @intFromBool(crossings(&none) < crossings(&free));
+        for (0..free.netCount()) |n| {
+            var a = free.segments(n);
+            var b = none.segments(n);
+            if (a.next() == null) try std.testing.expect(b.next() == null);
+        }
+    }
+    try std.testing.expect(fewer > 0);
 }
 
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {

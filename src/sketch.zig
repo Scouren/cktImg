@@ -32,6 +32,7 @@ const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
 const compact = @import("compact.zig");
+const thin = @import("thin.zig");
 const relay = @import("relay.zig");
 const config = @import("config.zig");
 
@@ -48,6 +49,10 @@ const Skeleton = skeleton.Skeleton;
 const Structure = structure.Structure;
 const Lengths = canvas.Lengths;
 const none = sch.none;
+
+/// How often the drawing is wired again after naming the nets that cross
+/// too many wires: a wire gone may free a path that crosses anew.
+const thin_rounds = 3;
 
 /// Lattice column and row → coordinate.
 const Geo = struct {
@@ -137,17 +142,36 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         if (clear) for (at, 0..) |*p, d| if (sk.drawn[d]) {
             p.* = s.xy[s.deviceNode(@intCast(d)).?];
         };
-        s.nodes.shrinkRetainingCapacity(0);
-        s.pins.shrinkRetainingCapacity(0);
-        s.routes.clearRetainingCapacity();
-        xy.clearRetainingCapacity();
-        s.xy = &.{};
-        @memset(s.labeled, false);
+        wipe(s, &xy);
     }
     try keepAts(gpa, s, nl, sk, at, ats);
-    try wireUp(gpa, s, nl, sk, st, len, at, ats, &lines, &xy);
+    // Wired; then a net crossing too many wires is named and the drawing
+    // wired again without it, which may free a path for another.
+    // ponytail: thinned on the finished places only, so a relaid drawing
+    // thins alike; the closing up still leaves room for the named nets'
+    // wires. Thin the scaffolding too if that room shows.
+    const style = try gpa.dupe(netlines.Style, lines.style);
+    defer gpa.free(style);
+    var thinned = lines;
+    thinned.style = style;
+    for (0..thin_rounds + 1) |round| {
+        try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, &xy);
+        const mirror = drawnMirror(s, sk, st);
+        if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
+        wipe(s, &xy);
+    }
     try noConnects(gpa, s);
     assert(s.xy.len == s.nodes.len);
+}
+
+/// The drawing's nodes, pins and wires taken off again, its devices too.
+fn wipe(s: *Schematic, xy: *std.ArrayList([2]f32)) void {
+    s.nodes.shrinkRetainingCapacity(0);
+    s.pins.shrinkRetainingCapacity(0);
+    s.routes.clearRetainingCapacity();
+    xy.clearRetainingCapacity();
+    s.xy = &.{};
+    @memset(s.labeled, false);
 }
 
 /// The devices at `at` (an `at` line's place first), then every net wired.
