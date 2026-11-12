@@ -435,11 +435,12 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
-test "sketch: no wire crosses a rail symbol's stub, and no supply stub is longer than two units" {
+test "sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units" {
     // Oracle: how people draw it. In 5,263 hand-drawn schematics 3 of the
     // 16,030 rail stubs of half a unit or less are crossed by a wire, and
-    // 97% of 9,149 upright supply runs are no longer than two units: a pin
-    // farther from the bar carries a symbol of its own.
+    // about 12 wires cross a supply's level run; 97% of 9,149 upright
+    // supply runs are no longer than two units: a pin farther from the bar
+    // carries a symbol of its own.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -468,6 +469,17 @@ test "sketch: no wire crosses a rail symbol's stub, and no supply stub is longer
         \\X1 c d g vdd 0 amp
         \\
     });
+    // A collector node between two supply pins: its wire stays under the bar.
+    try decks.append(arena, .{
+        "node_under_supply_bar",
+        \\Two-transistor amplifier
+        \\.model qnpn npn
+        \\QB n1 n0 vin 0 qnpn
+        \\QD vout n1 0 0 qnpn
+        \\RB vcc n0 1k
+        \\RC vcc vout 1k
+        \\
+    });
     const rails = [_]?np.ClassId{ lib.findRole(.power_rail), lib.findRole(.ground_rail) };
     const stub: i32 = @intFromFloat(@ceil((np.config.Layout{}).rail * @as(f32, @floatFromInt(lib.unit))));
     var bad: usize = 0;
@@ -478,7 +490,19 @@ test "sketch: no wire crosses a rail symbol's stub, and no supply stub is longer
             const net = p.pin_net[p.pinRange(dev)[0]];
             var it = p.segments(net);
             while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-                if (a.x != b.x) continue;
+                if (a.x != b.x) {
+                    // The supply's bar: crossed by no upright wire.
+                    for (0..p.netCount()) |m| {
+                        if (m == net or class != rails[0]) continue;
+                        var other = p.segments(m);
+                        while (other.next()) |q| for (q[0 .. q.len - 1], q[1..]) |u, v| {
+                            if (u.x != v.x or u.x <= @min(a.x, b.x) or u.x >= @max(a.x, b.x) or a.y <= @min(u.y, v.y) or a.y >= @max(u.y, v.y)) continue;
+                            std.debug.print("{s}: {s} crosses the bar of {s}\n", .{ d[0], p.net_name[m], p.net_name[net] });
+                            bad += 1;
+                        };
+                    }
+                    continue;
+                }
                 const len = @max(a.y, b.y) - @min(a.y, b.y);
                 if (class == rails[0] and len > 2 * lib.unit) {
                     std.debug.print("{s}: {s} has a stub of {d}\n", .{ d[0], p.net_name[net], len });

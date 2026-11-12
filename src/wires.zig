@@ -426,7 +426,10 @@ fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
         const joined = !last and blk: {
             const x0 = pinAt(s, q).x;
             const x1 = pinAt(s, on_bar.items[i + 1]).x;
-            break :blk x0 == x1 or try c.commit(net, &.{ .{ .x = x0, .y = y_bar }, .{ .x = x1, .y = y_bar } });
+            if (x0 == x1) break :blk true;
+            if (!try c.commit(net, &.{ .{ .x = x0, .y = y_bar }, .{ .x = x1, .y = y_bar } })) break :blk false;
+            c.wall();
+            break :blk true;
         };
         if (joined) continue;
         const mid = pinAt(s, on_bar.items[(run + i) / 2]);
