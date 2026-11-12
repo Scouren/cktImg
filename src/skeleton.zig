@@ -254,8 +254,10 @@ fn isRail(r: Role) bool {
 }
 
 /// Drawn: not a driver (unless a `driver` line says) and with pins. Vertical: a transistor, a two-pin
-/// device on a rail, or one in series (each of its nets holds one other
-/// channel element); capacitors only on a rail; never a two-pin device
+/// device on a rail, one in series (each of its nets holds one other
+/// channel element), one on the way down (one net nearer the supply, the
+/// other nearer the ground), a current source; capacitors only on a rail;
+/// never a two-pin device
 /// between two nets the symmetry swaps, which straddles the axis, nor a
 /// device whose current path is shorted (a MOS dummy: no current flows).
 fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void {
@@ -281,6 +283,10 @@ fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             count[pins[1].index()] += 1;
         }
     }
+    const from_supply = try railDistance(gpa, nl, roles, drawn, .supply);
+    defer gpa.free(from_supply);
+    const from_ground = try railDistance(gpa, nl, roles, drawn, .sink);
+    defer gpa.free(from_ground);
     for (form, 0..) |*f, d| {
         const pins = c.members(EdgeId.from(d));
         f.* = .horizontal;
@@ -292,8 +298,14 @@ fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             const b = pins[1].index();
             const on_rail = isRail(roles[a]) or isRail(roles[b]);
             const series = kinds[d] != .capacitor and count[a] == 2 and count[b] == 2;
+            // On the way down: people stand 262 of 305 such resistors and 18
+            // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
+            // 83 current sources wherever they are.
+            const down = kinds[d] != .capacitor and
+                (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
+                    from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
             const straddles = a != b and st.net_mate[a] == b;
-            if ((on_rail or series) and !straddles) f.* = .vertical;
+            if ((on_rail or series or down or kinds[d] == .isource) and !straddles) f.* = .vertical;
         }
     }
 }
@@ -306,7 +318,7 @@ fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const 
     const kinds = c.edges.items(.kind);
     @memset(upper, none);
     @memset(lower, none);
-    const dist = try supplyDistance(gpa, nl, roles, drawn);
+    const dist = try railDistance(gpa, nl, roles, drawn, .supply);
     defer gpa.free(dist);
     for (0..c.edgeCount()) |d| {
         if (!drawn[d] or form[d] != .vertical) continue;
@@ -329,9 +341,10 @@ fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const 
     }
 }
 
-/// Hops from a supply net through channel elements (transistor channels,
-/// two-pin devices but capacitors).
-fn supplyDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool) ![]u32 {
+/// Hops from a net of role `from` (a rail) through channel elements
+/// (transistor channels, two-pin devices but capacitors), never through
+/// another rail; `none` where no such way leads.
+fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, from: Role) ![]u32 {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     const dist = try gpa.alloc(u32, c.vertexCount());
@@ -339,7 +352,7 @@ fn supplyDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn
     @memset(dist, none);
     var queue: std.ArrayList(u32) = .empty;
     defer queue.deinit(gpa);
-    for (roles, 0..) |r, net| if (r == .supply) {
+    for (roles, 0..) |r, net| if (r == from) {
         dist[net] = 0;
         try queue.append(gpa, @intCast(net));
     };
@@ -347,6 +360,7 @@ fn supplyDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn
     while (head < queue.items.len) : (head += 1) {
         assert(queue.items.len <= dist.len);
         const v = queue.items[head];
+        if (isRail(roles[v]) and roles[v] != from) continue;
         for (c.incident(VertexId.from(v))) |e| {
             const d = e.index();
             if (!drawn[d] or kinds[d] == .capacitor) continue;
@@ -357,6 +371,8 @@ fn supplyDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn
             } else if (isTwoPin(kinds[d]) and pins.len >= 2) {
                 chan = .{ pins[0], pins[1] };
             } else continue;
+            // Through the channel only: a gate or a body on `v` is no way.
+            if (chan[0].index() != v and chan[1].index() != v) continue;
             for (chan) |w| if (dist[w.index()] == none) {
                 dist[w.index()] = dist[v] + 1;
                 try queue.append(gpa, w.index());

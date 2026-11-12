@@ -175,9 +175,12 @@ bridges and wires go there.
 
 **Drawn and form.** A device is drawn unless it is a driver (R3) or has no
 pin. It is **vertical** (current enters at its top and leaves at its
-bottom) when it is a transistor, a two-pin device on a rail, or a two-pin
-device in series (each of its nets holds one other channel element), a
-capacitor only on a rail; anything else is **horizontal**, a **bridge**
+bottom) when it is a transistor, a two-pin device on a rail, a two-pin
+device in series (each of its nets holds one other channel element), one on
+the way down (one net nearer the supply and the other nearer the ground,
+counted through channel elements and never through a gate, a body or
+another rail: an emitter's degeneration resistor), or a current source; a
+capacitor only on a rail. Anything else is **horizontal**, a **bridge**
 between columns. A two-pin device between two nets the symmetry swaps
 (it straddles the axis) bridges, and so does a device whose current path is
 shorted (a MOS dummy).
@@ -514,7 +517,7 @@ through a device or touching another net is a label at its pins.
 |------|-------|
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R1 a reference is an input, unless a drain makes it`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…`; `tools/json.zig`: `deck: a top cell's voltage source is a device of the circuit…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
-| skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
+| skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps`, `skeleton: a resistor on the way down stands upright under the emitter it leaves…` |
 | drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units`, `sketch: a bias gate carries a port symbol, not a written name`, `sketch: a bias net's pins standing near each other share one wire and one port`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |

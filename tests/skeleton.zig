@@ -139,3 +139,34 @@ test "skeleton: a stack hint picks the link its column keeps" {
         try std.testing.expect(l.sk.x[top] != l.sk.x[apart]);
     }
 }
+
+test "skeleton: a resistor on the way down stands upright under the emitter it leaves, a current source upright anywhere" {
+    // Oracle: how people draw it. In 5,263 hand-drawn schematics 262 of the
+    // 305 resistors with one net nearer the supply and the other nearer the
+    // ground (and in no plain series) stand upright, and 76 of 83 current
+    // sources off the rails; reference drawing ar-4843 is the first deck:
+    // the degeneration resistor under the emitter, the feedback one across.
+    // `q1`'s body on ground is no way to its emitter: the distance leaked
+    // through it once and `re` lay across.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    {
+        const l = try lay(arena, "emitter ladder\n.model qnpn npn\nVCC vcc 0 9\nQ1 c b e 0 qnpn\nR1 vcc b 10k\nR2 b 0 2.2k\n" ++
+            "RC vcc c 3.6k\nRE e n7 180\nRE1 n7 0 820\nC4 n7 0 1u\nRF e n6 1k\nC6 c n6 1u\n");
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        const q1 = l.nl.device("q1").?.index();
+        const re = l.nl.device("re").?.index();
+        const re1 = l.nl.device("re1").?.index();
+        try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[re]);
+        try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[l.nl.device("rf").?.index()]);
+        try std.testing.expectEqual(l.sk.x[q1], l.sk.x[re]);
+        try std.testing.expect(l.sk.y[q1] < l.sk.y[re] and l.sk.y[re] < l.sk.y[re1]);
+    }
+    {
+        const l = try lay(arena, "current source\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 d g 0 0 nch\nRD vdd d 1k\nRF d g 10k\n" ++
+            "I1 g s 1u\nC1 s 0 1p\nC2 s d 1p\n");
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device("i1").?.index()]);
+    }
+}
