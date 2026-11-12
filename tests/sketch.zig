@@ -194,6 +194,54 @@ test "sketch: lengths space the drawing and move nothing to another row or colum
     try std.testing.expectEqual(0, bad);
 }
 
+test "sketch: stages stand in the order the signal passes them, each load beside its stage" {
+    // Oracles: CircuitThink #006 as its authors drew it (Analog Canvas
+    // gallery ct-006, Apache-2.0): three common-source stages in a ring,
+    // M1, M2, M3 in a row, each stage's load capacitor beside it before the
+    // next; and the convention that a signal enters on the left and leaves
+    // on the right (Razavi's figures; chip-arena's "Signal left → right").
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const ring = try draw(arena, lib, &.{
+        \\Three-stage ring
+        \\.model nch nmos
+        \\Vdd vdd 0 1.8
+        \\CL1 n1 0 1p
+        \\CL2 n2 0 1p
+        \\CL3 vout 0 1p
+        \\M1 n1 vout 0 0 nch
+        \\M2 n2 n1 0 0 nch
+        \\M3 vout n2 0 0 nch
+        \\RD1 vdd n1 1k
+        \\RD2 vdd n2 1k
+        \\RD3 vdd vout 1k
+        \\
+    }, .{});
+    const chain = [_][]const u8{ "m1", "cl1", "m2", "cl2", "m3" };
+    var rising: usize = 0;
+    for (chain[0 .. chain.len - 1], chain[1..]) |a, b| rising += @intFromBool(pinOf(&ring, a, 0).x < pinOf(&ring, b, 0).x);
+    // Left to right, or the whole row mirrored.
+    try std.testing.expect(rising == chain.len - 1 or rising == 0);
+    const amp = try draw(arena, lib, &.{
+        \\Two-stage amplifier
+        \\.model nch nmos
+        \\Vdd vdd 0 1.8
+        \\Vin vin 0 dc 0.7 ac 1
+        \\CL vout 0 1p
+        \\M2 vout n1 0 0 nch
+        \\RD2 vdd vout 1k
+        \\M1 n1 vin 0 0 nch
+        \\RD1 vdd n1 1k
+        \\
+    }, .{});
+    try std.testing.expect(pinOf(&amp, "m1", 0).x < pinOf(&amp, "m2", 0).x);
+    try std.testing.expect(pinOf(&amp, "m2", 0).x < pinOf(&amp, "cl", 0).x);
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the

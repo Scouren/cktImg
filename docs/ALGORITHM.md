@@ -215,9 +215,16 @@ itself, a pair's tail, or a column wired to both halves stands on the axis
 (the first by rank where several share a row; the rest go free). The left
 half's order is the one whose wired nets span least (rails, bias nets and
 nets driven from outside aside: they are symbols or labels), tried
-exhaustively up to six columns, else by adjacent swaps while they help.
-Columns with no mate go right of the core when they reach an output, else
-left of it, each side ordered the same way.
+exhaustively up to six columns, else by moving one column at a time while
+that helps. Columns with no mate go right of the core when they reach an
+output, else left of it, each side ordered the same way. A circuit with no
+core (no mated column, none on an axis) has all its columns ordered at
+once, first by the signal's way: as few pins as can be stand left of the
+transistor or controlled source that drives their net (a gate before its
+driver, a load before its stage), so stages stand in the order the signal
+passes them, a mirror's reference left of its copies, and a loop is cut
+once; then by span, then by rank. The row is turned so that the columns an
+input reaches stand left of those that drive an output.
 
 **Bridges** (`bridges.place`). Two-pin bridges in series (through nets that
 join just the two of them, gates aside) share the slots between the nearest

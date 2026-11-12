@@ -9,9 +9,16 @@
 //! where several share a row (the rest go free). The left half's
 //! order is the one whose wired nets span least (rails, biases and nets
 //! driven from outside aside: they are symbols or labels), tried
-//! exhaustively up to `exhaustive_max` columns. Columns with no mate go
-//! right of the core when they reach an output, else left of it, each side
-//! ordered the same way.
+//! exhaustively up to `exhaustive_max` columns, else by moving one column
+//! at a time while that helps. Columns with no mate go right of the core
+//! when they reach an output, else left of it, each side ordered the same
+//! way. With no core (no mated column, none on an axis) every column is
+//! ordered at once, first so that as few gates as can be stand left of the
+//! device that drives them (a chain of stages stands in the order the
+//! signal passes them, a mirror's reference left of its copies, and a loop
+//! is cut once), then by span; and the row is turned so that the signal
+//! enters on the left: the columns an input reaches left of those that
+//! drive an output.
 //!
 //! Contents:
 //! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`
@@ -49,6 +56,12 @@ const none: u32 = std.math.maxInt(u32);
 /// Halves of more columns are ordered greedily (6! = 720 orders at most).
 const exhaustive_max = 6;
 
+/// How far one column is moved in a longer list, and how many passes over
+/// the list: the work is bounded by `move_rounds * 2 * move_reach` orders
+/// tried per column.
+const move_reach = 12;
+const move_rounds = 16;
+
 const Side = enum(u8) { left, axis, right, free };
 
 const Ctx = struct {
@@ -64,6 +77,8 @@ const Ctx = struct {
     wired: []const bool,
     /// Columns with an x so far: the axis, then each side as it is ordered.
     placed: []bool,
+    /// Whether an order is first judged by the signal's way (`against`).
+    flow: bool = false,
 };
 
 /// Each column's x. `column_of`, `mate`, `partner`, `rank` and `row` have
@@ -129,6 +144,24 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     sortByRank(ctx, free_right.items);
 
     @memset(x, 0);
+    if (left.items.len == 0 and axis.items.len == 0) {
+        // No core: one row of columns, in one order, read left to right.
+        try free_left.appendSlice(gpa, free_right.items);
+        sortByRank(ctx, free_left.items);
+        const place = struct {
+            fn f(xs: []i32, _: []const u32, list: []const u32, first: i32) void {
+                for (list, 0..) |k, i| xs[k] = first + 2 * @as(i32, @intCast(i));
+            }
+        }.f;
+        var by_flow = ctx;
+        by_flow.flow = true;
+        try best(by_flow, free_left.items, place, x, col_mate, 0);
+        if (!flowsRight(ctx, x)) {
+            const last = 2 * @as(i32, @intCast(n - 1));
+            for (x) |*v| v.* = last - v.*;
+        }
+        return x;
+    }
     for (axis.items) |k| placed[k] = true;
     // Axis columns share x = 0; the halves start one channel out, or two
     // when an axis column stands between them.
@@ -321,6 +354,27 @@ fn wiredToBoth(ctx: Ctx, side: []const Side, k: usize) bool {
     return l and r;
 }
 
+/// Whether the signal passes the columns left to right: those with a pin
+/// on an input stand, on average, no further right than those that drive
+/// an output (a channel pin on it). True with no input or no output.
+fn flowsRight(ctx: Ctx, x: []const i32) bool {
+    assert(x.len == ctx.cols.count());
+    var in: [2]i64 = .{ 0, 0 };
+    var out: [2]i64 = .{ 0, 0 };
+    for (0..ctx.cols.count()) |k| {
+        var reads = false;
+        var drives = false;
+        for (ctx.cols.of(k)) |d| for (ctx.nl.graph.members(EdgeId.from(d)), 0..) |net, pin| {
+            reads = reads or ctx.roles[net.index()] == .input;
+            drives = drives or (ctx.roles[net.index()] == .output and isChannelPin(ctx, d, pin));
+        };
+        if (reads) in = .{ in[0] + x[k], in[1] + 1 };
+        if (drives) out = .{ out[0] + x[k], out[1] + 1 };
+    }
+    if (in[1] == 0 or out[1] == 0) return true;
+    return in[0] * out[1] <= out[0] * in[1];
+}
+
 fn touchesOutput(ctx: Ctx, k: usize) bool {
     assert(k < ctx.cols.count());
     for (ctx.cols.of(k)) |d| for (ctx.nl.graph.members(EdgeId.from(d))) |net| {
@@ -355,9 +409,9 @@ fn sortByRank(ctx: Ctx, list: []u32) void {
 }
 
 /// Tries the orders of `list` (all of them up to `exhaustive_max` columns,
-/// else adjacent swaps while they help), placing each with `place`, and
-/// keeps the one whose wired nets span least. Ties keep the earlier order,
-/// so by rank.
+/// else one column moved at a time, up to `move_reach` places, while that
+/// helps), placing each with `place`, and keeps the one whose wired nets
+/// span least. Ties keep the earlier order, so by rank.
 fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u32, i32) void, x: []i32, col_mate: []const u32, first: i32) !void {
     if (list.len == 0) return;
     for (list) |k| {
@@ -366,6 +420,9 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
     }
     const work = try ctx.gpa.dupe(u32, list);
     defer ctx.gpa.free(work);
+    // The order by rank, which an equal order is held against.
+    const ranked = try ctx.gpa.dupe(u32, list);
+    defer ctx.gpa.free(ranked);
     place(x, col_mate, list, first);
     var best_cost = try span(ctx, x);
     if (list.len <= exhaustive_max) {
@@ -380,7 +437,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
                 std.mem.swap(u32, &work[j], &work[i]);
                 place(x, col_mate, work, first);
                 const cost = try span(ctx, x);
-                if (cost < best_cost) {
+                if (cost < best_cost or (ctx.flow and cost == best_cost and earlier(ranked, work, list))) {
                     best_cost = cost;
                     @memcpy(list, work);
                 }
@@ -395,17 +452,28 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
     } else {
         var improved = true;
         var rounds: usize = 0;
-        while (improved and rounds < list.len * list.len) : (rounds += 1) {
+        while (improved and rounds < move_rounds) : (rounds += 1) {
             improved = false;
-            for (0..list.len - 1) |i| {
-                std.mem.swap(u32, &list[i], &list[i + 1]);
-                place(x, col_mate, list, first);
-                const cost = try span(ctx, x);
-                if (cost < best_cost) {
+            for (0..list.len) |i| {
+                const lo = i -| move_reach;
+                const hi = @min(list.len - 1, i + move_reach);
+                for (lo..hi + 1) |j| {
+                    if (i == j) continue;
+                    // `list[i]` moved to place `j`, the columns between
+                    // closing up.
+                    @memcpy(work, list);
+                    if (i < j) {
+                        std.mem.copyForwards(u32, work[i..j], list[i + 1 .. j + 1]);
+                    } else {
+                        std.mem.copyForwards(u32, work[j + 1 .. i + 1], list[j..i]);
+                    }
+                    work[j] = list[i];
+                    place(x, col_mate, work, first);
+                    const cost = try span(ctx, x);
+                    if (cost >= best_cost) continue;
                     best_cost = cost;
                     improved = true;
-                } else {
-                    std.mem.swap(u32, &list[i], &list[i + 1]);
+                    @memcpy(list, work);
                 }
             }
         }
@@ -413,12 +481,59 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
     place(x, col_mate, list, first);
 }
 
+/// Whether order `a` comes before order `b` of the same columns, read as
+/// words over their places in `ranked`.
+fn earlier(ranked: []const u32, a: []const u32, b: []const u32) bool {
+    assert(a.len == b.len and a.len == ranked.len);
+    for (a, b) |ka, kb| {
+        if (ka == kb) continue;
+        return std.mem.indexOfScalar(u32, ranked, ka).? < std.mem.indexOfScalar(u32, ranked, kb).?;
+    }
+    return false;
+}
+
+/// How many pins stand left of every device that drives their net (a
+/// transistor's or controlled source's channel pin on it), over the wired
+/// nets and the columns `placed` so far: a gate, a base or a controlled
+/// source's input before its driver, a load before its stage. The signal
+/// going right to left.
+fn against(ctx: Ctx, x: []const i32) i64 {
+    const c = &ctx.nl.graph;
+    assert(x.len == ctx.cols.count());
+    var count: i64 = 0;
+    for (0..c.vertexCount()) |n| {
+        if (!ctx.wired[n]) continue;
+        var first: i32 = std.math.maxInt(i32);
+        for ([_]bool{ true, false }) |drivers| for (c.incident(VertexId.from(n))) |e| {
+            const d = e.index();
+            const k = ctx.column_of[d];
+            if (k == none or !ctx.placed[k]) continue;
+            const is_controlled = controlled(c.edges.items(.kind)[d]);
+            for (c.members(e), 0..) |net, pin| {
+                if (net.index() != n or (is_controlled and isChannelPin(ctx, d, pin)) != drivers) continue;
+                if (drivers) first = @min(first, x[k]) else count += @intFromBool(x[k] < first and first != std.math.maxInt(i32));
+            }
+        };
+    }
+    assert(count >= 0);
+    return count;
+}
+
+/// A device with a control pin: what it drives follows what it reads.
+fn controlled(kind: netlist.DeviceKind) bool {
+    return switch (kind) {
+        .mosfet, .bjt, .jfet, .mesfet, .vswitch, .cswitch, .vcvs, .vccs => true,
+        else => false,
+    };
+}
+
 /// The total width of the wired nets, each from its leftmost column to its
-/// rightmost, over the columns `placed` so far.
+/// rightmost, over the columns `placed` so far; with `ctx.flow`, each pin
+/// `against` the signal's way first, counted as more than any span.
 fn span(ctx: Ctx, x: []const i32) !i64 {
     const c = &ctx.nl.graph;
     assert(x.len == ctx.cols.count());
-    var total: i64 = 0;
+    var total: i64 = if (ctx.flow) against(ctx, x) << 32 else 0;
     for (0..c.vertexCount()) |n| {
         if (!ctx.wired[n]) continue;
         var lo: i32 = std.math.maxInt(i32);
