@@ -204,6 +204,16 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
     const names = circuit.vertices.items(.name);
     const roles = try gpa.alloc(Role, names.len);
     for (names, roles, 0..) |name, *r, i| r.* = if (i == 0) .sink else roleFromName(name);
+    // A reference comes from outside (R1) unless a transistor's drain or
+    // collector makes it here: then it is what the circuit puts out.
+    for (circuit.edges.items(.kind), 0..) |k, d| switch (k) {
+        .mosfet, .bjt, .jfet, .mesfet => {
+            const pins = circuit.members(EdgeId.from(d));
+            const made = if (pins.len > 0) pins[0].index() else 0; // net 0: the sink, never an input
+            if (roles[made] == .input and std.mem.startsWith(u8, names[made], "vref")) roles[made] = .output;
+        },
+        else => {},
+    };
 
     for (circuit.edges.items(.kind), 0..) |k, d| {
         if (k != .vsource) continue;
@@ -376,8 +386,8 @@ fn roleFromName(name: []const u8) Role {
     if (eqlAny(name, &.{ "gnd", "vss", "vee", "agnd", "dgnd", "vssa", "gnda" })) return .sink;
     if (startsAny(name, &.{ "vdd", "vcc", "avdd", "dvdd" }) or eqlAny(name, &.{"vpp"})) return .supply;
     if (startsAny(name, &.{ "vb", "bias" })) return .bias;
-    if (startsAny(name, &.{ "vin", "in" })) return .input;
-    if (startsAny(name, &.{ "vout", "out", "vref" }) or eqlAny(name, &.{"vo"})) return .output;
+    if (startsAny(name, &.{ "vin", "in", "vref" })) return .input;
+    if (startsAny(name, &.{ "vout", "out" }) or eqlAny(name, &.{"vo"})) return .output;
     return .internal;
 }
 

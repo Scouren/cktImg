@@ -27,6 +27,7 @@ Added:
 
 Fixed:
 
+- A net named `vref*` is an input unless a transistor's drain or collector makes it (`src/schematic.zig`); it was always an output. People give 557 of the 595 such nets with no drain on them an input port (5 an output). Over the 5,263 reference circuits: crossings 13,546 to 13,255, corners 55,610 to 55,594.
 - Transistors on a ground named `vss` or `gnd` drop to their type's lowest row as those on net 0 always did (`src/levels.zig`): a second stage's current source level with the tail source. Over the 5,263 Analog Canvas reference circuits: drawings whose every top-bottom order is the human's 23.7% to 26.6%, rows the human drew kept whole 32.2% to 35.7%; the longer gate lines cost wire crossings, 25,439 to 26,670.
 - A subckt with parameters no longer always gets a `spice_code` instance re-declaring them as `.param k={k}` (ngspice braces, which HSPICE syntax reads as a name). The shim appears only when card text kept verbatim names a parameter, and it is written bare (`.param k=<value>`).
 - An `X` override that is an expression over the caller's parameters (`w=w*2`, `l='l+w/2'`) imported as literal ngspice braces (`{{({w})}}*2`). A subckt parameter with a literal default is now a number parameter, unless some call passes it text Schemify cannot evaluate (`w=wn`, a bench `.param`). An expression over number parameters is one hole Schemify evaluates (`{w*2}` renders `w=1.6e-7` in every dialect).

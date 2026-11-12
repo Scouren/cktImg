@@ -81,6 +81,28 @@ test "R1 roles by net name" {
     try testing.expectEqual(sch.Role.sink, b.roles[b.net("gnd")]);
 }
 
+test "R1 a reference is an input, unless a drain makes it" {
+    // Oracle: how people draw it. Of the `vref*` nets with no drain on them
+    // in 5,263 hand-drawn schematics, 557 of 595 carry an input port (5 an
+    // output); of the 11 a drain drives, none does.
+    var taken = try Built.init(
+        \\reference taken
+        \\.model nch nmos
+        \\M1 x vref 0 0 nch
+        \\R1 vdd x 1k
+    );
+    defer taken.deinit();
+    try testing.expectEqual(sch.Role.input, taken.roles[taken.net("vref")]);
+    var made = try Built.init(
+        \\reference made
+        \\.model pch pmos
+        \\M1 vref g vdd vdd pch
+        \\R1 vref 0 1k
+    );
+    defer made.deinit();
+    try testing.expectEqual(sch.Role.output, made.roles[made.net("vref")]);
+}
+
 test "R2 a net driven from ground: signal source -> input, otherwise bias" {
     var b = try Built.init(
         \\source-driven roles

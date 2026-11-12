@@ -83,7 +83,8 @@ on a device overrides the relations on it.
   Inside a `.subckt`, lines are that cell's for the Schemify import, which
   logs every line it does not honour.
 - **Roles.** A net's name decides its role: supply `vdd*`, ground `0`, `gnd`
-  or `vss`, inputs `in*`/`vin*`, outputs `out*`/`vout*`, bias `vb*`/`bias*`.
+  or `vss`, inputs `in*`/`vin*` (and a `vref*` no drain makes), outputs `out*`/`vout*`,
+  bias `vb*`/`bias*`.
   A V source from ground makes its net an input when it carries a signal
   (`ac`, `sin`, `pulse`, `pwl`, ...), else a bias; a V source from a supply,
   input or bias net to ground is a driver, drawn apart at the left.
