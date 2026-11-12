@@ -112,14 +112,14 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     const kinds = c.edges.items(.kind);
     for ([_]symmetry.Polarity{ .n, .p, .other }) |pol| {
         var low: u32 = 0;
-        for (0..n) |d| if (onGround(nl, kinds, drawn, form, lower, d, pol)) {
+        for (0..n) |d| if (onGround(nl, roles, kinds, drawn, form, lower, d, pol)) {
             low = @max(low, rank[d]);
         };
         for (0..n) |d| {
-            if (!onGround(nl, kinds, drawn, form, lower, d, pol)) continue;
+            if (!onGround(nl, roles, kinds, drawn, form, lower, d, pol)) continue;
             const k = find(class, @intCast(d));
             const all = for (0..n) |e| {
-                if (find(class, @intCast(e)) == k and !onGround(nl, kinds, drawn, form, lower, e, pol)) break false;
+                if (find(class, @intCast(e)) == k and !onGround(nl, roles, kinds, drawn, form, lower, e, pol)) break false;
             } else true;
             if (all) rank[d] = low;
         }
@@ -154,10 +154,12 @@ fn undo(class: []u32, rank: []u32, before: []const u32, v: u32) bool {
     return changed;
 }
 
-fn onGround(nl: *const Netlist, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize, pol: symmetry.Polarity) bool {
+/// Whether `d` is a drawn transistor of type `pol` whose lower end is on a
+/// ground: net 0 or one of that role (`vss`, `gnd`).
+fn onGround(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize, pol: symmetry.Polarity) bool {
     if (!drawn[d] or form[d] != .vertical or !isTransistor(kinds[d])) return false;
     if (symmetry.polarity(nl.modelType(EdgeId.from(d))) != pol) return false;
-    return lower[d] == netlist.ground.index();
+    return roles[lower[d]] == .sink;
 }
 
 /// Merges the classes of `a` and `b` unless one is above the other.

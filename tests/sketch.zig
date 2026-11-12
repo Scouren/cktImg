@@ -281,6 +281,39 @@ test "sketch: a mirror the pair's halves are not wired to stands side by side, o
     try std.testing.expectEqual(2 * pinOf(&stage, "i1", 0).x, pinOf(&stage, "q5", 0).x + pinOf(&stage, "q6", 0).x);
 }
 
+test "sketch: a ground by any name: transistors on `vss` stand as those on net 0 do" {
+    // Oracle: a metamorphic relation. Renaming the ground net moves no
+    // device; and the book's two-stage op-amp (Razavi Fig. 9.22), whose
+    // second-stage current source stands level with the tail source.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck =
+        \\Two-stage op-amp
+        \\.model nch nmos
+        \\.model pch pmos
+        \\Vdd vdd 0 1.8
+        \\M1 n1 inm tail 0 nch
+        \\M2 n2 inp tail 0 nch
+        \\M3 n1 n1 vdd vdd pch
+        \\M4 n2 n1 vdd vdd pch
+        \\M5 tail vb1 0 0 nch
+        \\M6 vout n2 vdd vdd pch
+        \\M7 vout vb2 0 0 nch
+        \\
+    ;
+    const renamed = try std.mem.replaceOwned(u8, arena, deck, " 0", " vss");
+    const zero = try draw(arena, lib, &.{deck}, .{});
+    const vss = try draw(arena, lib, &.{renamed}, .{});
+    for ([_][]const u8{ "m1", "m2", "m3", "m4", "m5", "m6", "m7" }) |name| {
+        try std.testing.expectEqual(pinOf(&zero, name, 0), pinOf(&vss, name, 0));
+    }
+    try std.testing.expectEqual(pinOf(&vss, "m5", 0).y, pinOf(&vss, "m7", 0).y);
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the
