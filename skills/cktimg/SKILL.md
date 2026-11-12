@@ -39,7 +39,7 @@ one rung only for a **complaint** the rung above cannot fix.
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
-| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between); `face <dev> g left\|right`, `face <dev> <pin> up`; `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each`, `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between); `face <dev> g left\|right`, `face <dev> <pin> up`; `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
 | 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
 | 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
 | 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
@@ -82,14 +82,17 @@ on a device overrides the relations on it.
   name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
   Inside a `.subckt`, lines are that cell's for the Schemify import, which
   logs every line it does not honour.
-- **Roles.** A net's name decides its role: supply `vdd*`, ground `0`, `gnd`
-  or `vss`, inputs `in*`/`vin*` (and a `vref*` no drain makes), outputs `out*`/`vout*`,
+- **Roles.** A net's name decides its role: supply `vdd*` or `v+`, ground
+  `0`, `gnd`, `vss` or `v-`, inputs `in*`/`vin*` (and a `vref*` no drain makes), outputs `out*`/`vout*`,
   bias `vb*`/`bias*`.
   A V source from ground makes its net an input when it carries a signal
   (`ac`, `sin`, `pulse`, `pwl`, ...), else a bias; a V source from a supply,
   input or bias net to ground is a driver, drawn apart at the left. In a
   file of only `.subckt`s the top cell's V sources are devices of the
   circuit, wired where they stand (`*@ driver <src> apart` sets one apart).
+  A circuit of R, C, L, D and sources with no ground gets a reference: the
+  net most parts end on becomes its bottom wire, drawn with no ground
+  symbol. `*@ role <net> ground` names another, with ground symbols.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead.

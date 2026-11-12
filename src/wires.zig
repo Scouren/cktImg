@@ -5,7 +5,8 @@
 //! nodes, and the nets drawn as labels.
 //!
 //! - Rails: a ground symbol under each pin on ground; the supply a bar over
-//!   its pins with one symbol. Inputs: pins standing near each other on one
+//!   its pins with one symbol; a reference that is no ground a bar with
+//!   none. Inputs: pins standing near each other on one
 //!   wire with one port at its left end, else a port at each pin. Outputs:
 //!   a port at the outer end of the net's wire.
 //! - A bias net: a gate line between the two facing gates of one row,
@@ -149,13 +150,16 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             continue;
         }
         switch (s.roles[net]) {
-            .sink => if (lines.rail[net] == .bar) try bar(&c, pins, .down) else for (pins) |p| try terminal(&c, p, null),
+            .sink => switch (lines.rail[net]) {
+                .bar, .plain => try bar(&c, pins, .down, lines.rail[net] == .plain),
+                .auto, .each => for (pins) |p| try terminal(&c, p, null),
+            },
             .input => if (pins.len < 2 or (style == .auto and !near(&c, pins)) or !try patterned(&c, net, pins, axis2, style)) {
                 for (pins) |p| try terminal(&c, p, lines.port[net]);
             },
             .supply => if (lines.rail[net] == .each) {
                 for (pins) |p| try terminal(&c, p, null);
-            } else try bar(&c, pins, .up),
+            } else try bar(&c, pins, .up, lines.rail[net] == .plain),
             .bias => if (style == .auto) try bias(&c, net, pins) else {
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
@@ -379,8 +383,10 @@ fn terminal(c: *Canvas, p: u32, want: ?Side) !void {
 
 /// Rail pins facing `out` (up for a supply, down for ground): stubs to a
 /// bar a gap past the outermost, one symbol on each unbroken run of the bar
-/// at its middle stub. Any other pin: a symbol of its own.
-fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
+/// at its middle stub. Any other pin: a symbol of its own. `plain`, the bar
+/// is a wire and carries no symbol: where it is in pieces, each run and
+/// each pin off it carries the net's name instead.
+fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     const s = c.s;
     const gpa = c.gpa;
     assert(out == .up or out == .down);
@@ -391,13 +397,22 @@ fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
         if (s.pins.items(.side)[p] != out) continue;
         top = if (out == .up) @min(top, pinAt(s, p).y) else @max(top, pinAt(s, p).y);
     }
-    const reach = rail_reach * c.len.unit - c.len.rail;
+    // A plain bar is the net's one wire: every pin facing it comes down to
+    // it, however far.
+    const reach = if (plain) std.math.maxInt(i32) else rail_reach * c.len.unit - c.len.rail;
     for (pins) |p| {
         if (s.pins.items(.side)[p] == out and @abs(pinAt(s, p).y - top) <= reach) try ups.append(gpa, p);
     }
-    for (pins) |p| if (ups.items.len < 2 or std.mem.indexOfScalar(u32, ups.items, p) == null) try terminal(c, p, null);
+    if (pins.len == 0) return;
+    const net = s.pins.items(.net)[pins[0]];
+    // Pieces of a plain bar: the pins off it and its runs.
+    var pieces: usize = 0;
+    for (pins) |p| if (ups.items.len < 2 or std.mem.indexOfScalar(u32, ups.items, p) == null) {
+        if (plain) try c.labelAt(p) else try terminal(c, p, null);
+        pieces += 1;
+    };
+    if (plain and pieces > 0) s.labeled[net] = true;
     if (ups.items.len < 2) return;
-    const net = s.pins.items(.net)[ups.items[0]];
     const y_bar = if (out == .up) top - c.len.rail else top + c.len.rail;
     std.mem.sort(u32, ups.items, s, struct {
         fn lt(sc: *Schematic, x: u32, y: u32) bool {
@@ -413,10 +428,13 @@ fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
             if (@abs(at.y - y_bar) <= c.len.rail) c.wall();
             try on_bar.append(gpa, p);
         } else {
-            try terminal(c, p, null);
+            if (plain) try c.labelAt(p) else try terminal(c, p, null);
+            pieces += 1;
         }
     }
     if (on_bar.items.len == 0) return;
+    var mids: std.ArrayList(Pt) = .empty;
+    defer mids.deinit(gpa);
     // The bar in pieces between stubs, so every joint is a wire's end; a
     // piece that does not fit ends a run, and each run gets a symbol at its
     // middle stub.
@@ -433,9 +451,13 @@ fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
         };
         if (joined) continue;
         const mid = pinAt(s, on_bar.items[(run + i) / 2]);
-        try c.leaf(.terminal, net, .{ .x = mid.x, .y = y_bar }, out.opposite());
+        if (plain) try mids.append(gpa, .{ .x = mid.x, .y = y_bar }) else try c.leaf(.terminal, net, .{ .x = mid.x, .y = y_bar }, out.opposite());
         run = i + 1;
     }
+    // A plain bar in one piece is the whole net: a wire, nothing to name.
+    if (pieces + mids.items.len < 2) return;
+    for (mids.items) |at| try c.leaf(.label, net, at, out.opposite());
+    s.labeled[net] = true;
 }
 
 /// Two gates of one row facing each other: a gate line between them, named

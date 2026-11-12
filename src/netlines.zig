@@ -6,7 +6,8 @@
 //!     *@ label vb1               names at its pins, no wire
 //!     *@ wire vb1 [ladder|trunk|route]
 //!     *@ port out right          an input's or output's port side
-//!     *@ rail 0 bar              a rail as one bar, or a symbol per pin
+//!     *@ rail 0 bar              a rail as one bar, a symbol per pin (`each`),
+//!                                or one bar with no symbol (`plain`)
 //!     *@ first n1 n2             wired before the rest, in this order
 //!     *@ route n1 2,0 2,3 5,3    a polyline of the net, in symbol units
 //!     *@ via n1 4,1 4,6          points its wire passes, in order
@@ -49,7 +50,16 @@ pub const Style = enum(u8) {
     route,
 };
 
-pub const Rail = enum(u8) { auto, bar, each };
+pub const Rail = enum(u8) {
+    auto,
+    /// One bar past its pins, a rail symbol on each unbroken run of it.
+    bar,
+    /// A rail symbol at each pin.
+    each,
+    /// One bar and no symbol: a wire. Where the bar breaks, or a pin does
+    /// not reach it, the pieces carry the net's name.
+    plain,
+};
 
 /// A `route` (a polyline of the net, committed whole or not at all, one of
 /// its ends on a pin of the net) or a `via` (points the net's wire passes,
@@ -167,6 +177,11 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
         }
         try routes.append(arena, .{ .net = net.?.index(), .pts = pts, .via = via, .line = @intCast(i) });
         verdicts[i] = .{ .state = .honoured, .code = .ok };
+    }
+    // A reference the engine gave a circuit with no ground is its bottom
+    // wire, as people draw it: one bar and no symbol, unless a line says.
+    for (rail, 0..) |*r, net| {
+        if (r.* == .auto and sch.isReference(nl, roles, @intCast(net))) r.* = .plain;
     }
     return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items };
 }

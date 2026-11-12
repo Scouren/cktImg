@@ -1079,3 +1079,42 @@ test "sketch: a part to ground with nothing over it hangs under the gate it join
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: a circuit of parts with no ground stands on its reference as on ground, the reference a plain wire" {
+    // Oracle: the grounded drawing of the same circuit. A ladder drawn with
+    // its shunts on net 0, and again with that net renamed `com` so the
+    // deck has no ground, has every device in the same place: the engine
+    // finds the net the ladder stands on. And `com` is drawn as people draw
+    // a reference that is no ground (the bottom wire of 172 of 191 such
+    // pieces in the 5,263 reference drawings): one wire, no rail symbol,
+    // no name. `v-` and `v+` are rails by name.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const grounded = "ladder\nR1 a b 1k\nC1 b 0 1p\nR2 b c 1k\nC2 c 0 1p\nR3 c d 1k\nC3 d 0 1p\n";
+    const floating = "ladder\nR1 a b 1k\nC1 b com 1p\nR2 b c 1k\nC2 c com 1p\nR3 c d 1k\nC3 d com 1p\n";
+    const on_ground = try draw(arena, lib, &.{grounded}, .{});
+    const p = try draw(arena, lib, &.{floating}, .{});
+    const want = try placesByName(arena, &on_ground);
+    const got = try placesByName(arena, &p);
+    try std.testing.expectEqual(want.len, got.len);
+    for (want, got) |w, g| {
+        try std.testing.expectEqualStrings(w.name, g.name);
+        try std.testing.expectEqual(w.at, g.at);
+    }
+    const com = for (p.net_name, 0..) |name, n| {
+        if (std.mem.eql(u8, name, "com")) break n;
+    } else unreachable;
+    for (p.dev_name, 0..) |n, d| try std.testing.expect(n.len > 0 or p.pin_net[p.pinRange(d)[0]] != com);
+    for (p.labels) |l| try std.testing.expect(l.net != com);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+
+    var nl = try np.netlist.parse(arena, &.{"rails\nR1 v+ a 1k\nR2 a v- 1k\n"}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    try std.testing.expectEqual(np.Role.supply, roles[nl.net("v+").?.index()]);
+    try std.testing.expectEqual(np.Role.sink, roles[nl.net("v-").?.index()]);
+}

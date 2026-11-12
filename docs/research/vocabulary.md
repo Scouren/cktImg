@@ -28,7 +28,7 @@ when two pins share a net (a diode-connected gate).
 | 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's, the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
 | 2 | `label <net> [at <dev>.<pin>]`, `wire <net> [ladder\|column\|trunk\|route]` | names or a wire, and which pattern or pin | the guarantees; a wire that cannot be drawn is reported, then labels | strong |
 | 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side | — | strong |
-| 2 | `rail <net> bar\|each` | a supply or ground as one bar or a symbol per pin | — | strong |
+| 2 | `rail <net> bar\|each\|plain` | a supply or ground as one bar, a symbol per pin, or one bar with no symbol | — | strong |
 | 2 | `first <nets>` | nets wired before the rest, in this order | — | strong |
 | 2 | `shelf <columns>\|off` | how many device columns a row of the drawing holds before it wraps into rows (8); `off`: one row | — | strong |
 | 3 | `cell <dev> <col> <row>` | the lattice cell, in the skeleton's own frame (before it shifts the drawing to start at 0, so moving one device renumbers nothing); a bridge may take any row | distinct cells (I1) | weak |

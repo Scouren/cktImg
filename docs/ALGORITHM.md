@@ -49,9 +49,21 @@ polylines per net. `Placed` exports it (§5).
 
 | id | pattern | rule | example | test |
 |----|---------|------|---------|------|
-| R1 | a net's name | `gnd vss vee agnd dgnd vssa gnda` and net 0 → sink; `vdd* vcc* avdd* dvdd* vpp` → supply; `vb* bias*` → bias; `vin* in* vref*` → input (a `vref*` a transistor's drain or collector makes → output: people give 557 of 595 such nets with no drain an input port); `vout* out* vo` → output; otherwise internal | `R1 vdd vin 1k …` | R1 |
+| R1 | a net's name | `gnd vss vee agnd dgnd vssa gnda v-` and net 0 → sink; `vdd* vcc* avdd* dvdd* vpp v+` → supply; `vb* bias*` → bias; `vin* in* vref*` → input (a `vref*` a transistor's drain or collector makes → output: people give 557 of 595 such nets with no drain an input port); `vout* out* vo` → output; otherwise internal | `R1 vdd vin 1k …` | R1 |
 | R2 | an internal net joined to the sink by a V source | the source has `ac`, `sin`, `pulse`, `pwl`, `exp`, `sffm`, `am`, `trnoise` or `trrandom` → input; otherwise → bias. A source a `*@ driver <src> inline` line draws in the circuit is passed: it drives no terminal net | `Vs a 0 ac 1` / `Vb b 0 dc 0.5` | R2 |
 | R3 | a V source from a supply, input or bias net to the sink; or a device with no pin | not in the circuit: the net's terminal symbols stand for it there. A driver is still drawn, apart (§5) | `Vdd vdd 0 1.8` | R3 |
+
+A circuit of parts (no transistor) with no pin on a sink still stands on a
+**reference**: the internal net of two pins or more that most two-pin cards
+end on (second pins less first pins; a voltage source's minus and the pin a
+current source draws from count double), then the one with the most pins,
+then by name. It takes the sink's role, so its parts stand upright on it,
+and is drawn as people draw it, the circuit's bottom wire: one bar with no
+symbol (`rail <net> plain`). People draw one bottom wire under 172 of 191
+such connected pieces of the 5,263 reference drawings, and that score names
+it in 77.9%. A `*@ role <net> ground` line names the ground instead, and a
+`*@ role <net> internal` line on the reference leaves the circuit without
+one.
 
 Roles are an editable input to the layout (`guessRoles` only proposes them).
 A bias net is one driven from outside: a `vbias` a diode-connected device
@@ -419,7 +431,7 @@ crosses, so a label never joins two nets.
 
 | net | drawn as |
 |---|---|
-| ground | a ground symbol on a stub at each pin: one per branch, as the book draws it. No other net's wire crosses the stub: a person's symbol sits on its pin (3 of 16,030 rail stubs of half a unit or less are crossed in the 5,263 reference drawings) |
+| ground | a ground symbol on a stub at each pin: one per branch, as the book draws it (`rail <net> bar`: one bar under the pins as at a supply; `plain`, and a reference by default: the bar with no symbol, every pin facing down brought to it however far, and the net's name on each piece where it cannot be one wire). No other net's wire crosses the stub: a person's symbol sits on its pin (3 of 16,030 rail stubs of half a unit or less are crossed in the 5,263 reference drawings) |
 | supply | its pins facing up, no more than two units below the bar: stubs to a bar `rail` above the highest, one supply symbol on each unbroken run of the bar, at its middle stub; any other supply pin, and one farther from the bar (97% of people's upright supply runs are two units or less), a symbol of its own. A stub of `rail` is crossed by no wire, as at ground, and neither is the bar (about 12 wires cross a supply's level run in the reference drawings) |
 | input | its pins on one wire (a column or a trunk, as below) with one port out from the wire's left end, or its right, when the box around the pins is no more than 6 units around half and the port's stub has room, as people draw 87% of their inputs of two pins or more; else a port on a stub at each pin |
 | bias | a gate line between the two facing gates of one row, named at its middle; else its pins on one trunk with one input port out from a free end, when the box around them is no more than 6 units around half (people wire 187 of 215 such nets with one port); else an input port on a stub at each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in the 5,263 reference drawings, 3,228 carry port symbols and none a written name |
