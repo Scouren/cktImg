@@ -31,6 +31,7 @@ Added:
 
 Fixed:
 
+- Two blocks stacked in one column no longer touch (`src/sketch.zig`): a lattice row is as tall as its tallest body where that reaches more than `stack` past its pins (a block with pins on its sides only gave its row no height). With one block's last pin on the other's first, the router's path to it ended on another net and an assertion failed (`*@ cell` lines stacking two such blocks crashed the drawing). Over the 5,263 reference circuits: crossings 13,766 to 13,758, corners 56,327 to 56,125.
 - A net's distance from the supply runs through channels only (`src/skeleton.zig`): it leaked through a gate or a body pin on the way, so every node of a transistor whose body is on a rail counted as one hop from it, and a two-pin device between two such nodes could stand upside down.
 - A net named `vref*` is an input unless a transistor's drain or collector makes it (`src/schematic.zig`); it was always an output. People give 557 of the 595 such nets with no drain on them an input port (5 an output). Over the 5,263 reference circuits: crossings 13,546 to 13,255, corners 55,610 to 55,594.
 - Transistors on a ground named `vss` or `gnd` drop to their type's lowest row as those on net 0 always did (`src/levels.zig`): a second stage's current source level with the tail source. Over the 5,263 Analog Canvas reference circuits: drawings whose every top-bottom order is the human's 23.7% to 26.6%, rows the human drew kept whole 32.2% to 35.7%; the longer gate lines cost wire crossings, 25,439 to 26,670.

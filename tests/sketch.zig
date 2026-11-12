@@ -938,3 +938,40 @@ test "sketch: a mirror's facing gates are joined by one straight gate line" {
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other" {
+    // Oracle: the geometry itself. A block with its pins on one side is
+    // taller than its pins reach up or down (nothing): the lattice gave its
+    // row no height, the two bodies touched, `xl1`'s last pin on `xl2`'s
+    // first, and the router's path to the one ended on the other's net.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Two blocks in one column
+        \\.subckt tank n1 n2 n3
+        \\*@ left n1 n2 n3
+        \\L1 n1 n2 1n
+        \\L2 n2 n3 1n
+        \\.ends
+        \\.model nch nmos level=1
+        \\VDD vdd 0 1.8
+        \\XL1 p4 m4 vdd tank
+        \\XL2 p3 m3 vdd tank
+        \\M1 p4 g1 0 0 nch
+        \\M2 p3 g2 0 0 nch
+        \\M3 m4 g3 0 0 nch
+        \\M4 m3 g4 0 0 nch
+        \\*@ cell xl1 2 0
+        \\*@ cell xl2 2 2
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    for (0..3) |i| for (0..3) |j| {
+        const a = pinOf(&p, "xl1", @intCast(i));
+        const b = pinOf(&p, "xl2", @intCast(j));
+        try std.testing.expect(a.x != b.x or a.y != b.y);
+    };
+}

@@ -306,7 +306,8 @@ fn meanX(nl: *const Netlist, sk: *const Skeleton, net: u32, skip: u32) i64 {
 /// Each lattice column as wide as its widest device's reach on each side,
 /// plus room for a port, label or rail symbol (its stub and a unit) where a
 /// side pin on a net driven from outside, an output or a rail faces that
-/// side; rows as tall as their tallest device, plus a port's or rail
+/// side; rows as tall as their tallest device (its pins' reach, or its body
+/// where that reaches more than `stack` past them), plus a port's or rail
 /// symbol's stub where such a pin faces up or down (the supply's bar over
 /// the top aside). `len.series` between neighbouring columns, `len.stack`
 /// between rows.
@@ -331,8 +332,15 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
         const y: usize = @intCast(sk.y[d]);
         var left = r[@backingInt(Side.left)];
         var right = r[@backingInt(Side.right)];
+        // A body reaching farther than `stack` past its pins (a block with
+        // pins on its sides only) takes its own room: two such in one
+        // column touched, a pin of one on a pin of the other.
+        const info = s.devices.slice();
+        const body = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate((Pt{ .x = 0, .y = 0 }).sub(info.items(.grid)[d]));
         var up = r[@backingInt(Side.up)];
         var down = r[@backingInt(Side.down)];
+        if (-body.min.y > up + len.stack) up = -body.min.y;
+        if (body.max.y > down + len.stack) down = body.max.y;
         for (c.members(EdgeId.from(d)), 0..) |net, i| {
             const side = s.pinSide(@intCast(d), i) orelse continue;
             switch (s.roles[net.index()]) {
