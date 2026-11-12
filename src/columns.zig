@@ -115,11 +115,13 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     defer free_left.deinit(gpa);
     var free_right: std.ArrayList(u32) = .empty;
     defer free_right.deinit(gpa);
+    const outward = try outputSide(ctx, side);
+    defer gpa.free(outward);
     for (side, 0..) |s, k| switch (s) {
         .left => try left.append(gpa, @intCast(k)),
         .axis => try axis.append(gpa, @intCast(k)),
         .right => {},
-        .free => if (touchesOutput(ctx, k)) try free_right.append(gpa, @intCast(k)) else try free_left.append(gpa, @intCast(k)),
+        .free => if (outward[k]) try free_right.append(gpa, @intCast(k)) else try free_left.append(gpa, @intCast(k)),
     };
     sortByRank(ctx, left.items);
     sortByRank(ctx, axis.items);
@@ -133,7 +135,7 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         if (!clash) {
             axis.items[kept] = k;
             kept += 1;
-        } else if (touchesOutput(ctx, k)) {
+        } else if (outward[k]) {
             try free_right.append(gpa, k);
         } else {
             try free_left.append(gpa, k);
@@ -373,6 +375,39 @@ fn flowsRight(ctx: Ctx, x: []const i32) bool {
     }
     if (in[1] == 0 or out[1] == 0) return true;
     return in[0] * out[1] <= out[0] * in[1];
+}
+
+/// Per column: whether, free, it goes right of the core. One on an output
+/// does, and so does one a wired net joins to such a free column: a
+/// mirror's two stand on one side.
+fn outputSide(ctx: Ctx, side: []const Side) ![]bool {
+    const c = &ctx.nl.graph;
+    const n = ctx.cols.count();
+    assert(side.len == n);
+    const right = try ctx.gpa.alloc(bool, n);
+    for (right, 0..) |*r, k| r.* = touchesOutput(ctx, k);
+    var changed = true;
+    var rounds: usize = 0;
+    while (changed) : (rounds += 1) {
+        assert(rounds <= n);
+        changed = false;
+        for (ctx.wired, 0..) |w, net| {
+            if (!w) continue;
+            const on = c.incident(VertexId.from(@intCast(net)));
+            const any = for (on) |e| {
+                const k = ctx.column_of[e.index()];
+                if (k != none and side[k] == .free and right[k]) break true;
+            } else false;
+            if (!any) continue;
+            for (on) |e| {
+                const k = ctx.column_of[e.index()];
+                if (k == none or side[k] != .free or right[k]) continue;
+                right[k] = true;
+                changed = true;
+            }
+        }
+    }
+    return right;
 }
 
 fn touchesOutput(ctx: Ctx, k: usize) bool {

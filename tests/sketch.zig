@@ -242,6 +242,45 @@ test "sketch: stages stand in the order the signal passes them, each load beside
     try std.testing.expect(pinOf(&amp, "m2", 0).x < pinOf(&amp, "cl", 0).x);
 }
 
+test "sketch: a mirror the pair's halves are not wired to stands side by side, off the pair's axis" {
+    // Oracle: AnalogRetriever's bias-cancelled input stage as drawn in the
+    // Analog Canvas gallery (ar-6069, MIT): the mirror Q7, Q8 side by side
+    // left of the pair, whose loads Q5, Q6 stand side by side over it; and
+    // the book's convention that a mirror's two stand together (Razavi
+    // Fig. 5.2). Nested about the pair's axis, Q5 and Q6 stood between them.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const stage = try draw(arena, lib, &.{
+        \\Bias-cancelled input stage
+        \\.model qnpn npn
+        \\.model qpnp pnp
+        \\Vcc vcc 0 5
+        \\I1 net2 vee 1m
+        \\Q1 net0 vi net2 qnpn
+        \\Q2 net4 0 net2 qnpn
+        \\Q3 net3 net1 net0 qnpn
+        \\Q4 vo net0 net4 qnpn
+        \\Q5 net3 net3 vcc qpnp
+        \\Q6 vo net3 vcc qpnp
+        \\Q7 net1 net1 vcc qpnp
+        \\Q8 vi net1 vcc qpnp
+        \\
+    }, .{});
+    const a = pinOf(&stage, "q7", 0).x;
+    const b = pinOf(&stage, "q8", 0).x;
+    try std.testing.expect(a != b);
+    for ([_][]const u8{ "q1", "q2", "q3", "q4", "q5", "q6" }) |name| {
+        const x = pinOf(&stage, name, 0).x;
+        try std.testing.expect(x <= @min(a, b) or x >= @max(a, b));
+    }
+    // The pair's loads keep the pair's axis: the tail source under its middle.
+    try std.testing.expectEqual(2 * pinOf(&stage, "i1", 0).x, pinOf(&stage, "q5", 0).x + pinOf(&stage, "q6", 0).x);
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the

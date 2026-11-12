@@ -159,7 +159,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
         try start.append(gpa, @intCast(members.items.len));
     }
 
-    const mate = try mates.find(gpa, nl, st, drawn, form, column_of, chain.above, chain.below, start.items.len - 1);
+    const mate = try mates.find(gpa, nl, roles, st, drawn, form, column_of, chain.above, chain.below, start.items.len - 1);
     defer gpa.free(mate);
     const rank = try levels.rows(gpa, nl, roles, st, &rel, mate, chain.below, drawn, form, upper, lower);
     defer gpa.free(rank);

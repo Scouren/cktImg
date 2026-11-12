@@ -199,7 +199,17 @@ close a loop is not kept.
 cross-coupled pair's, and each two-member mirror's or bank's, carried up and
 down their two columns while the devices there are of one kind. Vertical
 devices only, and only where every member of a column has its mate in one
-column that maps back to it: columns are mirrored whole.
+column that maps back to it: columns are mirrored whole. A differential or
+cross-coupled pair takes its mates first, so its loads are its own before
+they are a mirror's other half. A drawing has one axis: block mates fall
+into clusters, two mated column pairs in one when the circuit wires them
+half to half (a net, no rail or bias, joins a column of one to a column of
+the other, and another net joins their two mates: a pair and its folded
+branches, two pairs on the same inputs). Where there are several clusters,
+the largest holding a differential or cross-coupled pair keeps its mates
+and the others lose theirs; none keeps them when none holds such a pair
+(mirrors along a chain of stages). Nested about one axis, an unrelated
+mirror's two would stand either side of the whole core.
 
 **Rows** (`levels.rows`). A device stands above another when its lower end is
 the other's upper end; a device's row is the longest path down those, after
@@ -217,7 +227,8 @@ half's order is the one whose wired nets span least (rails, bias nets and
 nets driven from outside aside: they are symbols or labels), tried
 exhaustively up to six columns, else by moving one column at a time while
 that helps. Columns with no mate go right of the core when they reach an
-output, else left of it, each side ordered the same way. A circuit with no
+output or a wired net joins them to a free column that does (a mirror's
+two stand on one side), else left of it, each side ordered the same way. A circuit with no
 core (no mated column, none on an axis) has all its columns ordered at
 once, first by the signal's way: as few pins as can be stand left of the
 transistor or controlled source that drives their net (a gate before its
@@ -467,7 +478,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: closing up reorders nothing, widens nothing…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |
