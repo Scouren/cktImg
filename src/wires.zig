@@ -439,7 +439,8 @@ fn bar(c: *Canvas, pins: []const u32, out: Side) !void {
 }
 
 /// Two gates of one row facing each other: a gate line between them, named
-/// at its middle. Else an input port on a stub at each pin, as people draw
+/// at its middle. Else, pins standing near each other: one trunk, one
+/// input port. Else an input port on a stub at each pin, as people draw
 /// a bias: of 4,378 nets named `vb*` or `bias*` in 5,263 hand-drawn
 /// schematics, 3,228 carry port symbols and none a written name.
 fn bias(c: *Canvas, net: u32, pins: []const u32) !void {
@@ -459,6 +460,8 @@ fn bias(c: *Canvas, net: u32, pins: []const u32) !void {
             return;
         }
     }
+    // Gates standing near each other: one wire, one port, as an input's.
+    if (pins.len >= 2 and near(c, pins) and try trunk.draw(c, net, pins, .name)) return;
     for (pins) |p| try terminal(c, p, null);
     s.labeled[net] = true;
 }

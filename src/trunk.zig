@@ -96,8 +96,9 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
         } else false;
         if (!beyond and c.fits(net, from, stepPt(from, if (r) .right else .left, reach))) break r;
     } else null;
-    // An input with room at neither end is not wired: each pin gets a port.
-    if (end == .port and role == .input and free == null) return false;
+    // An input or a bias with room at neither end is not wired: each pin
+    // gets a port.
+    if ((role == .input and end == .port or role == .bias and end == .name) and free == null) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
     if (end == .name) {
         const r = free orelse return nameOnPin(c, pins);
@@ -105,7 +106,8 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
         const from: Pt = .{ .x = if (r) hi else lo, .y = y_t };
         const to = stepPt(from, side, reach);
         if (!try c.commit(net, &.{ from, to })) return nameOnPin(c, pins);
-        try c.leaf(.label, net, to, side.opposite());
+        // A bias net's name is a port, as people draw it.
+        try c.leaf(if (role == .bias) .terminal else .label, net, to, side.opposite());
         return true;
     }
     if (role != .output and role != .input) return true;

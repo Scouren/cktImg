@@ -555,6 +555,54 @@ test "sketch: a bias gate carries a port symbol, not a written name" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: a bias net's pins standing near each other share one wire and one port" {
+    // Oracle: how people draw it. Of 215 bias nets whose pins stand within
+    // six units around half in 5,263 hand-drawn schematics, 187 are one
+    // wire with one port. A drain node a DC source holds (a bias by R2)
+    // stays the wire between the transistor and its load.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Common source, its drain held by a source
+        \\.model nch nmos
+        \\M1 x vb 0 0 nch
+        \\RD vdd x 1k
+        \\VX x 0 dc 1
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "x")) break i;
+    } else unreachable;
+    // One port in the circuit; the source drawn apart carries its own.
+    var ports: usize = 0;
+    const drain = pinOf(&p, "m1", 0);
+    for (p.dev_name, p.dev_class, 0..) |n, class, d| {
+        if (n.len != 0 or class != lib.findRole(.input_port).? or p.pin_net[p.pinRange(d)[0]] != net) continue;
+        ports += @intFromBool(@abs(p.dev_pos[d].x - drain.x) <= 2 * lib.unit);
+    }
+    try std.testing.expectEqual(1, ports);
+    // The drain's wire reaches the resistor's end.
+    const load = pinOf(&p, "rd", 1);
+    var joined = false;
+    var it = p.segments(net);
+    while (it.next()) |poly| {
+        var a = false;
+        var b = false;
+        for (poly) |pt| {
+            a = a or std.meta.eql(pt, drain);
+            b = b or std.meta.eql(pt, load);
+        }
+        joined = joined or (a and b);
+    }
+    try std.testing.expect(joined or drain.x == load.x);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the
