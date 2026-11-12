@@ -252,9 +252,12 @@ nets driven from outside aside: they are symbols or labels; a bridge between
 two wired nets counts the gap between their columns, so a column only a
 coupling capacitor joins to the rest stands beside it), tried
 exhaustively up to six columns, else by moving one column at a time while
-that helps. Columns with no mate go right of the core when they reach an
-output or a wired net joins them to a free column that does (a mirror's
-two stand on one side), else left of it, each side ordered the same way. A circuit with no
+that helps. A column with no mate goes to the side of the core's half it
+shares more wired nets with (people: 70.4% of 1,459 such columns in the
+5,263 reference drawings); one neither half pulls goes right of the core
+when it reaches an output or a wired net joins it to a free column going
+right (a mirror's two stand on one side), else left of it; each side is
+ordered the same way. A circuit with no
 core (no mated column, none on an axis) has all its columns ordered at
 once, first by the signal's way: as few pins as can be stand left of the
 transistor or controlled source that drives their net (a gate before its

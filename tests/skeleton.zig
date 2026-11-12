@@ -199,6 +199,30 @@ test "skeleton: a column only a bridge joins to the rest stands beside the colum
     try std.testing.expect(@min(@abs(rl - q1), @abs(rl - q2)) <= 8);
 }
 
+test "skeleton: a column outside the mirrored core stands on the side of the half it is wired to" {
+    // Oracle: a metamorphic relation. A second stage read from the right
+    // half's node stands right of the core, and the same stage read from
+    // the left half's node stands left of it: its wire then passes no
+    // column of the core. Neither net is an output by name. It went left
+    // either way, unless it reached an output.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const core = "second stage\n.model nch nmos level=1\n.model pch pmos level=1\nVdd vdd 0 1.8\nM1 a in1 p 0 nch\nM2 b in2 p 0 nch\n" ++
+        "M3 a a vdd vdd pch\nM4 b a vdd vdd pch\nM5 p vb 0 0 nch\nR6 vdd x 1k\n";
+    const from_right = try lay(arena, core ++ "M6 x b 0 0 nch\n");
+    const from_left = try lay(arena, core ++ "M6 x a 0 0 nch\n");
+    errdefer std.debug.print("=> {s}\n=> {s}\n", .{ cells(arena, &from_right) catch "", cells(arena, &from_left) catch "" });
+    for ([_]*const Laid{ &from_right, &from_left }, [_]bool{ true, false }) |l, right| {
+        const x = l.sk.x;
+        const m1 = x[l.nl.device("m1").?.index()];
+        const m2 = x[l.nl.device("m2").?.index()];
+        const m6 = x[l.nl.device("m6").?.index()];
+        try std.testing.expect(m1 < m2);
+        try std.testing.expect(if (right) m6 > m2 else m6 < m1);
+    }
+}
+
 test "skeleton: a row of more than eight columns wraps into shelves, a pair never parted; `*@ shelf` sets the width" {
     // Oracle: a page as people fill it (their drawings of over 30 devices
     // are 20 units wide at the median, the one row of columns was 37), and
