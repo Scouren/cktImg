@@ -332,9 +332,10 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
 
 /// `face <dev> <side pin> left|right`: a transistor's gate (or base) side;
 /// on a mated pair, the mate turns the other way unless a line names it.
-/// Returns false when a line turned a mated pair's gates out of their
-/// mirror.
-pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, verdicts: []?Verdict) Allocator.Error!bool {
+/// On a flat part, the end named stands on that side (`left_end`); its mate
+/// is not turned with it. Returns false when a line turned a mated pair's
+/// gates out of their mirror.
+pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, left_end: []skeleton.End, verdicts: []?Verdict) Allocator.Error!bool {
     const before = try arena.dupe(bool, gate_right);
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -360,6 +361,12 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
             verdicts[i] = reject(.unknown_name);
             continue;
         };
+        // A flat part: one of its two ends on that side.
+        if (drawn[d] and form[d] == .horizontal and c.members(EdgeId.from(d)).len == 2) {
+            left_end[d] = if ((pin == 0) != right) .first else .second;
+            verdicts[i] = honoured;
+            continue;
+        }
         const side_pin = switch (kinds[d]) {
             .mosfet, .bjt, .jfet, .mesfet => pin == 1,
             else => false,

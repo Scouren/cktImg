@@ -31,6 +31,7 @@
 //!
 //! Contents:
 //! - `pub const Form = enum(u8) { vertical, horizontal }`
+//! - `pub const End = enum(u8) { auto, first, second }`
 //! - `pub const Skeleton = struct`
 //! - `pub const Options = struct { shelf: u32 = 8 }`
 //! - `pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton`
@@ -65,6 +66,10 @@ const isRail = forms.isRail;
 
 pub const Form = enum(u8) { vertical, horizontal };
 
+/// The end of a flat two-pin device a `face` line puts on the left: its
+/// first pin, its second, or `auto`, the drawing's choice.
+pub const End = enum(u8) { auto, first, second };
+
 /// What of the drawing's style (`config.Layout`) decides a cell.
 pub const Options = struct {
     /// Device columns a row holds before it wraps (`wrap.zig`); 0: one row.
@@ -81,6 +86,8 @@ pub const Skeleton = struct {
     lower: []const u32,
     /// Its gate (side pins) faces right.
     gate_right: []const bool,
+    /// A flat two-pin device's end a `face` line puts on the left.
+    left_end: []const End,
     /// Its cell; the smallest of each axis is 0.
     x: []const i32,
     y: []const i32,
@@ -137,7 +144,7 @@ pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []cons
 pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
     const c = &nl.graph;
     const n = c.edgeCount();
-    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.x.len, sk.y.len, sk.shelf.len }) |len| {
+    for ([_]usize{ sk.drawn.len, sk.form.len, sk.upper.len, sk.lower.len, sk.gate_right.len, sk.left_end.len, sk.x.len, sk.y.len, sk.shelf.len }) |len| {
         if (len != n) return error.WrongLength;
     }
     for (0..n) |d| {
@@ -174,6 +181,8 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     const upper = try arena.alloc(u32, n);
     const lower = try arena.alloc(u32, n);
     const gate_right = try arena.alloc(bool, n);
+    const left_end = try arena.alloc(End, n);
+    @memset(left_end, .auto);
     const x = try arena.alloc(i32, n);
     const y = try arena.alloc(i32, n);
     @memset(x, 0);
@@ -254,7 +263,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
     gates(nl, roles, st, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
-    const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, verdicts);
+    const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
     const shelf = try arena.alloc(u32, n);
     @memset(shelf, 0);
     try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts);
@@ -262,7 +271,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     try expectDistinctCells(gpa, drawn, x, y);
     const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;
     if (axis2) |a2| for (mate, 0..) |m, d| if (m != none and drawn[d] and form[d] == .vertical) assert(x[d] + x[m] == a2);
-    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .x = x, .y = y, .shelf = shelf, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
+    return .{ .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .left_end = left_end, .x = x, .y = y, .shelf = shelf, .axis2 = axis2, .origin = origin, .verdicts = verdicts };
 }
 
 fn byRank(gpa: Allocator, rank: []const u32) ![]u32 {

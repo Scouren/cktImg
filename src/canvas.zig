@@ -225,10 +225,10 @@ pub const Canvas = struct {
         // A stub over the net's own wire is no stub: the symbol would stand
         // on the wire, and a netlister reads the two as apart.
         const toward = for ([_]Side{ asked, side, .up, .down }) |t| {
-            if (!c.onNet(net, stepPt(from, t, c.len.terminal))) break t;
+            if (!c.along(net, from, t)) break t;
         } else asked;
         const end = stepPt(from, toward, c.len.terminal);
-        if (!c.onNet(net, end) and try c.commit(net, &.{ from, end })) {
+        if (!c.along(net, from, toward) and try c.commit(net, &.{ from, end })) {
             try c.leaf(.terminal, net, end, toward.opposite());
         } else if (c.fits(net, from, from)) {
             try c.leaf(.label, net, from, toward.opposite());
@@ -243,6 +243,13 @@ pub const Canvas = struct {
             }
             try c.labelAt(first.?);
         }
+    }
+
+    /// Whether a stub of `terminal` out from `from` toward `side` runs along
+    /// a wire of `net`, or ends on one: its first step or its far end is on
+    /// the net's wire.
+    fn along(c: *const Canvas, net: u32, from: Pt, side: Side) bool {
+        return c.onNet(net, stepPt(from, side, 1)) or c.onNet(net, stepPt(from, side, c.len.terminal));
     }
 
     /// Whether `at` is on a wire of `net` drawn so far.

@@ -63,12 +63,9 @@ device is up and which way a bridge runs; `kind`, `class`, `driver`,
 (a net pair is routed as mirror images); `label` and `wire` take a pin and
 a pattern.
 
-Not built: the engine rejects four forms of this table, and
-[ALGORITHM.md](../ALGORITHM.md) lists what it takes. `label <net> at
-<dev>.<pin>` (a `label` names the whole net), `wire <net> column`, `face
-<dev> <pin> down`, and `face` left or right on a bridge (its direction: `at
-<dev> <x> <y> R0|MR0` says it). An agent hinting 13 hand drawings reached
-for the first and the last (`skills/cktimg/HINTING.md`, What no line says).
+Not built: the engine rejects two forms of this table, and
+[ALGORITHM.md](../ALGORITHM.md) lists what it takes: `label <net> at
+<dev>.<pin>` (a `label` names the whole net) and `wire <net> column`.
 
 ## Coverage
 

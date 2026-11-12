@@ -363,16 +363,19 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
 }
 
 /// The honoured `cell` and `at` lines that name a device `h` names, when
-/// `h` is a relation they can displace; null for none.
+/// `h` is a relation they can displace; the honoured `route` and `via`
+/// lines on the net a `label` names (the wire they draw is no name); null
+/// for none.
 fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
-    switch (h.verb) {
-        .row, .above, .order, .face => {},
+    const exact: [2]hints.Verb = switch (h.verb) {
+        .row, .above, .order, .face => .{ .cell, .at },
+        .label => .{ .route, .via },
         else => return null,
-    }
+    };
     var by: std.ArrayList(u32) = .empty;
     for (nl.hints, out, 0..) |g, v, i| {
-        if ((g.verb != .cell and g.verb != .at) or v.state != .honoured or g.args.len == 0) continue;
-        const names = if (h.verb == .face) h.args[0..1] else h.args;
+        if ((g.verb != exact[0] and g.verb != exact[1]) or v.state != .honoured or g.args.len == 0) continue;
+        const names = if (h.verb == .face or h.verb == .label) h.args[0..1] else h.args;
         for (names) |name| if (std.mem.eql(u8, name, g.args[0])) {
             try by.append(arena, @intCast(i));
             break;

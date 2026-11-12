@@ -304,7 +304,7 @@ line per decision, at the top level of the deck drawn:
 *@ role vb1 bias           a net's role; driver, class, kind, expand
 *@ above M9 Iss M7         rows top down; row M1 Rc Cc holds them level
 *@ order RD1 M1 M5 M2      columns left to right
-*@ face M3 g left          a gate's side, or which end is up
+*@ face M3 g left          a gate's side, which end is up, or a flat part's left end
 *@ label vb1               names, not a wire; wire, port, rail, first
 *@ cell M5 2 4             a lattice cell
 *@ at M5 6 4.5 R90         exact coordinates and turn; refdes M5 left

@@ -224,6 +224,43 @@ test "lines: order stands the bridges it names one after another in that order, 
     }
 }
 
+test "lines: face turns a flat part end for end" {
+    // Oracle: the line's own statement, read off the drawing: the pin
+    // named stands on that side of the part's other pin. One of the two
+    // lines is against the way the engine turns the part; `face` took a
+    // gate's side and an upright end only, so a flat part's way could be
+    // said by an exact place alone (an agent hinting hand drawings asked
+    // for it and was refused).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\A part between two columns
+        \\.model nch nmos level=1
+        \\Vdd vdd 0 1.8
+        \\R3 vdd a 1k
+        \\R4 vdd b 1k
+        \\M1 a in1 0 0 nch
+        \\M2 b in2 0 0 nch
+        \\C1 a b 1p
+        \\
+    ;
+    for ([_][]const u8{ "*@ face c1 a left", "*@ face c1 a right", "*@ face c1 b left", "*@ face c1 2 right" }) |text| {
+        const r = try run(f.arena(), f.lib, deck, try std.mem.concat(f.arena(), u8, &.{ "*@ bridge c1\n", text, "\n" }));
+        try expectState(r.verdict(text), .honoured, .ok);
+        const first_left = r.pin("c1", 0).x < r.pin("c1", 1).x;
+        try std.testing.expectEqual(r.pin("c1", 0).y, r.pin("c1", 1).y);
+        const names_first = std.mem.indexOf(u8, text, " a ") != null;
+        const says_left = std.mem.endsWith(u8, text, "left");
+        try std.testing.expectEqual(names_first == says_left, first_left);
+    }
+    // An upright part has no left or right end; nor has a transistor lying
+    // flat, its two ends on one net (found by `zig build fuzz`).
+    const up = try run(f.arena(), f.lib, deck, "*@ face r3 a left\n");
+    try expectState(up.verdict("*@ face r3 a left"), .rejected, .not_placeable);
+    const lying = try run(f.arena(), f.lib, "A transistor on one net\n.model pch pmos level=1\nM2 out 0 out vdd pch\n", "*@ weak face m2 g right\n");
+    try expectState(lying.verdict("*@ weak face m2 g right"), .rejected, .not_placeable);
+}
+
 test "lines: symmetry off leaves no mates; symmetric refuses what no symmetry swaps; axis pins a device on it" {
     var f = try Fixture.init();
     defer f.deinit();
@@ -341,6 +378,18 @@ test "lines: a port asked along its net's own wire is not drawn back over it" {
     ;
     const r = try run(f.arena(), f.lib, deck, "*@ weak port in top\n*@ weak role 0 bias\n");
     try expectState(r.verdict("*@ weak port in top"), .relaxed, .no_room);
+    // An output down a column, its port asked on top: the stub would start
+    // along the wire and end past the pin above, inside the device (found
+    // by `zig build fuzz`: only the stub's far end was looked at).
+    const down =
+        \\An output down a column
+        \\.model pch pmos level=1
+        \\R0 out 0 1k
+        \\M3 out 0 a vdd pch
+        \\
+    ;
+    const o = try run(f.arena(), f.lib, down, "*@ weak port out top\n");
+    try expectState(o.verdict("*@ weak port out top"), .relaxed, .no_room);
     // The node between two parts in series is all wire to its left and its
     // right: its port stands off the line, on no device's pin (in 238 of
     // 5,263 reference circuits the symbol stood on the next part's pin).
@@ -361,6 +410,27 @@ test "lines: a port asked along its net's own wire is not drawn back over it" {
         try std.testing.expect(at.y != s.pin("r1", 0).y or at.y != s.pin("c1", 0).y);
         for ([_]np.Pt{ s.pin("r1", 0), s.pin("c1", 0) }) |q| try std.testing.expect(!(q.x == at.x and q.y == at.y));
     }
+}
+
+test "lines: a label on a net a via pins gives way to it" {
+    // Oracle: the report's contract: a line the drawing lacks says which
+    // line it gave way to. A `via` draws the net's wire through its point,
+    // so a `label` on that net cannot hold; it was reported `relaxed
+    // not_drawn`, the verdict kept for the engine's own faults (found by
+    // `zig build fuzz`).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\One transistor
+        \\.model nch nmos level=1
+        \\M0 in out b 0 nch
+        \\
+    ;
+    const r = try run(f.arena(), f.lib, deck, "*@ via out 6,8\n*@ label out\n");
+    try expectState(r.verdict("*@ via out 6,8"), .honoured, .ok);
+    const v = r.verdict("*@ label out");
+    try expectState(v, .dropped, .conflict);
+    try std.testing.expectEqualSlices(u32, &.{r.line("*@ via out 6,8")}, v.blocked_by);
 }
 
 test "lines: a malformed line, an unknown name or verb are rejected" {

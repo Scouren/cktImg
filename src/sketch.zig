@@ -310,6 +310,12 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
     }
     if (pins.len != 2) return true;
     const s0 = class.side(0, o) orelse return true;
+    // A `face` line says which end is left.
+    switch (sk.left_end[d]) {
+        .first => return s0 == .left,
+        .second => return s0 == .right,
+        .auto => {},
+    }
     // A pin on a net it shares with one other flat part of its row faces
     // that part: two parts in series are one line, as people draw them
     // (52.7% of 1,397 such pairs in 5,263 hand-drawn schematics; the mean

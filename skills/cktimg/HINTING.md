@@ -58,9 +58,11 @@ Work down this list. Stop at the first round whose picture meets the target.
    across a mirrored pair names the device on the axis too
    (`order m9 m1 iss m2 m10`), or the axis device is pushed aside.
 
-4. **`face` for gates.** Turn a stack's gates to the side their inputs come
-   from. Turning a bias gate away from its mate needs `label <net>` with it,
-   or one port is wired round.
+4. **`face` for gates and flat parts.** Turn a stack's gates to the side
+   their inputs come from. Turning a bias gate away from its mate needs
+   `label <net>` with it, or one port is wired round. `face <part> <pin>
+   left|right` turns a flat part end for end; its mate needs a line of its
+   own.
 
 5. **`group stack <transistor> <part>`** for a part that belongs in a
    transistor's column.
@@ -106,7 +108,6 @@ complaint open.
 |---|---|
 | One pin of a net named, the rest wired | `label <net>` names the whole net; else leave it |
 | A flat part level with a given pin | `at` on the full set |
-| Which end of a flat part points left | `at ... R0` or `MR0` |
 | An upright part between two rows | `at` |
 | "This net goes over the top" | `route`, in coordinates |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |

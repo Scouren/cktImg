@@ -150,7 +150,8 @@ fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []c
                 for (0..r.intRangeAtMost(u32, 0, 3)) |_| try w.print(" {s}", .{&dev(r, devices, letters)});
                 try w.writeAll("\n");
             },
-            3 => try w.print("face {s} g {s}\n", .{ &a, if (r.boolean()) "left" else "right" }),
+            // A gate's side, or a flat part's left end.
+            3 => try w.print("face {s} {s} {s}\n", .{ &a, if (r.boolean()) "g" else "a", if (r.boolean()) "left" else "right" }),
             4 => try w.print("face {s} {s} up\n", .{ &a, if (r.boolean()) "a" else "d" }),
             5 => try w.writeAll("symmetry off\n"),
             6 => try w.print("symmetric {s} {s}\n", .{ &a, &b }),
