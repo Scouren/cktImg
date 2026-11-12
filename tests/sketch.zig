@@ -1002,3 +1002,52 @@ test "sketch: a net between two shelves is joined by name, a shelf's own nets by
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: a trunk is the cheapest track that fits, not the first" {
+    // Oracle: no wire over three pins is shorter than half the perimeter of
+    // the box around them (the rectilinear Steiner tree of three points). A
+    // stage's base net joins a coupling capacitor, a feedback resistor and
+    // the base: the two parts' pins face each other on one row, the base
+    // stands off it, and the net's wire is exactly that long. The first
+    // track that fit (the tap row under both parts) was longer, with five
+    // corners.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\stage
+        \\.model qnpn npn
+        \\C1 vin b 1p
+        \\C2 c vo 1p
+        \\I1 vcc c 0.5m
+        \\Q1 c b e 0 qnpn
+        \\R1 c b 200k
+        \\R2 e 0 200
+        \\R3 vo 0 20k
+        \\Vi vin 0 1
+        \\*@ driver vi inline
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const net = for (p.net_name, 0..) |name, n| {
+        if (std.mem.eql(u8, name, "b")) break n;
+    } else unreachable;
+    // The places the count is made from: the parts' pins level and facing,
+    // the base off their row.
+    const c1 = pinOf(&p, "c1", 1);
+    const r1 = pinOf(&p, "r1", 1);
+    try std.testing.expectEqual(c1.y, r1.y);
+    try std.testing.expect(c1.x < r1.x and pinOf(&p, "c1", 0).x < c1.x and pinOf(&p, "r1", 0).x > r1.x);
+    const base = pinOf(&p, "q1", 1);
+    try std.testing.expect(base.y != c1.y and base.x > r1.x);
+    var length: i64 = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        length += @abs(a.x - b.x) + @abs(a.y - b.y);
+    };
+    try std.testing.expectEqual(@abs(base.x - c1.x) + @abs(base.y - c1.y), length);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
