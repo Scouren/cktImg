@@ -227,7 +227,9 @@ const Graph = struct {
 
 /// Closes `s` up in place: x toward `axis2` (twice the mirror axis; null
 /// for the left edge), then y toward the top. `len.series` and `len.stack`
-/// are the least room kept between device columns and rows, `len.tap` the
+/// are the least room kept between device columns and between the rows of
+/// one column (two symbols `len.series` apart along x pass each other
+/// along y), `len.tap` the
 /// least length of a wire between two symbols, bends or junctions, and
 /// `len.clearance` the least room between any other two things; a gap
 /// already smaller is kept as it is. `gpa` backs the work.
@@ -238,7 +240,7 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocat
         defer arena_state.deinit();
         const arena = arena_state.allocator();
         // Read again for y: the x pass moved everything.
-        const d = try read(arena, s);
+        const d = try read(arena, s, len);
         try pass(arena, s, &d, len, ax, if (ax == 0) axis2 else null);
     }
 }
@@ -246,7 +248,7 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocat
 // ---- private ----
 
 /// The drawing's features and ties, from the schematic as it stands.
-fn read(arena: Allocator, s: *const Schematic) Allocator.Error!Drawing {
+fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Drawing {
     var d: Drawing = .{};
     const info = s.devices.slice();
     const kinds = s.nodes.items(.kind);
@@ -303,14 +305,16 @@ fn read(arena: Allocator, s: *const Schematic) Allocator.Error!Drawing {
         }
         if (r.len != 2) continue;
         // A stub keeps its length: a rail's to its bar or symbol, and any
-        // wire that ends on a port, a symbol or a name.
+        // wire that ends on a port, a symbol or a name. A rail's longer way
+        // up to its bar, from a lower row, is a wire like any other: tied,
+        // it would hold its row where the lattice put it.
         const a = pt(r.pts[0]);
         const b = pt(r.pts[1]);
         const rail = s.roles[r.net] == .supply or s.roles[r.net] == .sink;
         const stub = for (leaves.items) |l| {
             if ((l.at.eql(a) and toward(a, b) == l.faces) or (l.at.eql(b) and toward(b, a) == l.faces)) break true;
         } else false;
-        if ((rail and a.x == b.x) or stub) try d.ties.append(arena, .{ a, b });
+        if ((rail and a.x == b.x and @abs(b.y - a.y) <= len.rail) or stub) try d.ties.append(arena, .{ a, b });
     }
     return d;
 }
@@ -355,6 +359,11 @@ fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1
     for (d.devices.items, 0..) |da, i| for (d.devices.items[i + 1 ..]) |db| {
         const a, const b = if (along(da.at, ax) <= along(db.at, ax)) .{ da, db } else .{ db, da };
         try g.keep(arena, along(a.at, ax), along(b.at, ax), @divExact(g.quantum, 2));
+        // A row is its column's: two symbols a column apart may stand
+        // beside each other (a tall block beside a stack), held only by
+        // their order and by what would touch.
+        const beside = @max(across(b.box.min, ax) - across(a.box.max, ax), across(a.box.min, ax) - across(b.box.max, ax));
+        if (ax == 1 and beside >= len.series) continue;
         try g.keep(arena, along(a.box.max, ax), along(b.box.min, ax), room);
     };
 

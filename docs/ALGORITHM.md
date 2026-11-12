@@ -313,7 +313,12 @@ does a stub with its port, rail symbol or name. Two things that would touch
 sliding past each other keep their order and the smaller of the gap they
 have and `clearance`; a wire between two symbols, bends or junctions keeps
 `tap`; two devices keep their order, and `series` (along x) or `stack`
-(along y) between their symbols. Each track then goes as near the anchor as
+(along y) between their symbols. A row is its column's: along y, two
+symbols at least `series` apart along x keep only their order, so a tall
+block stands beside the stack it joins and does not hold a band of its
+own. A supply pin's wire up to the bar is a stub, and moves with its
+device, only when it is no longer than `rail`: a longer one, from a lower
+row, is a wire like any other. Each track then goes as near the anchor as
 that allows (a longest path, by relaxation), in steps of a quarter unit.
 The two coordinates equally far from the mirror axis are one track, so both
 halves answer the same constraints and the drawing stays mirrored. Only the
@@ -373,9 +378,9 @@ crosses, so a label never joins two nets.
 |---|---|
 | ground | a ground symbol on a stub at each pin: one per branch, as the book draws it |
 | supply | its pins facing up: stubs to a bar `rail` above the highest, one supply symbol on each unbroken run of the bar, at its middle stub; any other supply pin, a symbol of its own |
-| input | a port on a stub at each pin |
+| input | its pins on one wire (a column or a trunk, as below) with one port out from the wire's left end, or its right, when the box around the pins is no more than 6 units around half and the port's stub has room, as people draw 87% of their inputs of two pins or more; else a port on a stub at each pin |
 | bias | a gate line between the two facing gates of one row, named at its middle; else a label at each pin |
-| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the row of a pin facing sideways between the lowest pin facing down and the highest facing up, so that pin is joined straight; else along the net's tap row: midway between those two, else `tap` past the pins; or the first free track a quarter or half unit either side, or half a unit past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
+| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the row of a pin facing sideways that every pin facing down stands over and every pin facing up under, so that pin is joined straight and no other bends: a gate level with a column's junction, or the gate a lone drain comes down to; else along the net's tap row: midway between the lowest pin facing down and the highest facing up, else `tap` past the pins; or the first free track a quarter or half unit either side, or half a unit past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
 
 **Routes** (`routes.draw`), for the nets waiting, in canonical order:
 

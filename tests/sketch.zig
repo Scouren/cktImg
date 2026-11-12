@@ -58,6 +58,34 @@ fn crossings(p: *const np.Placed) usize {
     return count;
 }
 
+/// Bends on net `n`'s wire: the points where one level piece and one
+/// upright piece of it end, and nothing else of it touches.
+fn bends(p: *const np.Placed, n: usize) usize {
+    var seen: [64]np.Pt = undefined;
+    var n_seen: usize = 0;
+    var count: usize = 0;
+    var it = p.segments(n);
+    while (it.next()) |poly| for (poly) |at| {
+        const known = for (seen[0..n_seen]) |q| {
+            if (q.x == at.x and q.y == at.y) break true;
+        } else false;
+        if (known) continue;
+        seen[n_seen] = at;
+        n_seen += 1;
+        // A piece ending at `at` counts once, one passing through twice.
+        var level: usize = 0;
+        var upright: usize = 0;
+        var jt = p.segments(n);
+        while (jt.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
+            if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
+            const ends: usize = if ((at.x == a.x and at.y == a.y) or (at.x == b.x and at.y == b.y)) 1 else 2;
+            if (a.y == b.y) level += ends else upright += ends;
+        };
+        count += @intFromBool(level == 1 and upright == 1);
+    };
+    return count;
+}
+
 fn pinOf(p: *const np.Placed, name: []const u8, index: u32) np.Pt {
     for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return p.pin_xy[p.pinRange(d)[0] + index];
     unreachable;
@@ -556,9 +584,9 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
         \\R1 vip vout 1k
         \\R2 vin vout 1k
         \\.ends
-        \\CH vout vss 1p
-        \\M2 vdd net0 vout vss nch
-        \\X1 vdd vss vin vout net0 amp
+        \\CH x vss 1p
+        \\M2 vdd net0 x vss nch
+        \\X1 vdd vss vin x net0 amp
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
@@ -570,7 +598,7 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
         hi = .{ .x = @max(hi.x, at.x), .y = @max(hi.y, at.y) };
     }
     const net = for (p.net_name, 0..) |n, i| {
-        if (std.mem.eql(u8, n, "vout")) break i;
+        if (std.mem.eql(u8, n, "x")) break i;
     } else unreachable;
     var wire: i32 = 0;
     var it = p.segments(net);
@@ -579,6 +607,94 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
     };
     try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y, wire);
     try support.expectConnected(&p, lib);
+}
+
+test "sketch: a lone drain comes straight down to the row of the gate it drives" {
+    // Oracle: a certificate. Two pins on neither one row nor one column
+    // need a bend, and one is enough: down the drain's column, along the
+    // gate's row. A trunk on a row of its own took three.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Stage
+        \\.model nch nmos
+        \\.model pch pmos
+        \\M1 x in vdd vdd pch
+        \\M2 out x 0 0 nch
+        \\M3 out vb vdd vdd pch
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const drain = pinOf(&p, "m1", 0);
+    const gate = pinOf(&p, "m2", 1);
+    try std.testing.expect(drain.x != gate.x and drain.y != gate.y);
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "x")) break i;
+    } else unreachable;
+    try std.testing.expectEqual(1, bends(&p, net));
+    try support.expectConnected(&p, lib);
+}
+
+test "sketch: an input's pins standing near each other share one wire and one port" {
+    // Oracle: how people draw it. Of 3,400 input nets of two pins or more
+    // in 5,274 hand-drawn schematics, 87% carry one port symbol with the
+    // pins wired; the inverter's two gates on `in` are the plainest case.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Inverter
+        \\.model nch nmos
+        \\.model pch pmos
+        \\M1 out in vdd vdd pch
+        \\M2 out in 0 0 nch
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "in")) break i;
+    } else unreachable;
+    var ports: usize = 0;
+    for (p.dev_name, 0..) |n, d| ports += @intFromBool(n.len == 0 and p.pin_net[p.pinRange(d)[0]] == net);
+    try std.testing.expectEqual(1, ports);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: a tall block stands beside the stack it joins, not between its rows" {
+    // Oracle: the keys' own definitions (`config.Layout`). Closed up, the
+    // wire from the junction on the block's pin row down to the load
+    // capacitor is `tap` long, whatever the block's height: the block is
+    // in another column (people stand blocks side by side in 82% of 5,274
+    // hand-drawn schematics). A row of its own for the block put the
+    // capacitor under the block's foot.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Follower
+        \\.model nch nmos
+        \\.subckt amp vdd vss vip vin vout
+        \\R1 vip vout 1k
+        \\R2 vin vout 1k
+        \\.ends
+        \\CH vout vss 1p
+        \\M2 vdd net0 vout vss nch
+        \\X1 vdd vss vin vout net0 amp
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const tap: i32 = @intFromFloat(@ceil((np.config.Layout{}).tap * @as(f32, @floatFromInt(lib.unit))));
+    try std.testing.expectEqual(tap, pinOf(&p, "ch", 0).y - pinOf(&p, "x1", 3).y);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
 test "sketch: a mirror's facing gates are joined by one straight gate line" {

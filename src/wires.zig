@@ -5,8 +5,9 @@
 //! nodes, and the nets drawn as labels.
 //!
 //! - Rails: a ground symbol under each pin on ground; the supply a bar over
-//!   its pins with one symbol. Inputs: a port at each pin. Outputs: a port
-//!   at the outer end of the net's wire.
+//!   its pins with one symbol. Inputs: pins standing near each other on one
+//!   wire with one port at its left end, else a port at each pin. Outputs:
+//!   a port at the outer end of the net's wire.
 //! - A bias net: a gate line between the two facing gates of one row,
 //!   named; else a label at each pin.
 //! - Any other net: pins facing each other in pairs on two rows or more as
@@ -46,9 +47,18 @@ const Role = sch.Role;
 const Canvas = canvas.Canvas;
 const Lengths = canvas.Lengths;
 const Line = canvas.Line;
+
 const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
+
+/// The half perimeter, in units, of the box around an input's pins up to
+/// which they are wired to one port; farther apart, each pin gets a port.
+/// People wire 87% of their inputs of two pins or more to one symbol and
+/// cut a connection past 5.5 to 7.5 units (5,274 drawings).
+// ponytail: one cut for every pin kind; per-edge cuts (gate to gate 3,
+// gate to other 5.5, other 7.5) once the pitch is the human one.
+const input_reach = 6;
 
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
@@ -124,7 +134,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         }
         switch (s.roles[net]) {
             .sink => if (lines.rail[net] == .bar) try bar(&c, pins, .down) else for (pins) |p| try terminal(&c, p, null),
-            .input => for (pins) |p| try terminal(&c, p, lines.port[net]),
+            .input => if (pins.len < 2 or (style == .auto and !near(&c, pins)) or !try patterned(&c, net, pins, axis2, style)) {
+                for (pins) |p| try terminal(&c, p, lines.port[net]);
+            },
             .supply => if (lines.rail[net] == .each) {
                 for (pins) |p| try terminal(&c, p, null);
             } else try bar(&c, pins, .up),
@@ -249,6 +261,15 @@ fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u
 fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
     for (c.segs.items) |g| if (g.net == net and Rect.fromCorners(g.a, g.b).contains(at)) return true;
     return false;
+}
+
+/// Whether an input's pins stand near enough to share one wire and one
+/// port: the box around them no more than `input_reach` units around half.
+fn near(c: *const Canvas, pins: []const u32) bool {
+    assert(pins.len >= 1);
+    var box: Rect = .point(pinAt(c.s, pins[0]));
+    for (pins[1..]) |p| box = box.merge(.point(pinAt(c.s, p)));
+    return box.max.x - box.min.x + box.max.y - box.min.y <= input_reach * c.len.unit;
 }
 
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a

@@ -1,7 +1,7 @@
 //! The trunk pattern (issue #8, stage 4): one net with no symbol of its own
 //! as a trunk along a row with each pin brought to it, or a column's pins
 //! joined in order. In: the canvas, the net and its pins, placed. Out: the
-//! net's wires on the canvas (an output's port too), or nothing drawn when
+//! net's wires on the canvas (an output's or an input's port too), or nothing drawn when
 //! no track fits.
 //!
 //! Contents:
@@ -71,11 +71,24 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!bool {
         }
     } else false;
     if (!fit) return false;
-    for (lines.items) |*l| assert(try c.commit(net, l.slice()));
-    if (s.roles[net] != .output) return true;
+    const role = s.roles[net];
     // The output's port: out from the outer end of the trunk, or of the
-    // column at its tap, on the drawing's nearer side.
-    const right = 2 * hi >= c.middle2();
+    // column at its tap, on the drawing's nearer side. An input's: from
+    // the left end, where the signal enters, or the right, an end no pin
+    // of the net stands beyond (the stub would run back along the wire);
+    // with room at neither, nothing is drawn, and each pin gets a port.
+    var right = 2 * hi >= c.middle2();
+    if (role == .input) {
+        right = for ([_]bool{ false, true }) |r| {
+            const from: Pt = .{ .x = if (r) hi else lo, .y = y_t };
+            const beyond = for (pins) |p| {
+                if (if (r) pinAt(s, p).x > hi else pinAt(s, p).x < lo) break true;
+            } else false;
+            if (!beyond and c.fits(net, from, stepPt(from, if (r) .right else .left, c.len.terminal))) break r;
+        } else return false;
+    }
+    for (lines.items) |*l| assert(try c.commit(net, l.slice()));
+    if (role != .output and role != .input) return true;
     try c.port(net, .{ .x = if (right) hi else lo, .y = y_t }, if (right) .right else .left);
     return true;
 }
@@ -174,23 +187,24 @@ fn pastDevices(c: *const Canvas, pins: []const u32) [2]i32 {
     return if (top + bottom < lo + hi) .{ over, under } else .{ under, over };
 }
 
-/// The rows of the pins facing sideways that lie strictly between the
-/// lowest pin facing down and the highest facing up (on the junction
-/// between two devices of a column), nearest `tap` first, into `out`; how
-/// many.
+/// The rows of the pins facing sideways that every pin facing down stands
+/// over and every pin facing up under (the junction between two devices
+/// of a column; the row a lone drain comes down to), nearest `tap` first,
+/// into `out`; how many. A trunk along such a row joins that pin straight
+/// and bends no other: people's wires run pin to pin or pin to T.
 fn levelRows(s: *const Schematic, pins: []const u32, tap: i32, out: []i32) usize {
-    var down: ?i32 = null;
-    var up: ?i32 = null;
+    var down: i32 = std.math.minInt(i32);
+    var up: i32 = std.math.maxInt(i32);
     for (pins) |p| switch (s.pins.items(.side)[p]) {
-        .down => down = @max(down orelse pinAt(s, p).y, pinAt(s, p).y),
-        .up => up = @min(up orelse pinAt(s, p).y, pinAt(s, p).y),
+        .down => down = @max(down, pinAt(s, p).y),
+        .up => up = @min(up, pinAt(s, p).y),
         else => {},
     };
-    if (down == null or up == null) return 0;
+    if (down == std.math.minInt(i32) and up == std.math.maxInt(i32)) return 0;
     var n: usize = 0;
     for (pins) |p| {
         const y = pinAt(s, p).y;
-        if (!s.pins.items(.side)[p].isHorizontal() or y <= down.? or y >= up.?) continue;
+        if (!s.pins.items(.side)[p].isHorizontal() or y <= down or y >= up) continue;
         if (std.mem.indexOfScalar(i32, out[0..n], y) != null or n == out.len) continue;
         out[n] = y;
         n += 1;

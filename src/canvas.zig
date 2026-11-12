@@ -197,12 +197,12 @@ pub const Canvas = struct {
         try c.leaf(.label, net, if (stub) end else at, side.opposite());
     }
 
-    /// An output's port on a stub out from `from` toward `side`. When the
+    /// An output's or input's port on a stub out from `from` toward `side`. When the
     /// stub does not fit, a label at `from`, or at the net's top-left pin when
     /// `from` is where another net's wire crosses (a label there would join
     /// the two).
     pub fn port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void {
-        assert(c.s.roles[net] == .output);
+        assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
         const toward = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
         const end = stepPt(from, toward, c.len.terminal);
         if (try c.commit(net, &.{ from, end })) {
