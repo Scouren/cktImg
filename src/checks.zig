@@ -9,11 +9,14 @@
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
+//! - `pub fn ways(p: *const Placed, n: usize, at: Pt) u4`, `pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt`
 //! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
+//! - `pub fn deviceIn(p: *const Placed, name: []const u8) ?usize`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
+const device = @import("device.zig");
 const library = @import("library.zig");
 const placed = @import("placed.zig");
 const netlist = @import("netlist.zig");
@@ -23,6 +26,7 @@ const pinned = @import("pinned.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
+const Side = library.Side;
 const Library = library.Library;
 const Placed = placed.Placed;
 const Netlist = netlist.Netlist;
@@ -179,51 +183,59 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
         for (p.pin_xy, p.pin_net) |at, pn| if (pn == n) try pts.append(gpa, at);
         for (pts.items, 0..) |at, i| {
             const seen = for (pts.items[0..i]) |q| {
-                if (q.x == at.x and q.y == at.y) break true;
+                if (q.eql(at)) break true;
             } else false;
             if (seen) continue;
-            var dirs: [4]bool = @splat(false); // left, right, up, down
-            var segs = p.segments(n);
-            while (segs.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-                if (!Rect.fromCorners(a, b).contains(at)) continue;
-                const lo = if (a.x < b.x or a.y < b.y) a else b;
-                const hi = if (lo.x == a.x and lo.y == a.y) b else a;
-                if (!(at.x == lo.x and at.y == lo.y)) dirs[if (a.y == b.y) 0 else 2] = true;
-                if (!(at.x == hi.x and at.y == hi.y)) dirs[if (a.y == b.y) 1 else 3] = true;
-            };
+            // A pin's lead is one more way: the side its device lies on.
+            var arms = ways(p, n, at);
             for (0..p.deviceCount()) |d| {
                 const lo, const hi = p.pinRange(d);
                 for (lo..hi) |pin| {
-                    if (p.pin_net[pin] != n or !(p.pin_xy[pin].x == at.x and p.pin_xy[pin].y == at.y)) continue;
-                    const o = p.dev_pos[d];
-                    const dx = o.x - at.x;
-                    const dy = o.y - at.y;
-                    if (dx == 0 and dy == 0) continue;
-                    if (@abs(dx) >= @abs(dy)) dirs[if (dx < 0) 0 else 1] = true else dirs[if (dy < 0) 2 else 3] = true;
+                    if (p.pin_net[pin] != n or !p.pin_xy[pin].eql(at)) continue;
+                    if (Side.of(p.dev_pos[d].sub(at))) |s| arms |= @as(u4, 1) << @backingInt(s);
                 }
             }
-            var arms: u32 = 0;
-            for (dirs) |x| arms += @intFromBool(x);
             const dot = for (p.junctions) |j| {
-                if (j.x == at.x and j.y == at.y) break true;
+                if (j.eql(at)) break true;
             } else false;
-            if ((arms >= 3) == dot) continue;
-            try out.append(gpa, .{ .rule = if (dot) .dot_stray else .dot_missing, .net = @intCast(n), .at = at, .other = arms });
+            if ((@popCount(arms) >= 3) == dot) continue;
+            try out.append(gpa, .{ .rule = if (dot) .dot_stray else .dot_missing, .net = @intCast(n), .at = at, .other = @popCount(arms) });
         }
         var outer = p.segments(n);
         while (outer.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
             if (a.y != b.y) continue;
             var inner = p.segments(n);
             while (inner.next()) |q| for (q[0 .. q.len - 1], q[1..]) |c, d| {
-                if (c.x != d.x) continue;
-                if (c.x <= @min(a.x, b.x) or c.x >= @max(a.x, b.x) or a.y <= @min(c.y, d.y) or a.y >= @max(c.y, d.y)) continue;
-                try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = .{ .x = c.x, .y = a.y }, .other = 0 });
+                if (crossing(a, b, c, d)) |at| try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = at, .other = 0 });
             };
         };
     }
     for (p.junctions, 0..) |j, i| for (p.junctions[i + 1 ..]) |k| {
-        if (j.x == k.x and j.y == k.y) try out.append(gpa, .{ .rule = .dot_twice, .net = placed.no_net, .at = j, .other = 2 });
+        if (j.eql(k)) try out.append(gpa, .{ .rule = .dot_twice, .net = placed.no_net, .at = j, .other = 2 });
     };
+}
+
+/// The ways net `n`'s wires leave `at`, bit `@backingInt(side)` for each
+/// `Side`: a wire ending there is one way, a wire through it two. Zero for
+/// a point off its wires; a pin's lead is not counted.
+pub fn ways(p: *const Placed, n: usize, at: Pt) u4 {
+    var out: u4 = 0;
+    var it = p.segments(n);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        const r = Rect.fromCorners(a, b);
+        if (!r.contains(at)) continue;
+        out |= @as(u4, @intFromBool(r.min.x < at.x)) | @as(u4, @intFromBool(r.max.x > at.x)) << 1 |
+            @as(u4, @intFromBool(r.min.y < at.y)) << 2 | @as(u4, @intFromBool(r.max.y > at.y)) << 3;
+    };
+    return out;
+}
+
+/// Where the level run `a`–`b` and the upright run `c`–`d` cross strictly
+/// inside both; null when they do not, or are not level and upright.
+pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt {
+    if (a.y != b.y or c.x != d.x) return null;
+    if (c.x <= @min(a.x, b.x) or c.x >= @max(a.x, b.x) or a.y <= @min(c.y, d.y) or a.y >= @max(c.y, d.y)) return null;
+    return .{ .x = c.x, .y = a.y };
 }
 
 /// Whether `p` draws what line `h` of `nl`'s deck asks, read from the
@@ -234,17 +246,15 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
 /// show (a group, the symmetry).
 pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool {
     switch (h.verb) {
+        // The two orders: `order` runs along the columns (x), `row` and
+        // `above` down the rows (y); a `row` stays level, the others go on.
         .row, .above, .order => {
             var prev: ?Pt = null;
             for (h.args) |name| {
                 const at = p.dev_pos[deviceIn(p, name) orelse return false];
                 if (prev) |q| {
-                    const ok = switch (h.verb) {
-                        .row => at.y == q.y,
-                        .above => at.y > q.y,
-                        else => at.x > q.x,
-                    };
-                    if (!ok) return false;
+                    const here, const before = if (h.verb == .order) .{ at.x, q.x } else .{ at.y, q.y };
+                    if (if (h.verb == .row) here != before else here <= before) return false;
                 }
                 prev = at;
             }
@@ -262,8 +272,9 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             const dir = h.args[2];
             if (std.mem.eql(u8, dir, "left")) return at.x < o.x;
             if (std.mem.eql(u8, dir, "right")) return at.x > o.x;
-            // An end: above or below the device's other end.
-            const other: u32 = if (isFet(nl, e)) (if (pin == 0) 2 else 0) else (if (pin == 0) 1 else 0);
+            // An end: above or below the other end of its path; a box has none.
+            const path = device.of(nl.graph.edges.items(.kind)[e]).path orelse return false;
+            const other: u32 = path[@intFromBool(pin == path[0])];
             if (lo + other >= hi) return false;
             const there = p.pin_xy[lo + other];
             return if (std.mem.eql(u8, dir, "up")) at.y < there.y else at.y > there.y;
@@ -314,18 +325,24 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             var buf: [64]Pt = undefined;
             const pts = scaled(h.args[1..], unit, &buf) orelse return false;
             for (pts, 0..) |at, k| {
-                if (!onWire(p, net, at)) return false;
+                if (ways(p, net, at) == 0) return false;
                 if (h.verb == .via or k == 0) continue;
                 // Every point of the segment from the last one on the net.
                 const prev = pts[k - 1];
                 const step: Pt = .{ .x = std.math.sign(at.x - prev.x), .y = std.math.sign(at.y - prev.y) };
                 var q = prev;
-                while (!q.eql(at)) : (q = q.add(step)) if (!onWire(p, net, q)) return false;
+                while (!q.eql(at)) : (q = q.add(step)) if (ways(p, net, q) == 0) return false;
             }
             return true;
         },
         else => return null,
     }
+}
+
+/// The device of `p` named `name`, the first of that name; null for none.
+pub fn deviceIn(p: *const Placed, name: []const u8) ?usize {
+    for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return d;
+    return null;
 }
 
 // ---- private ----
@@ -343,14 +360,6 @@ fn scaled(words: []const []const u8, unit: i32, buf: []Pt) ?[]const Pt {
         q.* = .{ .x = @intFromFloat(@round(x * u)), .y = @intFromFloat(@round(y * u)) };
     }
     return buf[0..n];
-}
-
-fn onWire(p: *const Placed, net: u32, at: Pt) bool {
-    var it = p.segments(net);
-    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-        if (Rect.fromCorners(a, b).contains(at)) return true;
-    };
-    return false;
 }
 
 /// Whether the named devices' pins on `net` are one piece by its wires
@@ -376,7 +385,7 @@ fn wired(p: *const Placed, net: u32) bool {
     while (changed and rounds <= n) : (rounds += 1) {
         changed = false;
         for (0..n) |i| for (0..n) |j| {
-            if (group[i] == group[j] or !(buf[i].x == buf[j].x and buf[i].y == buf[j].y)) continue;
+            if (group[i] == group[j] or !buf[i].eql(buf[j])) continue;
             const gi = group[i];
             const gj = group[j];
             const lo = @min(gi, gj);
@@ -401,7 +410,7 @@ fn wired(p: *const Placed, net: u32) bool {
         for (a..b) |pin| {
             if (p.pin_net[pin] != net) continue;
             const g = for (0..n) |k| {
-                if (buf[k].x == p.pin_xy[pin].x and buf[k].y == p.pin_xy[pin].y) break group[k];
+                if (buf[k].eql(p.pin_xy[pin])) break group[k];
             } else return false;
             if (piece != null and piece.? != g) return false;
             piece = g;
@@ -413,16 +422,4 @@ fn wired(p: *const Placed, net: u32) bool {
 fn netIn(p: *const Placed, name: []const u8) ?u32 {
     for (p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
     return null;
-}
-
-fn deviceIn(p: *const Placed, name: []const u8) ?usize {
-    for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return d;
-    return null;
-}
-
-fn isFet(nl: *const Netlist, e: u32) bool {
-    return switch (nl.graph.edges.items(.kind)[e]) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
 }

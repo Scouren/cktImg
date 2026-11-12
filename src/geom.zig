@@ -75,8 +75,8 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
         const right = box.max.x + label_gap;
         const left = box.min.x - label_gap - w;
         const mid = @divFloor(box.min.x + box.max.x - w, 2);
-        const above: Pt = .{ .x = mid, .y = box.min.y - label_gap - descent };
-        const below: Pt = .{ .x = mid, .y = box.max.y + label_gap + text_h };
+        const above = [1]Pt{.{ .x = mid, .y = box.min.y - label_gap - descent }};
+        const below = [1]Pt{.{ .x = mid, .y = box.max.y + label_gap + text_h }};
         const auto = [6]Pt{
             .{ .x = right, .y = y },
             .{ .x = right, .y = y - step },
@@ -86,41 +86,23 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
             .{ .x = left, .y = y + step },
         };
         // A `refdes` line's side first: its spots, then the rest.
-        var candidates: [9]Pt = undefined;
-        var count: usize = 0;
         const want: ?Side = if (p.dev_refdes.len > d) p.dev_refdes[d] else null;
-        if (want) |side| switch (side) {
-            .right => for (auto[0..3]) |c| {
-                candidates[count] = c;
-                count += 1;
-            },
-            .left => for (auto[3..6]) |c| {
-                candidates[count] = c;
-                count += 1;
-            },
-            .up => {
-                candidates[count] = above;
-                count += 1;
-            },
-            .down => {
-                candidates[count] = below;
-                count += 1;
-            },
-        };
-        for (auto) |c| {
-            candidates[count] = c;
-            count += 1;
-        }
-        var at = candidates[0];
-        for (candidates[0..count]) |c| {
+        const asked: []const Pt = if (want) |side| switch (side) {
+            .right => auto[0..3],
+            .left => auto[3..6],
+            .up => &above,
+            .down => &below,
+        } else &.{};
+        var at = if (asked.len > 0) asked[0] else auto[0];
+        search: for ([_][]const Pt{ asked, &auto }) |spots| for (spots) |c| {
             const r = refdesRect(c, name);
             for (obstacles.items) |o| {
                 if (o.intersects(r)) break;
             } else {
                 at = c;
-                break;
+                break :search;
             }
-        }
+        };
         try obstacles.append(gpa, refdesRect(at, name));
         anchors[d] = at;
     }
@@ -138,11 +120,7 @@ pub fn nameSide(p: *const Placed, pin: u32) library.Side {
     while (it.next()) |poly| {
         const ends = [2][2]Pt{ .{ poly[0], poly[1] }, .{ poly[poly.len - 1], poly[poly.len - 2] } };
         for (ends) |e| {
-            if (!e[0].eql(at)) continue;
-            if (e[1].x > at.x) return .left;
-            if (e[1].x < at.x) return .right;
-            if (e[1].y > at.y) return .up;
-            return .down;
+            if (e[0].eql(at)) return (Side.of(e[1].sub(at)) orelse continue).opposite();
         }
     }
     return .right;

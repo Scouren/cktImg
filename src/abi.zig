@@ -102,7 +102,7 @@ pub export fn cktimg_lib_add(
     const fail = std.math.maxInt(usize);
     const l = lib orelse return fail;
     const n = name orelse return fail;
-    if (role > @backingInt(library.Role.output_port)) return fail;
+    const class_role = std.enums.fromInt(library.Role, role) orelse return fail;
     const ts = terms orelse return fail;
     var arena: std.heap.ArenaAllocator = .init(gpa);
     defer arena.deinit();
@@ -124,22 +124,22 @@ pub export fn cktimg_lib_add(
                     return .{ .x = v[2 * k], .y = v[2 * k + 1] };
                 }
             }.f;
-            const d: library.DrawOp = switch (op.kind) {
-                0 => .{ .line = .{ .a = pt(xy, 0), .b = pt(xy, 1) } },
-                1 => blk: {
+            // An op's kind is its `DrawOp` tag, as `cktimg_device_op_kind` hands it back.
+            const d: library.DrawOp = switch (std.enums.fromInt(std.meta.Tag(library.DrawOp), op.kind) orelse return fail) {
+                .line => .{ .line = .{ .a = pt(xy, 0), .b = pt(xy, 1) } },
+                .polyline => blk: {
                     if (op.count < 2) return fail;
                     const ps = a.alloc(Pt, op.count) catch return fail;
                     for (ps, 0..) |*q, k| q.* = pt(xy, k);
                     break :blk .{ .polyline = ps };
                 },
-                2 => .{ .circle = .{ .c = pt(xy, 0), .r = op.r } },
-                3 => .{ .text = .{ .at = pt(xy, 0), .s = std.mem.span(op.text orelse return fail), .size = op.size } },
-                else => return fail,
+                .circle => .{ .circle = .{ .c = pt(xy, 0), .r = op.r } },
+                .text => .{ .text = .{ .at = pt(xy, 0), .s = std.mem.span(op.text orelse return fail), .size = op.size } },
             };
             draw.append(a, d) catch return fail;
         }
     }
-    const id = l.register(.{ .name = std.mem.span(n), .role = @fromBackingInt(@intCast(role)), .terminals = t, .draw = draw.items }) catch return fail;
+    const id = l.register(.{ .name = std.mem.span(n), .role = class_role, .terminals = t, .draw = draw.items }) catch return fail;
     return id.i();
 }
 

@@ -79,14 +79,10 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
         }
         var count: u32 = 0;
         for (dirs) |x| count += @intFromBool(x);
-        if (count < 3) continue;
-        const at: Pt = .{ .x = @intFromFloat(@round(c[0])), .y = @intFromFloat(@round(c[1])) };
-        for (found.items) |j| {
-            if (j.eql(at)) break;
-        } else try found.append(out, at);
+        if (count >= 3) try mark(out, &found, c);
     };
     // A net's horizontal piece crossing one of its own vertical pieces,
-    // strictly inside both.
+    // strictly inside both: four ways out of a point that is no route's.
     for (s.routes.items) |hr| for (hr.pts[0 .. hr.len - 1], hr.pts[1..hr.len]) |a, b| {
         if (@abs(a[1] - b[1]) >= eps or near(a, b)) continue;
         for (r_by_net[r_off[hr.net]..r_off[hr.net + 1]]) |vi| {
@@ -94,11 +90,7 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
             for (vr.pts[0 .. vr.len - 1], vr.pts[1..vr.len]) |c, d| {
                 if (@abs(c[0] - d[0]) >= eps or near(c, d)) continue;
                 const x: [2]f32 = .{ c[0], a[1] };
-                if (!inside(x, a, b) or !inside(x, c, d)) continue;
-                const at: Pt = .{ .x = @intFromFloat(@round(x[0])), .y = @intFromFloat(@round(x[1])) };
-                for (found.items) |j| {
-                    if (j.eql(at)) break;
-                } else try found.append(out, at);
+                if (inside(x, a, b) and inside(x, c, d)) try mark(out, &found, x);
             }
         }
     };
@@ -107,6 +99,15 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
 }
 
 // ---- private ----
+
+/// A dot at `c`, rounded to the target's units, unless one is there.
+fn mark(out: Allocator, found: *std.ArrayList(Pt), c: [2]f32) Allocator.Error!void {
+    const at: Pt = .{ .x = @intFromFloat(@round(c[0])), .y = @intFromFloat(@round(c[1])) };
+    for (found.items) |j| {
+        if (j.eql(at)) return;
+    }
+    try found.append(out, at);
+}
 
 fn near(p: [2]f32, q: [2]f32) bool {
     return @abs(p[0] - q[0]) < eps and @abs(p[1] - q[1]) < eps;

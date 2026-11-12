@@ -79,23 +79,13 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
                 .ground_rail => .down,
                 else => geom.nameSide(p, lo),
             };
-            const anchor = switch (side) {
-                .right => "west",
-                .left => "east",
-                .up => "south",
-                .down => "north",
-            };
             const nudge: Pt = switch (side) {
                 .right => .{ .x = 5, .y = 0 },
                 .left => .{ .x = -5, .y = 0 },
                 .up => .{ .x = 0, .y = -3 },
                 .down => .{ .x = 0, .y = 8 },
             };
-            try w.print("  \\node[cktnet,anchor={s}] at ", .{anchor});
-            try writePoint(w, p.pin_xy[lo].add(nudge));
-            try w.writeAll(" {");
-            try escape(w, name);
-            try w.writeAll("};\n");
+            try writeNetName(w, p.pin_xy[lo].add(nudge), side, name);
         }
     }
     for (p.junctions) |j| {
@@ -107,19 +97,7 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
         try writePath(w, "cktsym", .r0, .zero, &.{ .{ .x = c.x - 3, .y = c.y - 3 }, .{ .x = c.x + 3, .y = c.y + 3 } });
         try writePath(w, "cktsym", .r0, .zero, &.{ .{ .x = c.x - 3, .y = c.y + 3 }, .{ .x = c.x + 3, .y = c.y - 3 } });
     }
-    for (p.labels) |l| {
-        const anchor = switch (l.side) {
-            .right => "west",
-            .left => "east",
-            .up => "south",
-            .down => "north",
-        };
-        try w.print("  \\node[cktnet,anchor={s}] at ", .{anchor});
-        try writePoint(w, l.at);
-        try w.writeAll(" {");
-        try escape(w, p.net_name[l.net]);
-        try w.writeAll("};\n");
-    }
+    for (p.labels) |l| try writeNetName(w, l.at, l.side, p.net_name[l.net]);
     try w.writeAll("\\end{circuitikz}\n");
 }
 
@@ -150,6 +128,22 @@ pub fn escape(w: *Writer, s: []const u8) Writer.Error!void {
         try w.writeAll(sub);
     }
     try w.writeAll(s[run..]);
+}
+
+/// A net's name at `at`, its text running towards `side`: a label's, or the
+/// name beside a rail or port.
+fn writeNetName(w: *Writer, at: Pt, side: library.Side, name: []const u8) Writer.Error!void {
+    const anchor = switch (side) {
+        .right => "west",
+        .left => "east",
+        .up => "south",
+        .down => "north",
+    };
+    try w.print("  \\node[cktnet,anchor={s}] at ", .{anchor});
+    try writePoint(w, at);
+    try w.writeAll(" {");
+    try escape(w, name);
+    try w.writeAll("};\n");
 }
 
 fn writePath(w: *Writer, style: []const u8, o: Orient, base: Pt, pts: []const Pt) Writer.Error!void {

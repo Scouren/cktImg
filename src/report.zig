@@ -24,6 +24,7 @@ const opamp = @import("opamp.zig");
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
 const assert = std.debug.assert;
+const device = @import("device.zig");
 const library = @import("library.zig");
 const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
@@ -45,6 +46,17 @@ const Role = sch.Role;
 const Structure = structure.Structure;
 const Skeleton = skeleton.Skeleton;
 const Verdict = hints.Verdict;
+
+/// One of the two orders of lattice cells: by `major`, then `minor`. Rows
+/// top down are y then x; columns left to right are x then y.
+const Lattice = struct {
+    major: []const i32,
+    minor: []const i32,
+
+    fn before(l: Lattice, a: u32, b: u32) bool {
+        return if (l.major[a] != l.major[b]) l.major[a] < l.major[b] else l.minor[a] < l.minor[b];
+    }
+};
 
 /// What became of each of `nl`'s hints: the verdict of the stage that owns
 /// it (the parser, the structure, the skeleton, the net lines), `role` and
@@ -113,9 +125,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     const anchors = try geom.refdesAnchors(arena, drawing, l);
     for (out, nl.hints) |*v, h| {
         if (v.state != .honoured or h.verb != .refdes) continue;
-        const d = for (drawing.dev_name, 0..) |n, k| {
-            if (std.mem.eql(u8, n, h.args[0])) break k;
-        } else continue;
+        const d = checks.deviceIn(drawing, h.args[0]) orelse continue;
         const box = drawing.deviceRect(l, d);
         const r = geom.refdesRect(anchors[d], h.args[0]);
         const there = switch (drawing.dev_refdes[d].?) {
@@ -154,11 +164,7 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     // An op-amp circuit is placed along its signal, not on the lattice
     // (`opamp.zig`): its places are the decision, every device's.
     if (p != null and !opamp.steered(nl) and opamp.applies(nl, sk.drawn)) {
-        for (p.?.dev_name, p.?.dev_pos, p.?.dev_orient) |name, pos, o| {
-            const e = (if (name.len > 0) nl.device(name) else null) orelse continue;
-            if (!sk.drawn[e.index()]) continue;
-            try out.append(arena, try std.fmt.allocPrint(arena, "*@ at {s} {s} {s} {s}{d}", .{ name, try units(arena, pos.x, unit), try units(arena, pos.y, unit), if (o.mirror) "MR" else "R", @as(u16, o.rot) * 90 }));
-        }
+        try places(arena, &out, "*@ at", nl, sk, p.?, unit);
         return out.items;
     }
     // Forms of the two-pin devices.
@@ -177,23 +183,21 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     for (0..n) |d| {
         if (!sk.drawn[d] or sk.form[d] != .vertical) continue;
         const pins = c.members(EdgeId.from(d));
+        // Kept as it was: the first card pin on the upper net. The general
+        // form is the end of its path there (`device.of(kind).path`), which
+        // reads `s` where a gate tied to the upper source reads `g` today.
         const up = for (pins, 0..) |net, k| {
             if (net.index() == sk.upper[d]) break k;
         } else unreachable;
         try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} up", .{ names[d], try relations.pinName(arena, kinds[d], @intCast(up)) }));
-        if (!isFet(kinds[d]) or pins.len < 3) continue;
-        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} {s}", .{ names[d], try relations.pinName(arena, kinds[d], 1), if (sk.gate_right[d]) "right" else "left" }));
+        const gate = device.of(kinds[d]).gate orelse continue;
+        assert(gate < pins.len); // upright with a gate: a transistor with its three pins
+        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} {s}", .{ names[d], try relations.pinName(arena, kinds[d], gate), if (sk.gate_right[d]) "right" else "left" }));
     }
-    // Rows: each one's devices left to right, then one of each top down.
+    // The two orders. Rows, top down: each one's devices left to right as a
+    // `row` line, then the first of each as the `above` line.
     const order = try columnDevices(arena, sk);
-    std.mem.sort(u32, order, sk, struct {
-        fn lt(k: *const Skeleton, a: u32, b: u32) bool {
-            return if (k.y[a] != k.y[b]) k.y[a] < k.y[b] else k.x[a] < k.x[b];
-        }
-    }.lt);
-    var downs: std.ArrayList(u8) = .empty;
-    try downs.appendSlice(arena, "*@ above");
-    var rows: usize = 0;
+    std.mem.sort(u32, order, Lattice{ .major = sk.y, .minor = sk.x }, Lattice.before);
     var at: usize = 0;
     while (at < order.len) {
         var end = at + 1;
@@ -204,37 +208,18 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
             for (order[at..end]) |d| try line.print(arena, " {s}", .{names[d]});
             try out.append(arena, line.items);
         }
-        try downs.print(arena, " {s}", .{names[order[at]]});
-        rows += 1;
         at = end;
     }
-    if (rows >= 2) try out.append(arena, downs.items);
-    // Columns: the top device of each, left to right.
-    std.mem.sort(u32, order, sk, struct {
-        fn lt(k: *const Skeleton, a: u32, b: u32) bool {
-            return if (k.x[a] != k.x[b]) k.x[a] < k.x[b] else k.y[a] < k.y[b];
-        }
-    }.lt);
-    var across: std.ArrayList(u8) = .empty;
-    try across.appendSlice(arena, "*@ order");
-    var cols: usize = 0;
-    for (order, 0..) |d, i| {
-        if (i > 0 and sk.x[order[i - 1]] == sk.x[d]) continue;
-        try across.print(arena, " {s}", .{names[d]});
-        cols += 1;
-    }
-    if (cols >= 2) try out.append(arena, across.items);
+    try heads(arena, &out, "*@ above", names, order, sk.y);
+    // Columns, left to right: the top device of each as the `order` line.
+    std.mem.sort(u32, order, Lattice{ .major = sk.x, .minor = sk.y }, Lattice.before);
+    try heads(arena, &out, "*@ order", names, order, sk.x);
     if (rung < 3) return out.items;
     for (0..n) |d| if (sk.drawn[d]) {
         try out.append(arena, try std.fmt.allocPrint(arena, "*@ weak cell {s} {d} {d}", .{ names[d], sk.x[d] + sk.origin[0], sk.y[d] + sk.origin[1] }));
     };
     if (rung < 4) return out.items;
-    const drawing = p orelse return out.items;
-    for (drawing.dev_name, drawing.dev_pos, drawing.dev_orient) |name, pos, o| {
-        const e = (if (name.len > 0) nl.device(name) else null) orelse continue;
-        if (!sk.drawn[e.index()]) continue;
-        try out.append(arena, try std.fmt.allocPrint(arena, "*@ weak at {s} {s} {s} {s}{d}", .{ name, try units(arena, pos.x, unit), try units(arena, pos.y, unit), if (o.mirror) "MR" else "R", @as(u16, o.rot) * 90 }));
-    }
+    try places(arena, &out, "*@ weak at", nl, sk, p orelse return out.items, unit);
     return out.items;
 }
 
@@ -330,10 +315,8 @@ fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed
             const id = l.find(h.args[1]) orelse return reject(.unknown_name);
             const drawing = p orelse return .{ .state = .honoured, .code = .ok };
             // Taken only when it has the terminals of the class it replaces.
-            for (drawing.dev_name, drawing.dev_class) |n, k| if (std.mem.eql(u8, n, h.args[0])) {
-                return if (k == id) .{ .state = .honoured, .code = .ok } else reject(.bad_args);
-            };
-            return .{ .state = .honoured, .code = .ok };
+            const d = checks.deviceIn(drawing, h.args[0]) orelse return .{ .state = .honoured, .code = .ok };
+            return if (drawing.dev_class[d] == id) .{ .state = .honoured, .code = .ok } else reject(.bad_args);
         },
         .unknown => return reject(.unknown_verb),
         else => return reject(.not_built),
@@ -394,10 +377,7 @@ fn inCircuit(nl: *const Netlist, sk: *const Skeleton, p: ?*const Placed, lib: ?*
         if (!sk.drawn[e.index()]) continue;
         const drawing = p orelse return true;
         const l = lib orelse return true;
-        const name = c.edges.items(.name)[e.index()];
-        const d = for (drawing.dev_name, 0..) |n, i| {
-            if (std.mem.eql(u8, n, name)) break i;
-        } else return true;
+        const d = checks.deviceIn(drawing, c.edges.items(.name)[e.index()]) orelse return true;
         const terms = l.at(drawing.dev_class[d]).terminals;
         for (c.members(e), 0..) |pin, k| {
             if (pin.index() == net and k < terms.len and !terms[k].hidden) return true;
@@ -406,11 +386,14 @@ fn inCircuit(nl: *const Netlist, sk: *const Skeleton, p: ?*const Placed, lib: ?*
     return false;
 }
 
-fn isFet(kind: netlist.DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
+/// Each device of `p` the skeleton draws as an `at` line under `head`: its
+/// place in symbol units, and its turn.
+fn places(arena: Allocator, out: *std.ArrayList([]const u8), head: []const u8, nl: *const Netlist, sk: *const Skeleton, p: *const Placed, unit: i32) !void {
+    for (p.dev_name, p.dev_pos, p.dev_orient) |name, pos, o| {
+        const e = (if (name.len > 0) nl.device(name) else null) orelse continue;
+        if (!sk.drawn[e.index()]) continue;
+        try out.append(arena, try std.fmt.allocPrint(arena, "{s} {s} {s} {s} {s}{d}", .{ head, name, try units(arena, pos.x, unit), try units(arena, pos.y, unit), if (o.mirror) "MR" else "R", @as(u16, o.rot) * 90 }));
+    }
 }
 
 /// The drawn column devices.
@@ -418,6 +401,20 @@ fn columnDevices(arena: Allocator, sk: *const Skeleton) ![]u32 {
     var out: std.ArrayList(u32) = .empty;
     for (sk.drawn, sk.form, 0..) |dr, f, d| if (dr and f == .vertical) try out.append(arena, @intCast(d));
     return out.items;
+}
+
+/// One `verb` line naming the first device of each run of `order` that
+/// shares a `major`; none when all share one.
+fn heads(arena: Allocator, out: *std.ArrayList([]const u8), verb: []const u8, names: []const []const u8, order: []const u32, major: []const i32) !void {
+    var line: std.ArrayList(u8) = .empty;
+    try line.appendSlice(arena, verb);
+    var runs: usize = 0;
+    for (order, 0..) |d, i| {
+        if (i > 0 and major[order[i - 1]] == major[d]) continue;
+        try line.print(arena, " {s}", .{names[d]});
+        runs += 1;
+    }
+    if (runs >= 2) try out.append(arena, line.items);
 }
 
 fn netName(w: *Writer, p: *const Placed, n: u32) Writer.Error!void {
@@ -436,8 +433,7 @@ fn crossings(p: *const Placed) u32 {
                 if (m == n) continue;
                 var v = p.segments(m);
                 while (v.next()) |vp| for (vp[0 .. vp.len - 1], vp[1..]) |c, d| {
-                    if (c.x != d.x) continue;
-                    if (c.x > @min(a.x, b.x) and c.x < @max(a.x, b.x) and a.y > @min(c.y, d.y) and a.y < @max(c.y, d.y)) count += 1;
+                    count += @intFromBool(checks.crossing(a, b, c, d) != null);
                 };
             }
         };
@@ -463,14 +459,8 @@ fn bends(p: *const Placed) u32 {
                 for (q[0..if (lj == li) pi else q.len]) |o| if (o.eql(at)) break :seen true;
             } else false;
             if (seen) continue;
-            // The ways out: bit 0 left, 1 right, 2 up, 3 down.
-            var ways: u4 = 0;
-            jt = p.segments(n);
-            while (jt.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
-                if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
-                ways |= @as(u4, @intFromBool(@min(a.x, b.x) < at.x)) | @as(u4, @intFromBool(@max(a.x, b.x) > at.x)) << 1 |
-                    @as(u4, @intFromBool(@min(a.y, b.y) < at.y)) << 2 | @as(u4, @intFromBool(@max(a.y, b.y) > at.y)) << 3;
-            };
+            // The ways out: bits 0 and 1 along the row, 2 and 3 along the column.
+            const ways = checks.ways(p, n, at);
             const on_pin = for (p.pin_xy, p.pin_net) |q, net| {
                 if (net == n and q.eql(at)) break true;
             } else false;
@@ -486,12 +476,7 @@ fn grid(arena: Allocator, w: *Writer, nl: *const Netlist, sk: *const skeleton.Sk
     const names = nl.graph.edges.items(.name);
     var order: std.ArrayList(u32) = .empty;
     for (sk.drawn, 0..) |dr, d| if (dr) try order.append(arena, @intCast(d));
-    std.mem.sort(u32, order.items, sk, struct {
-        fn lt(k: *const skeleton.Skeleton, x: u32, y: u32) bool {
-            if (k.y[x] != k.y[y]) return k.y[x] < k.y[y];
-            return k.x[x] < k.x[y];
-        }
-    }.lt);
+    std.mem.sort(u32, order.items, Lattice{ .major = sk.y, .minor = sk.x }, Lattice.before);
     var line: std.ArrayList(u8) = .empty;
     var rows: u32 = 0;
     for (order.items, 0..) |d, i| {

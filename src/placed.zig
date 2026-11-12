@@ -24,6 +24,7 @@
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const device_mod = @import("device.zig");
 const library = @import("library.zig");
 const netlist_mod = @import("netlist.zig");
 const sch = @import("schematic.zig");
@@ -219,13 +220,7 @@ const Builder = struct {
 
         // Terminal symbols: one rail or port per terminal the layout drew.
         for (kinds, s.nodes.items(.ref), s.nodes.items(.group), 0..) |k, net, g, node| {
-            if (k != .terminal or g != node) continue;
-            const at = round(s.xy[node]);
-            if (roleClass(s, net)) |c| {
-                try b.added(c, net, at);
-            } else {
-                try b.labels.append(b.a(), .{ .net = net, .at = at, .side = leafSide(s, @intCast(node)) });
-            }
+            if (k == .terminal and g == node) try b.terminal(net, round(s.xy[node]), leafSide(s, @intCast(node)));
         }
         try b.islands();
     }
@@ -261,8 +256,10 @@ const Builder = struct {
         try b.pin0.append(b.a(), @intCast(b.pin_net.items.len));
     }
 
-    /// A rail or port symbol the layout added, on `net`, its pin at `at`.
-    fn added(b: *Builder, c: ClassId, net: u32, at: Pt) !void {
+    /// A terminal net's symbol, its pin at `at`: the class of its role, or
+    /// with none in the library its name, running towards `side`.
+    fn terminal(b: *Builder, net: u32, at: Pt, side: Side) !void {
+        const c = roleClass(b.s, net) orelse return b.labels.append(b.a(), .{ .net = net, .at = at, .side = side });
         const t = b.s.lib.at(c).terminals[0].at;
         try b.names.append(b.a(), "");
         try b.classes.append(b.a(), c);
@@ -330,15 +327,16 @@ const Builder = struct {
             const x = lo.x - unit - 2 * unit * (n - 1 - @as(i32, @intCast(k))) - @divTrunc(unit, 2);
             const top = lo.y;
             const members = b.nl.graph.members(EdgeId.from(d));
-            // The pin on the terminal net goes up.
-            const up_pin: usize = if (s.roles[members[0].index()] == .sink) 1 else 0;
+            // Rows order potential: the end of its path off the ground goes up.
+            const path = device_mod.of(b.nl.graph.edges.items(.kind)[d]).path.?;
+            const up_pin: usize = path[@intFromBool(s.roles[members[path[0]].index()] == .sink)];
             const class_id = s.devices.items(.class)[d];
             const class = s.lib.at(class_id);
             var o: Orient = .left;
             const want_up = if (up_pin < class.terminals.len) class.terminals[up_pin].at else Pt.zero;
             if (o.apply(want_up).y > 0) o = Orient.flipped(.left, false, true);
             const origin: Pt = .{ .x = x, .y = top + unit };
-            try b.deviceAt(d, origin, o);
+            try b.device(d, origin, o);
             // Wires from each end pin to its symbol.
             const first = b.pin0.items[b.pin0.items.len - 2];
             for (members, 0..) |net, i| {
@@ -347,17 +345,9 @@ const Builder = struct {
                 const up = p.y < origin.y;
                 const end: Pt = .{ .x = p.x, .y = if (up) top else top + 2 * unit };
                 _ = try b.poly(net.index(), &.{ toF(p), toF(end) });
-                if (roleClass(s, net.index())) |c| {
-                    try b.added(c, net.index(), end);
-                } else {
-                    try b.labels.append(b.a(), .{ .net = net.index(), .at = end, .side = if (up) .up else .down });
-                }
+                try b.terminal(net.index(), end, if (up) .up else .down);
             }
         }
-    }
-
-    fn deviceAt(b: *Builder, d: u32, origin: Pt, o: Orient) !void {
-        return b.device(d, origin, o);
     }
 
     fn poly(b: *Builder, net: u32, pts: []const [2]f32) !?[]const Pt {

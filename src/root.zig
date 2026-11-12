@@ -84,13 +84,7 @@ pub fn place(
     sources: []const []const u8,
     diag: ?*netlist.Diagnostic,
 ) PlaceError!Placed {
-    var nl = try netlist.parse(gpa, sources, diag);
-    defer nl.deinit(gpa);
-    const roles = try guessRoles(gpa, &nl);
-    defer gpa.free(roles);
-    var s = try layout(gpa, &nl, roles, lib, cfg.layout);
-    defer s.deinit();
-    return Placed.init(gpa, &s, &nl);
+    return stages(gpa, gpa, cfg, lib, sources, diag);
 }
 
 /// `place` for many documents with one set of pages: each `run` returns a
@@ -117,11 +111,7 @@ pub const Pipeline = struct {
 
     pub fn run(self: *Pipeline, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!*const Placed {
         self.reset();
-        const tmp = self.scratch.allocator();
-        var nl = try netlist.parse(tmp, sources, diag);
-        const roles = try guessRoles(tmp, &nl);
-        var s = try layout(tmp, &nl, roles, self.lib, self.cfg.layout);
-        self.current = try Placed.init(self.out.allocator(), &s, &nl);
+        self.current = try stages(self.scratch.allocator(), self.out.allocator(), self.cfg, self.lib, sources, diag);
         _ = self.scratch.reset(.retain_capacity);
         return &self.current.?;
     }
@@ -133,6 +123,20 @@ pub const Pipeline = struct {
         _ = self.scratch.reset(.retain_capacity);
     }
 };
+
+// ---- private ----
+
+/// Every stage in order, the one list both tiers run: each stage's
+/// temporaries in `tmp`, freed before it returns, the result in `out`.
+fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!Placed {
+    var nl = try netlist.parse(tmp, sources, diag);
+    defer nl.deinit(tmp);
+    const roles = try guessRoles(tmp, &nl);
+    defer tmp.free(roles);
+    var s = try layout(tmp, &nl, roles, lib, cfg.layout);
+    defer s.deinit();
+    return Placed.init(out, &s, &nl);
+}
 
 test {
     std.testing.refAllDecls(@This());
