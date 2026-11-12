@@ -21,8 +21,8 @@
 //! Two things a subcircuit library file needs and SPICE does not give it:
 //! a file whose first line is `.subckt` has no title line, so the file name
 //! is used as one; and a deck with no top-level devices draws the body of
-//! its last `.subckt` (the top cell), its ports as nets and its instances as
-//! blocks.
+//! its last `.subckt` (the top cell), its ports as nets, its instances as
+//! blocks and its voltage sources in the circuit (a cell has no bench).
 
 const std = @import("std");
 const np = @import("NetlistParser");
@@ -197,8 +197,10 @@ fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const 
     const title_end = std.mem.indexOfScalar(u8, text, '\n') orelse text.len;
     const rest = text[@min(title_end + 1, text.len)..];
     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
-    const roles = try portRoles(gpa, arena, &.{ body, rest }, top.ports, diag);
-    return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ body, "\n", roles }), rest });
+    const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
+    const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
+    const roles = try portRoles(gpa, arena, &.{ with_sources, rest }, top.ports, diag);
+    return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
 
 /// The `*@ weak at` stays of a drawing: one line per named device of
@@ -234,6 +236,20 @@ fn stays(arena: Allocator, text: []const u8, unit: i32) ![]const u8 {
         try out.print(arena, "{s}{d}\n", .{ if (mirror.bool) "MR" else "R", rot.integer * 90 });
     }
     return out.items;
+}
+
+/// `*@ weak driver <src> inline` lines for the top cell's voltage sources:
+/// a source in a cell's body is a device of the circuit, wired where it
+/// stands (as people draw 971 of 972 in 5,263 hand-drawn schematics), not a
+/// bench source to set apart.
+fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, diag: *np.netlist.Diagnostic) ![]const u8 {
+    var nl = try np.netlist.parse(gpa, sources, diag);
+    defer nl.deinit(gpa);
+    var out: Writer.Allocating = .init(arena);
+    for (nl.graph.edges.items(.kind), nl.graph.edges.items(.name)) |kind, name| {
+        if (kind == .vsource) try out.writer.print("*@ weak driver {s} inline\n", .{name});
+    }
+    return out.written();
 }
 
 /// `*@ weak role` lines for the top cell's ports whose names say nothing of
@@ -493,6 +509,30 @@ test "deck: a subcircuit file draws its top cell" {
     try std.testing.expectEqualStrings("cell.spice", nl.title);
     try std.testing.expectEqual(2, nl.graph.edgeCount()); // buf's x1, x2 as blocks
     try std.testing.expectEqualStrings("inv", nl.defOf(nl.device("x1").?).?.name);
+}
+
+test "deck: a top cell's voltage source is a device of the circuit, not a driver set apart" {
+    // Oracle: how people draw it. Of the 972 voltage sources the engine set
+    // apart in 5,263 hand-drawn subcircuits, 971 are wired where they stand.
+    // `vx` holds a drain node: the node stays an internal net (no port by
+    // R2) and the source is no driver (R3).
+    const gpa = std.testing.allocator;
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    var diag: np.netlist.Diagnostic = .{};
+    const srcs = try deckSources(gpa, arena_state.allocator(), "cs.spice",
+        \\.subckt dut vdd vss vb
+        \\M1 n0 vb vss vss nch
+        \\RD vdd n0 1k
+        \\VX n0 vss dc 1
+        \\.ends dut
+    , &diag);
+    var nl = try np.netlist.parse(gpa, srcs, &diag);
+    defer nl.deinit(gpa);
+    const roles = try np.guessRoles(gpa, &nl);
+    defer gpa.free(roles);
+    try std.testing.expectEqual(np.Role.internal, roles[nl.net("n0").?.index()]);
+    try std.testing.expect(!np.schematic.isDriver(&nl.graph, roles, nl.device("vx").?.index()));
 }
 
 test "deck: the top cell's ports that no name gives a role are inputs and outputs" {

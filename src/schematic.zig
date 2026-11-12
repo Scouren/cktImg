@@ -215,8 +215,21 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         else => {},
     };
 
+    const order = try hints.applyOrder(gpa, nl.hints);
+    defer gpa.free(order);
+    // A source a `*@ driver <src> inline` line draws in the circuit drives
+    // no terminal net: R2 passes it.
+    const in_circuit = try gpa.alloc(bool, circuit.edgeCount());
+    defer gpa.free(in_circuit);
+    @memset(in_circuit, false);
+    for (order) |i| {
+        const h = nl.hints[i];
+        if (h.verb != .driver or h.args.len != 2) continue;
+        const d = nl.device(h.args[0]) orelse continue;
+        in_circuit[d.index()] = std.mem.eql(u8, h.args[1], "inline");
+    }
     for (circuit.edges.items(.kind), 0..) |k, d| {
-        if (k != .vsource) continue;
+        if (k != .vsource or in_circuit[d]) continue;
         const pins = circuit.members(EdgeId.from(d));
         if (pins.len < 2) continue;
         const a = pins[0].index();
@@ -226,8 +239,6 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         roles[driven] = if (isSignalSource(nl, @intCast(d))) .input else .bias;
     }
     // The deck's `*@ role <net> <role>` lines, the preferred one last.
-    const order = try hints.applyOrder(gpa, nl.hints);
-    defer gpa.free(order);
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .role or h.args.len != 2) continue;

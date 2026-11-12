@@ -463,7 +463,8 @@ keeps the roomier lattice instead. A net whose wire would cross more than
 `cross_max` other wires (6) is joined by name, its pins that stand near
 each other still wired; `.cross_max = 2`
 is how sparingly a person crosses wires, at the price of more names.
-A file containing only `.subckt` definitions draws its last one, and
+A file containing only `.subckt` definitions draws its last one, its
+voltage sources in the circuit (`*@ driver <src> apart` sets one apart), and
 `examples/blocks.spice` is a hierarchical deck to try. The JSON format is
 described in `src/json.zig`.
 

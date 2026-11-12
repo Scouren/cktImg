@@ -87,7 +87,9 @@ on a device overrides the relations on it.
   bias `vb*`/`bias*`.
   A V source from ground makes its net an input when it carries a signal
   (`ac`, `sin`, `pulse`, `pwl`, ...), else a bias; a V source from a supply,
-  input or bias net to ground is a driver, drawn apart at the left.
+  input or bias net to ground is a driver, drawn apart at the left. In a
+  file of only `.subckt`s the top cell's V sources are devices of the
+  circuit, wired where they stand (`*@ driver <src> apart` sets one apart).
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead.
