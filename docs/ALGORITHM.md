@@ -223,7 +223,13 @@ stand above each other in a loop (a transmission gate's two), only their
 column's links count. Then each type's transistors on ground (net 0 or any
 net of the ground role: `vss`, `gnd`) drop to that type's lowest row among
 them, as the book draws a second stage's current
-source beside the first stage's mirror.
+source beside the first stage's mirror. A two-pin part on ground with nothing
+over it (its upper net is no upright device's lower end: a gate's resistor or
+source, a load on a net of gates) hangs under its net: a row below the lowest
+transistor the net is a gate of, level with a device the net is the upper end
+of; mates hang level. People draw such a part's upper pin below its net in
+72% of 1,642 pins of the 5,263 reference drawings; longest path alone stood
+it on the top row.
 
 **Column order** (`columns.order`). Mated columns are the core: one of each
 pair on the left, its mate mirrored on the right. A column the mates map to

@@ -1051,3 +1051,31 @@ test "sketch: a trunk is the cheapest track that fits, not the first" {
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
+
+test "sketch: a part to ground with nothing over it hangs under the gate it joins" {
+    // Oracle: the hand-drawn figure. A gate's resistor to ground is drawn
+    // under the gate's net, its upper pin below the gate (72% of 1,642 such
+    // pins in the 5,263 reference drawings), so the wire comes down into
+    // it. Longest path from the top alone stood it on the top row, its pin
+    // over the gate, the wire four corners round.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\hang
+        \\.model nch nmos level=1
+        \\.model pch pmos level=1
+        \\VDD vdd 0 1.8
+        \\M2 out out vdd vdd pch
+        \\M1 out g 0 0 nch
+        \\R1 g 0 100k
+        \\C1 in g 1p
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    try std.testing.expect(pinOf(&p, "r1", 0).y > pinOf(&p, "m1", 1).y);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}

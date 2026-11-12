@@ -11,7 +11,8 @@
 //! links count. Then each type's transistors
 //! on ground drop to that type's lowest level among them, as the book draws
 //! a second stage's current source beside the first stage's mirror, unless
-//! that breaks a line.
+//! that breaks a line. A two-pin part on ground with nothing over it hangs
+//! under its net: a level below the lowest transistor the net is a gate of.
 //!
 //! Contents:
 //! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
@@ -38,7 +39,8 @@ const none = structure.none;
 
 /// Each vertical device's level: longest path down from the top, after
 /// merging mates and blocks (where that closes no cycle); then each type's
-/// transistors on ground drop to that type's lowest level among them.
+/// transistors on ground drop to that type's lowest level among them, and
+/// a part on ground with nothing over it hangs under the net it joins.
 /// `below` is each device's next in its column, or `none`.
 pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
     const c = &nl.graph;
@@ -124,6 +126,38 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             if (all) rank[d] = low;
         }
     }
+    // A part on ground with nothing over it hangs under its net: a row
+    // below the lowest transistor whose gate the net drives, level with a
+    // device the net is the upper end of. Longest path alone left it on the
+    // top row, its pin over the net it joins, where people have it under
+    // (72% of 1,642 such pins in 5,263 hand-drawn schematics, 27% here).
+    const hang = try gpa.dupe(u32, rank);
+    defer gpa.free(hang);
+    for (0..n) |d| {
+        if (!isFoot(nl, roles, kinds, drawn, form, lower, d)) continue;
+        const net = upper[d];
+        if (roles[net] == .supply or roles[net] == .sink) continue;
+        var under: u32 = 0;
+        const over = for (c.incident(VertexId.from(net))) |e_id| {
+            const e = e_id.index();
+            if (e == d or !drawn[e] or form[e] != .vertical) continue;
+            if (lower[e] == net) break true;
+            under = @max(under, if (upper[e] == net) rank[e] else rank[e] + 1);
+        } else false;
+        if (!over) hang[d] = @max(rank[d], under);
+    }
+    for (0..n) |d| {
+        if (hang[d] == rank[d]) continue;
+        // Mates hang level: the class's lowest, when all of it hangs.
+        const k = find(class, @intCast(d));
+        var low = hang[d];
+        const all = for (0..n) |e| {
+            if (find(class, @intCast(e)) != k) continue;
+            if (!isFoot(nl, roles, kinds, drawn, form, lower, e)) break false;
+            low = @max(low, hang[e]);
+        } else true;
+        if (all) rank[d] = low;
+    }
     var undone = true;
     var passes: usize = 0;
     while (undone) : (passes += 1) {
@@ -160,6 +194,13 @@ fn onGround(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, 
     if (!drawn[d] or form[d] != .vertical or !isTransistor(kinds[d])) return false;
     if (symmetry.polarity(nl.modelType(EdgeId.from(d))) != pol) return false;
     return roles[lower[d]] == .sink;
+}
+
+/// Whether `d` is a drawn upright part of two pins, no transistor, whose
+/// lower end is on a ground.
+fn isFoot(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize) bool {
+    if (!drawn[d] or form[d] != .vertical or isTransistor(kinds[d])) return false;
+    return nl.graph.members(EdgeId.from(d)).len == 2 and roles[lower[d]] == .sink;
 }
 
 /// Merges the classes of `a` and `b` unless one is above the other.
