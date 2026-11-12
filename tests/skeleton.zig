@@ -170,3 +170,22 @@ test "skeleton: a resistor on the way down stands upright under the emitter it l
         try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device("i1").?.index()]);
     }
 }
+
+test "skeleton: a column only a bridge joins to the rest stands beside the column the bridge leads to" {
+    // Oracle: the bridge's own wire. `rl` hangs on the first stage's
+    // collector through the coupling capacitor `c3` and on nothing else: a
+    // column pitch (8) from a column on that collector's net, its wire
+    // passes no other stage. It stood past the last stage once, the wire
+    // crossing three.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "coupled load\n.model qnpn npn\nVCC vcc 0 9\nQ1 c1 b1 0 qnpn\nRC1 vcc c1 1k\nQ2 c2 c1 0 qnpn\nRC2 vcc c2 1k\n" ++
+        "Q3 c3 c2 0 qnpn\nRC3 vcc c3 1k\nQ4 c4 c3 0 qnpn\nRC4 vcc c4 1k\nC3 c1 n9 1u\nRL n9 0 10k\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const rl = l.sk.x[l.nl.device("rl").?.index()];
+    const q1 = l.sk.x[l.nl.device("q1").?.index()];
+    const q2 = l.sk.x[l.nl.device("q2").?.index()];
+    try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[l.nl.device("c3").?.index()]);
+    try std.testing.expect(@min(@abs(rl - q1), @abs(rl - q2)) <= 8);
+}

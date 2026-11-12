@@ -8,7 +8,8 @@
 //! or a column wired to both halves stands on the axis, the first by rank
 //! where several share a row (the rest go free). The left half's
 //! order is the one whose wired nets span least (rails, biases and nets
-//! driven from outside aside: they are symbols or labels), tried
+//! driven from outside aside: they are symbols or labels; a bridge between
+//! two wired nets counts the gap between their columns), tried
 //! exhaustively up to `exhaustive_max` columns, else by moving one column
 //! at a time while that helps. Columns with no mate go right of the core
 //! when they reach an output, else left of it, each side ordered the same
@@ -563,7 +564,8 @@ fn controlled(kind: netlist.DeviceKind) bool {
 }
 
 /// The total width of the wired nets, each from its leftmost column to its
-/// rightmost, over the columns `placed` so far; with `ctx.flow`, each pin
+/// rightmost, and of the gaps the bridges cross, over the columns `placed`
+/// so far; with `ctx.flow`, each pin
 /// `against` the signal's way first, counted as more than any span.
 fn span(ctx: Ctx, x: []const i32) !i64 {
     const c = &ctx.nl.graph;
@@ -581,5 +583,27 @@ fn span(ctx: Ctx, x: []const i32) !i64 {
         }
         if (lo <= hi) total += hi - lo;
     }
+    // A bridge joins two nets: the gap between their columns is its wire.
+    for (0..c.edgeCount()) |d| {
+        const pins = c.members(EdgeId.from(d));
+        if (ctx.column_of[d] != none or pins.len != 2) continue;
+        if (!ctx.wired[pins[0].index()] or !ctx.wired[pins[1].index()]) continue;
+        const a = extent(ctx, x, pins[0]) orelse continue;
+        const b = extent(ctx, x, pins[1]) orelse continue;
+        total += @max(0, a[0] - b[1], b[0] - a[1]);
+    }
     return total;
+}
+
+/// The leftmost and rightmost column placed so far with a device on `n`.
+fn extent(ctx: Ctx, x: []const i32, n: VertexId) ?[2]i32 {
+    var lo: i32 = std.math.maxInt(i32);
+    var hi: i32 = std.math.minInt(i32);
+    for (ctx.nl.graph.incident(n)) |e| {
+        const k = ctx.column_of[e.index()];
+        if (k == none or !ctx.placed[k]) continue;
+        lo = @min(lo, x[k]);
+        hi = @max(hi, x[k]);
+    }
+    return if (lo <= hi) .{ lo, hi } else null;
 }
