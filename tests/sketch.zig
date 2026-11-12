@@ -408,6 +408,33 @@ test "sketch: a lower crossing budget names more nets and draws no more crossing
     try std.testing.expect(fewer > 0);
 }
 
+test "sketch: a net over the crossing budget keeps its near pins wired, one name a part" {
+    // Oracle: how people draw it. Of the nets people join by name in 5,274
+    // hand-drawn schematics, 75% keep the pins standing near each other
+    // wired and cut only the far connection. With no crossing budget the
+    // Sallen-Key filter's node `a` (R1, R2, C1) is cut: fewer names than
+    // pins, a wire left, and the names still join the whole net.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = for (textbook.beyond) |c| {
+        if (std.mem.eql(u8, c.name, "sallen_key")) break c.spice;
+    } else unreachable;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{ .cross_max = 0 });
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "a")) break i;
+    } else unreachable;
+    var names: usize = 0;
+    for (p.labels) |l| names += @intFromBool(l.net == net);
+    var wires = p.segments(net);
+    try std.testing.expectEqual(2, names);
+    try std.testing.expect(wires.next() != null);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: closing up reorders nothing, widens nothing, and narrows the five-transistor OTA" {
     // Oracle: the lattice drawing (`compact` off) of the same deck. Every
     // two named devices keep their order along x and along y, and the

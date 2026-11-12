@@ -1,17 +1,22 @@
 //! Thinning (stage 4): the nets whose wires cross too many others, drawn
-//! as names instead. In: the drawing's routes, the nets' roles and how the
-//! deck's lines style each net. Out: the style of each net it names set to
-//! `label`; the caller wires the drawing again.
+//! in parts joined by name instead. In: the drawing's routes, the nets'
+//! roles and how the deck's lines style each net. Out: the style of each
+//! net it thins set to `cut`, or `label` if it was `cut` already; the
+//! caller wires the drawing again.
 //!
 //! A person's drawing seldom lets one net's wire cross more than two others
 //! (of 43,282 wired nets in 5,263 hand-drawn reference schematics, Analog
-//! Canvas gallery, 423 do): past that the net is joined by name. The net
-//! crossing the most wires is named first, and the crossings counted again
-//! without it, until none is over. Only internal nets the deck's lines
-//! leave to the engine: a rail, a port and a net a line wires keep theirs.
-//! A rail's wires are not counted: a gate line crosses the stubs up to the
-//! supply bar as the book draws it (Razavi Fig. 12.20). A named net's
-//! mirror image is named with it.
+//! Canvas gallery, 423 do): past that the net is joined by name. And a
+//! person cuts only the far connection: 75% of their named nets keep the
+//! pins that stand near each other wired. So a net over the budget is first
+//! `cut` (`wires.zig`: each group of near pins on one wire, one name a
+//! group), and named at every pin only if its parts still cross too much.
+//! The net crossing the most wires goes first, and the crossings are
+//! counted again without it, until none is over. Only internal nets the
+//! deck's lines leave to the engine: a rail, a port and a net a line wires
+//! keep theirs. A rail's wires are not counted: a gate line crosses the
+//! stubs up to the supply bar as the book draws it (Razavi Fig. 12.20). A
+//! thinned net's mirror image goes with it.
 //!
 //! Contents:
 //! - `pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool`
@@ -27,11 +32,14 @@ const Role = sch.Role;
 const Style = netlines.Style;
 const none = sch.none;
 
-/// Sets `style[net] = .label` for each net whose wires in `routes` cross
-/// more than `max` wires of other nets (rails aside), the worst first (the
-/// lower net on a tie), counting again without it; and for its image in
-/// `net_mate`.
-/// Whether any was set. `gpa` backs the work.
+/// The most other wires the parts of a `cut` net may cross.
+const cut_max = 2;
+
+/// Takes each net whose wires in `routes` cross more than `max` wires of
+/// other nets (rails aside) one step further from a whole wire, the worst
+/// first (the lower net on a tie), counting again without it: `auto` to
+/// `cut`, a net already `cut` to `label`; and its image in `net_mate` with
+/// it. Whether any was. `gpa` backs the work.
 pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool {
     assert(roles.len == style.len);
     // One entry per point where two nets' wires cross.
@@ -45,28 +53,40 @@ pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate
     };
     const count = try gpa.alloc(u32, style.len);
     defer gpa.free(count);
+    // Nets taken a step here: out of the count, and not taken twice.
+    const gone = try gpa.alloc(bool, style.len);
+    defer gpa.free(gone);
+    @memset(gone, false);
     var any = false;
     for (0..style.len) |_| {
         @memset(count, 0);
-        for (pairs.items) |p| if (style[p[0]] != .label and style[p[1]] != .label) {
+        for (pairs.items) |p| if (!gone[p[0]] and !gone[p[1]]) {
             count[p[0]] += 1;
             count[p[1]] += 1;
         };
         var worst: u32 = none;
-        for (count, roles, style, 0..) |k, role, st, net| {
-            if (k <= max or role != .internal or st != .auto) continue;
+        for (count, 0..) |k, net| {
+            if (k <= (if (style[net] == .cut) cut_max else max) or !steps(roles[net], style[net], gone[net])) continue;
             if (worst == none or k > count[worst]) worst = @intCast(net);
         }
         if (worst == none) break;
-        style[worst] = .label;
         any = true;
-        const mate = if (net_mate) |m| m[worst] else none;
-        if (mate != none and roles[mate] == .internal and style[mate] == .auto) style[mate] = .label;
+        for ([_]u32{ worst, if (net_mate) |m| m[worst] else none }) |net| {
+            if (net == none or !steps(roles[net], style[net], gone[net])) continue;
+            style[net] = if (style[net] == .auto) .cut else .label;
+            gone[net] = true;
+        }
     }
     return any;
 }
 
 // ---- private ----
+
+/// Whether a net may go a step further from a whole wire: an internal net
+/// the deck's lines leave to the engine, once a call.
+fn steps(role: Role, style: Style, gone: bool) bool {
+    return role == .internal and !gone and (style == .auto or style == .cut);
+}
 
 fn rail(role: Role) bool {
     return role == .supply or role == .sink;
@@ -104,15 +124,18 @@ test "name: the net crossing the most wires is named first, and the count taken 
     // Net 0 crosses three wires, net 1 two, the rest one each.
     try std.testing.expect(!try name(gpa, &routes, &roles, null, 3, &style));
     try std.testing.expect(try name(gpa, &routes, &roles, null, 2, &style));
+    try std.testing.expectEqualSlices(Style, &.{ .cut, .auto, .auto, .auto, .auto }, &style);
+    // Still over when counted again (the same wires): named at every pin.
+    try std.testing.expect(try name(gpa, &routes, &roles, null, 2, &style));
     try std.testing.expectEqualSlices(Style, &.{ .label, .auto, .auto, .auto, .auto }, &style);
     // A budget of one: net 0 goes, and net 1 then crosses net 4 alone.
     style = @splat(.auto);
     try std.testing.expect(try name(gpa, &routes, &roles, null, 1, &style));
-    try std.testing.expectEqualSlices(Style, &.{ .label, .auto, .auto, .auto, .auto }, &style);
+    try std.testing.expectEqualSlices(Style, &.{ .cut, .auto, .auto, .auto, .auto }, &style);
     // None: net 0, then net 1 (or 4: the lower on a tie).
     style = @splat(.auto);
     try std.testing.expect(try name(gpa, &routes, &roles, null, 0, &style));
-    try std.testing.expectEqualSlices(Style, &.{ .label, .label, .auto, .auto, .auto }, &style);
+    try std.testing.expectEqualSlices(Style, &.{ .cut, .cut, .auto, .auto, .auto }, &style);
     // A net a line wires keeps its wire.
     style = .{ .wire, .auto, .auto, .auto, .auto };
     try std.testing.expect(!try name(gpa, &routes, &roles, null, 2, &style));

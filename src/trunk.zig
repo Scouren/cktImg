@@ -5,7 +5,8 @@
 //! no track fits.
 //!
 //! Contents:
-//! - `pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!bool`
+//! - `pub const End = enum { port, name }`
+//! - `pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -15,6 +16,7 @@ const sch = @import("schematic.zig");
 const canvas = @import("canvas.zig");
 
 const Pt = library.Pt;
+const Side = library.Side;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
 const Line = canvas.Line;
@@ -22,16 +24,27 @@ const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
 
+/// What the wire's free end carries.
+pub const End = enum {
+    /// By the net's role: an output's or an input's port, else nothing.
+    port,
+    /// The net's name: `pins` are one part of a net joined by name.
+    name,
+};
+
 /// The rows tried for a trunk before the tap row.
 const level_max = 4;
 
 /// A net with no symbol of its own: one column's pins joined in order, or
 /// each pin brought to a trunk along the net's tap row. An output also
-/// gets a port at the trunk's outer end. False, with nothing drawn, when
-/// the lines would touch another net's point or run through a device.
-pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!bool {
+/// gets a port at the trunk's outer end; with `end` `.name` (two pins or
+/// more) the wire carries the net's name on a stub from a free end. False,
+/// with nothing drawn, when the lines would touch another net's point or
+/// run through a device.
+pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool {
     const s = c.s;
     assert(pins.len >= 1);
+    assert(end == .port or pins.len >= 2);
     for (pins) |p| assert(s.pins.items(.net)[p] == net);
     // A lone pin has nothing to join: an output's gets its port.
     if (pins.len == 1) {
@@ -72,28 +85,51 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!bool {
     } else false;
     if (!fit) return false;
     const role = s.roles[net];
-    // The output's port: out from the outer end of the trunk, or of the
-    // column at its tap, on the drawing's nearer side. An input's: from
-    // the left end, where the signal enters, or the right, an end no pin
-    // of the net stands beyond (the stub would run back along the wire);
-    // with room at neither, nothing is drawn, and each pin gets a port.
-    var right = 2 * hi >= c.middle2();
-    if (role == .input) {
-        right = for ([_]bool{ false, true }) |r| {
-            const from: Pt = .{ .x = if (r) hi else lo, .y = y_t };
-            const beyond = for (pins) |p| {
-                if (if (r) pinAt(s, p).x > hi else pinAt(s, p).x < lo) break true;
-            } else false;
-            if (!beyond and c.fits(net, from, stepPt(from, if (r) .right else .left, c.len.terminal))) break r;
-        } else return false;
-    }
+    // An input's port and a part's name go out from a free end of the
+    // wire: the left, where the signal enters, or the right; an end no pin
+    // of the net stands beyond (the stub would run back along the wire).
+    const reach = if (end == .name) c.len.label else c.len.terminal;
+    const free: ?bool = if (end == .port and role != .input) null else for ([_]bool{ false, true }) |r| {
+        const from: Pt = .{ .x = if (r) hi else lo, .y = y_t };
+        const beyond = for (pins) |p| {
+            if (if (r) pinAt(s, p).x > hi else pinAt(s, p).x < lo) break true;
+        } else false;
+        if (!beyond and c.fits(net, from, stepPt(from, if (r) .right else .left, reach))) break r;
+    } else null;
+    // An input with room at neither end is not wired: each pin gets a port.
+    if (end == .port and role == .input and free == null) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
+    if (end == .name) {
+        const r = free orelse return nameOnPin(c, pins);
+        const side: Side = if (r) .right else .left;
+        const from: Pt = .{ .x = if (r) hi else lo, .y = y_t };
+        const to = stepPt(from, side, reach);
+        if (!try c.commit(net, &.{ from, to })) return nameOnPin(c, pins);
+        try c.leaf(.label, net, to, side.opposite());
+        return true;
+    }
     if (role != .output and role != .input) return true;
+    // The output's port: out from the outer end of the trunk, or of the
+    // column at its tap, on the drawing's nearer side.
+    const right = free orelse (2 * hi >= c.middle2());
     try c.port(net, .{ .x = if (right) hi else lo, .y = y_t }, if (right) .right else .left);
     return true;
 }
 
 // ---- private ----
+
+/// The part's name at its top-left pin, by place, so card order changes
+/// nothing: the wire has no free end to carry it.
+fn nameOnPin(c: *Canvas, pins: []const u32) !bool {
+    var best = pins[0];
+    for (pins) |p| {
+        const a = pinAt(c.s, p);
+        const b = pinAt(c.s, best);
+        if (a.y < b.y or (a.y == b.y and a.x < b.x)) best = p;
+    }
+    try c.labelAt(best);
+    return true;
+}
 
 /// The lines of one trunk at `y_t`: a column's pins joined in order, or each
 /// pin brought to the trunk and the trunk across them; `lo`, `hi` its ends.

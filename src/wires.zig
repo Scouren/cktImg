@@ -60,6 +60,12 @@ const stepPt = canvas.stepPt;
 // gate to other 5.5, other 7.5) once the pitch is the human one.
 const input_reach = 6;
 
+/// The longest connection kept as wire in a net joined by name, in half
+/// units, by how many of its two pins face sideways (a gate, a base):
+/// neither, one, both. Fitted on the connections people wire and name in
+/// 5,274 hand-drawn schematics (93.6% of nets right on those held out).
+const cut = [3]u32{ 15, 11, 6 };
+
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
 /// pins drawn on their symbol with no wire.
@@ -129,6 +135,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         }
         if (style == .label) {
             for (pins) |p| try c.labelAt(p);
+            s.labeled[net] = true;
+            continue;
+        }
+        if (style == .cut) {
+            try parts(&c, net, pins);
             s.labeled[net] = true;
             continue;
         }
@@ -263,6 +274,59 @@ fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
     return false;
 }
 
+/// A net joined by name between its parts: the pins standing near each
+/// other (each within `cut` of another of its part) on one trunk with one
+/// name; a pin on its own, or a part no trunk fits, a name at each pin.
+fn parts(c: *Canvas, net: u32, pins: []const u32) !void {
+    assert(pins.len >= 1);
+    const gpa = c.gpa;
+    // Each pin's part: the least index of a pin in it.
+    const part = try gpa.alloc(u32, pins.len);
+    defer gpa.free(part);
+    for (part, 0..) |*g, i| g.* = @intCast(i);
+    var merged = true;
+    var rounds: usize = 0;
+    while (merged) : (rounds += 1) {
+        assert(rounds <= pins.len); // every round but the last joins two parts
+        merged = false;
+        for (pins, 0..) |p, i| for (pins[i + 1 ..], i + 1..) |q, j| {
+            if (part[i] == part[j] or !within(c, p, q)) continue;
+            const keep = @min(part[i], part[j]);
+            const drop = @max(part[i], part[j]);
+            for (part) |*g| {
+                if (g.* == drop) g.* = keep;
+            }
+            merged = true;
+        };
+    }
+    // One part is the whole net, the wire that crossed too much: names.
+    if (std.mem.allEqual(u32, part, 0)) {
+        for (pins) |p| try c.labelAt(p);
+        return;
+    }
+    var members: std.ArrayList(u32) = .empty;
+    defer members.deinit(gpa);
+    for (0..pins.len) |g| {
+        members.clearRetainingCapacity();
+        for (pins, part) |p, of| {
+            if (of == g) try members.append(gpa, p);
+        }
+        if (members.items.len == 0) continue;
+        if (members.items.len >= 2 and try trunk.draw(c, net, members.items, .name)) continue;
+        for (members.items) |p| try c.labelAt(p);
+    }
+}
+
+/// Whether two pins of a net stand near enough to stay wired when the net
+/// is joined by name: the connections people keep (`cut`).
+fn within(c: *const Canvas, p: u32, q: u32) bool {
+    const a = pinAt(c.s, p);
+    const b = pinAt(c.s, q);
+    const sides = c.s.pins.items(.side);
+    const sideways = @as(usize, @intFromBool(sides[p].isHorizontal())) + @intFromBool(sides[q].isHorizontal());
+    return 2 * (@abs(a.x - b.x) + @abs(a.y - b.y)) <= cut[sideways] * @as(u32, @intCast(c.len.unit));
+}
+
 /// Whether an input's pins stand near enough to share one wire and one
 /// port: the box around them no more than `input_reach` units around half.
 fn near(c: *const Canvas, pins: []const u32) bool {
@@ -277,13 +341,13 @@ fn near(c: *const Canvas, pins: []const u32) bool {
 /// the router takes the net.
 fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
     // One pin: nothing to route; its port, if any, as by default.
-    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins);
+    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port);
     return switch (style) {
-        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins),
+        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port),
         .ladder => try ladder(c, net, pins, axis2),
-        .trunk => try trunk.draw(c, net, pins),
+        .trunk => try trunk.draw(c, net, pins, .port),
         .route => false,
-        .label => unreachable,
+        .label, .cut => unreachable,
     };
 }
 

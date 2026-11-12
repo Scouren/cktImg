@@ -39,6 +39,9 @@ pub const Style = enum(u8) {
     auto,
     /// Names at its pins.
     label,
+    /// Names between its parts: pins standing near each other on one
+    /// wire, one name a part. The engine's (`thin.zig`); no line asks it.
+    cut,
     /// A wire, by whichever pattern fits.
     wire,
     ladder,
@@ -90,7 +93,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
                 if (h.args.len == 2) {
                     if (h.verb == .label) break :blk .bad_args;
                     s = std.meta.stringToEnum(Style, h.args[1]) orelse break :blk .bad_args;
-                    if (s == .auto or s == .label or s == .wire) break :blk .bad_args;
+                    if (s == .auto or s == .label or s == .cut or s == .wire) break :blk .bad_args;
                 }
                 style[net] = s;
                 break :blk null;

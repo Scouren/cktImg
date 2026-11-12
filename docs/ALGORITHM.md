@@ -296,7 +296,7 @@ gets a copy node on its own line.
 | `bend_cost` | 1 | what the router pays for a bend, in wire |
 | `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
 | `compact` | true | whether the drawing is closed up (below) |
-| `cross_max` | 6 | the most wires of other nets one internal net's wire may cross before the net is drawn as names (below) |
+| `cross_max` | 6 | the most wires of other nets one internal net's wire may cross before the net is cut and joined by name (below) |
 
 A length moves nothing to another row or column: rows, columns and order are
 the skeleton's (tested by stretching every one). The defaults are a person's
@@ -337,11 +337,19 @@ closed up: its places are already the answer.
 **Thinning** (`thin.zig`). A person seldom lets one net's wire cross more
 than two others: of 43,282 wired nets in 5,263 hand-drawn reference
 schematics (the Analog Canvas gallery), 423 do; past that they join the net
-by name. So after the drawing is wired, the internal net whose wires cross
-the most wires of other nets, when over `cross_max`, is drawn as names at
-its pins, its mirror image with it, and the crossings are counted again
-without it until none is over; then the drawing is wired again, up to three
-times, since a wire gone may free a path. A rail's wires are not counted (a
+by name. And they cut only the far connection: 75% of the nets they name
+keep the pins standing near each other wired. So after the drawing is
+wired, the internal net whose wires cross the most wires of other nets,
+when over `cross_max`, is **cut**, its mirror image with it, and the
+crossings are counted again without it until none is over; then the drawing
+is wired again, up to three times, since a wire gone may free a path. A cut
+net's pins fall into parts, each pin within reach of another of its part
+(3 units between two gates, 5.5 from a gate to another pin, 7.5 otherwise:
+the lengths that tell the connections people wire from those they name,
+right on 93.6% of held-out nets); a part of two pins or more is one trunk
+with one name at a free end, a pin alone carries its name, and a net that
+is all one part is named at every pin. A cut net whose parts still cross
+more than two wires is named at every pin the next time round. A rail's wires are not counted (a
 gate line crosses the stubs up to the supply bar, as the book draws it),
 and a rail, a port and a net a `wire` line names keep their wires. The
 default of 6 names about as many nets as the reference drawings do; 2 is
@@ -504,7 +512,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |

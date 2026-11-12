@@ -99,7 +99,7 @@ on a device overrides the relations on it.
   (`.compact = true`, the default); `.compact = false` keeps the roomier
   lattice, every row and column a full pitch apart. `.cross_max` (6) is the
   most other wires one internal net's wire may cross before the net is
-  drawn as names: lower it (2) for a drawing with too many crossings, raise
+  joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
   it for one with too many names; `*@ wire <net>` keeps one net wired.
 - **Schemify:** `schemify cmd --trust <project> cktimg.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way.
