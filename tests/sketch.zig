@@ -437,8 +437,8 @@ test "sketch: a lower crossing budget names more nets and draws no more crossing
 test "sketch: a net over the crossing budget keeps its near pins wired, one name a part" {
     // Oracle: how people draw it. Of the nets people join by name in 5,274
     // hand-drawn schematics, 75% keep the pins standing near each other
-    // wired and cut only the far connection. With no crossing budget the
-    // Sallen-Key filter's node `a` (R1, R2, C1) is cut: fewer names than
+    // wired and cut only the far connection. With no crossing budget one
+    // node of the Sallen-Key filter (three pins) is cut: fewer names than
     // pins, a wire left, and the names still join the whole net.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
@@ -449,13 +449,19 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
         if (std.mem.eql(u8, c.name, "sallen_key")) break c.spice;
     } else unreachable;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{ .cross_max = 0 });
-    const net = for (p.net_name, 0..) |n, i| {
-        if (std.mem.eql(u8, n, "a")) break i;
-    } else unreachable;
+    // The cut net: the one that carries names.
+    try std.testing.expect(p.labels.len > 0);
+    const net = p.labels[0].net;
     var names: usize = 0;
     for (p.labels) |l| names += @intFromBool(l.net == net);
+    var pins: usize = 0;
+    for (p.dev_name, 0..) |name, d| if (name.len > 0) {
+        const from, const to = p.pinRange(d);
+        for (p.pin_net[from..to]) |n| pins += @intFromBool(n == net);
+    };
     var wires = p.segments(net);
     try std.testing.expectEqual(2, names);
+    try std.testing.expect(pins > names);
     try std.testing.expect(wires.next() != null);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
@@ -1341,6 +1347,29 @@ test "sketch: a chain of parts into a gate stands on the gate's row, the part on
         if (std.mem.eql(u8, name, "g")) break n;
     } else unreachable;
     try std.testing.expectEqual(0, bends(&p, g));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: a pair's halves close over the tail between them" {
+    // Oracle: the hand drawings. Over an axis column on another row, the
+    // two inner columns of a mirrored core stand 2.5 units apart at the
+    // median of 246 such cores in the 5,263 reference drawings. The
+    // five-transistor OTA's pair stands so over its tail; held `series`
+    // from the tail's symbol on either side, it stood four units apart.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = for (textbook.all) |c| {
+        if (std.mem.eql(u8, c.name, "ota_5t")) break c.spice;
+    } else unreachable;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const m1 = pinOf(&p, "m1", 0);
+    const m2 = pinOf(&p, "m2", 0);
+    try std.testing.expectEqual(m1.y, m2.y);
+    try std.testing.expect(2 * @abs(m2.x - m1.x) <= 5 * lib.unit);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

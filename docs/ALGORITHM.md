@@ -388,7 +388,12 @@ have and `clearance`; a wire between two symbols, bends or junctions keeps
 (along y) between their symbols. A row is its column's: along y, two
 symbols at least `series` apart along x keep only their order, so a tall
 block stands beside the stack it joins and does not hold a band of its
-own. A supply pin's wire up to the bar is a stub, and moves with its
+own. And a column is its row's: along x, two symbols at least `stack` apart
+along y keep only their order, so a pair's halves close over the tail
+between them and a stage stands half under its neighbour's load, as people
+draw them (neighbouring columns of a block stand 1.98 units apart at the
+mean in the 5,263 reference drawings; with `series` between every two
+symbols the engine's stood 2.95). A supply pin's wire up to the bar is a stub, and moves with its
 device, only when it is no longer than `rail`: a longer one, from a lower
 row, is a wire like any other. Each track then goes as near the anchor as
 that allows (a longest path, by relaxation), in steps of a quarter unit.

@@ -361,9 +361,13 @@ fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1
         try g.keep(arena, along(a.at, ax), along(b.at, ax), @divExact(g.quantum, 2));
         // A row is its column's: two symbols a column apart may stand
         // beside each other (a tall block beside a stack), held only by
-        // their order and by what would touch.
+        // their order and by what would touch. And a column is its row's:
+        // two symbols a row apart keep their order, not `series`, so a
+        // pair's halves close over its tail as people draw them
+        // (neighbouring columns 1.98 units apart at the mean in 5,263
+        // hand-drawn schematics; with `series` between every two, 2.95).
         const beside = @max(across(b.box.min, ax) - across(a.box.max, ax), across(a.box.min, ax) - across(b.box.max, ax));
-        if (ax == 1 and beside >= len.series) continue;
+        if (beside >= (if (ax == 1) len.series else len.stack)) continue;
         try g.keep(arena, along(a.box.max, ax), along(b.box.min, ax), room);
     };
 
