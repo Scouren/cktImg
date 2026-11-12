@@ -213,6 +213,28 @@ test "skeleton: a current-controlled source stands as a source does: upright on 
     for ([_][]const u8{ "i1", "f1", "h1" }) |name| try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device(name).?.index()]);
 }
 
+test "skeleton: a pair's tail stands between the pair's two, not the mirror reference that shares its row" {
+    // Oracle: the netlist alone. The one device on the net where the two
+    // of a mated pair end stands strictly between them (people: 91.9% of
+    // 347 such devices in the 5,263 reference drawings). The tail and the
+    // diode-connected reference that feeds its gate both map to themselves
+    // and stand on one row: the reference, first by rank, took the axis and
+    // the tail stood outside the pair, its wire across a half.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Pair over a mirrored tail\n.model nch nmos level=1\nVDD vdd 0 1.8\nIREF vdd b 10u\nMREF b b 0 0 nch\nMT p b 0 0 nch\n" ++
+        "M1 a in1 p 0 nch\nM2 c in2 p 0 nch\nR1 vdd a 10k\nR2 vdd c 10k\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const x = l.sk.x;
+    const m1 = x[l.nl.device("m1").?.index()];
+    const m2 = x[l.nl.device("m2").?.index()];
+    const tail = x[l.nl.device("mt").?.index()];
+    const ref = x[l.nl.device("mref").?.index()];
+    try std.testing.expect(tail > @min(m1, m2) and tail < @max(m1, m2));
+    try std.testing.expect(ref < @min(m1, m2) or ref > @max(m1, m2));
+}
+
 test "skeleton: a column outside the mirrored core stands on the side of the half it is wired to" {
     // Oracle: a metamorphic relation. A second stage read from the right
     // half's node stands right of the core, and the same stage read from

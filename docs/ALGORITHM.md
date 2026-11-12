@@ -9,7 +9,7 @@ whole layout is one pass, with no relayout rounds.
 |---|---|---|
 | 1. Roles | `schematic.zig` | a role per net |
 | 2. Structure | `structure.zig`, `symmetry.zig`, `hints.zig` | a canonical order, blocks, the left-right symmetry |
-| 3. Skeleton | `skeleton.zig`, `levels.zig`, `columns.zig`, `bridges.zig` | each device's cell on a lattice, its form and gate side |
+| 3. Skeleton | `skeleton.zig`, `levels.zig`, `columns.zig`, `span.zig`, `bridges.zig`, `wrap.zig` | each device's cell on a lattice, its form and gate side |
 | 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `trunk.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
@@ -257,7 +257,8 @@ book draws it).
 **Column order** (`columns.order`). Mated columns are the core: one of each
 pair on the left, its mate mirrored on the right. A column the mates map to
 itself, a pair's tail, or a column wired to both halves stands on the axis
-(the first by rank where several share a row; the rest go free). The left
+(where several share a row, a pair's tail first, the device on the net the
+pair's two end on, then by rank; the rest go free). The left
 half's order is the one whose wired nets span least (rails, bias nets and
 nets driven from outside aside: they are symbols or labels; a bridge between
 two wired nets counts the gap between their columns, so a column only a

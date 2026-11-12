@@ -5,8 +5,8 @@
 //!
 //! Mated columns are the core: one of each pair on the left, its mate
 //! mirrored on the right; a column the mates map to itself, a pair's tail,
-//! or a column wired to both halves stands on the axis, the first by rank
-//! where several share a row (the rest go free). The left half's
+//! or a column wired to both halves stands on the axis, a pair's tail
+//! first and then by rank where several share a row (the rest go free). The left half's
 //! order is the one whose wired nets span least (rails, biases and nets
 //! driven from outside aside: they are symbols or labels; a bridge between
 //! two wired nets counts the gap between their columns), tried
@@ -23,7 +23,8 @@
 //! drive an output.
 //!
 //! Contents:
-//! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`
+//! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`, `Columns.count(c: Columns) u32`, `Columns.of(c: Columns, k: usize) []const u32`
+//! - `pub const Ctx = struct`
 //! - `pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Columns, column_of: []const u32, mate: []const u32, partner: []const u32, rank: []const u32, row: []const u32) Allocator.Error![]i32`
 
 const std = @import("std");
@@ -31,6 +32,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
+const order_cost = @import("span.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -42,31 +44,21 @@ pub const Columns = struct {
     start: []const u32,
     devices: []const u32,
 
-    fn count(c: Columns) u32 {
+    /// How many columns.
+    pub fn count(c: Columns) u32 {
         assert(c.start.len >= 1);
         return @intCast(c.start.len - 1);
     }
-    fn of(c: Columns, k: usize) []const u32 {
+    /// Column `k`'s devices, top to bottom.
+    pub fn of(c: Columns, k: usize) []const u32 {
         assert(k + 1 < c.start.len);
         assert(c.start[k] < c.start[k + 1]);
         return c.devices[c.start[k]..c.start[k + 1]];
     }
 };
 
-const none: u32 = std.math.maxInt(u32);
-
-/// Halves of more columns are ordered greedily (6! = 720 orders at most).
-const exhaustive_max = 6;
-
-/// How far one column is moved in a longer list, and how many passes over
-/// the list: the work is bounded by `move_rounds * 2 * move_reach` orders
-/// tried per column.
-const move_reach = 12;
-const move_rounds = 16;
-
-const Side = enum(u8) { left, axis, right, free };
-
-const Ctx = struct {
+/// What an order of the columns is judged against (`span.zig` reads it).
+pub const Ctx = struct {
     gpa: Allocator,
     nl: *const Netlist,
     roles: []const Role,
@@ -82,6 +74,19 @@ const Ctx = struct {
     /// Whether an order is first judged by the signal's way (`against`).
     flow: bool = false,
 };
+
+const none: u32 = std.math.maxInt(u32);
+
+/// Halves of more columns are ordered greedily (6! = 720 orders at most).
+const exhaustive_max = 6;
+
+/// How far one column is moved in a longer list, and how many passes over
+/// the list: the work is bounded by `move_rounds * 2 * move_reach` orders
+/// tried per column.
+const move_reach = 12;
+const move_rounds = 16;
+
+const Side = enum(u8) { left, axis, right, free };
 
 /// Each column's x. `column_of`, `mate`, `partner`, `rank` and `row` have
 /// one entry per device (`none` for a device in no column, or with no mate
@@ -127,6 +132,17 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     };
     sortByRank(ctx, left.items);
     sortByRank(ctx, axis.items);
+    // A pair's tail first: of two columns that would share the axis on one
+    // row, the one between the pair's two keeps it (people: 91.9% of 347
+    // such devices in 5,263 hand-drawn schematics stand between the two).
+    var tails: usize = 0;
+    for (0..axis.items.len) |i| {
+        if (!isTail(ctx, mate, axis.items[i])) continue;
+        const k = axis.items[i];
+        std.mem.copyBackwards(u32, axis.items[tails + 1 .. i + 1], axis.items[tails..i]);
+        axis.items[tails] = k;
+        tails += 1;
+    }
     // One x for the axis: a column spanning a row of one before it there
     // goes free instead.
     var kept: usize = 0;
@@ -160,7 +176,7 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         var by_flow = ctx;
         by_flow.flow = true;
         try best(by_flow, free_left.items, place, x, col_mate, 0);
-        if (!flowsRight(ctx, x)) {
+        if (!order_cost.flowsRight(ctx, x)) {
             const last = 2 * @as(i32, @intCast(n - 1));
             for (x) |*v| v.* = last - v.*;
         }
@@ -301,7 +317,7 @@ fn distances(ctx: Ctx, mate: []const u32, from: u32) ![]u32 {
         if (v < devices) {
             for (c.members(EdgeId.from(v)), 0..) |net, i| {
                 const w = devices + net.index();
-                if (!isChannelPin(ctx, v, i) or dist[w] != none or ctx.roles[net.index()] == .supply or ctx.roles[net.index()] == .sink) continue;
+                if (!order_cost.isChannelPin(ctx, v, i) or dist[w] != none or ctx.roles[net.index()] == .supply or ctx.roles[net.index()] == .sink) continue;
                 dist[w] = dist[v] + 1;
                 try queue.append(ctx.gpa, w);
             }
@@ -320,18 +336,6 @@ fn distances(ctx: Ctx, mate: []const u32, from: u32) ![]u32 {
         }
     }
     return dist;
-}
-
-/// A pin current flows through: a transistor's drain and source (collector
-/// and emitter), a switch's or controlled source's first two, any pin of
-/// anything else. A switch's control pins tie every switch on a clock.
-fn isChannelPin(ctx: Ctx, d: u32, pin: usize) bool {
-    assert(pin < ctx.nl.graph.members(EdgeId.from(d)).len);
-    return switch (ctx.nl.graph.edges.items(.kind)[d]) {
-        .mosfet, .bjt, .jfet, .mesfet => pin == 0 or pin == 2,
-        .vswitch, .cswitch, .vcvs, .vccs => pin < 2,
-        else => true,
-    };
 }
 
 fn closest(ctx: Ctx, dist: []const u32, k: usize) u32 {
@@ -358,25 +362,27 @@ fn wiredToBoth(ctx: Ctx, side: []const Side, k: usize) bool {
     return l and r;
 }
 
-/// Whether the signal passes the columns left to right: those with a pin
-/// on an input stand, on average, no further right than those that drive
-/// an output (a channel pin on it). True with no input or no output.
-fn flowsRight(ctx: Ctx, x: []const i32) bool {
-    assert(x.len == ctx.cols.count());
-    var in: [2]i64 = .{ 0, 0 };
-    var out: [2]i64 = .{ 0, 0 };
-    for (0..ctx.cols.count()) |k| {
-        var reads = false;
-        var drives = false;
-        for (ctx.cols.of(k)) |d| for (ctx.nl.graph.members(EdgeId.from(d)), 0..) |net, pin| {
-            reads = reads or ctx.roles[net.index()] == .input;
-            drives = drives or (ctx.roles[net.index()] == .output and isChannelPin(ctx, d, pin));
-        };
-        if (reads) in = .{ in[0] + x[k], in[1] + 1 };
-        if (drives) out = .{ out[0] + x[k], out[1] + 1 };
-    }
-    if (in[1] == 0 or out[1] == 0) return true;
-    return in[0] * out[1] <= out[0] * in[1];
+/// Whether column `k` holds a pair's tail: a device with a channel end on a
+/// net two mated devices end on too.
+fn isTail(ctx: Ctx, mate: []const u32, k: u32) bool {
+    const c = &ctx.nl.graph;
+    for (ctx.cols.of(k)) |d| for (c.members(EdgeId.from(d)), 0..) |net, pin| {
+        if (!order_cost.isChannelPin(ctx, d, pin) or !ctx.wired[net.index()]) continue;
+        for (c.incident(net)) |e| {
+            const a = e.index();
+            const m = mate[a];
+            if (a == d or m == none or m == a or m == d) continue;
+            // Both of the pair end on the net.
+            const ends = for ([_]u32{ a, m }) |v| {
+                const on = for (c.members(EdgeId.from(v)), 0..) |n2, p2| {
+                    if (n2.index() == net.index() and order_cost.isChannelPin(ctx, v, p2)) break true;
+                } else false;
+                if (!on) break false;
+            } else true;
+            if (ends) return true;
+        }
+    };
+    return false;
 }
 
 /// Per column: whether, free, it goes right of the core. One the core's
@@ -482,7 +488,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
     const ranked = try ctx.gpa.dupe(u32, list);
     defer ctx.gpa.free(ranked);
     place(x, col_mate, list, first);
-    var best_cost = try span(ctx, x);
+    var best_cost = try order_cost.span(ctx, x);
     if (list.len <= exhaustive_max) {
         // Heap's algorithm over `work`, iteratively.
         var c: [exhaustive_max]usize = @splat(0);
@@ -494,7 +500,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
                 const j = if (i % 2 == 0) 0 else c[i];
                 std.mem.swap(u32, &work[j], &work[i]);
                 place(x, col_mate, work, first);
-                const cost = try span(ctx, x);
+                const cost = try order_cost.span(ctx, x);
                 if (cost < best_cost or (ctx.flow and cost == best_cost and earlier(ranked, work, list))) {
                     best_cost = cost;
                     @memcpy(list, work);
@@ -527,7 +533,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
                     }
                     work[j] = list[i];
                     place(x, col_mate, work, first);
-                    const cost = try span(ctx, x);
+                    const cost = try order_cost.span(ctx, x);
                     if (cost >= best_cost) continue;
                     best_cost = cost;
                     improved = true;
@@ -548,84 +554,4 @@ fn earlier(ranked: []const u32, a: []const u32, b: []const u32) bool {
         return std.mem.indexOfScalar(u32, ranked, ka).? < std.mem.indexOfScalar(u32, ranked, kb).?;
     }
     return false;
-}
-
-/// How many pins stand left of every device that drives their net (a
-/// transistor's or controlled source's channel pin on it), over the wired
-/// nets and the columns `placed` so far: a gate, a base or a controlled
-/// source's input before its driver, a load before its stage. The signal
-/// going right to left.
-fn against(ctx: Ctx, x: []const i32) i64 {
-    const c = &ctx.nl.graph;
-    assert(x.len == ctx.cols.count());
-    var count: i64 = 0;
-    for (0..c.vertexCount()) |n| {
-        if (!ctx.wired[n]) continue;
-        var first: i32 = std.math.maxInt(i32);
-        for ([_]bool{ true, false }) |drivers| for (c.incident(VertexId.from(n))) |e| {
-            const d = e.index();
-            const k = ctx.column_of[d];
-            if (k == none or !ctx.placed[k]) continue;
-            const is_controlled = controlled(c.edges.items(.kind)[d]);
-            for (c.members(e), 0..) |net, pin| {
-                if (net.index() != n or (is_controlled and isChannelPin(ctx, d, pin)) != drivers) continue;
-                if (drivers) first = @min(first, x[k]) else count += @intFromBool(x[k] < first and first != std.math.maxInt(i32));
-            }
-        };
-    }
-    assert(count >= 0);
-    return count;
-}
-
-/// A device with a control pin: what it drives follows what it reads.
-fn controlled(kind: netlist.DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet, .vswitch, .cswitch, .vcvs, .vccs => true,
-        else => false,
-    };
-}
-
-/// The total width of the wired nets, each from its leftmost column to its
-/// rightmost, and of the gaps the bridges cross, over the columns `placed`
-/// so far; with `ctx.flow`, each pin
-/// `against` the signal's way first, counted as more than any span.
-fn span(ctx: Ctx, x: []const i32) !i64 {
-    const c = &ctx.nl.graph;
-    assert(x.len == ctx.cols.count());
-    var total: i64 = if (ctx.flow) against(ctx, x) << 32 else 0;
-    for (0..c.vertexCount()) |n| {
-        if (!ctx.wired[n]) continue;
-        var lo: i32 = std.math.maxInt(i32);
-        var hi: i32 = std.math.minInt(i32);
-        for (c.incident(VertexId.from(n))) |e| {
-            const k = ctx.column_of[e.index()];
-            if (k == none or !ctx.placed[k]) continue;
-            lo = @min(lo, x[k]);
-            hi = @max(hi, x[k]);
-        }
-        if (lo <= hi) total += hi - lo;
-    }
-    // A bridge joins two nets: the gap between their columns is its wire.
-    for (0..c.edgeCount()) |d| {
-        const pins = c.members(EdgeId.from(d));
-        if (ctx.column_of[d] != none or pins.len != 2) continue;
-        if (!ctx.wired[pins[0].index()] or !ctx.wired[pins[1].index()]) continue;
-        const a = extent(ctx, x, pins[0]) orelse continue;
-        const b = extent(ctx, x, pins[1]) orelse continue;
-        total += @max(0, a[0] - b[1], b[0] - a[1]);
-    }
-    return total;
-}
-
-/// The leftmost and rightmost column placed so far with a device on `n`.
-fn extent(ctx: Ctx, x: []const i32, n: VertexId) ?[2]i32 {
-    var lo: i32 = std.math.maxInt(i32);
-    var hi: i32 = std.math.minInt(i32);
-    for (ctx.nl.graph.incident(n)) |e| {
-        const k = ctx.column_of[e.index()];
-        if (k == none or !ctx.placed[k]) continue;
-        lo = @min(lo, x[k]);
-        hi = @max(hi, x[k]);
-    }
-    return if (lo <= hi) .{ lo, hi } else null;
 }
