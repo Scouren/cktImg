@@ -27,6 +27,7 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
+const forms = @import("forms.zig");
 const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
@@ -236,7 +237,7 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, mate: [
     }
     var cost: u32 = 0;
     for (roles, 0..) |r, net| {
-        if (r == .supply or r == .sink) continue;
+        if (forms.isRail(r)) continue;
         var left = false;
         var right = false;
         for (c.incident(VertexId.from(@intCast(net)))) |e| {

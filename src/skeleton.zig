@@ -41,6 +41,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
@@ -61,7 +62,7 @@ const VertexId = netlist.VertexId;
 const Role = sch.Role;
 const Structure = structure.Structure;
 const none = structure.none;
-const isTransistor = forms.isTransistor;
+const isTransistor = device.isTransistor;
 const isRail = forms.isRail;
 
 pub const Form = enum(u8) { vertical, horizontal };
@@ -451,11 +452,11 @@ fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: [
         hi = @max(hi, x[d]);
     };
     for (0..c.edgeCount()) |d| {
-        if (!drawn[d] or form[d] != .vertical or !isTransistor(kinds[d])) continue;
-        const pins = c.members(EdgeId.from(d));
+        if (!drawn[d] or form[d] != .vertical) continue;
+        const gate = c.members(EdgeId.from(d))[device.of(kinds[d]).gate orelse continue];
         var sum: i64 = 0;
         var count: i64 = 0;
-        if (!isRail(roles[pins[1].index()])) for (c.incident(pins[1])) |e| {
+        if (!isRail(roles[gate.index()])) for (c.incident(gate)) |e| {
             const v = e.index();
             if (v == d or !drawn[v]) continue;
             sum += x[v];

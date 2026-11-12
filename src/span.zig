@@ -16,7 +16,9 @@
 const std = @import("std");
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const columns = @import("columns.zig");
+const forms = @import("forms.zig");
 
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
@@ -68,14 +70,11 @@ pub fn flowsRight(ctx: Ctx, x: []const i32) bool {
     // at its source, which people draw on the left (the part farther from
     // the source stands right of the nearer in 90.1% of 1,676 pairs in
     // 5,263 hand-drawn schematics).
-    const parts_only = for (kinds) |kind| switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet, .subckt => break false,
-        else => {},
-    } else true;
+    const parts_only = forms.isPartsOnly(ctx.nl);
     // Its sources, when it has any in a column, are where the signal
     // enters, whatever its nets are called.
     const sourced = parts_only and found: for (0..ctx.cols.count()) |k| {
-        for (ctx.cols.of(k)) |d| if (kinds[d] == .vsource or kinds[d] == .isource) break :found true;
+        for (ctx.cols.of(k)) |d| if (device.of(kinds[d]).source == .independent) break :found true;
     } else false;
     var in: [2]i64 = .{ 0, 0 };
     var out: [2]i64 = .{ 0, 0 };
@@ -84,7 +83,7 @@ pub fn flowsRight(ctx: Ctx, x: []const i32) bool {
         var reads = false;
         var drives = false;
         for (ctx.cols.of(k)) |d| {
-            reads = reads or (sourced and (kinds[d] == .vsource or kinds[d] == .isource));
+            reads = reads or (sourced and device.of(kinds[d]).source == .independent);
             for (ctx.nl.graph.members(EdgeId.from(d)), 0..) |net, pin| {
                 reads = reads or (!sourced and ctx.roles[net.index()] == .input);
                 drives = drives or (ctx.roles[net.index()] == .output and isChannelPin(ctx, d, pin));
@@ -100,25 +99,23 @@ pub fn flowsRight(ctx: Ctx, x: []const i32) bool {
     return in[0] * out[1] <= out[0] * in[1];
 }
 
-/// A pin current flows through: a transistor's drain and source (collector
-/// and emitter), a switch's or controlled source's first two, any pin of
-/// anything else. A switch's control pins tie every switch on a clock.
+/// A pin current flows through (`device.carries`): a pin of a transistor's
+/// path, a switch's or controlled source's first two, any pin of anything
+/// else. A switch's control pins tie every switch on a clock. Asserts that
+/// `d` has a pin `pin`.
 pub fn isChannelPin(ctx: Ctx, d: u32, pin: usize) bool {
     assert(pin < ctx.nl.graph.members(EdgeId.from(d)).len);
-    return switch (ctx.nl.graph.edges.items(.kind)[d]) {
-        .mosfet, .bjt, .jfet, .mesfet => pin == 0 or pin == 2,
-        .vswitch, .cswitch, .vcvs, .vccs => pin < 2,
-        else => true,
-    };
+    return device.carries(ctx.nl.graph.edges.items(.kind)[d], pin);
 }
 
 // ---- private ----
 
-/// How many pins stand left of every device that drives their net (a
-/// transistor's or controlled source's channel pin on it), over the wired
-/// nets and the columns `placed` so far: a gate, a base or a controlled
-/// source's input before its driver, a load before its stage. The signal
-/// going right to left.
+/// How many pins stand left of every device that drives their net, over
+/// the wired nets and the columns `placed` so far: a gate, a base or a
+/// controlled source's input before its driver, a load before its stage.
+/// The signal going right to left. A pin drives its net when it carries
+/// current and its device reads a net (`device.reads`): what it drives
+/// follows what it reads.
 fn against(ctx: Ctx, x: []const i32) i64 {
     const c = &ctx.nl.graph;
     assert(x.len == ctx.cols.count());
@@ -130,23 +127,16 @@ fn against(ctx: Ctx, x: []const i32) i64 {
             const d = e.index();
             const k = ctx.column_of[d];
             if (k == none or !ctx.placed[k]) continue;
-            const is_controlled = controlled(c.edges.items(.kind)[d]);
+            const kind = c.edges.items(.kind)[d];
+            const reads = device.reads(kind);
             for (c.members(e), 0..) |net, pin| {
-                if (net.index() != n or (is_controlled and isChannelPin(ctx, d, pin)) != drivers) continue;
+                if (net.index() != n or (reads and device.carries(kind, pin)) != drivers) continue;
                 if (drivers) first = @min(first, x[k]) else count += @intFromBool(x[k] < first and first != std.math.maxInt(i32));
             }
         };
     }
     assert(count >= 0);
     return count;
-}
-
-/// A device with a control pin: what it drives follows what it reads.
-fn controlled(kind: netlist.DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet, .vswitch, .cswitch, .vcvs, .vccs => true,
-        else => false,
-    };
 }
 
 /// The leftmost and rightmost column placed so far with a device on `n`.

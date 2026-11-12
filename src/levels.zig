@@ -23,6 +23,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
@@ -39,6 +40,8 @@ const Form = skeleton.Form;
 const Role = sch.Role;
 const Relations = relations.Relations;
 const none = structure.none;
+const isTransistor = device.isTransistor;
+const isRail = forms.isRail;
 
 /// Each vertical device's level: longest path down from the top, after
 /// merging mates and blocks (where that closes no cycle); then each type's
@@ -50,12 +53,13 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     const n = c.edgeCount();
     assert(mate.len == n and below.len == n);
     assert(roles.len == c.vertexCount());
+    const kinds = c.edges.items(.kind);
     // Edges: u above l where u's lower end is l's upper end.
     var edges: std.ArrayList([2]u32) = .empty;
     defer edges.deinit(gpa);
     for (0..n) |u| {
         // A rail is a symbol per device: nothing stands on another through it.
-        if (!drawn[u] or form[u] != .vertical or roles[lower[u]] == .supply or roles[lower[u]] == .sink) continue;
+        if (!drawn[u] or form[u] != .vertical or isRail(roles[lower[u]])) continue;
         for (c.incident(VertexId.from(lower[u]))) |e| {
             const l = e.index();
             if (l == u or !drawn[l] or form[l] != .vertical or upper[l] != lower[u]) continue;
@@ -70,13 +74,11 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     // lower device of its own type on its own rail: people keep that row
     // (65% of 184); nor a mated one beside an upper device of its type on
     // its rail, as the book draws a fully differential second stage.
-    const kinds_all = c.edges.items(.kind);
     for (0..n) |g| {
-        if (!drawn[g] or form[g] != .vertical or !isTransistor(kinds_all[g])) continue;
-        const pins = c.members(EdgeId.from(g));
-        if (pins.len < 3) continue;
-        const net = pins[1].index();
-        if (net == upper[g] or net == lower[g] or roles[net] == .supply or roles[net] == .sink) continue;
+        if (!drawn[g] or form[g] != .vertical) continue;
+        const gate = device.of(kinds[g]).gate orelse continue;
+        const net = c.members(EdgeId.from(g))[gate].index();
+        if (net == upper[g] or net == lower[g] or isRail(roles[net])) continue;
         var over: ?u32 = null;
         var under: ?u32 = null;
         var gates: usize = 0;
@@ -84,8 +86,7 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         for (c.incident(VertexId.from(net))) |e| {
             const d = e.index();
             if (!drawn[d]) continue;
-            const dp = c.members(e);
-            if (isTransistor(kinds_all[d]) and dp.len >= 3 and dp[1].index() == net) gates += 1;
+            if (device.of(kinds[d]).gate) |pin| gates += @intFromBool(c.members(e)[pin].index() == net);
             if (form[d] != .vertical or d == g) continue;
             if (lower[d] == net) {
                 clear = clear and (over == null or over.? == d);
@@ -99,7 +100,7 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         const u = over orelse continue;
         const l = under orelse continue;
         if (!clear or gates != 1 or below[u] != l) continue;
-        if (onRailWith(nl, roles, kinds_all, lower, g, l) or (mate[g] != none and mate[g] != g and onRailWith(nl, roles, kinds_all, upper, g, u))) continue;
+        if (onRailWith(nl, roles, kinds, lower, g, l) or (mate[g] != none and mate[g] != g and onRailWith(nl, roles, kinds, upper, g, u))) continue;
         try edges.append(gpa, .{ u, @intCast(g) });
         try edges.append(gpa, .{ @intCast(g), l });
     }
@@ -155,7 +156,6 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     // line is undone.
     const before = try gpa.dupe(u32, rank);
     defer gpa.free(before);
-    const kinds = c.edges.items(.kind);
     for ([_]symmetry.Polarity{ .n, .p, .other }) |pol| {
         var low: u32 = 0;
         for (0..n) |d| if (onGround(nl, roles, kinds, drawn, form, lower, d, pol)) {
@@ -180,7 +180,7 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     for (0..n) |d| {
         if (!isFoot(nl, roles, kinds, drawn, form, lower, d)) continue;
         const net = upper[d];
-        if (roles[net] == .supply or roles[net] == .sink) continue;
+        if (isRail(roles[net])) continue;
         var under: u32 = 0;
         const over = for (c.incident(VertexId.from(net))) |e_id| {
             const e = e_id.index();
@@ -243,13 +243,14 @@ fn onGround(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, 
 /// Whether `g` and `d` are transistors of one type with the same rail on
 /// their `end` (upper or lower).
 fn onRailWith(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, end: []const u32, g: usize, d: u32) bool {
-    if (!isTransistor(kinds[d]) or end[g] != end[d]) return false;
-    if (roles[end[g]] != .sink and roles[end[g]] != .supply) return false;
+    if (!isTransistor(kinds[d]) or end[g] != end[d] or !isRail(roles[end[g]])) return false;
     return symmetry.polarity(nl.modelType(EdgeId.from(g))) == symmetry.polarity(nl.modelType(EdgeId.from(d)));
 }
 
-/// Whether `d` is a drawn upright part of two pins, no transistor, whose
-/// lower end is on a ground.
+/// Whether `d` is a drawn upright part drawn with two terminals (two pins
+/// on its card, or a dependent source, its control pair undrawn) whose
+/// lower end is on a ground. Narrower than "an upright part on ground": a
+/// switch (its control pair is wired) and a three-pin diode keep their row.
 fn isFoot(nl: *const Netlist, roles: []const Role, kinds: []const DeviceKind, drawn: []const bool, form: []const Form, lower: []const u32, d: usize) bool {
     if (!drawn[d] or form[d] != .vertical or isTransistor(kinds[d])) return false;
     return (nl.graph.members(EdgeId.from(d)).len == 2 or forms.isDependent(nl, roles, @intCast(d))) and roles[lower[d]] == .sink;
@@ -301,11 +302,4 @@ fn reaches(gpa: Allocator, class: []u32, edges: []const [2]u32, from: u32, to: u
         }
     }
     return false;
-}
-
-fn isTransistor(kind: DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
 }

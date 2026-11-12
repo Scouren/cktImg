@@ -4,23 +4,27 @@
 //! for `crooked`, a laid skeleton. Out: `drawn`, `form`, `upper`, `lower`;
 //! the flat parts to stand upright after all.
 //!
-//! A device is upright when current passes it on the way down: a
-//! transistor, a two-pin device on a rail, in series, or between a net
-//! nearer the supply and one nearer the ground. A flat part the skeleton
-//! could not set level with the pins it joins stands upright in a second
-//! lay (`crooked`).
+//! What current passes is a device's path, the two pins `device.of` names
+//! for its kind. The one device that table does not place is the book's
+//! ideal amplifier (`isAmplifier`), a box. A device is upright when current
+//! passes it on the way down: a transistor, a part on a rail, in series, or
+//! between a net nearer the supply and one nearer the ground. A flat part
+//! the skeleton could not set level with the pins it joins stands upright
+//! in a second lay (`crooked`).
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
 //! - `pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32) !void`
 //! - `pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, column: i32, stood: []bool) bool`
 //! - `pub fn isTransistor(kind: DeviceKind) bool`, `pub fn isTwoPin(kind: DeviceKind) bool`, `pub fn isRail(r: Role) bool`
+//! - `pub fn isTwoEnded(nl: *const Netlist, d: u32) bool`, `pub fn isPartsOnly(nl: *const Netlist) bool`
 //! - `pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const symmetry = @import("symmetry.zig");
@@ -53,54 +57,44 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         dr.* = c.members(EdgeId.from(d)).len > 0 and !sch.isDriver(c, roles, @intCast(d));
     }
     try relations.drivers(gpa, nl, drawn, verdicts);
-    // Channel elements on each net: transistor channel ends, two-pin pins.
+    // Channel elements on each net: the ends of every path but a capacitor's.
     const count = try gpa.alloc(u32, c.vertexCount());
     defer gpa.free(count);
     @memset(count, 0);
     for (0..c.edgeCount()) |d| {
-        if (!drawn[d]) continue;
-        const pins = c.members(EdgeId.from(d));
-        if (isTransistor(kinds[d]) and pins.len >= 3) {
-            count[pins[0].index()] += 1;
-            count[pins[2].index()] += 1;
-        } else if (passes(nl, roles, @intCast(d)) and kinds[d] != .capacitor and pins.len >= 2) {
-            count[pins[0].index()] += 1;
-            count[pins[1].index()] += 1;
-        }
+        if (!drawn[d] or kinds[d] == .capacitor) continue;
+        for (pathNets(nl, roles, @intCast(d)) orelse continue) |net| count[net] += 1;
     }
     const from_supply = try railDistance(gpa, nl, roles, drawn, .supply);
     defer gpa.free(from_supply);
     const from_ground = try railDistance(gpa, nl, roles, drawn, .sink);
     defer gpa.free(from_ground);
     for (form, 0..) |*f, d| {
-        const pins = c.members(EdgeId.from(d));
         f.* = .horizontal;
         if (!drawn[d]) continue;
-        if (isTransistor(kinds[d]) and pins.len >= 3) {
-            if (pins[0].index() != pins[2].index()) f.* = .vertical;
-        } else if (passes(nl, roles, @intCast(d)) and pins.len >= 2 and pins[0].index() != pins[1].index()) {
-            const a = pins[0].index();
-            const b = pins[1].index();
-            const on_rail = isRail(roles[a]) or isRail(roles[b]);
-            const series = kinds[d] != .capacitor and count[a] == 2 and count[b] == 2;
-            // On the way down: people stand 262 of 305 such resistors and 18
-            // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
-            // 83 current sources wherever they are.
-            const down = kinds[d] != .capacitor and
-                (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
-                    from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
-            const straddles = a != b and st.net_mate[a] == b;
-            // A dependent source stands upright wherever it is, as a
-            // current source does: 398 of 414 in those drawings.
-            const source = kinds[d] == .isource or isDependent(nl, roles, @intCast(d));
-            if ((on_rail or series or down or source) and !straddles) f.* = .vertical;
-        }
+        // A box has no path, and a shorted path passes no current.
+        const a, const b = pathNets(nl, roles, @intCast(d)) orelse continue;
+        if (a == b) continue;
+        const on_rail = isRail(roles[a]) or isRail(roles[b]);
+        const series = kinds[d] != .capacitor and count[a] == 2 and count[b] == 2;
+        // On the way down: people stand 262 of 305 such resistors and 18
+        // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
+        // 83 current sources wherever they are.
+        const down = kinds[d] != .capacitor and
+            (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
+                from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
+        const straddles = st.net_mate[a] == b;
+        // A dependent source stands upright wherever it is, as a
+        // current source does: 398 of 414 in those drawings.
+        const source = kinds[d] == .isource or isDependent(nl, roles, @intCast(d));
+        if (device.isTransistor(kinds[d]) or ((on_rail or series or down or source) and !straddles)) f.* = .vertical;
     }
 }
 
-/// A transistor's ends from its type (an n-type's drain is its upper end);
-/// a two-pin device's from the rails, else the pin nearer the supply
-/// through channel elements.
+/// Each upright device's path ends, the one nearer the supply `upper`: a
+/// transistor's from its type (an n-type's drain is its upper end); a
+/// part's from the rails, else the pin nearer the supply through channel
+/// elements. Asserts that every upright device has a path.
 pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32) !void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -111,19 +105,18 @@ pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []co
     for (0..c.edgeCount()) |d| {
         if (!drawn[d] or form[d] != .vertical) continue;
         const e = EdgeId.from(d);
-        const pins = c.members(e);
-        if (isTransistor(kinds[d])) {
-            const p = symmetry.polarity(nl.modelType(e)) == .p;
-            upper[d] = if (p) pins[2].index() else pins[0].index();
-            lower[d] = if (p) pins[0].index() else pins[2].index();
-        } else {
-            const a = pins[0].index();
-            const b = pins[1].index();
-            const a_up = roles[a] == .supply or roles[b] == .sink or
+        // Only what has a path stands upright (`classify`, an `upright`
+        // line, `crooked`).
+        const p = device.of(kinds[d]).path.?;
+        const a = c.members(e)[p[0]].index();
+        const b = c.members(e)[p[1]].index();
+        const a_up = if (device.isTransistor(kinds[d]))
+            symmetry.polarity(nl.modelType(e)) != .p
+        else
+            roles[a] == .supply or roles[b] == .sink or
                 (roles[b] != .supply and roles[a] != .sink and dist[a] <= dist[b]);
-            upper[d] = if (a_up) a else b;
-            lower[d] = if (a_up) b else a;
-        }
+        upper[d] = if (a_up) a else b;
+        lower[d] = if (a_up) b else a;
         assert(upper[d] != none and lower[d] != none);
         assert(upper[d] != lower[d]);
     }
@@ -144,23 +137,17 @@ pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []co
 /// a circuit with no transistor and no block. `column` is a device column's width in lattice columns.
 pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, column: i32, stood: []bool) bool {
     const c = &nl.graph;
-    const kinds = c.edges.items(.kind);
     assert(stood.len == c.edgeCount());
     @memset(stood, false);
     // A circuit of parts only has no column of stages to stand a part in:
     // its series parts lie along its top wire.
-    const parts_only = for (kinds) |kind| {
-        if (isTransistor(kind) or kind == .subckt) break false;
-    } else true;
-    if (parts_only) return false;
+    if (isPartsOnly(nl)) return false;
     var any = false;
     for (0..c.edgeCount()) |d| {
-        if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoPin(kinds[d])) continue;
-        const pins = c.members(EdgeId.from(d));
-        if (pins.len != 2 or pins[0].index() == pins[1].index()) continue;
-        const a = pins[0].index();
-        const b = pins[1].index();
-        if (isRail(roles[a]) or isRail(roles[b]) or st.net_mate[a] == b) continue;
+        if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoEnded(nl, @intCast(d))) continue;
+        const a = c.members(EdgeId.from(d))[0].index();
+        const b = c.members(EdgeId.from(d))[1].index();
+        if (a == b or isRail(roles[a]) or isRail(roles[b]) or st.net_mate[a] == b) continue;
         // Two mated parts that meet (a pair of sense resistors on the axis)
         // lie across it, as the book draws them.
         const m = st.device_mate[d];
@@ -201,19 +188,33 @@ pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk
     return any;
 }
 
+/// A path with a gate (`device.isTransistor`).
 pub fn isTransistor(kind: DeviceKind) bool {
-    return switch (kind) {
-        .mosfet, .bjt, .jfet, .mesfet => true,
-        else => false,
-    };
+    return device.isTransistor(kind);
 }
 
-/// A two-pin device the current passes through: its first two pins.
+/// A part (`device.isPart`) that is one by its kind alone: every part but
+/// a voltage-controlled source, which `isDependent` decides card by card.
 pub fn isTwoPin(kind: DeviceKind) bool {
-    return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .cccs, .ccvs, .diode, .vswitch, .cswitch => true,
-        else => false,
-    };
+    return device.isPart(kind) and !isVoltageControlled(kind);
+}
+
+/// Whether `d` has two ends and no more: a part by its kind (`isTwoPin`)
+/// whose card names its path's two pins alone. Narrower than the table's
+/// path: a part with a side pin on its card (a switch's control pair, a
+/// diode's third pin) and a voltage-controlled source lie as a block does.
+pub fn isTwoEnded(nl: *const Netlist, d: u32) bool {
+    return isTwoPin(nl.graph.edges.items(.kind)[d]) and nl.graph.members(EdgeId.from(d)).len == 2;
+}
+
+/// A circuit of parts: no transistor and no block among its cards, so no
+/// column of stages. Narrower than "every device has a path": a line
+/// (`T`, `O`, `U`), a `B` source and a coupling are no block here.
+pub fn isPartsOnly(nl: *const Netlist) bool {
+    for (nl.graph.edges.items(.kind)) |kind| {
+        if (device.isTransistor(kind) or kind == .subckt) return false;
+    }
+    return true;
 }
 
 /// A voltage-controlled source drawn as a dependent source: a two-pin part,
@@ -223,31 +224,49 @@ pub fn isTwoPin(kind: DeviceKind) bool {
 /// draw each with two terminals (414 of 414 in 5,263 hand-drawn
 /// schematics).
 pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool {
-    const c = &nl.graph;
-    const pins = c.members(EdgeId.from(d));
-    if (pins.len < 2) return false;
-    return switch (c.edges.items(.kind)[d]) {
-        .vccs => true,
-        // An unreadable gain (a parameter) is no number: not an amplifier.
-        .vcvs => !(roles[pins[1].index()] == .sink and @abs(c.edges.items(.value)[d]) >= 1000),
-        else => false,
-    };
+    return isVoltageControlled(nl.graph.edges.items(.kind)[d]) and
+        nl.graph.members(EdgeId.from(d)).len >= 2 and !isAmplifier(nl, roles, d);
 }
 
+/// A supply or a ground: the two ends of the rows' order of potential.
 pub fn isRail(r: Role) bool {
     return r == .supply or r == .sink;
 }
 
 // ---- private ----
 
-/// A part the current passes through by its first two pins.
-fn passes(nl: *const Netlist, roles: []const Role, d: u32) bool {
-    return isTwoPin(nl.graph.edges.items(.kind)[d]) or isDependent(nl, roles, d);
+/// The nets on the two ends of `d`'s current path, in card order
+/// (`device.of`); null for a box, which has none, and for the one path the
+/// table names that is drawn as a box (`isAmplifier`).
+fn pathNets(nl: *const Netlist, roles: []const Role, d: u32) ?[2]u32 {
+    const pins = nl.graph.members(EdgeId.from(d));
+    const p = device.of(nl.graph.edges.items(.kind)[d]).path orelse return null;
+    if (pins.len <= p[1] or isAmplifier(nl, roles, d)) return null;
+    return .{ pins[p[0]].index(), pins[p[1]].index() };
 }
 
-/// Hops from a net of role `from` (a rail) through channel elements
-/// (transistor channels, two-pin devices but capacitors), never through
-/// another rail; `none` where no such way leads.
+/// The one exception to the device table: the book's ideal amplifier, an
+/// `E` with its low output on a ground and a gain of a thousand or more
+/// (`E1 out 0 inp inn 1e5`). Its kind has a path, but it is drawn as a
+/// box, the op-amp's triangle with its inputs wired, so no rule here
+/// passes current through it.
+fn isAmplifier(nl: *const Netlist, roles: []const Role, d: u32) bool {
+    const c = &nl.graph;
+    const pins = c.members(EdgeId.from(d));
+    // An unreadable gain (a parameter) is no number: not an amplifier.
+    return c.edges.items(.kind)[d] == .vcvs and pins.len >= 2 and
+        roles[pins[1].index()] == .sink and @abs(c.edges.items(.value)[d]) >= 1000;
+}
+
+/// A source a control pair sets: an `E`, a `G`.
+fn isVoltageControlled(kind: DeviceKind) bool {
+    const p = device.of(kind);
+    return p.source == .controlled and p.control != null;
+}
+
+/// Hops from a net of role `from` (a rail) through channel elements (every
+/// path but a capacitor's), never through another rail; `none` where no
+/// such way leads.
 fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, from: Role) ![]u32 {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -268,18 +287,12 @@ fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: 
         for (c.incident(VertexId.from(v))) |e| {
             const d = e.index();
             if (!drawn[d] or kinds[d] == .capacitor) continue;
-            const pins = c.members(e);
-            var chan: [2]VertexId = undefined;
-            if (isTransistor(kinds[d]) and pins.len >= 3) {
-                chan = .{ pins[0], pins[2] };
-            } else if (passes(nl, roles, d) and pins.len >= 2) {
-                chan = .{ pins[0], pins[1] };
-            } else continue;
+            const chan = pathNets(nl, roles, d) orelse continue;
             // Through the channel only: a gate or a body on `v` is no way.
-            if (chan[0].index() != v and chan[1].index() != v) continue;
-            for (chan) |w| if (dist[w.index()] == none) {
-                dist[w.index()] = dist[v] + 1;
-                try queue.append(gpa, w.index());
+            if (chan[0] != v and chan[1] != v) continue;
+            for (chan) |w| if (dist[w] == none) {
+                dist[w] = dist[v] + 1;
+                try queue.append(gpa, w);
             };
         }
     }

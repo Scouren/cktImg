@@ -24,19 +24,21 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
+const forms = @import("forms.zig");
 const library = @import("library.zig");
 
 const Netlist = netlist.Netlist;
-const DeviceKind = netlist.DeviceKind;
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
 const Role = sch.Role;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
 const none = structure.none;
+const isRail = forms.isRail;
 
 /// Places every drawn horizontal device, `order` (devices by rank) chain by
 /// chain, into a free cell of `x`, `y`; the vertical devices' cells are set,
@@ -98,17 +100,6 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
 
 // ---- private ----
 
-fn isTwoPin(kind: DeviceKind) bool {
-    return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .cccs, .ccvs, .diode, .vswitch, .cswitch => true,
-        else => false,
-    };
-}
-
-fn isRail(r: Role) bool {
-    return r == .supply or r == .sink;
-}
-
 /// The bridges in series with `d` (two-pin bridges joined by nets that hold
 /// just the two of them), in order, into `out`; returns the chain's two end
 /// nets (for anything but a two-pin bridge, a block: the first and the last
@@ -118,7 +109,7 @@ fn chainOf(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []con
     out.clearRetainingCapacity();
     try out.append(gpa, d);
     const pins = c.members(EdgeId.from(d));
-    if (!isTwoPin(c.edges.items(.kind)[d]) or pins.len != 2) {
+    if (!forms.isTwoEnded(nl, d)) {
         // A block stands between the first and the last of its nets that
         // are no rail: its input and its output, as a subcircuit lists its
         // ports, not the supply its first port is often on.
@@ -161,20 +152,23 @@ fn linked(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []
         if (form[v] == .vertical and upper[v] != net and lower[v] != net) continue;
         count += 1;
         if (std.mem.indexOfScalar(u32, chain, v) != null) continue;
-        if (form[v] != .horizontal or placed[v] or !isTwoPin(c.edges.items(.kind)[v]) or c.members(e).len != 2) return null;
+        if (form[v] != .horizontal or placed[v] or !forms.isTwoEnded(nl, v)) return null;
         other = v;
     }
     return if (count == 2) other else null;
 }
 
 /// The slots of a chain whose tips are `tips`, in chain order: evenly
-/// between the nearest pair of distinct columns on its two tips when no
-/// other column stands between them; else beside a column on both tips (or
-/// on either), toward the axis when an end net is on it, an input's side,
-/// or away from the axis; beside a column, the member whose tip is on it
-/// stands next to it. Its row: the first end's tap row; else the row of
-/// the one gate on an end no channel ends on; else any pin's tap row;
-/// under the drawing when a column between runs through that row.
+/// between the two columns its tips stand at. Those are the nearest pair
+/// of distinct columns on its two tips when no other column stands between
+/// them; else a column on both tips (or on either) and, for the tip with
+/// none of its own, the slot one past the chain's beside it: on the left
+/// of the one column whose gates a block drives, toward the axis when an
+/// end net is on it, an input's side, or away from the axis; the member
+/// whose tip is on the column stands next to it. Its row: the first end's
+/// tap row; else the row of the one gate on an end no channel ends on;
+/// else any pin's tap row; under the drawing when a column between runs
+/// through that row.
 fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, x: []const i32, y: []const i32, axis2: ?i32, chain: []const u32, tips: [2]u32, out: *std.ArrayList([2]i32)) !void {
     const c = &nl.graph;
     const k: i32 = @intCast(chain.len);
@@ -227,69 +221,68 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
             break;
         }
     };
-    // A block with no column on its first net, its output (by its port's
-    // name) on the gates of one column and nothing else, stands left of
-    // that column, level with the gate: 346 of 487 blocks driving a gate
-    // in 5,263 hand-drawn schematics stand left of it, 100 right.
-    if (chain.len == 1 and best == null) if (outputNet(nl, chain[0])) |net| {
-        // The gates of one column and nothing else: the wire is straight.
-        var driven: ?i32 = null;
-        for (c.incident(VertexId.from(net))) |e| {
-            const v = e.index();
-            if (v == chain[0] or !drawn[v]) continue;
-            const gate = form[v] == .vertical and upper[v] != net and lower[v] != net;
-            if (!gate or (driven != null and driven.? != x[v])) {
-                driven = null;
-                break;
+    // The columns its two tips stand at, and its row: the chain lies evenly
+    // between the two.
+    const spot: struct { pair: [2]i32, row: i32 } = stand: {
+        if (best) |pair| {
+            const lo = @min(pair[0], pair[1]);
+            const hi = @max(pair[0], pair[1]);
+            const between = for (0..c.edgeCount()) |v| {
+                if (drawn[v] and form[v] == .vertical and x[v] > lo and x[v] < hi) break true;
+            } else false;
+            if (hi - lo > k and (!between or shared == null)) {
+                break :stand .{ .pair = pair, .row = if (crosses(drawn, form, x, y, lo, hi, row)) outside(drawn, form, y) else row };
             }
-            driven = x[v];
         }
-        if (driven) |at| {
-            try out.append(gpa, .{ at - 1, row });
-            return;
-        }
-    };
-    if (best) |pair| {
-        const lo = @min(pair[0], pair[1]);
-        const hi = @max(pair[0], pair[1]);
-        const between = for (0..c.edgeCount()) |v| {
-            if (drawn[v] and form[v] == .vertical and x[v] > lo and x[v] < hi) break true;
-        } else false;
-        if (hi - lo > k and (!between or shared == null)) {
-            const r = if (crosses(drawn, form, x, y, lo, hi, row)) outside(drawn, form, y) else row;
-            // Evenly between, the first member nearest the first end's
-            // column, each half the other's mirror image.
-            const span: i32 = @intCast(@abs(pair[1] - pair[0]));
-            const sign: i32 = if (pair[1] < pair[0]) -1 else 1;
-            for (0..chain.len) |i| {
-                const near = 2 * i + 1 <= chain.len;
-                const j: i32 = @intCast(if (near) i else chain.len - 1 - i);
-                const off = @divFloor(2 * span * (j + 1) + k + 1, 2 * (k + 1));
-                try out.append(gpa, .{ pair[0] + sign * (if (near) off else span - off), r });
+        // A block with no column on its first net, its output (by its port's
+        // name) on the gates of one column and nothing else, stands left of
+        // that column, level with the gate: 346 of 487 blocks driving a gate
+        // in 5,263 hand-drawn schematics stand left of it, 100 right.
+        const driven: ?i32 = gates: {
+            if (chain.len != 1 or best != null) break :gates null;
+            const net = outputNet(nl, chain[0]) orelse break :gates null;
+            // The gates of one column and nothing else: the wire is straight.
+            var column: ?i32 = null;
+            for (c.incident(VertexId.from(net))) |e| {
+                const v = e.index();
+                if (v == chain[0] or !drawn[v]) continue;
+                const gate = form[v] == .vertical and upper[v] != net and lower[v] != net;
+                if (!gate or (column != null and column.? != x[v])) break :gates null;
+                column = x[v];
             }
-            return;
-        }
-    }
-    const at = shared orelse any orelse 0;
-    const on_axis = st.net_mate[tips[0]] == tips[0] or st.net_mate[tips[1]] == tips[1];
-    const inward_left = axis2 != null and 2 * at > axis2.?;
-    const left = if (axis2 != null and on_axis)
-        inward_left
-    else
-        roles[tips[0]] == .input or roles[tips[1]] == .input or (axis2 != null and !inward_left and 2 * at != axis2.?);
-    const dir: i32 = if (left) -1 else 1;
-    // The member whose tip is on the column stands next to it: the chain
-    // runs from its first tip, so it is turned when only the second tip
-    // has a device there.
-    var on = [2]bool{ false, false };
-    for (tips, &on) |net, *o| for (c.incident(VertexId.from(net))) |e| {
-        const d = e.index();
-        if (drawn[d] and form[d] == .vertical and x[d] == at) o.* = true;
+            break :gates column;
+        };
+        // Beside one column, the tip with no column of its own one past the
+        // chain's slots: on the left of the column it drives or when an end
+        // is an input (what drives stands left of what reads); else the
+        // axis decides.
+        const at = driven orelse shared orelse any orelse 0;
+        const on_axis = st.net_mate[tips[0]] == tips[0] or st.net_mate[tips[1]] == tips[1];
+        const inward_left = axis2 != null and 2 * at > axis2.?;
+        const left = driven != null or if (axis2 != null and on_axis)
+            inward_left
+        else
+            roles[tips[0]] == .input or roles[tips[1]] == .input or (axis2 != null and !inward_left and 2 * at != axis2.?);
+        const far = at + (if (left) -(k + 1) else k + 1);
+        // The member whose tip is on the column stands next to it: the chain
+        // runs from its first tip, so it is turned when only the second tip
+        // has a device there.
+        var on = [2]bool{ false, false };
+        for (tips, &on) |net, *o| for (c.incident(VertexId.from(net))) |e| {
+            const d = e.index();
+            if (drawn[d] and form[d] == .vertical and x[d] == at) o.* = true;
+        };
+        break :stand .{ .pair = if (on[1] and !on[0]) .{ far, at } else .{ at, far }, .row = row };
     };
-    const turned = on[1] and !on[0];
+    // Evenly between, the first member nearest the first end's column, each
+    // half the other's mirror image.
+    const span: i32 = @intCast(@abs(spot.pair[1] - spot.pair[0]));
+    const sign: i32 = if (spot.pair[1] < spot.pair[0]) -1 else 1;
     for (0..chain.len) |i| {
-        const slot: i32 = @intCast(if (turned) chain.len - 1 - i else i);
-        try out.append(gpa, .{ at + dir * (slot + 1), row });
+        const near = 2 * i + 1 <= chain.len;
+        const j: i32 = @intCast(if (near) i else chain.len - 1 - i);
+        const off = @divFloor(2 * span * (j + 1) + k + 1, 2 * (k + 1));
+        try out.append(gpa, .{ spot.pair[0] + sign * (if (near) off else span - off), spot.row });
     }
 }
 
@@ -347,12 +340,8 @@ fn gateRow(nl: *const Netlist, drawn: []const bool, form: []const Form, upper: [
         const d = e.index();
         if (!drawn[d] or form[d] != .vertical) continue;
         if (lower[d] == net or upper[d] == net) return null;
-        const pins = c.members(e);
-        const gate = switch (c.edges.items(.kind)[d]) {
-            .mosfet, .bjt, .jfet, .mesfet => pins.len >= 3 and pins[1].index() == net,
-            else => false,
-        };
-        if (!gate) continue;
+        const gate = device.of(c.edges.items(.kind)[d]).gate orelse continue;
+        if (c.members(e)[gate].index() != net) continue;
         if (row != null) return null;
         row = 2 * @as(i32, @intCast(rank[d]));
     }

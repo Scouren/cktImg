@@ -33,6 +33,7 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const order_cost = @import("span.zig");
+const forms = @import("forms.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -128,7 +129,7 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         .left => try left.append(gpa, @intCast(k)),
         .axis => try axis.append(gpa, @intCast(k)),
         .right => {},
-        .free => if (outward[k]) try free_right.append(gpa, @intCast(k)) else try free_left.append(gpa, @intCast(k)),
+        .free => try (if (outward[k]) &free_right else &free_left).append(gpa, @intCast(k)),
     };
     sortByRank(ctx, left.items);
     sortByRank(ctx, axis.items);
@@ -153,11 +154,7 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         if (!clash) {
             axis.items[kept] = k;
             kept += 1;
-        } else if (outward[k]) {
-            try free_right.append(gpa, k);
-        } else {
-            try free_left.append(gpa, k);
-        }
+        } else try (if (outward[k]) &free_right else &free_left).append(gpa, k);
     }
     axis.shrinkRetainingCapacity(kept);
     sortByRank(ctx, free_left.items);
@@ -168,14 +165,9 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         // No core: one row of columns, in one order, read left to right.
         try free_left.appendSlice(gpa, free_right.items);
         sortByRank(ctx, free_left.items);
-        const place = struct {
-            fn f(xs: []i32, _: []const u32, list: []const u32, first: i32) void {
-                for (list, 0..) |k, i| xs[k] = first + 2 * @as(i32, @intCast(i));
-            }
-        }.f;
         var by_flow = ctx;
         by_flow.flow = true;
-        try best(by_flow, free_left.items, place, x, col_mate, 0);
+        try best(by_flow, free_left.items, inRow, x, col_mate, 0);
         if (!order_cost.flowsRight(ctx, x)) {
             const last = 2 * @as(i32, @intCast(n - 1));
             for (x) |*v| v.* = last - v.*;
@@ -186,38 +178,17 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     // Axis columns share x = 0; the halves start one channel out, or two
     // when an axis column stands between them.
     const inner: i32 = if (axis.items.len > 0) 2 else 1;
-    try best(ctx, left.items, struct {
-        fn place(xs: []i32, cm: []const u32, list: []const u32, first: i32) void {
-            for (list, 0..) |k, i| {
-                const at = -(first + 2 * @as(i32, @intCast(i)));
-                xs[k] = at;
-                xs[cm[k]] = -at;
-            }
-        }
-    }.place, x, col_mate, inner);
+    try best(ctx, left.items, mirrored, x, col_mate, inner);
     var lo: i32 = -inner + 2;
     var hi: i32 = inner - 2;
     for (left.items) |k| {
         lo = @min(lo, x[k]);
         hi = @max(hi, x[col_mate[k]]);
     }
-    if (left.items.len == 0 and axis.items.len == 0) {
-        lo = 0;
-        hi = -2;
-    }
     // Free columns outboard, each side in its order left to right: right
     // ones from the core's right edge, left ones ending at its left edge.
-    try best(ctx, free_right.items, struct {
-        fn place(xs: []i32, _: []const u32, list: []const u32, first: i32) void {
-            for (list, 0..) |k, i| xs[k] = first + 2 * @as(i32, @intCast(i));
-        }
-    }.place, x, col_mate, hi + 2);
-    try best(ctx, free_left.items, struct {
-        fn place(xs: []i32, _: []const u32, list: []const u32, last: i32) void {
-            const n_list: i32 = @intCast(list.len);
-            for (list, 0..) |k, i| xs[k] = last - 2 * (n_list - 1 - @as(i32, @intCast(i)));
-        }
-    }.place, x, col_mate, lo - 2);
+    try best(ctx, free_right.items, inRow, x, col_mate, hi + 2);
+    try best(ctx, free_left.items, inRow, x, col_mate, lo - 2 * @as(i32, @intCast(free_left.items.len)));
     for (side, 0..) |s, k| if (s == .right) assert(x[k] == -x[col_mate[k]]);
     return x;
 }
@@ -317,7 +288,7 @@ fn distances(ctx: Ctx, mate: []const u32, from: u32) ![]u32 {
         if (v < devices) {
             for (c.members(EdgeId.from(v)), 0..) |net, i| {
                 const w = devices + net.index();
-                if (!order_cost.isChannelPin(ctx, v, i) or dist[w] != none or ctx.roles[net.index()] == .supply or ctx.roles[net.index()] == .sink) continue;
+                if (!order_cost.isChannelPin(ctx, v, i) or dist[w] != none or forms.isRail(ctx.roles[net.index()])) continue;
                 dist[w] = dist[v] + 1;
                 try queue.append(ctx.gpa, w);
             }
@@ -470,6 +441,21 @@ fn sortByRank(ctx: Ctx, list: []u32) void {
             return c.rank[c.cols.of(a)[0]] < c.rank[c.cols.of(b)[0]];
         }
     }.lt);
+}
+
+/// `list` left to right from `first`, a channel between neighbours.
+fn inRow(xs: []i32, _: []const u32, list: []const u32, first: i32) void {
+    for (list, 0..) |k, i| xs[k] = first + 2 * @as(i32, @intCast(i));
+}
+
+/// `list` leftward from `-first`, each column's mate (`cm`) its mirror
+/// image about x = 0.
+fn mirrored(xs: []i32, cm: []const u32, list: []const u32, first: i32) void {
+    for (list, 0..) |k, i| {
+        const at = -(first + 2 * @as(i32, @intCast(i)));
+        xs[k] = at;
+        xs[cm[k]] = -at;
+    }
 }
 
 /// Tries the orders of `list` (all of them up to `exhaustive_max` columns,
