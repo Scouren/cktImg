@@ -16,6 +16,7 @@
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
+//! - `pub fn topLeft(s: *const Schematic, pins: []const u32) usize`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
 
 const std = @import("std");
@@ -58,7 +59,7 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
         }
         const from = c.segs.items.len;
         failed.clearRetainingCapacity();
-        const first = try join(c, net, pins, null, &failed);
+        const first = try join(c, net, pins, null, false, &failed);
         if (mate != none and mate != net and !done[mate]) {
             done[mate] = true;
             const mine = pins_of[mate].items;
@@ -67,7 +68,7 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
             } else {
                 var lost: std.ArrayList(u32) = .empty;
                 defer lost.deinit(gpa);
-                const f = try join(c, mate, mine, null, &lost);
+                const f = try join(c, mate, mine, null, false, &lost);
                 try finish(c, mate, mine[f], lost.items);
             }
         }
@@ -81,8 +82,19 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
 pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void {
     var failed: std.ArrayList(u32) = .empty;
     defer failed.deinit(c.gpa);
-    if (pins.len > 0) _ = try joinFrom(c, net, pins, null, true, &failed);
+    if (pins.len > 0) _ = try join(c, net, pins, null, true, &failed);
     try finish(c, net, anchor, failed.items);
+}
+
+/// The index in `pins` of the topmost pin, then the leftmost: a net's first
+/// pin by place, so the order of the cards chooses nothing. Asserts a pin.
+pub fn topLeft(s: *const Schematic, pins: []const u32) usize {
+    assert(pins.len >= 1);
+    var first: usize = 0;
+    for (pins, 0..) |p, i| if (above(pinAt(s, p), pinAt(s, pins[first]))) {
+        first = i;
+    };
+    return first;
 }
 
 /// An output's port out from the topmost of its wires' outermost points,
@@ -110,16 +122,11 @@ pub fn port(c: *Canvas, net: u32) !void {
 // ---- private ----
 
 /// Joins `pins` by maze, the pin nearest a joined one next; returns the
-/// first pin's index (the topmost, then leftmost) and appends the pins no
-/// path reached to `failed`. With `half`, every pin is routed, to the net's
-/// wires or to the axis at x = `half`, never right of it.
-fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, failed: *std.ArrayList(u32)) !usize {
-    return joinFrom(c, net, pins, half, false, failed);
-}
-
-/// `join`; with `onto`, every pin is routed to the net's wires already
-/// drawn (none starts the tree).
-fn joinFrom(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed: *std.ArrayList(u32)) !usize {
+/// first pin's index (`topLeft`) and appends the pins no path reached to
+/// `failed`. With `half`, every pin is routed, to the net's wires or to the
+/// axis at x = `half`, never right of it; with `onto`, to the net's wires
+/// already drawn (none starts the tree).
+fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed: *std.ArrayList(u32)) !usize {
     const s = c.s;
     const gpa = c.gpa;
     assert(pins.len >= 1);
@@ -127,10 +134,7 @@ fn joinFrom(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, fai
     const joined = try gpa.alloc(bool, pins.len);
     defer gpa.free(joined);
     @memset(joined, false);
-    var first: usize = 0;
-    for (pins, 0..) |p, i| if (above(pinAt(s, p), pinAt(s, pins[first]))) {
-        first = i;
-    };
+    const first = topLeft(s, pins);
     if (half == null and !onto) joined[first] = true;
     const sides = s.pins.items(.side);
     var wired = onto;
@@ -211,7 +215,7 @@ fn halves(c: *Canvas, net: u32, pins: []const u32, m: Mirror) !bool {
     const cp = c.save();
     var failed: std.ArrayList(u32) = .empty;
     defer failed.deinit(gpa);
-    _ = try join(c, net, left.items, axis, &failed);
+    _ = try join(c, net, left.items, axis, false, &failed);
     const ok = failed.items.len == 0 and try spineAndImage(c, net, pins, cp.segs, axis, &spine);
     if (!ok) c.restore(cp);
     return ok;

@@ -51,6 +51,8 @@ pub const Style = enum(u8) {
 };
 
 pub const Rail = enum(u8) {
+    /// No line says. `read` gives a rail its role's style instead, so only
+    /// a net that is no rail keeps this.
     auto,
     /// One bar past its pins, a rail symbol on each unbroken run of it.
     bar,
@@ -77,7 +79,8 @@ pub const NetLines = struct {
 };
 
 /// Reads the lines; each valid one honoured (the report checks `label`,
-/// `wire` and `port` against the drawing), each invalid one rejected.
+/// `wire` and `port` against the drawing), each invalid one rejected. A
+/// rail no line styles gets its role's style.
 pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32, verdicts: []?Verdict) Allocator.Error!NetLines {
     assert(unit > 0);
     const n = nl.graph.vertexCount();
@@ -89,104 +92,124 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
     const rail = try arena.alloc(Rail, n);
     @memset(rail, .auto);
     var first: std.ArrayList(u32) = .empty;
-    // The preferred line on a net applied last, so it wins.
+    // What a line says of one net: its words counted, its net known, the
+    // net one the verb draws (`admits`), then what it says of it. The
+    // preferred line on a net applied last, so it wins.
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
-        const code: ?hints.Code = switch (h.verb) {
-            .label, .wire => blk: {
-                if (h.args.len < 1 or h.args.len > 2) break :blk .bad_args;
-                const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
-                const r = roles[net];
-                if (r == .supply or r == .sink) break :blk .not_placeable;
-                if (h.verb == .wire and r == .input) break :blk .not_placeable;
-                var s: Style = if (h.verb == .label) .label else .wire;
-                if (h.args.len == 2) {
-                    if (h.verb == .label) break :blk .bad_args;
-                    s = std.meta.stringToEnum(Style, h.args[1]) orelse break :blk .bad_args;
-                    if (s == .auto or s == .label or s == .cut or s == .wire) break :blk .bad_args;
-                }
-                style[net] = s;
-                break :blk null;
-            },
-            .port => blk: {
-                if (h.args.len != 2) break :blk .bad_args;
-                const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
-                if (roles[net] != .input and roles[net] != .output) break :blk .not_placeable;
-                port[net] = sideOf(h.args[1]) orelse break :blk .bad_args;
-                break :blk null;
-            },
-            .rail => blk: {
-                if (h.args.len != 2) break :blk .bad_args;
-                const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
-                if (roles[net] != .supply and roles[net] != .sink) break :blk .not_placeable;
-                const r = std.meta.stringToEnum(Rail, h.args[1]) orelse break :blk .bad_args;
-                if (r == .auto) break :blk .bad_args;
-                rail[net] = r;
-                break :blk null;
-            },
+        const least: usize = switch (h.verb) {
+            .label, .wire => 1,
+            .port, .rail => 2,
             else => continue,
         };
-        verdicts[i] = if (code) |c| .{ .state = .rejected, .code = c } else .{ .state = .honoured, .code = .ok };
+        const code: hints.Code = blk: {
+            if (h.args.len < least or h.args.len > 2) break :blk .bad_args;
+            const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
+            if (!admits(h.verb, roles[net])) break :blk .not_placeable;
+            switch (h.verb) {
+                // Counted as `wire` is: a second word is refused only here,
+                // after the net's name and role.
+                .label => {
+                    if (h.args.len == 2) break :blk .bad_args;
+                    style[net] = .label;
+                },
+                .wire => {
+                    var s: Style = .wire;
+                    if (h.args.len == 2) {
+                        s = std.meta.stringToEnum(Style, h.args[1]) orelse break :blk .bad_args;
+                        if (s == .auto or s == .label or s == .cut or s == .wire) break :blk .bad_args;
+                    }
+                    style[net] = s;
+                },
+                .port => port[net] = sideOf(h.args[1]) orelse break :blk .bad_args,
+                .rail => {
+                    const r = std.meta.stringToEnum(Rail, h.args[1]) orelse break :blk .bad_args;
+                    if (r == .auto) break :blk .bad_args;
+                    rail[net] = r;
+                },
+                else => unreachable,
+            }
+            break :blk .ok;
+        };
+        verdicts[i] = verdict(code);
     }
     // `first` lines in file order: theirs is the order to wire in.
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .first) continue;
-        const known = h.args.len > 0 and for (h.args) |name| {
-            if (nl.net(name) == null) break false;
-        } else true;
-        if (!known) {
-            verdicts[i] = .{ .state = .rejected, .code = if (h.args.len == 0) .bad_args else .unknown_name };
-            continue;
-        }
-        for (h.args) |name| {
-            const net = nl.net(name).?.index();
-            if (std.mem.indexOfScalar(u32, first.items, net) == null) try first.append(arena, net);
-        }
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        const code: hints.Code = blk: {
+            if (h.args.len == 0) break :blk .bad_args;
+            for (h.args) |name| if (nl.net(name) == null) break :blk .unknown_name;
+            for (h.args) |name| {
+                const net = nl.net(name).?.index();
+                if (std.mem.indexOfScalar(u32, first.items, net) == null) try first.append(arena, net);
+            }
+            break :blk .ok;
+        };
+        verdicts[i] = verdict(code);
     }
     // Routes and vias: `<net> x,y ...` (`x y` pairs once split), Manhattan.
+    // Their points are counted once the net is known and before its role
+    // is asked.
     var routes: std.ArrayList(Route) = .empty;
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .route and h.verb != .via) continue;
         const via = h.verb == .via;
-        const net = if (h.args.len > 0) nl.net(h.args[0]) else null;
-        const pairs = if (h.args.len > 0) h.args.len - 1 else 0;
-        if (net == null or pairs % 2 != 0 or pairs / 2 < @as(usize, if (via) 1 else 2)) {
-            verdicts[i] = .{ .state = .rejected, .code = if (h.args.len > 0 and net == null) .unknown_name else .bad_args };
-            continue;
-        }
-        // Rails and inputs are symbols at their pins, never one wire.
-        const r = roles[net.?.index()];
-        if (r == .supply or r == .sink or r == .input) {
-            verdicts[i] = .{ .state = .rejected, .code = .not_placeable };
-            continue;
-        }
-        const pts = try arena.alloc(Pt, pairs / 2);
-        const u: f64 = @floatFromInt(unit);
-        const ok = for (pts, 0..) |*p, k| {
-            const x = std.fmt.parseFloat(f64, h.args[1 + 2 * k]) catch break false;
-            const y = std.fmt.parseFloat(f64, h.args[2 + 2 * k]) catch break false;
-            if (!std.math.isFinite(x) or !std.math.isFinite(y) or @abs(x) > 1e6 or @abs(y) > 1e6) break false;
-            p.* = .{ .x = @intFromFloat(@round(x * u)), .y = @intFromFloat(@round(y * u)) };
-            if (k > 0 and !via and (p.x == pts[k - 1].x) == (p.y == pts[k - 1].y)) break false;
-        } else true;
-        if (!ok) {
-            verdicts[i] = .{ .state = .rejected, .code = .bad_args };
-            continue;
-        }
-        try routes.append(arena, .{ .net = net.?.index(), .pts = pts, .via = via, .line = @intCast(i) });
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        const code: hints.Code = blk: {
+            if (h.args.len == 0) break :blk .bad_args;
+            const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
+            const pairs = h.args.len - 1;
+            if (pairs % 2 != 0 or pairs / 2 < @as(usize, if (via) 1 else 2)) break :blk .bad_args;
+            if (!admits(h.verb, roles[net])) break :blk .not_placeable;
+            const pts = try arena.alloc(Pt, pairs / 2);
+            const u: f64 = @floatFromInt(unit);
+            for (pts, 0..) |*p, k| {
+                const x = std.fmt.parseFloat(f64, h.args[1 + 2 * k]) catch break :blk .bad_args;
+                const y = std.fmt.parseFloat(f64, h.args[2 + 2 * k]) catch break :blk .bad_args;
+                if (!std.math.isFinite(x) or !std.math.isFinite(y) or @abs(x) > 1e6 or @abs(y) > 1e6) break :blk .bad_args;
+                p.* = .{ .x = @intFromFloat(@round(x * u)), .y = @intFromFloat(@round(y * u)) };
+                if (k > 0 and !via and (p.x == pts[k - 1].x) == (p.y == pts[k - 1].y)) break :blk .bad_args;
+            }
+            try routes.append(arena, .{ .net = net, .pts = pts, .via = via, .line = @intCast(i) });
+            break :blk .ok;
+        };
+        verdicts[i] = verdict(code);
     }
-    // A reference the engine gave a circuit with no ground is its bottom
-    // wire, as people draw it: one bar and no symbol, unless a line says.
-    for (rail, 0..) |*r, net| {
-        if (r.* == .auto and sch.isReference(nl, roles, @intCast(net))) r.* = .plain;
+    // Unless a line says: a supply is one bar over its pins; a ground a
+    // symbol at each pin, one per branch, as the book draws it; a reference
+    // the engine gave a circuit with no ground is its bottom wire, as people
+    // draw it: one bar and no symbol.
+    for (rail, roles, 0..) |*r, role, net| {
+        if (r.* != .auto) continue;
+        r.* = switch (role) {
+            .supply => .bar,
+            .sink => if (sch.isReference(nl, roles, @intCast(net))) .plain else .each,
+            .input, .bias, .internal, .output => continue,
+        };
     }
     return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items };
 }
 
 // ---- private ----
+
+/// Whether `verb` says something of a net of `role`: a rail is its symbols,
+/// never named or wired; an input is a port at its pins, never one wire. A
+/// verb that is no net line's says nothing of any.
+fn admits(verb: hints.Verb, role: Role) bool {
+    const rail = role == .supply or role == .sink;
+    return switch (verb) {
+        .label => !rail,
+        .wire, .route, .via => !rail and role != .input,
+        .port => role == .input or role == .output,
+        .rail => rail,
+        else => false,
+    };
+}
+
+/// A line's verdict by its code: honoured, or rejected and why.
+fn verdict(code: hints.Code) Verdict {
+    return .{ .state = if (code == .ok) .honoured else .rejected, .code = code };
+}
 
 fn sideOf(word: []const u8) ?Side {
     if (std.mem.eql(u8, word, "top")) return .up;

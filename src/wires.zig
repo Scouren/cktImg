@@ -72,12 +72,33 @@ const rail_reach = 2;
 /// 5,274 hand-drawn schematics (93.6% of nets right on those held out).
 const cut = [3]u32{ 15, 11, 6 };
 
+/// What a net is drawn as by its role, in the order the kinds are drawn.
+const Drawn = enum(u8) {
+    /// A supply or a ground: its symbols, or a bar.
+    rail,
+    /// An input or a bias, driven from outside: its port.
+    port,
+    /// An internal net or an output: a wire.
+    wire,
+
+    fn of(role: Role) Drawn {
+        return switch (role) {
+            .supply, .sink => .rail,
+            .input, .bias => .port,
+            .internal, .output => .wire,
+        };
+    }
+};
+
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
-/// in step with it), `gap` the room beside a device, `hidden` the points of
-/// pins drawn on their symbol with no wire.
+/// in step with it), `len` the drawing's lengths, `hidden` the points of
+/// pins drawn on their symbol with no wire. Asserts `lines` is
+/// `netlines.read`'s of these nets: an entry a net, every rail's bar or
+/// symbols chosen, no input styled as a wire.
 pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
+    assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
     var c = try Canvas.init(gpa, s, xy, len, boxes, hidden);
     defer c.deinit();
     c.port_side = lines.port;
@@ -94,16 +115,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     for (order, 0..) |*o, i| o.* = @intCast(i);
     const Order = struct { roles: []const Role, rank: []const u32 };
     std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank }, struct {
-        fn first(r: Role) u8 {
-            return switch (r) {
-                .supply, .sink => 0,
-                .input, .bias => 1,
-                .internal, .output => 2,
-            };
-        }
         fn lt(o: Order, x: u32, y: u32) bool {
-            const fx = first(o.roles[x]);
-            const fy = first(o.roles[y]);
+            const fx = @backingInt(Drawn.of(o.roles[x]));
+            const fy = @backingInt(Drawn.of(o.roles[y]));
             if (fx != fy) return fx < fy;
             return o.rank[x] < o.rank[y];
         }
@@ -149,35 +163,30 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             s.labeled[net] = true;
             continue;
         }
-        switch (s.roles[net]) {
-            .sink => switch (lines.rail[net]) {
-                .bar, .plain => try bar(&c, pins, .down, lines.rail[net] == .plain),
-                .auto, .each => for (pins) |p| try terminal(&c, p, null),
+        switch (Drawn.of(s.roles[net])) {
+            // A rail's pins face out along the rows, a supply's up and a
+            // ground's down: a symbol at each, or one bar past them all.
+            .rail => switch (lines.rail[net]) {
+                .each => for (pins) |p| try terminal(&c, p),
+                .bar, .plain => |r| try bar(&c, pins, if (s.roles[net] == .supply) .up else .down, r == .plain),
+                .auto => unreachable,
             },
-            .input => if (pins.len < 2 or (style == .auto and !near(&c, pins)) or !try patterned(&c, net, pins, axis2, style)) {
-                for (pins) |p| try terminal(&c, p, lines.port[net]);
-            },
-            .supply => if (lines.rail[net] == .each) {
-                for (pins) |p| try terminal(&c, p, null);
-            } else try bar(&c, pins, .up, lines.rail[net] == .plain),
-            .bias => if (style == .auto) try bias(&c, net, pins) else {
+            // A bias a line wires (never an input) is a wire like any
+            // other, named once.
+            .port => if (style == .auto) try ported(&c, net, pins) else {
+                assert(s.roles[net] == .bias);
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
             },
-            .internal, .output => if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net),
+            .wire => if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net),
         }
     }
     try routes.draw(&c, waiting.items, pins_of, mirror);
     try joinRouted(&c, routed, pins_of);
     // On its top-left pin, so card order changes nothing.
     for (named.items) |net| if (!s.labeled[net]) {
-        var best = pins_of[net].items[0];
-        for (pins_of[net].items) |p| {
-            const a = pinAt(s, p);
-            const b = pinAt(s, best);
-            if (a.y < b.y or (a.y == b.y and a.x < b.x)) best = p;
-        }
-        try c.labelAt(best);
+        const of = pins_of[net].items;
+        try c.labelAt(of[routes.topLeft(s, of)]);
     };
     assert(xy.items.len == s.nodes.len);
 }
@@ -191,31 +200,19 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
 fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
     if (pins.len == 0) return false;
     if (!r.via) {
-        const ends = for (pins) |p| {
+        for (pins) |p| {
             const at = pinAt(c.s, p);
-            if (at.eql(r.pts[0]) or at.eql(r.pts[r.pts.len - 1])) break true;
-        } else false;
-        if (!ends) return false;
-        const cp = c.save();
-        if (!try commitThrough(c, r.net, pins, r.pts)) {
-            c.restore(cp);
-            return false;
+            if (at.eql(r.pts[0]) or at.eql(r.pts[r.pts.len - 1])) return commitThrough(c, r.net, pins, r.pts);
         }
-        return true;
+        return false;
     }
-    var from = pinAt(c.s, pins[0]);
-    for (pins) |p| {
-        const at = pinAt(c.s, p);
-        if (at.y < from.y or (at.y == from.y and at.x < from.x)) from = at;
-    }
+    var from = pinAt(c.s, pins[routes.topLeft(c.s, pins)]);
     var drew = false;
     for (r.pts) |to| {
         if (to.eql(from)) continue;
         const reached = for ([_]Pt{ .{ .x = to.x, .y = from.y }, .{ .x = from.x, .y = to.y } }) |corner| {
             const path: []const Pt = if (corner.eql(from) or corner.eql(to)) &.{ from, to } else &.{ from, corner, to };
-            const cp = c.save();
             if (try commitThrough(c, r.net, pins, path)) break true;
-            c.restore(cp);
         } else false;
         if (!reached) continue;
         from = to;
@@ -226,7 +223,7 @@ fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
 
 /// Commits polyline `pts` of `net`, each of its pins the polyline passes
 /// made a point of it (a pin joins a wire only at a point), in pieces of six
-/// points at most. False when a piece does not fit; the caller restores.
+/// points at most. False, with nothing drawn, when a piece does not fit.
 fn commitThrough(c: *Canvas, net: u32, pins: []const u32, pts: []const Pt) !bool {
     var all: std.ArrayList(Pt) = .empty;
     defer all.deinit(c.gpa);
@@ -248,10 +245,14 @@ fn commitThrough(c: *Canvas, net: u32, pins: []const u32, pts: []const Pt) !bool
         }
         try all.append(c.gpa, b);
     }
+    const cp = c.save();
     var k: usize = 0;
     while (k + 1 < all.items.len) {
         const end = @min(k + 5, all.items.len - 1);
-        if (!try c.commit(net, all.items[k .. end + 1])) return false;
+        if (!try c.commit(net, all.items[k .. end + 1])) {
+            c.restore(cp);
+            return false;
+        }
         k = end;
     }
     return true;
@@ -344,8 +345,7 @@ fn near(c: *const Canvas, pins: []const u32) bool {
 /// the router takes the net.
 fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
     // One pin: nothing to route; its port, if any, as by default.
-    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port);
-    return switch (style) {
+    return switch (if (pins.len < 2) .auto else style) {
         .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port),
         .ladder => try ladder(c, net, pins, axis2),
         .trunk => try trunk.draw(c, net, pins, .port),
@@ -354,25 +354,22 @@ fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlin
     };
 }
 
-/// A rail's, input's or output's symbol one gap out from the pin, on a
-/// stub (toward `want` when a `port` line asks and the stub fits); a label
-/// there if the stub would touch something.
-fn terminal(c: *Canvas, p: u32, want: ?Side) !void {
+/// A rail's symbol or a port one gap out from pin `p`, on a stub: toward
+/// the side a `port` line asks, then the way the pin faces, the first whose
+/// stub fits; a label on the pin when neither does.
+fn terminal(c: *Canvas, p: u32) !void {
     const at = pinAt(c.s, p);
     const side = c.s.pins.items(.side)[p];
     const net = c.s.pins.items(.net)[p];
-    if (want) |w| if (w != side) {
-        const out = stepPt(at, w, c.len.terminal);
-        if (try c.commit(net, &.{ at, out })) return c.leaf(.terminal, net, out, w.opposite());
-    };
-    const end = stepPt(at, side, if (c.rails[net]) c.len.rail else c.len.terminal);
-    if (try c.commit(net, &.{ at, end })) {
+    const reach = if (c.rails[net]) c.len.rail else c.len.terminal;
+    for ([_]Side{ c.port_side[net] orelse side, side }) |out| {
+        const end = stepPt(at, out, reach);
+        if (!try c.commit(net, &.{ at, end })) continue;
         if (c.rails[net]) c.wall();
-        try c.leaf(.terminal, net, end, side.opposite());
-    } else {
-        try c.leaf(.label, net, at, side.opposite());
-        c.s.labeled[net] = true;
+        return c.leaf(.terminal, net, end, out.opposite());
     }
+    try c.leaf(.label, net, at, side.opposite());
+    c.s.labeled[net] = true;
 }
 
 /// Rail pins facing `out` (up for a supply, down for ground): stubs to a
@@ -403,7 +400,7 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     // Pieces of a plain bar: the pins off it and its runs.
     var pieces: usize = 0;
     for (pins) |p| if (ups.items.len < 2 or std.mem.indexOfScalar(u32, ups.items, p) == null) {
-        if (plain) try c.labelAt(p) else try terminal(c, p, null);
+        if (plain) try c.labelAt(p) else try terminal(c, p);
         pieces += 1;
     };
     if (plain and pieces > 0) s.labeled[net] = true;
@@ -423,7 +420,7 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
             if (@abs(at.y - y_bar) <= c.len.rail) c.wall();
             try on_bar.append(gpa, p);
         } else {
-            if (plain) try c.labelAt(p) else try terminal(c, p, null);
+            if (plain) try c.labelAt(p) else try terminal(c, p);
             pieces += 1;
         }
     }
@@ -462,16 +459,18 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     s.labeled[net] = true;
 }
 
-/// Two gates of one row facing each other: a gate line between them, named
-/// at its middle. Else, pins standing near each other: one trunk, one
-/// input port. Else an input port on a stub at each pin, as people draw
-/// a bias: of 4,378 nets named `vb*` or `bias*` in 5,263 hand-drawn
-/// schematics, 3,228 carry port symbols and none a written name.
-fn bias(c: *Canvas, net: u32, pins: []const u32) !void {
+/// A net driven from outside (an input, a bias). Pins standing near each
+/// other: one trunk, one port out from a free end. Else a port on a stub at
+/// each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in
+/// 5,263 hand-drawn schematics, 3,228 carry port symbols and none a written
+/// name. Before either, a bias of two gates of one row facing each other:
+/// a gate line between them, named at its middle.
+fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
     const s = c.s;
     assert(pins.len >= 1);
-    assert(s.roles[net] == .bias);
-    if (pins.len == 2) {
+    const bias = s.roles[net] == .bias;
+    assert(bias or s.roles[net] == .input);
+    if (bias and pins.len == 2) {
         const a = pinAt(s, pins[0]);
         const b = pinAt(s, pins[1]);
         const sa = s.pins.items(.side)[pins[0]];
@@ -484,10 +483,11 @@ fn bias(c: *Canvas, net: u32, pins: []const u32) !void {
             return;
         }
     }
-    // Gates standing near each other: one wire, one port, as an input's.
-    if (pins.len >= 2 and near(c, pins) and try trunk.draw(c, net, pins, .name)) return;
-    for (pins) |p| try terminal(c, p, null);
-    s.labeled[net] = true;
+    // A bias's port stands where a name would, on a name's stub.
+    if (pins.len >= 2 and near(c, pins) and try trunk.draw(c, net, pins, if (bias) .name else .port)) return;
+    for (pins) |p| try terminal(c, p);
+    // A bias's ports are its name written out: it is drawn with labels.
+    if (bias) s.labeled[net] = true;
 }
 
 /// An internal net whose pins all face each other in pairs along rows, one

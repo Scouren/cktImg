@@ -179,8 +179,7 @@ fn window(q: Query, nearest_only: bool) Rect {
         }
     };
     if (nearest) |c| r = r.merge(.point(c));
-    const m = 8 * q.step;
-    r = .{ .min = .{ .x = r.min.x - m, .y = r.min.y - m }, .max = .{ .x = r.max.x + m, .y = r.max.y + m } };
+    r = grow(r, 8 * q.step);
     var rounds: usize = 0;
     while (true) : (rounds += 1) {
         assert(rounds <= q.boxes.len + 1);
@@ -271,7 +270,7 @@ fn search(gpa: Allocator, q_all: Query, win: ?Rect) Allocator.Error!?[]Pt {
 /// `q` with only the boxes, marks and wires within `clear` of `win`.
 fn nearby(a: Allocator, q: Query, win: ?Rect) Allocator.Error!Query {
     const w = win orelse return q;
-    const reach: Rect = .{ .min = .{ .x = w.min.x - q.clear, .y = w.min.y - q.clear }, .max = .{ .x = w.max.x + q.clear, .y = w.max.y + q.clear } };
+    const reach = grow(w, q.clear);
     var boxes: std.ArrayList(Rect) = .empty;
     for (q.boxes) |b| if (b.intersects(reach)) try boxes.append(a, b);
     var marks: std.ArrayList(Mark) = .empty;
@@ -328,9 +327,24 @@ fn order(a: i32, b: i32) std.math.Order {
     return std.math.order(a, b);
 }
 
-/// The indices of the sorted `vs` nearer than `r` (at least 1) to `c`.
-fn near(vs: []const i32, c: i32, r: i32) [2]usize {
-    return .{ std.sort.lowerBound(i32, vs, c - r + 1, order), std.sort.upperBound(i32, vs, c + r - 1, order) };
+/// `r` with `d` more on every side.
+fn grow(r: Rect, d: i32) Rect {
+    return .{ .min = .{ .x = r.min.x - d, .y = r.min.y - d }, .max = .{ .x = r.max.x + d, .y = r.max.y + d } };
+}
+
+/// The indices of the sorted `vs` from `lo` to `hi`, both included.
+fn within(vs: []const i32, lo: i32, hi: i32) [2]usize {
+    return .{ std.sort.lowerBound(i32, vs, lo, order), std.sort.upperBound(i32, vs, hi, order) };
+}
+
+/// Sets `flags` at every grid point in `r`; asserts there is one.
+fn flag(g: Grid, flags: []bool, r: Rect) void {
+    const cols = within(g.xs, r.min.x, r.max.x);
+    const rows = within(g.ys, r.min.y, r.max.y);
+    assert(rows[1] > rows[0] and cols[1] > cols[0]);
+    for (rows[0]..rows[1]) |j| for (cols[0]..cols[1]) |i| {
+        flags[j * g.width() + i] = true;
+    };
 }
 
 /// The steps (from index i to i + 1) of the sorted `vs` that overlap the
@@ -404,13 +418,17 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
     @memset(g.blocked, .{ false, false, false, false });
     for (q.boxes) |b| blockBox(g, b);
     for (q.wires) |w| {
+        assert(w.a.x == w.b.x or w.a.y == w.b.y);
         const rail = w.net < q.rails.len and q.rails[w.net];
-        if (w.net == q.net) ownWire(g, w) else otherWire(g, w, q.clear, if (rail) .rail else .signal);
-        if (w.net != q.net and w.wall) closeAlong(g, w);
+        // Every grid point along the net's own wire is a target, and along
+        // another net's wall closed.
+        if (w.net == q.net) flag(g, g.target, .fromCorners(w.a, w.b)) else otherWire(g, w, q.clear, if (rail) .rail else .signal);
+        if (w.net != q.net and w.wall) flag(g, g.closed, .fromCorners(w.a, w.b));
     }
     for (q.marks) |m| {
         if (m.net != q.net) {
-            closeNear(g, m.at, q.clear);
+            // The grid points nearer than `clear` to another net's point.
+            flag(g, g.closed, grow(.point(m.at), q.clear - 1));
         } else {
             const i = indexOf(g, m.at).?;
             if (!g.target[i]) g.closed[i] = true;
@@ -430,36 +448,22 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
 
 /// Steps whose middle lies strictly inside the box (its edges are lines).
 fn blockBox(g: Grid, b: Rect) void {
-    const x0 = std.sort.lowerBound(i32, g.xs, b.min.x, order);
-    const x1 = std.sort.upperBound(i32, g.xs, b.max.x, order);
-    const y0 = std.sort.lowerBound(i32, g.ys, b.min.y, order);
-    const y1 = std.sort.upperBound(i32, g.ys, b.max.y, order);
+    const x0, const x1 = within(g.xs, b.min.x, b.max.x);
+    const y0, const y1 = within(g.ys, b.min.y, b.max.y);
     assert(x1 > x0 and y1 > y0);
     // Rows and columns strictly inside, each step between the edges.
     for (y0 + 1..@max(y0 + 1, y1 - 1)) |j| for (x0..x1 - 1) |i| g.block(j * g.width() + i, true);
     for (x0 + 1..@max(x0 + 1, x1 - 1)) |i| for (y0..y1 - 1) |j| g.block(j * g.width() + i, false);
 }
 
-/// Every grid point along the net's own wire is a target.
-fn ownWire(g: Grid, w: Wire) void {
-    assert(w.a.x == w.b.x or w.a.y == w.b.y);
-    const r = Rect.fromCorners(w.a, w.b);
-    const x0 = std.sort.lowerBound(i32, g.xs, r.min.x, order);
-    const x1 = std.sort.upperBound(i32, g.xs, r.max.x, order);
-    const y0 = std.sort.lowerBound(i32, g.ys, r.min.y, order);
-    const y1 = std.sort.upperBound(i32, g.ys, r.max.y, order);
-    for (y0..y1) |j| for (x0..x1) |i| {
-        g.target[j * g.width() + i] = true;
-    };
-}
-
 /// Another net's wire: its points are crossings of kind `kind`; steps
-/// along it, or on a line nearer than `clear` beside it, are blocked.
+/// along it, or on a line nearer than `clear` (at least 1) beside it, are
+/// blocked.
 fn otherWire(g: Grid, w: Wire, clear: i32, kind: Cross) void {
     assert(w.a.x == w.b.x or w.a.y == w.b.y);
     const r = Rect.fromCorners(w.a, w.b);
     if (r.min.y == r.max.y) {
-        const rows = near(g.ys, r.min.y, clear);
+        const rows = within(g.ys, r.min.y - clear + 1, r.min.y + clear - 1);
         const along = spanning(g.xs, r.min.x - clear, r.max.x + clear);
         for (rows[0]..rows[1]) |j| for (along[0]..along[1]) |i| g.block(j * g.width() + i, true);
         const j = indexOf(g, r.min).? / g.width();
@@ -468,7 +472,7 @@ fn otherWire(g: Grid, w: Wire, clear: i32, kind: Cross) void {
             if (g.xs[i] >= r.min.x and g.xs[i] <= r.max.x) g.h_other[k] = @fromBackingInt(@intCast(@max(@backingInt(g.h_other[k]), @backingInt(kind))));
         }
     } else {
-        const cols = near(g.xs, r.min.x, clear);
+        const cols = within(g.xs, r.min.x - clear + 1, r.min.x + clear - 1);
         const along = spanning(g.ys, r.min.y - clear, r.max.y + clear);
         for (cols[0]..cols[1]) |i| for (along[0]..along[1]) |j| g.block(j * g.width() + i, false);
         const i = indexOf(g, r.min).? % g.width();
@@ -477,26 +481,6 @@ fn otherWire(g: Grid, w: Wire, clear: i32, kind: Cross) void {
             if (g.ys[j] >= r.min.y and g.ys[j] <= r.max.y) g.v_other[k] = @fromBackingInt(@intCast(@max(@backingInt(g.v_other[k]), @backingInt(kind))));
         }
     }
-}
-
-/// A wall: every grid point on it is closed.
-fn closeAlong(g: Grid, w: Wire) void {
-    const r = Rect.fromCorners(w.a, w.b);
-    const rows = [2]usize{ std.sort.lowerBound(i32, g.ys, r.min.y, order), std.sort.upperBound(i32, g.ys, r.max.y, order) };
-    const cols = [2]usize{ std.sort.lowerBound(i32, g.xs, r.min.x, order), std.sort.upperBound(i32, g.xs, r.max.x, order) };
-    for (rows[0]..rows[1]) |j| for (cols[0]..cols[1]) |i| {
-        g.closed[j * g.width() + i] = true;
-    };
-}
-
-/// The grid points nearer than `clear` to another net's point.
-fn closeNear(g: Grid, p: Pt, clear: i32) void {
-    const rows = near(g.ys, p.y, clear);
-    const cols = near(g.xs, p.x, clear);
-    assert(rows[1] > rows[0] and cols[1] > cols[0]);
-    for (rows[0]..rows[1]) |j| for (cols[0]..cols[1]) |i| {
-        g.closed[j * g.width() + i] = true;
-    };
 }
 
 fn sortedUnique(gpa: Allocator, items: []i32) ![]i32 {
