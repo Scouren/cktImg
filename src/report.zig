@@ -20,6 +20,7 @@
 
 const std = @import("std");
 const config = @import("config.zig");
+const opamp = @import("opamp.zig");
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
 const assert = std.debug.assert;
@@ -150,6 +151,16 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     }
     if (rung < 2) return out.items;
     const n = c.edgeCount();
+    // An op-amp circuit is placed along its signal, not on the lattice
+    // (`opamp.zig`): its places are the decision, every device's.
+    if (p != null and !opamp.steered(nl) and opamp.applies(nl, sk.drawn)) {
+        for (p.?.dev_name, p.?.dev_pos, p.?.dev_orient) |name, pos, o| {
+            const e = (if (name.len > 0) nl.device(name) else null) orelse continue;
+            if (!sk.drawn[e.index()]) continue;
+            try out.append(arena, try std.fmt.allocPrint(arena, "*@ at {s} {s} {s} {s}{d}", .{ name, try units(arena, pos.x, unit), try units(arena, pos.y, unit), if (o.mirror) "MR" else "R", @as(u16, o.rot) * 90 }));
+        }
+        return out.items;
+    }
     // Forms of the two-pin devices.
     for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
         var line: std.ArrayList(u8) = .empty;

@@ -4,6 +4,7 @@
 //! Contents:
 //! - `pub const symbols: *const [N:0]u8`
 //! - `pub const wide_chain`
+//! - `pub const inverting_amp`
 //! - `pub fn library(gpa: std.mem.Allocator) !*np.Library`
 //! - `pub fn freeLibrary(gpa: std.mem.Allocator, lib: *np.Library) void`
 //! - `pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
@@ -25,6 +26,11 @@ pub const wide_chain = "chain\n.model nch nmos level=1\nVDD vdd 0 1.8\n" ++
 
 /// The standard symbol set (`symbols.zon`), on the heap so that schematics
 /// can point at it while their owner moves.
+/// An inverting amplifier on an op-amp block: an input resistor, a
+/// feedback resistor, a load. The op-amp placement draws it (`opamp.zig`).
+pub const inverting_amp = "Inverting amplifier\n.subckt opamp vdd vss vip vin vout\nR1 vip vout 1k\n.ends\n" ++
+    "X1 vdd 0 0 x out opamp\nR1 in x 1k\nRF x out 10k\nRL out 0 10k\n";
+
 pub fn library(gpa: std.mem.Allocator) !*np.Library {
     const lib = try gpa.create(np.Library);
     errdefer gpa.destroy(lib);

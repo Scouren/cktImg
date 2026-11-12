@@ -920,7 +920,9 @@ test "sketch: a tall block stands beside the stack it joins, not between its row
     // hand-drawn schematics). A row of its own for the block put the
     // capacitor under the block's foot.
     // The block is held right of the stack (`order`), where its pin row
-    // is the junction's.
+    // is the junction's: the amplifier's fed-back input is drawn under the
+    // other (`left`), as a follower's is, where a generated box puts the
+    // inverting input on top.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -930,6 +932,7 @@ test "sketch: a tall block stands beside the stack it joins, not between its row
         \\Follower
         \\.model nch nmos
         \\.subckt amp vdd vss vip vin vout
+        \\*@ left vip vin
         \\R1 vip vout 1k
         \\R2 vin vout 1k
         \\.ends
@@ -1395,4 +1398,47 @@ test "sketch: a flat part that cannot be wired straight stands upright; a line o
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
     const flat = try draw(arena, lib, &.{deck ++ "*@ bridge r1\n"}, .{});
     try std.testing.expectEqual(pinOf(&flat, "r1", 0).y, pinOf(&flat, "r1", 1).y);
+}
+
+test "sketch: an op-amp circuit is drawn along its signal: inverting input on top, feedback over the block, the input part level with its pin" {
+    // Oracle: the hand drawings, as relations between pins. In the 199
+    // op-amp circuits of the 5,263 reference drawings the inverting input
+    // is on top (76%), a part from the output to an input stands straight
+    // over or under its block (82%) on its pin's side (96%), the input's
+    // series part lies level with its pin, and a load to ground stands
+    // upright right of the block (100%). An inverting amplifier drawn so
+    // crosses no wire. On the lattice the block and its parts shared a row
+    // and the feedback went round.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const p = try draw(arena, lib, &.{support.inverting_amp}, .{});
+    // The block's pins, in port order: vdd, vss, vip, vin, vout.
+    const plus = pinOf(&p, "x1", 2);
+    const minus = pinOf(&p, "x1", 3);
+    const out = pinOf(&p, "x1", 4);
+    try std.testing.expect(minus.y < plus.y);
+    try std.testing.expect(minus.x < out.x);
+    // The input resistor: level with the inverting pin, left of it.
+    try std.testing.expectEqual(minus.y, pinOf(&p, "r1", 0).y);
+    try std.testing.expectEqual(minus.y, pinOf(&p, "r1", 1).y);
+    try std.testing.expect(pinOf(&p, "r1", 0).x < minus.x and pinOf(&p, "r1", 1).x < minus.x);
+    // The feedback resistor: flat, over the block, between its pins.
+    const rf = [2]np.Pt{ pinOf(&p, "rf", 0), pinOf(&p, "rf", 1) };
+    try std.testing.expectEqual(rf[0].y, rf[1].y);
+    try std.testing.expect(rf[0].y < minus.y);
+    try std.testing.expect(@divFloor(rf[0].x + rf[1].x, 2) > minus.x and @divFloor(rf[0].x + rf[1].x, 2) < out.x);
+    // The load: upright, right of the block, under the output.
+    const rl = [2]np.Pt{ pinOf(&p, "rl", 0), pinOf(&p, "rl", 1) };
+    try std.testing.expectEqual(rl[0].x, rl[1].x);
+    try std.testing.expect(rl[0].x > out.x and @max(rl[0].y, rl[1].y) > out.y);
+    try std.testing.expectEqual(0, crossings(&p));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    // A line of the deck that places a device takes the placement back.
+    const steered = try draw(arena, lib, &.{support.inverting_amp ++ "*@ bridge rl\n"}, .{});
+    try std.testing.expectEqual(pinOf(&steered, "rl", 0).y, pinOf(&steered, "rl", 1).y);
 }

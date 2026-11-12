@@ -436,6 +436,14 @@ control where its ports go:
 With `*@ expand`, the body is drawn instead of a block, flattened using
 ngspice names (`r.x1.r1`).
 
+A circuit of amplifier blocks and two-pin parts (an inverting amplifier, a
+filter, an integrator) is drawn along its signal, as people draw one: the
+inverting input on top, the feedback part over the block, the input's part
+level with its pin, the load upright at the right. The amplifier is known by
+its port names (`inp`/`vip`/`in+`, `inn`/`in-`, `in`/`vin`, `out`/`vout`,
+rails); a line that places a device (`row`, `order`, `at`, ...) takes the
+whole placement back to the lattice.
+
 An `X` whose master isn't defined in the deck is drawn too. A PDK primitive
 (`XM1 d g s b sky130_fd_pr__nfet_01v8`, or a `…res…` or `…cap…` cell) is
 drawn as that device; anything else becomes a block with ports `p1`..`pN`.

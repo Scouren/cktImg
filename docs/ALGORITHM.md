@@ -10,6 +10,7 @@ whole layout is one pass, with no relayout rounds.
 | 1. Roles | `schematic.zig` | a role per net |
 | 2. Structure | `structure.zig`, `symmetry.zig`, `hints.zig` | a canonical order, blocks, the left-right symmetry |
 | 3. Skeleton | `skeleton.zig`, `forms.zig`, `levels.zig`, `columns.zig`, `span.zig`, `bridges.zig`, `wrap.zig` | each device's cell on a lattice, its form and gate side |
+| 3a. Op-amp circuits | `opamp.zig`, `opamp_grow.zig` | for a circuit of amplifier blocks and two-pin parts: a place and a turn for every device, in the lattice's stead |
 | 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `trunk.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
@@ -30,7 +31,8 @@ device, a **block**: the library's class named after the subcircuit, or else a
 generated box with the ports on its sides. Comments inside the definition
 steer it: `*@ left inp inn` (likewise `right`, `top`, `bottom`) puts those
 ports on that side of the generated box, the rest going left and right in
-port order; `*@ expand` draws the body instead, flattened with ngspice's
+port order, an amplifier's inverting input (`inn`, `in-`, `vn`, or `vin`
+beside a `vip`) above the other when no line places either; `*@ expand` draws the body instead, flattened with ngspice's
 names (`r.x1.r1`, net `x1.a`; ground stays global).
 
 **Rails** are the supply and sink nets (§1).
@@ -340,6 +342,49 @@ other, and a larger mirror's or bank's all face left, as along one gate line.
 A symmetric circuit's cells are an exact mirror image: every mate pair's
 columns sum to the axis (asserted), and no two devices share a cell.
 
+### Op-amp circuits
+
+A circuit whose every drawn device is a two-pin part or an amplifier block
+(a `.subckt` with one or two inputs and one output by its port names:
+`inp`/`vip`/`in+`/`vp`, `inn`/`in-`/`vn`, `in`/`vin`/`a`, `out`/`vout`/`y`/`o`,
+the rest rails), with at least one block, has no column: all of it bridges.
+It is placed along its signal instead (`opamp.place`), each device a place
+and a turn in drawing units, and the drawing stage wires those places as it
+wires `at` lines. The steps are the habits of the 199 such circuits among
+the 5,263 hand-drawn references (the shares are people's):
+
+1. The block farthest from the inputs is placed first; a block that drives
+   it is placed when its output net is reached, left of it (85% of driven
+   blocks stand right of their driver).
+2. The inverting input is on top (76%), so the feedback stands over the
+   block.
+3. A part from the output back to an input lies flat over the block for the
+   upper pin, under it for the lower (82% straight over or under, 96% on
+   their pin's side); two or three in series lie in one such row.
+4. From a pin's node leftward, parts to a rail stand upright beside it, the
+   first series part lies level with the node, the rest stack away from the
+   block; from the output rightward the same, so a load stands upright right
+   of the block.
+5. A part between two nodes that both stand lies in the first row clear of
+   every body between them, or upright beside them when one is over the
+   other.
+
+A body keeps 0.28 unit from every other, and a taken place moves by half a
+unit. The procedure is a port of a reference written against the hand
+drawings (`place_bp_frozen_v8.py` of the study); over the 199 circuits the
+two give the same places for 170, and the reference declines the other 29
+(a fully differential amplifier, a block with an input right of its
+output), which stay on the lattice. Laid so, the 199 cross 65 wires where
+the lattice crossed 299 and their hand drawings 10.
+
+A deck with a line that places or turns a device (`upright`, `bridge`,
+`row`, `above`, `order`, `face`, `cell`, a strong `at`) is the lines' to
+place: the lattice lays it out as before. `--decisions` states the
+placement as one strong `*@ at` line a device; pasted back they draw the
+same picture. A relay (`--from`, `weak at`) of such a circuit places it
+afresh: an unchanged deck gives the same bytes, a changed one is placed as
+a whole, with no radius of change.
+
 ## 4. Drawing
 
 From the skeleton to a laid-out `Schematic` (`sketch.lay`).
@@ -609,7 +654,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R1 a reference is an input, unless a drain makes it`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…`; `tools/json.zig`: `deck: a top cell's voltage source is a device of the circuit…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps`, `skeleton: a resistor on the way down stands upright under the emitter it leaves…`, `skeleton: a column only a bridge joins to the rest stands beside the column the bridge leads to`, `skeleton: a row of more than eight columns wraps into shelves, a pair never parted; `*@ shelf` sets the width` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units`, `sketch: a bias gate carries a port symbol, not a written name`, `sketch: a bias net's pins standing near each other share one wire and one port`, `sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other`, `sketch: a net between two shelves is joined by name, a shelf's own nets by wire`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: an op-amp circuit is drawn along its signal…`, `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: a mirror the pair's halves are not wired to stands side by side…`, `` sketch: a ground by any name: transistors on `vss` stand as those on net 0 do ``, `sketch: stages stand in the order the signal passes them…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a lower crossing budget names more nets and draws no more crossings`, `sketch: a net over the crossing budget keeps its near pins wired, one name a part`, `sketch: no wire crosses a rail symbol's stub or a supply bar, and no supply stub is longer than two units`, `sketch: a bias gate carries a port symbol, not a written name`, `sketch: a bias net's pins standing near each other share one wire and one port`, `sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other`, `sketch: a net between two shelves is joined by name, a shelf's own nets by wire`, `thin.zig`: `name: the net crossing the most wires is named first…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |

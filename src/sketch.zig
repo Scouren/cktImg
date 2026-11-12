@@ -24,6 +24,7 @@ const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
+const opamp = @import("opamp.zig");
 const wires = @import("wires.zig");
 const netlines = @import("netlines.zig");
 const pinned = @import("pinned.zig");
@@ -91,7 +92,11 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
     @memset(scratch, null);
-    const ats = try pinned.read(sa, nl, s.lib.unit, sk.drawn, scratch);
+    var ats = try pinned.read(sa, nl, s.lib.unit, sk.drawn, scratch);
+    // A circuit of amplifier blocks and parts is placed along its signal
+    // (`opamp.zig`), every device, unless a line of the deck places one.
+    const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
+    if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk);
     const len = Lengths.of(layout, s.lib.unit);
@@ -115,7 +120,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         const weak = try gpa.alloc(bool, nl.hints.len);
         defer gpa.free(weak);
         for (weak, nl.hints) |*w, h| w.* = h.weak and h.verb == .at;
-        if (std.mem.indexOfScalar(bool, weak, true) != null) {
+        if (along == null and std.mem.indexOfScalar(bool, weak, true) != null) {
             placed_all = try relay.place(gpa, s, sk, weak, geo.xs, geo.ys, ats, at);
         }
     }
@@ -156,7 +161,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     thinned.style = style;
     // A net between two shelves is joined by name, each shelf's pins wired.
     for (style, s.roles, 0..) |*sty, role, net| {
-        if (sty.* != .auto or role != .internal) continue;
+        if (along != null or sty.* != .auto or role != .internal) continue;
         var first: ?u32 = null;
         for (nl.graph.incident(netlist.VertexId.from(@intCast(net)))) |e| {
             if (!sk.drawn[e.index()]) continue;

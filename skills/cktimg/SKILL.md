@@ -96,6 +96,16 @@ on a device overrides the relations on it.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead.
+  A circuit of only amplifier blocks and two-pin parts is drawn along its
+  signal (inverting input on top, feedback over the block, input part level
+  with its pin), not on the lattice. The amplifier is known by its port
+  names: `inp`/`vip`/`in+`/`vp`, `inn`/`in-`/`vn`, a single `in`/`vin`/`a`,
+  `out`/`vout`/`y`/`o`, the rest rails (`vdd*`, `vcc*`, `vss*`, `gnd*`,
+  `vee*`); any other port name keeps the lattice. One placing line
+  (`upright`, `bridge`, `row`, `above`, `order`, `face`, `cell`, a strong
+  `at`) turns that placement off for the whole deck, so fix such a drawing
+  from `--decisions 4`: it gives every device as a strong `*@ at` line,
+  paste all and edit the ones to move. `--from` places such a deck afresh.
 - **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
   the drawing and keep every row and column; `src/config.zig` lists each
   with its default: a person's pitch, half a unit between stacked
