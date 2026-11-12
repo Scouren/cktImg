@@ -41,6 +41,10 @@ pub const Layout = struct {
     series: f32 = 1.0,
     /// A pin to its supply or ground symbol; the supply bar over its pins.
     rail: f32 = 0.5,
+    /// Whether a supply bar runs on `rail` past its outer pins, its ends
+    /// T's and not corners: a rail, as half the hand drawings draw one
+    /// (1,258 of 2,506 supply bars; the rest end on their outer pins).
+    rail_past: bool = true,
     /// A pin to its input or output port.
     terminal: f32 = 0.5,
     /// A pin to its net label.

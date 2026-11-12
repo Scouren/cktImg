@@ -467,7 +467,8 @@ them, as the lint rules are set:
 The drawing is closed up to those lengths, as a person draws it: columns
 `series` apart, stacked devices `stack` apart (half a unit, a person's
 pitch; `.stack = 1, .rail = 1, .terminal = 1, .tap = 1` is roomier). `.layout = .{ .compact = false }`
-keeps the roomier lattice instead. A net whose wire would cross more than
+keeps the roomier lattice instead. A supply bar runs on half a unit past its
+outer pins, as a rail; `.rail_past = false` ends it on them. A net whose wire would cross more than
 `cross_max` other wires (3) is joined by name, its pins that stand near
 each other still wired; `.cross_max = 2`
 is how sparingly a person crosses wires, at the price of more names, and

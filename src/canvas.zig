@@ -52,6 +52,9 @@ pub const Lengths = struct {
     clearance: i32,
     bend_cost: i32,
     cross_cost: i32,
+    /// How far a supply bar runs past its outer pins: `rail`, or 0 with
+    /// `rail_past` off.
+    past: i32,
 
     /// `layout`'s lengths for symbols of `unit`. Asserts a positive unit.
     pub fn of(layout: config.Layout, unit: i32) Lengths {
@@ -65,6 +68,7 @@ pub const Lengths = struct {
             const scaled = @ceil(v * @as(f32, @floatFromInt(unit)));
             @field(out, f) = @max(1, @as(i32, @intFromFloat(@min(scaled, 1 << 20))));
         }
+        out.past = if (layout.rail_past) out.rail else 0;
         assert(out.stack >= 1 and out.clearance >= 1);
         return out;
     }

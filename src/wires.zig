@@ -377,7 +377,8 @@ fn terminal(c: *Canvas, p: u32, want: ?Side) !void {
 
 /// Rail pins facing `out` (up for a supply, down for ground): stubs to a
 /// bar a gap past the outermost, one symbol on each unbroken run of the bar
-/// at its middle stub. Any other pin: a symbol of its own. `plain`, the bar
+/// at its middle stub; a supply's run of two or more stubs goes on
+/// `len.past` beyond its outer ones where that fits. Any other pin: a symbol of its own. `plain`, the bar
 /// is a wire and carries no symbol: where it is in pieces, each run and
 /// each pin off it carries the net's name instead.
 fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
@@ -444,6 +445,13 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
             break :blk true;
         };
         if (joined) continue;
+        // A supply's bar runs on past its outer pins, as a rail does.
+        const x_lo = pinAt(s, on_bar.items[run]).x;
+        if (out == .up and !plain and c.len.past > 0 and x_lo != pinAt(s, q).x) {
+            for ([_][2]i32{ .{ x_lo, x_lo - c.len.past }, .{ pinAt(s, q).x, pinAt(s, q).x + c.len.past } }) |e| {
+                if (try c.commit(net, &.{ .{ .x = e[0], .y = y_bar }, .{ .x = e[1], .y = y_bar } })) c.wall();
+            }
+        }
         const mid = pinAt(s, on_bar.items[(run + i) / 2]);
         if (plain) try mids.append(gpa, .{ .x = mid.x, .y = y_bar }) else try c.leaf(.terminal, net, .{ .x = mid.x, .y = y_bar }, out.opposite());
         run = i + 1;

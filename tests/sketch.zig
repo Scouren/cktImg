@@ -1442,3 +1442,62 @@ test "sketch: an op-amp circuit is drawn along its signal: inverting input on to
     const steered = try draw(arena, lib, &.{support.inverting_amp ++ "*@ bridge rl\n"}, .{});
     try std.testing.expectEqual(pinOf(&steered, "rl", 0).y, pinOf(&steered, "rl", 1).y);
 }
+
+test "sketch: a supply bar runs on past its outer pins, so its ends are T's; rail_past = false ends it on them" {
+    // Oracle: the hand drawings. Of 2,506 supply bars joining two or more
+    // pins in the 5,263 reference drawings, 1,258 run half a unit past both
+    // outer pins (a rail), 1,185 end on them; no bar here did, and its two
+    // end corners were 5,030 of the engine's 34,354 corners where the
+    // people's supply wires turn 2,323.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck =
+        \\Two dividers
+        \\Vdd vdd 0 1
+        \\R1 vdd a 1k
+        \\R2 a 0 1k
+        \\R3 vdd b 1k
+        \\R4 b 0 1k
+        \\
+    ;
+    const extent = struct {
+        fn f(p: *const np.Placed, n: usize) [2]i32 {
+            var lo: i32 = std.math.maxInt(i32);
+            var hi: i32 = std.math.minInt(i32);
+            // The bar: the net's level pieces (the source drawn apart has
+            // a stub of its own, upright).
+            var it = p.segments(n);
+            while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+                if (a.y != b.y) continue;
+                lo = @min(lo, @min(a.x, b.x));
+                hi = @max(hi, @max(a.x, b.x));
+            };
+            return .{ lo, hi };
+        }
+    }.f;
+    const netOf = struct {
+        fn f(p: *const np.Placed, name: []const u8) usize {
+            for (p.net_name, 0..) |n, i| if (std.mem.eql(u8, n, name)) return i;
+            unreachable;
+        }
+    }.f;
+    const rail: i32 = @intFromFloat(@ceil((np.config.Layout{}).rail * @as(f32, @floatFromInt(lib.unit))));
+    const p = try draw(arena, lib, &.{deck}, .{});
+    const vdd = netOf(&p, "vdd");
+    const x1 = pinOf(&p, "r1", 0).x;
+    const x3 = pinOf(&p, "r3", 0).x;
+    try std.testing.expectEqual([2]i32{ @min(x1, x3) - rail, @max(x1, x3) + rail }, extent(&p, vdd));
+    try std.testing.expectEqual(0, bends(&p, vdd));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    try std.testing.expectEqual(0, try support.dots(gpa, &p, true));
+    const ended = try draw(arena, lib, &.{deck}, .{ .rail_past = false });
+    const e1 = pinOf(&ended, "r1", 0).x;
+    const e3 = pinOf(&ended, "r3", 0).x;
+    try std.testing.expectEqual([2]i32{ @min(e1, e3), @max(e1, e3) }, extent(&ended, netOf(&ended, "vdd")));
+    try std.testing.expectEqual(2, bends(&ended, netOf(&ended, "vdd")));
+}

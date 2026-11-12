@@ -121,6 +121,8 @@ on a device overrides the relations on it.
   most other wires one internal net's wire may cross before the net is
   joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
   it (6) for one with too many names; `*@ wire <net>` keeps one net wired.
+  `.rail_past` (true) runs a supply bar on past its outer pins, a rail;
+  `false` ends the bar on them.
   `.shelf` (8) is how many device columns a row holds before the drawing
   wraps into rows of columns: raise it for a wider page, `0` for one row;
   `*@ shelf <columns>|off` says so in one deck.
