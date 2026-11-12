@@ -809,6 +809,8 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
     // Oracle: a certificate. Three pins cannot be joined with less wire
     // than half the perimeter of the box around them; a trunk on the tap
     // row instead of the side pin's row spends a jog more.
+    // The block is held right of the stack (`order`), its pin toward the
+    // junction: facing away, no wire reaches that length.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -824,6 +826,7 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
         \\CH x vss 1p
         \\M2 vdd net0 x vss nch
         \\X1 vdd vss vin x net0 amp
+        \\*@ order m2 x1
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
@@ -910,6 +913,8 @@ test "sketch: a tall block stands beside the stack it joins, not between its row
     // in another column (people stand blocks side by side in 82% of 5,274
     // hand-drawn schematics). A row of its own for the block put the
     // capacitor under the block's foot.
+    // The block is held right of the stack (`order`), where its pin row
+    // is the junction's.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -925,6 +930,7 @@ test "sketch: a tall block stands beside the stack it joins, not between its row
         \\CH vout vss 1p
         \\M2 vdd net0 vout vss nch
         \\X1 vdd vss vin vout net0 amp
+        \\*@ order m2 x1
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
@@ -1158,6 +1164,47 @@ test "sketch: no wire ends on nothing: two pins' ways to a trunk do not run on t
     const deck = "gate\n.model nch nmos\nM1 vout net0 vin 0 nch\nRD vdd vout 1k\nRG net0 vb 1k\n";
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
     for (0..p.netCount()) |n| try std.testing.expectEqual(0, looseEnds(&p, n));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: a block stands between the columns of its input and its output, whatever its first port" {
+    // Oracle: the block's own ports. An amplifier whose first two ports are
+    // its rails reads `b`, the third stage's drain, and drives `o`, the
+    // second stage's gate: it stands between those two columns, where its
+    // wires are shortest. Placed by its first port, the supply, it stood
+    // left of both.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\A block between two stages
+        \\.model nch nmos level=1
+        \\.subckt amp vdd vss inp inn out
+        \\R1 inp out 1k
+        \\.ends amp
+        \\VDD vdd 0 1.8
+        \\M1 a g1 0 0 nch
+        \\R1 vdd a 1k
+        \\M3 b g3 0 0 nch
+        \\R3 vdd b 1k
+        \\X1 vdd 0 b fb o amp
+        \\M2 z o 0 0 nch
+        \\R2 vdd z 1k
+        \\M4 y z 0 0 nch
+        \\R4 vdd y 1k
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    var x: [3]i32 = undefined;
+    for ([_][]const u8{ "x1", "m3", "m2" }, &x) |name, *at| {
+        at.* = for (p.dev_name, p.dev_pos) |n, pos| {
+            if (std.mem.eql(u8, n, name)) break pos.x;
+        } else unreachable;
+    }
+    try std.testing.expect(x[0] > @min(x[1], x[2]) and x[0] < @max(x[1], x[2]));
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

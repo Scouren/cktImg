@@ -269,8 +269,10 @@ columns of the chain's two end nets, in order, at the first end's tap row, or
 under the drawing when a column between runs through that row. A chain whose
 tips stand on one column (or one end on none) stands beside it: toward the
 axis when an end net lies on it, else toward an input's side or away from the
-axis. Any other bridge (an op-amp) stands midway between its nets' two
-nearest columns. A chain whose mate stands already mirrors it; taken slots
+axis. Any other bridge (an op-amp) stands midway between the nearest
+columns of its first and its last net that is no rail: its input and its
+output, as a subcircuit lists its ports (not the supply an op-amp's first
+port is on). A chain whose mate stands already mirrors it; taken slots
 move it outward.
 
 **Shelves** (`wrap.shelves`). A row of more than eight device columns (a

@@ -9,8 +9,9 @@
 //! when a column between runs through that row; a chain whose tips stand
 //! on one column (or one end on none) stands beside it: toward the axis
 //! when an end net lies on it, else toward an input's side or away from the
-//! axis. Any other bridge (an op-amp) stands midway between its nets' two
-//! nearest columns. A chain whose mate stands already mirrors it; taken
+//! axis. Any other bridge (an op-amp) stands midway between the nearest
+//! columns of its first and its last net that is no rail: its input and
+//! its output, as a subcircuit lists its ports. A chain whose mate stands already mirrors it; taken
 //! slots move it outward.
 //!
 //! Contents:
@@ -101,13 +102,26 @@ fn isRail(r: Role) bool {
 
 /// The bridges in series with `d` (two-pin bridges joined by nets that hold
 /// just the two of them), in order, into `out`; returns the chain's two end
-/// nets (the same net twice for anything but a two-pin bridge).
+/// nets (for anything but a two-pin bridge, a block: the first and the last
+/// of its nets that are no rail).
 fn chainOf(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, placed: []const bool, d: u32, out: *std.ArrayList(u32)) ![2]u32 {
     const c = &nl.graph;
     out.clearRetainingCapacity();
     try out.append(gpa, d);
     const pins = c.members(EdgeId.from(d));
-    if (!isTwoPin(c.edges.items(.kind)[d]) or pins.len != 2) return .{ pins[0].index(), pins[0].index() };
+    if (!isTwoPin(c.edges.items(.kind)[d]) or pins.len != 2) {
+        // A block stands between the first and the last of its nets that
+        // are no rail: its input and its output, as a subcircuit lists its
+        // ports, not the supply its first port is often on.
+        var ends: [2]u32 = .{ pins[0].index(), pins[0].index() };
+        var found = false;
+        for (pins) |p| if (!isRail(roles[p.index()])) {
+            if (!found) ends[0] = p.index();
+            ends[1] = p.index();
+            found = true;
+        };
+        return ends;
+    }
     var tips: [2]u32 = .{ pins[0].index(), pins[1].index() };
     // Grow from each end in turn: the far end leftward, then rightward.
     for (0..2) |side| {
