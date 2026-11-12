@@ -56,13 +56,17 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
         if (!drawn[d] or form[d] != .horizontal or placed[d]) continue;
         const tips = try chainOf(gpa, nl, roles, drawn, form, upper, lower, placed, d, &chain);
         slots.clearRetainingCapacity();
-        const m = st.device_mate[chain.items[0]];
-        if (axis2 != null and m != none and m != chain.items[0] and placed[m]) {
+        // Mirrored when every member's mate stands as a bridge already: one
+        // that stands upright (a line of the deck's) has no slot to mirror.
+        const mirrored = axis2 != null and for (chain.items) |b| {
+            const mb = st.device_mate[b];
+            if (mb == none or mb == b or !placed[mb]) break false;
+        } else true;
+        if (mirrored) {
             // The mirror image of the mate's chain, member by member.
             for (chain.items) |b| {
                 const mb = st.device_mate[b];
-                const at: [2]i32 = if (mb != none and placed[mb]) .{ axis2.? - x[mb], y[mb] } else .{ axis2.? - x[m], y[m] };
-                try slots.append(gpa, at);
+                try slots.append(gpa, .{ axis2.? - x[mb], y[mb] });
             }
         } else {
             try chainSlots(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y, axis2, chain.items, tips, &slots);
@@ -79,6 +83,7 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
         }
         for (chain.items, slots.items) |b, sl| {
             const at: [2]i32 = .{ sl[0] + shift, sl[1] };
+            assert(!taken.contains(at));
             try taken.put(gpa, at, {});
             x[b] = at[0];
             y[b] = at[1];

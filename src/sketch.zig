@@ -214,18 +214,28 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
         else
             info.items(.orient)[d].applyRect(bbox).translate(toPt(at[d]).sub(info.items(.grid)[d]));
     }
-    // The least preferred `at` gives way first.
-    var k = order.len;
-    while (k > 0) {
-        k -= 1;
-        if (nl.hints[order[k]].verb != .at) continue;
-        const d = (nl.device(nl.hints[order[k]].args[0]) orelse continue).index();
-        const a = ats[d] orelse continue;
-        if (a.line != order[k]) continue;
-        for (0..n) |e| {
-            if (e == d or !sk.drawn[e] or !boxes[d].intersects(boxes[e])) continue;
-            ats[d] = null;
-            break;
+    // The least preferred `at` gives way first, and stands where the
+    // lattice has it: another `at` may be on that place, and gives way in
+    // turn, until none overlaps.
+    var dropped = true;
+    var passes: usize = 0;
+    while (dropped) : (passes += 1) {
+        assert(passes <= nl.hints.len);
+        dropped = false;
+        var k = order.len;
+        while (k > 0) {
+            k -= 1;
+            if (nl.hints[order[k]].verb != .at) continue;
+            const d = (nl.device(nl.hints[order[k]].args[0]) orelse continue).index();
+            const a = ats[d] orelse continue;
+            if (a.line != order[k]) continue;
+            for (0..n) |e| {
+                if (e == d or !sk.drawn[e] or !boxes[d].intersects(boxes[e])) continue;
+                ats[d] = null;
+                boxes[d] = info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(toPt(at[d]).sub(info.items(.grid)[d]));
+                dropped = true;
+                break;
+            }
         }
     }
     for (0..n) |d| {

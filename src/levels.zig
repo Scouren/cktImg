@@ -224,6 +224,8 @@ fn find(class: []u32, d: u32) u32 {
     return k;
 }
 
+/// Whether the class of `from` stands above the class of `to` through
+/// `edges`: a path of them from one to the other.
 fn reaches(gpa: Allocator, class: []u32, edges: []const [2]u32, from: u32, to: u32) !bool {
     assert(from < class.len);
     assert(to < class.len);
@@ -232,10 +234,12 @@ fn reaches(gpa: Allocator, class: []u32, edges: []const [2]u32, from: u32, to: u
     @memset(seen, false);
     var stack: std.ArrayList(u32) = .empty;
     defer stack.deinit(gpa);
-    try stack.append(gpa, from);
-    seen[from] = true;
+    // By class: a device a `row` line holds level is not its own class.
+    const target = find(class, to);
+    try stack.append(gpa, find(class, from));
+    seen[find(class, from)] = true;
     while (stack.pop()) |k| {
-        if (k == to) return true;
+        if (k == target) return true;
         for (edges) |e| {
             if (find(class, e[0]) != k) continue;
             const l = find(class, e[1]);

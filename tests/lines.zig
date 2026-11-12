@@ -333,6 +333,70 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
     try std.testing.expect(o.at("m4").eql(base.at("m4")));
 }
 
+test "lines: a row line and an above line on a loop of two devices are both held" {
+    // Oracle: the lines themselves, read off the drawing. A transmission
+    // gate's two transistors stand above each other both ways; `row` puts
+    // one level with the capacitor, `above` orders the two. The engine
+    // compared a device against its row's class and kept both ways of the
+    // loop: no levels, an abort.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const gate = "Transmission gate\n.model nch nmos\n.model pch pmos\nC1 vout 0 1p\nM1 vout ck vin 0 nch\nM2 vout ckb vin vdd pch\n";
+    const r = try run(f.arena(), f.lib, gate, "*@ row m2 c1\n*@ above m1 m2\n");
+    try expectState(r.verdict("*@ row m2 c1"), .honoured, .ok);
+    try expectState(r.verdict("*@ above m1 m2"), .honoured, .ok);
+    try std.testing.expectEqual(r.at("m2").y, r.at("c1").y);
+    try std.testing.expect(r.at("m1").y < r.at("m2").y);
+}
+
+test "lines: a line admitted after another line's mirror image stands, and the image goes" {
+    // Oracle: the lines themselves, read off the drawing. `above m2 m0`
+    // also states its image, `above m1 m3`; the rows `m2 m3` and `m0 m1`,
+    // admitted after it, say the opposite of the image. Every line the
+    // deck wrote is held. The image stayed, and the rows had no levels.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const mirrors = "Two mirrors over a pair\n.model nch nmos\n.model pch pmos\nM0 o1 a vdd vdd pch\nM1 a a vdd vdd pch\n" ++
+        "M2 b b vdd vdd pch\nM3 o2 b vdd vdd pch\nM4 b in2 t 0 nch\nM5 a in1 t 0 nch\nI1 t 0 1m\nR1 o1 0 1k\nR2 o2 0 1k\n";
+    const r = try run(f.arena(), f.lib, mirrors, "*@ row m2 m3\n*@ row m0 m1\n*@ above m2 m0\n");
+    for ([_][]const u8{ "*@ row m2 m3", "*@ row m0 m1", "*@ above m2 m0" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expectEqual(r.at("m2").y, r.at("m3").y);
+    try std.testing.expectEqual(r.at("m0").y, r.at("m1").y);
+    try std.testing.expect(r.at("m2").y < r.at("m0").y);
+}
+
+test "lines: an at that gives way stands on its lattice place, and an at on that place gives way too" {
+    // Oracle: the guarantee (no symbol on another), checked by `run`, and
+    // the drawing with no line. M4 is put on M3 and gives way; M1 is put
+    // where M4 then stands, and must give way as well. It was checked
+    // against the place M4 had left, kept, and drawn on M4.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    const m3 = base.at("m3");
+    const m4 = base.at("m4");
+    const lines = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n*@ at m1 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m4.x, f.lib.unit), fu(m4.y, f.lib.unit) });
+    const r = try run(f.arena(), f.lib, ota, lines);
+    for (r.nl.hints, r.v) |h, v| if (h.verb == .at) try expectState(v, .dropped, .guarantee);
+    try std.testing.expect(r.at("m4").eql(m4));
+    try std.testing.expect(r.at("m1").eql(base.at("m1")));
+}
+
+test "lines: a chain of two bridges, one mate turned upright, takes two cells" {
+    // Oracle: the guarantees `run` checks (every device once, no symbol on
+    // another). Two coupling capacitors in series through an input are a
+    // chain; the mate of one is turned upright by a line, so the chain has
+    // no whole mirror image to take. Member by member, both took the one
+    // mirror cell.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const lna = "Two pairs\n.model nch nmos\nC1 g1 in1 1p\nC2 g2 in2 1p\nC5 g5 in1 1p\nC6 g6 in2 1p\nM1 x1 g1 0 0 nch\nM2 x2 g2 0 0 nch\n" ++
+        "M5 x1 g5 0 0 nch\nM6 x2 g6 0 0 nch\nR3 vdd x1 1k\nR4 vdd x2 1k\n";
+    const r = try run(f.arena(), f.lib, lna, "*@ upright c5\n*@ bridge c2\n*@ bridge c6\n");
+    try expectState(r.verdict("*@ upright c5"), .honoured, .ok);
+    try std.testing.expect(!r.at("c2").eql(r.at("c6")));
+}
+
 test "lines: route pins a net's wire from one of its pins; one off its pins is refused; via passes a point" {
     var f = try Fixture.init();
     defer f.deinit();

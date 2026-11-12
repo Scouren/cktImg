@@ -265,6 +265,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
     var held: std.ArrayList([3]u32) = .empty;
+    var images: std.ArrayList([]const [3]u32) = .empty;
     const check: Check = .{ .gpa = gpa, .n = n, .own = own };
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
@@ -286,10 +287,15 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             if (!drawn[a] or !drawn[b] or form[a] != .vertical or form[b] != .vertical) continue;
             try image.append(arena, .{ a, b, k[2] });
         }
-        if (image.items.len == 0) continue;
-        try held.appendSlice(arena, image.items);
-        if (!try consistent(gpa, n, held.items)) held.shrinkRetainingCapacity(held.items.len - image.items.len);
+        if (image.items.len != 0) try images.append(arena, image.items);
     }
+    // The images after every line, the strongest line's first: a line
+    // admitted later stands, and the image that contradicts it goes.
+    for (images.items) |image| {
+        try held.appendSlice(arena, image);
+        if (!try consistent(gpa, n, held.items)) held.shrinkRetainingCapacity(held.items.len - image.len);
+    }
+    assert(try consistent(gpa, n, held.items));
     const class = try arena.alloc(u32, n);
     for (class, 0..) |*k, d| k.* = @intCast(d);
     var edges: std.ArrayList([2]u32) = .empty;
