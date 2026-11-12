@@ -194,7 +194,10 @@ device in series (each of its nets holds one other channel element), one on
 the way down (one net nearer the supply and the other nearer the ground,
 counted through channel elements and never through a gate, a body or
 another rail: an emitter's degeneration resistor), or a current source; a
-capacitor only on a rail. Anything else is **horizontal**, a **bridge**
+capacitor only on a rail. The two-pin devices are R, C, L, D, V and I
+cards, switches, and the current-controlled sources (F, H: their control is
+a source's name, and people draw every controlled source as a two-pin
+source). Anything else is **horizontal**, a **bridge**
 between columns. A two-pin device between two nets the symmetry swaps
 (it straddles the axis) bridges, and so does a device whose current path is
 shorted (a MOS dummy).

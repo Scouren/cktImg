@@ -97,7 +97,7 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
 
 fn isTwoPin(kind: DeviceKind) bool {
     return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .diode, .vswitch, .cswitch => true,
+        .resistor, .capacitor, .inductor, .vsource, .isource, .cccs, .ccvs, .diode, .vswitch, .cswitch => true,
         else => false,
     };
 }

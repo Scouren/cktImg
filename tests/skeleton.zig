@@ -199,6 +199,20 @@ test "skeleton: a column only a bridge joins to the rest stands beside the colum
     try std.testing.expect(@min(@abs(rl - q1), @abs(rl - q2)) <= 8);
 }
 
+test "skeleton: a current-controlled source stands as a source does: upright on its rail" {
+    // Oracle: the independent source beside it. An F card has two pins
+    // like an I card (its control is a source's name), and people draw
+    // every controlled source as a two-pin source (575 of 575 in the 5,263
+    // reference drawings): on ground it stands upright, as `i1` does. It
+    // was no two-pin part to the skeleton, and lay flat.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Current gain\nVS in 0 1\nRS in a 1k\nVSENSE a 0 0\nF1 0 out VSENSE 10\nRL out 0 1k\nI1 0 out 1m\nH1 x 0 VSENSE 5\nRX x 0 1k\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    for ([_][]const u8{ "i1", "f1", "h1" }) |name| try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device(name).?.index()]);
+}
+
 test "skeleton: a column outside the mirrored core stands on the side of the half it is wired to" {
     // Oracle: a metamorphic relation. A second stage read from the right
     // half's node stands right of the core, and the same stage read from

@@ -258,7 +258,7 @@ fn isTransistor(kind: DeviceKind) bool {
 /// A two-pin device the current passes through: its first two pins.
 fn isTwoPin(kind: DeviceKind) bool {
     return switch (kind) {
-        .resistor, .capacitor, .inductor, .vsource, .isource, .diode, .vswitch, .cswitch => true,
+        .resistor, .capacitor, .inductor, .vsource, .isource, .cccs, .ccvs, .diode, .vswitch, .cswitch => true,
         else => false,
     };
 }
