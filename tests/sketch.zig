@@ -540,6 +540,47 @@ test "sketch: devices dealt to any cells still draw connected, short-free and do
     try std.testing.expectEqual(0, bad);
 }
 
+test "sketch: a pin level with a column's junction is joined along its own row" {
+    // Oracle: a certificate. Three pins cannot be joined with less wire
+    // than half the perimeter of the box around them; a trunk on the tap
+    // row instead of the side pin's row spends a jog more.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Follower
+        \\.model nch nmos
+        \\.subckt amp vdd vss vip vin vout
+        \\R1 vip vout 1k
+        \\R2 vin vout 1k
+        \\.ends
+        \\CH vout vss 1p
+        \\M2 vdd net0 vout vss nch
+        \\X1 vdd vss vin vout net0 amp
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const pins = [_]np.Pt{ pinOf(&p, "ch", 0), pinOf(&p, "m2", 2), pinOf(&p, "x1", 3) };
+    var lo = pins[0];
+    var hi = pins[0];
+    for (pins) |at| {
+        lo = .{ .x = @min(lo.x, at.x), .y = @min(lo.y, at.y) };
+        hi = .{ .x = @max(hi.x, at.x), .y = @max(hi.y, at.y) };
+    }
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "vout")) break i;
+    } else unreachable;
+    var wire: i32 = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        wire += @intCast(@abs(b.x - a.x) + @abs(b.y - a.y));
+    };
+    try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y, wire);
+    try support.expectConnected(&p, lib);
+}
+
 test "sketch: a mirror's facing gates are joined by one straight gate line" {
     // Oracle: the book's figure (Razavi Fig. 5.26(b), the golden `ota_5t`):
     // the mirror's gate line runs straight from M3's gate to M4's, and the

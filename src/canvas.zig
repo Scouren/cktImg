@@ -17,8 +17,10 @@
 //! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`
 //! - `Canvas.middle2(c: *const Canvas) i32`
 //! - `Canvas.save(c: *const Canvas) Checkpoint`, `Canvas.restore(c: *Canvas, cp: Checkpoint) void`
+//! - `pub const Line = struct`, `Line.of(pts: []const Pt) Line`, `Line.push(l: *Line, p: Pt) void`, `Line.slice(l: *const Line) []const Pt`
 //! - `pub fn pinAt(s: *const Schematic, p: u32) Pt`
 //! - `pub fn stepPt(p: Pt, side: Side, d: i32) Pt`
+//! - `pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -64,6 +66,30 @@ pub const Lengths = struct {
         }
         assert(out.stack >= 1 and out.clearance >= 1);
         return out;
+    }
+};
+
+/// One wire to draw: a polyline of at most six points, as a `Route` holds.
+pub const Line = struct {
+    pts: [6]Pt = undefined,
+    len: u8 = 0,
+
+    /// A line through `pts`.
+    pub fn of(pts: []const Pt) Line {
+        var l: Line = .{};
+        for (pts) |p| l.push(p);
+        return l;
+    }
+    /// Adds a point; asserts room.
+    pub fn push(l: *Line, p: Pt) void {
+        assert(l.len < l.pts.len);
+        l.pts[l.len] = p;
+        l.len += 1;
+    }
+    /// The points; asserts at least one.
+    pub fn slice(l: *const Line) []const Pt {
+        assert(l.len >= 1);
+        return l.pts[0..l.len];
     }
 };
 
@@ -238,6 +264,15 @@ pub fn stepPt(p: Pt, side: Side, d: i32) Pt {
         .up => .{ .x = p.x, .y = p.y - d },
         .down => .{ .x = p.x, .y = p.y + d },
     };
+}
+
+/// Whether every line fits for `net` (`Canvas.fits`).
+pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool {
+    for (lines) |*l| {
+        const pts = l.slice();
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| if (!c.fits(net, a, b)) return false;
+    }
+    return true;
 }
 
 // ---- private ----

@@ -35,6 +35,7 @@ const canvas = @import("canvas.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const netlines = @import("netlines.zig");
+const trunk = @import("trunk.zig");
 const NetLines = netlines.NetLines;
 
 const Side = library.Side;
@@ -44,29 +45,10 @@ const Schematic = sch.Schematic;
 const Role = sch.Role;
 const Canvas = canvas.Canvas;
 const Lengths = canvas.Lengths;
+const Line = canvas.Line;
+const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
-
-/// One wire to draw: a polyline of at most six points, as a `Route` holds.
-const Line = struct {
-    pts: [6]Pt = undefined,
-    len: u8 = 0,
-
-    fn of(pts: []const Pt) Line {
-        var l: Line = .{};
-        for (pts) |p| l.push(p);
-        return l;
-    }
-    fn push(l: *Line, p: Pt) void {
-        assert(l.len < l.pts.len);
-        l.pts[l.len] = p;
-        l.len += 1;
-    }
-    fn slice(l: *const Line) []const Pt {
-        assert(l.len >= 1);
-        return l.pts[0..l.len];
-    }
-};
 
 /// Draws every net of `s`; `xy` holds the nodes' points (`s.xy` is kept
 /// in step with it), `gap` the room beside a device, `hidden` the points of
@@ -274,11 +256,11 @@ fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
 /// the router takes the net.
 fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
     // One pin: nothing to route; its port, if any, as by default.
-    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk(c, net, pins);
+    if (pins.len < 2) return try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins);
     return switch (style) {
-        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk(c, net, pins),
+        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins),
         .ladder => try ladder(c, net, pins, axis2),
-        .trunk => try trunk(c, net, pins),
+        .trunk => try trunk.draw(c, net, pins),
         .route => false,
         .label => unreachable,
     };
@@ -427,219 +409,5 @@ fn ladder(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32) !bool {
     }
     if (!linesFit(c, net, lines.items)) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
-    return true;
-}
-
-/// A net with no symbol of its own: one column's pins joined in order, or
-/// each pin brought to a trunk along the net's tap row. An output also
-/// gets a port at the trunk's outer end. False, with nothing drawn, when
-/// the lines would touch another net's point or run through a device.
-fn trunk(c: *Canvas, net: u32, pins: []const u32) !bool {
-    const s = c.s;
-    assert(pins.len >= 1);
-    for (pins) |p| assert(s.pins.items(.net)[p] == net);
-    // A lone pin has nothing to join: an output's gets its port.
-    if (pins.len == 1) {
-        if (s.roles[net] == .output) try c.port(net, pinAt(s, pins[0]), s.pins.items(.side)[pins[0]]);
-        return true;
-    }
-    var lines: std.ArrayList(Line) = .empty;
-    defer lines.deinit(c.gpa);
-    var lo: i32 = std.math.maxInt(i32);
-    var hi: i32 = std.math.minInt(i32);
-    const column = sameX(s, pins);
-    // A trunk takes the first of a few tracks that no other net's wire or
-    // point is on: the tap row, a quarter gap either side, then half; then
-    // a half gap past its pins' devices, away from the drawing's middle
-    // first (a gate line over the top row's gates, under the bottom's).
-    const tap = tapY(s, pins, c.len.tap);
-    const q = @divFloor(c.len.unit, 4);
-    const past = pastDevices(c, pins);
-    var y_t = tap;
-    // Facing gates joined by a gate line first (a mirror's, as the book
-    // draws it), then every pin on its own way to the trunk.
-    const fit = fit: for ([_]bool{ true, false }) |rungs| {
-        for ([_]i32{ tap, tap - q, tap + q, tap - 2 * q, tap + 2 * q, past[0], past[1] }) |track| {
-            y_t = track;
-            lines.clearRetainingCapacity();
-            lo = std.math.maxInt(i32);
-            hi = std.math.minInt(i32);
-            const drawn = try trunkLines(c.gpa, s, pins, y_t, c.len.unit, column, rungs, &lines, &lo, &hi);
-            if (rungs and !drawn) break;
-            if (linesFit(c, net, lines.items)) break :fit true;
-            if (column) break;
-        }
-    } else false;
-    if (!fit) return false;
-    for (lines.items) |*l| assert(try c.commit(net, l.slice()));
-    if (s.roles[net] != .output) return true;
-    // The output's port: out from the outer end of the trunk, or of the
-    // column at its tap, on the drawing's nearer side.
-    const right = 2 * hi >= c.middle2();
-    try c.port(net, .{ .x = if (right) hi else lo, .y = y_t }, if (right) .right else .left);
-    return true;
-}
-
-/// The lines of one trunk at `y_t`: a column's pins joined in order, or each
-/// pin brought to the trunk and the trunk across them; `lo`, `hi` its ends.
-/// With `rungs`, two pins facing each other along a row off the trunk are
-/// joined straight (a gate line) and the line's middle is brought to the
-/// trunk; whether any such line was drawn.
-fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, gap: i32, column: bool, rungs: bool, lines: *std.ArrayList(Line), lo: *i32, hi: *i32) !bool {
-    if (column) {
-        const sorted = try gpa.dupe(u32, pins);
-        defer gpa.free(sorted);
-        std.mem.sort(u32, sorted, s, struct {
-            fn lt(sc: *const Schematic, x: u32, y: u32) bool {
-                return pinAt(sc, x).y < pinAt(sc, y).y;
-            }
-        }.lt);
-        for (sorted[0 .. sorted.len - 1], sorted[1..]) |p, q| {
-            if (!pinAt(s, p).eql(pinAt(s, q))) try lines.append(gpa, .of(&.{ pinAt(s, p), pinAt(s, q) }));
-        }
-        lo.* = pinAt(s, sorted[0]).x;
-        hi.* = lo.*;
-        return false;
-    }
-    var ends: std.ArrayList(i32) = .empty;
-    defer ends.deinit(gpa);
-    const paired = try gpa.alloc(bool, pins.len);
-    defer gpa.free(paired);
-    @memset(paired, false);
-    const sides = s.pins.items(.side);
-    const q = @max(1, @divFloor(gap, 4));
-    if (rungs) for (pins, 0..) |p, i| {
-        const a = pinAt(s, p);
-        if (sides[p] != .right or a.y == y_t) continue;
-        // The nearest pin facing back along the row.
-        var best: ?usize = null;
-        for (pins, 0..) |o, j| {
-            const b = pinAt(s, o);
-            if (sides[o] != .left or paired[j] or b.y != a.y or b.x <= a.x) continue;
-            if (best == null or b.x < pinAt(s, pins[best.?]).x) best = j;
-        }
-        const j = best orelse continue;
-        const b = pinAt(s, pins[j]);
-        // The middle, on the quarter-unit grid; a line too short has none.
-        const mid: Pt = .{ .x = a.x + @divFloor(@divFloor(b.x - a.x, 2), q) * q, .y = a.y };
-        if (mid.x == a.x) continue;
-        paired[i] = true;
-        paired[j] = true;
-        try lines.append(gpa, .of(&.{ a, mid }));
-        try lines.append(gpa, .of(&.{ mid, b }));
-        try lines.append(gpa, .of(&.{ mid, .{ .x = mid.x, .y = y_t } }));
-        try ends.append(gpa, mid.x);
-        lo.* = @min(lo.*, mid.x);
-        hi.* = @max(hi.*, mid.x);
-    };
-    for (pins, paired) |p, done| {
-        if (done) continue;
-        const line = reachTrunk(s, p, y_t, gap);
-        // A pin on the trunk already needs no line of its own.
-        if (line.len >= 2) try lines.append(gpa, line);
-        const end = line.pts[line.len - 1];
-        try ends.append(gpa, end.x);
-        lo.* = @min(lo.*, end.x);
-        hi.* = @max(hi.*, end.x);
-    }
-    // The trunk in pieces between the ends, so every joint is a wire's end.
-    std.mem.sort(i32, ends.items, {}, std.sort.asc(i32));
-    for (ends.items[0 .. ends.items.len - 1], ends.items[1..]) |a, b| {
-        if (a != b) try lines.append(gpa, .of(&.{ .{ .x = a, .y = y_t }, .{ .x = b, .y = y_t } }));
-    }
-    return std.mem.indexOfScalar(bool, paired, true) != null;
-}
-
-/// A half gap over the top of the pins' devices and under their bottom,
-/// the one farther from the drawing's middle first.
-fn pastDevices(c: *const Canvas, pins: []const u32) [2]i32 {
-    var top: i32 = std.math.maxInt(i32);
-    var bottom: i32 = std.math.minInt(i32);
-    var lo: i32 = std.math.maxInt(i32);
-    var hi: i32 = std.math.minInt(i32);
-    for (c.boxes) |b| {
-        lo = @min(lo, b.min.y);
-        hi = @max(hi, b.max.y);
-        for (pins) |p| if (b.contains(pinAt(c.s, p))) {
-            top = @min(top, b.min.y);
-            bottom = @max(bottom, b.max.y);
-        };
-    }
-    if (top > bottom) return .{ pinAt(c.s, pins[0]).y, pinAt(c.s, pins[0]).y };
-    const half = @divFloor(c.len.unit, 2);
-    const over = top - half;
-    const under = bottom + half;
-    return if (top + bottom < lo + hi) .{ over, under } else .{ under, over };
-}
-
-/// Between the lowest pin facing down and the highest facing up; a gap
-/// past the pins when only one way faces; else the topmost pin's row.
-fn tapY(s: *const Schematic, pins: []const u32, gap: i32) i32 {
-    assert(pins.len >= 1);
-    assert(gap > 0);
-    var down: ?i32 = null;
-    var up: ?i32 = null;
-    var top: i32 = std.math.maxInt(i32);
-    for (pins) |p| {
-        const at = pinAt(s, p);
-        top = @min(top, at.y);
-        switch (s.pins.items(.side)[p]) {
-            .down => down = @max(down orelse at.y, at.y),
-            .up => up = @min(up orelse at.y, at.y),
-            else => {},
-        }
-    }
-    if (down != null and up != null) return @divFloor(down.? + up.?, 2);
-    if (down) |d| return d + gap;
-    if (up) |u| return u - gap;
-    return top;
-}
-
-fn sameX(s: *const Schematic, pins: []const u32) bool {
-    assert(pins.len >= 1);
-    const x = pinAt(s, pins[0]).x;
-    for (pins) |p| {
-        if (pinAt(s, p).x != x) return false;
-        if (s.pins.items(.side)[p].isHorizontal()) return false;
-    }
-    return true;
-}
-
-/// A pin's way to the trunk at `y_t`: straight when it faces it, out a
-/// half gap and down or up when it faces sideways, round its own device
-/// through the channel on its right when it faces away.
-fn reachTrunk(s: *const Schematic, p: u32, y_t: i32, gap: i32) Line {
-    const at = pinAt(s, p);
-    const side = s.pins.items(.side)[p];
-    var line: Line = .of(&.{at});
-    const half = @divFloor(gap, 2);
-    switch (side) {
-        .left, .right => {
-            const out = stepPt(at, side, half);
-            line.push(out);
-            if (out.y != y_t) line.push(.{ .x = out.x, .y = y_t });
-        },
-        .up, .down => {
-            const toward = if (side == .down) y_t >= at.y else y_t <= at.y;
-            if (toward) {
-                if (at.y != y_t) line.push(.{ .x = at.x, .y = y_t });
-            } else {
-                const out = stepPt(at, side, half);
-                line.push(out);
-                line.push(.{ .x = out.x + gap, .y = out.y });
-                line.push(.{ .x = out.x + gap, .y = y_t });
-            }
-        },
-    }
-    assert(line.len >= 1);
-    return line;
-}
-
-/// Whether every line fits for `net` (`Canvas.fits`).
-fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool {
-    for (lines) |*l| {
-        const pts = l.slice();
-        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| if (!c.fits(net, a, b)) return false;
-    }
     return true;
 }

@@ -10,7 +10,7 @@ whole layout is one pass, with no relayout rounds.
 | 1. Roles | `schematic.zig` | a role per net |
 | 2. Structure | `structure.zig`, `symmetry.zig`, `hints.zig` | a canonical order, blocks, the left-right symmetry |
 | 3. Skeleton | `skeleton.zig`, `levels.zig`, `columns.zig`, `bridges.zig` | each device's cell on a lattice, its form and gate side |
-| 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
+| 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `trunk.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
 `layout` (in `root.zig`) is stages 2 to 4; `place` is parse, roles, layout
@@ -375,7 +375,7 @@ crosses, so a label never joins two nets.
 | supply | its pins facing up: stubs to a bar `rail` above the highest, one supply symbol on each unbroken run of the bar, at its middle stub; any other supply pin, a symbol of its own |
 | input | a port on a stub at each pin |
 | bias | a gate line between the two facing gates of one row, named at its middle; else a label at each pin |
-| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the net's tap row: between the lowest pin facing down and the highest facing up, else `tap` past the pins; or the first free track a quarter or half unit either side, or half a unit past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
+| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to a line along the row of a pin facing sideways between the lowest pin facing down and the highest facing up, so that pin is joined straight; else along the net's tap row: midway between those two, else `tap` past the pins; or the first free track a quarter or half unit either side, or half a unit past the pins' devices). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
 
 **Routes** (`routes.draw`), for the nets waiting, in canonical order:
 
