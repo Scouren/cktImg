@@ -433,6 +433,10 @@ control where its ports go:
 .ends
 ```
 
+Without a directive a port goes by its name: supplies on top, grounds and
+bias lines (`vb1`) at the bottom, an output (`out`, `vout`, `vo`) on the
+right, the rest on the left.
+
 With `*@ expand`, the body is drawn instead of a block, flattened using
 ngspice names (`r.x1.r1`).
 

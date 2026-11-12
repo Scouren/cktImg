@@ -12,7 +12,9 @@
 //! when an end net lies on it, else toward an input's side or away from the
 //! axis. Any other bridge (an op-amp) stands midway between the nearest
 //! columns of its first and its last net that is no rail: its input and
-//! its output, as a subcircuit lists its ports. A chain whose mate stands already mirrors it; taken
+//! its output, as a subcircuit lists its ports; with no column on its first
+//! and its output (by its port's name) on the gates of one column alone, it
+//! stands left of that column. A chain whose mate stands already mirrors it; taken
 //! slots move it outward.
 //!
 //! Contents:
@@ -25,6 +27,7 @@ const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
+const library = @import("library.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -224,6 +227,28 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
             break;
         }
     };
+    // A block with no column on its first net, its output (by its port's
+    // name) on the gates of one column and nothing else, stands left of
+    // that column, level with the gate: 346 of 487 blocks driving a gate
+    // in 5,263 hand-drawn schematics stand left of it, 100 right.
+    if (chain.len == 1 and best == null) if (outputNet(nl, chain[0])) |net| {
+        // The gates of one column and nothing else: the wire is straight.
+        var driven: ?i32 = null;
+        for (c.incident(VertexId.from(net))) |e| {
+            const v = e.index();
+            if (v == chain[0] or !drawn[v]) continue;
+            const gate = form[v] == .vertical and upper[v] != net and lower[v] != net;
+            if (!gate or (driven != null and driven.? != x[v])) {
+                driven = null;
+                break;
+            }
+            driven = x[v];
+        }
+        if (driven) |at| {
+            try out.append(gpa, .{ at - 1, row });
+            return;
+        }
+    };
     if (best) |pair| {
         const lo = @min(pair[0], pair[1]);
         const hi = @max(pair[0], pair[1]);
@@ -266,6 +291,18 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
         const slot: i32 = @intCast(if (turned) chain.len - 1 - i else i);
         try out.append(gpa, .{ at + dir * (slot + 1), row });
     }
+}
+
+/// The net on block `d`'s output, as its definition names its ports
+/// (`library.portRole`); null for anything else.
+fn outputNet(nl: *const Netlist, d: u32) ?u32 {
+    const def = nl.defOf(EdgeId.from(d)) orelse return null;
+    const pins = nl.graph.members(EdgeId.from(d));
+    if (def.ports.len != pins.len) return null;
+    for (pins, def.ports) |p, name| {
+        if (library.portRole(def.ports, name) == .out) return p.index();
+    }
+    return null;
 }
 
 /// A column strictly between `lo` and `hi` runs through `row`: one of its

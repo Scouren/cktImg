@@ -99,7 +99,9 @@ on a device overrides the relations on it.
   symbol. `*@ role <net> ground` names another, with ground symbols.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
-  box, and `*@ expand` draws the devices instead.
+  box, and `*@ expand` draws the devices instead. With no such line:
+  supplies on top, grounds and bias lines (`vb`, `vb1`, ...) below, an
+  output (`out*`, `vout*`, `vo`, `vop`, `von`, `o`) right, the rest left.
   A circuit of only amplifier blocks and two-pin parts is drawn along its
   signal (inverting input on top, feedback over the block, input part level
   with its pin), not on the lattice. The amplifier is known by its port

@@ -1501,3 +1501,41 @@ test "sketch: a supply bar runs on past its outer pins, so its ends are T's; rai
     try std.testing.expectEqual([2]i32{ @min(e1, e3), @max(e1, e3) }, extent(&ended, netOf(&ended, "vdd")));
     try std.testing.expectEqual(2, bends(&ended, netOf(&ended, "vdd")));
 }
+
+test "sketch: a block stands left of the transistor whose gate it drives" {
+    // Oracle: the hand drawings. Of 487 blocks whose output net holds a
+    // transistor's gate in the 5,263 reference drawings, 346 stand left of
+    // that transistor (71%), 100 right. A regulator's error amplifier stood
+    // right of its pass device, its output led back over the top.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck =
+        \\A regulator
+        \\.model nch nmos
+        \\.subckt amp vdd vss vb1 vp vn vo
+        \\R1 vp vo 1k
+        \\R2 vn vo 1k
+        \\R3 vb1 vo 1k
+        \\.ends
+        \\MNP vin net0 vout vout nch
+        \\R1 vout fb 1k
+        \\R2 fb vss 1k
+        \\X1 vdd vss vb1 vref fb net0 amp
+        \\
+    ;
+    const p = try draw(arena, lib, &.{deck}, .{});
+    // The block's output pin (port order: vdd, vss, vb1, vp, vn, vo) and
+    // the pass device's gate (d, g, s). The amplifier's first port that is
+    // no rail is a bias line: its place came from that one's role.
+    const out = pinOf(&p, "x1", 5);
+    const gate = pinOf(&p, "mnp", 1);
+    try std.testing.expect(out.x < gate.x);
+    try std.testing.expect(gate.x < pinOf(&p, "mnp", 0).x);
+    try std.testing.expectEqual(out.y, gate.y);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
