@@ -183,6 +183,47 @@ test "lines: order splits a column the engine would make, and keeps the sides it
     try std.testing.expect(r.at("m1").x < r.at("m3").x);
 }
 
+test "lines: order stands the bridges it names one after another in that order, and joins two lines on one bridge" {
+    // Oracle: the line's own statement, read off the drawing: each device
+    // named stands left of the next. A bridge was set between the nearest
+    // columns its line names and no more, so two bridges named in a row
+    // stood as the engine had them, and the line was reported `relaxed
+    // not_drawn` (found hinting a hand-drawn circuit; `zig build fuzz` now
+    // writes order lines of up to five names).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\Two parts between two columns
+        \\.model nch nmos level=1
+        \\Vdd vdd 0 1.8
+        \\R3 vdd a 1k
+        \\R4 vdd b 1k
+        \\M1 a in1 0 0 nch
+        \\M2 b in2 0 0 nch
+        \\R1 a b 1k
+        \\C1 a b 1p
+        \\
+    ;
+    for ([_][]const u8{ "*@ order m1 r1 c1 m2", "*@ order m1 c1 r1 m2", "*@ order c1 r1", "*@ order r1 c1" }) |text| {
+        const r = try run(f.arena(), f.lib, deck, try std.mem.concat(f.arena(), u8, &.{ "*@ bridge r1 c1\n", text, "\n" }));
+        try expectState(r.verdict(text), .honoured, .ok);
+        var names = std.mem.tokenizeScalar(u8, text["*@ order ".len..], ' ');
+        var last: ?i32 = null;
+        while (names.next()) |name| {
+            if (last) |x| try std.testing.expect(x < r.at(name).x);
+            last = r.at(name).x;
+        }
+    }
+    // Two lines on one bridge: the column the second names stands between
+    // the columns the first does.
+    const both = try run(f.arena(), f.lib, deck, "*@ bridge r1 c1\n*@ order m1 r1 c1 m2\n*@ order r1 r3 c1\n");
+    try expectState(both.verdict("*@ order m1 r1 c1 m2"), .honoured, .ok);
+    try expectState(both.verdict("*@ order r1 r3 c1"), .honoured, .ok);
+    for ([_][2][]const u8{ .{ "m1", "r1" }, .{ "r1", "r3" }, .{ "r3", "c1" }, .{ "c1", "m2" } }) |pair| {
+        try std.testing.expect(both.at(pair[0]).x < both.at(pair[1]).x);
+    }
+}
+
 test "lines: symmetry off leaves no mates; symmetric refuses what no symmetry swaps; axis pins a device on it" {
     var f = try Fixture.init();
     defer f.deinit();
@@ -281,6 +322,25 @@ test "lines: label names a net, wire wires one, port and rail set their symbols"
     const one = try run(f.arena(), f.lib, dividers, "*@ rail 0 bar\n");
     try expectState(one.verdict("*@ rail 0 bar"), .honoured, .ok);
     try std.testing.expect(one.symbols("0") < each.symbols("0"));
+}
+
+test "lines: a port asked along its net's own wire is not drawn back over it" {
+    // Oracle: the netlister's reading (`run` checks every net is one
+    // piece). An input between two pins of one column is an upright wire;
+    // `port in top` sent the port's stub back up that wire, which reads as
+    // two pieces (found by `zig build fuzz`). The line has no room and
+    // says so; the port goes out sideways.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\An input down a column
+        \\.model nch nmos level=1
+        \\Vin in 0 ac 1
+        \\M2 vdd b in 0 nch
+        \\
+    ;
+    const r = try run(f.arena(), f.lib, deck, "*@ weak port in top\n*@ weak role 0 bias\n");
+    try expectState(r.verdict("*@ weak port in top"), .relaxed, .no_room);
 }
 
 test "lines: a malformed line, an unknown name or verb are rejected" {

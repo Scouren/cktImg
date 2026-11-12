@@ -172,7 +172,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     for (0..thin_rounds + 1) |round| {
         try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, &xy);
         const mirror = drawnMirror(s, sk, st);
-        if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
+        if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
         wipe(s, &xy);
     }
     try noConnects(gpa, s);

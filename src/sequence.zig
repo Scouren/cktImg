@@ -4,12 +4,16 @@
 //! the columns reordered, bridges set between their neighbours (and on the
 //! rows `row` lines give them), and a verdict per line.
 //!
-//! An order line's column devices give edges "left of", admitted strongest
-//! first; a line that closes a cycle is dropped with its preferred conflict.
-//! Devices one line names stand in different columns, so a link the engine
-//! would make between them is not made. A line on mated devices also states
-//! its mirror image (reversed), weighed after every line and kept where it
-//! fits; the columns' order then drops the mates it no longer mirrors.
+//! Each two neighbours of an order line are a pair "left of", admitted
+//! strongest first; a line that closes a cycle is dropped with its preferred
+//! conflict. Column devices a path of pairs joins through bridges alone
+//! stand in that order (two lines on one bridge order the columns either
+//! names), and devices one line names stand in different columns, so a link
+//! the engine would make between them is not made. A bridge stands right of
+//! every device before it and left of every one after it. A line on mated
+//! devices also states its mirror image (reversed), weighed after every
+//! line and kept where it fits; the columns' order then drops the mates it
+//! no longer mirrors.
 //!
 //! Contents:
 //! - `pub const Sequence = struct`, `Sequence.refuses(s: *const Sequence, gpa: Allocator, above: []const u32, u: u32, l: u32) Allocator.Error!bool`
@@ -35,11 +39,10 @@ const none = structure.none;
 pub const Sequence = struct {
     /// `[a, b]`: column device a's column left of b's.
     left: []const [2]u32,
-    /// Per bridge an order line places: its nearest column devices before
-    /// and after it in the line (`none` at an end); `{none, none}` for the
-    /// rest.
-    between: []const [2]u32,
-    /// Per bridge so placed: the line that placed it, or `none`.
+    /// `[a, b]`: device a left of b, each two neighbours of an admitted
+    /// line and of its mirror image where that fits.
+    pairs: []const [2]u32,
+    /// Per bridge a line names: the line, or `none`.
     placed_by: []const u32,
 
     /// Whether linking `u` over `l` (with the columns `above` holds so far)
@@ -110,9 +113,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     const check: Check = .{ .gpa = gpa, .own = own, .form = form };
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
-    var left: std.ArrayList([2]u32) = .empty;
-    const between = try arena.alloc([2]u32, n);
-    @memset(between, .{ none, none });
+    var pairs: std.ArrayList([2]u32) = .empty;
     const placed_by = try arena.alloc(u32, n);
     @memset(placed_by, none);
     var images: std.ArrayList(struct { line: u32, devices: []const u32 }) = .empty;
@@ -126,8 +127,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         verdicts[i] = .{ .state = .honoured, .code = .ok };
         const line = own[i];
-        try columnEdges(arena, form, line, &left);
-        try place(form, line, between, placed_by, i);
+        try neighbours(arena, form, line, &pairs, placed_by, i);
         // The mirror image, reversed, where every device has a mate.
         const image = try arena.alloc(u32, line.len);
         const whole = for (line, 0..) |d, k| {
@@ -142,16 +142,20 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     // admitted later stands, and the image that would close a cycle with
     // it goes.
     for (images.items) |image| {
-        const before = left.items.len;
-        try columnEdges(arena, form, image.devices, &left);
-        if (!try devicesAcyclic(gpa, n, left.items)) {
-            left.shrinkRetainingCapacity(before);
+        const before = pairs.items.len;
+        for (image.devices[0 .. image.devices.len - 1], image.devices[1..]) |a, b| try pairs.append(arena, .{ a, b });
+        if (!try devicesAcyclic(gpa, n, pairs.items)) {
+            pairs.shrinkRetainingCapacity(before);
             continue;
         }
-        try place(form, image.devices, between, placed_by, image.line);
+        for (image.devices) |d| if (form[d] != .vertical) {
+            placed_by[d] = image.line;
+        };
     }
-    assert(try devicesAcyclic(gpa, n, left.items));
-    return .{ .left = left.items, .between = between, .placed_by = placed_by };
+    assert(try devicesAcyclic(gpa, n, pairs.items));
+    const left = try columnEdges(gpa, arena, form, pairs.items);
+    assert(try devicesAcyclic(gpa, n, left));
+    return .{ .left = left, .pairs = pairs.items, .placed_by = placed_by };
 }
 
 /// Reorders the columns so every `left` edge holds, moving as little as it
@@ -193,32 +197,66 @@ pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x
 }
 
 /// Sets each bridge a `row` line names on its row, and each bridge an
-/// `order` line places strictly between its neighbours' x, on a free cell,
-/// in canonical order (`by_rank`); a bridge with no free cell there stays,
-/// its line relaxed.
+/// `order` line names right of every device before it in a line and left
+/// of every one after, on the free cell nearest its own, the bridges a
+/// line puts first placed first, then in canonical order (`by_rank`); a
+/// bridge with no free cell there stays, its line relaxed.
 pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void {
     const n = x.len;
     var taken: std.AutoHashMapUnmanaged([2]i32, void) = .empty;
     defer taken.deinit(gpa);
     for (0..n) |d| if (drawn[d]) try taken.put(gpa, .{ x[d], y[d] }, {});
     assert(by_rank.len == n);
-    for (by_rank) |b| {
+    // The last cell each bridge may take, one left of whatever a line puts
+    // after it; and how many bridges a line puts before it in a row.
+    const hi = try gpa.alloc(i32, n);
+    defer gpa.free(hi);
+    @memset(hi, std.math.maxInt(i32) / 2);
+    const depth = try gpa.alloc(u32, n);
+    defer gpa.free(depth);
+    @memset(depth, 0);
+    for (0..n + 1) |round| {
+        var changed = false;
+        for (s.pairs) |e| {
+            if (form[e[0]] == .vertical) continue;
+            const cap = (if (form[e[1]] == .vertical) x[e[1]] else hi[e[1]]) - 1;
+            if (cap < hi[e[0]]) {
+                hi[e[0]] = cap;
+                changed = true;
+            }
+            if (form[e[1]] != .vertical and depth[e[1]] <= depth[e[0]]) {
+                depth[e[1]] = depth[e[0]] + 1;
+                changed = true;
+            }
+        }
+        if (!changed) break;
+        assert(round < n); // the pairs have no cycle
+    }
+    const order = try gpa.dupe(u32, by_rank);
+    defer gpa.free(order);
+    std.sort.insertion(u32, order, depth, struct {
+        fn lt(dep: []const u32, a: u32, b: u32) bool {
+            return dep[a] < dep[b];
+        }
+    }.lt);
+    for (order) |b| {
         if (!drawn[b] or form[b] == .vertical) continue;
         const r = bridge_row[b];
-        const nb = s.between[b];
-        if (r == none and nb[0] == none and nb[1] == none) continue;
-        const want_y = if (r != none) y[r] else y[b];
         var lo: i32 = std.math.minInt(i32) / 2;
-        var hi: i32 = std.math.maxInt(i32) / 2;
-        if (nb[0] != none) lo = x[nb[0]] + 1;
-        if (nb[1] != none) hi = x[nb[1]] - 1;
-        const want_x = std.math.clamp(x[b], lo, @max(lo, hi));
+        var named = false;
+        for (s.pairs) |e| {
+            if (e[1] == b) lo = @max(lo, x[e[0]] + 1);
+            named = named or e[0] == b or e[1] == b;
+        }
+        if (r == none and !named) continue;
+        const want_y = if (r != none) y[r] else y[b];
+        const want_x = std.math.clamp(x[b], lo, @max(lo, hi[b]));
         _ = taken.remove(.{ x[b], y[b] });
         // The free cell nearest the wanted one, within the bounds.
         const at: ?[2]i32 = for (0..@as(usize, @intCast(2 * n + 2))) |step| {
             const off: i32 = @intCast((step + 1) / 2);
             const cx = if (step % 2 == 0) want_x + off else want_x - off;
-            if (cx < lo or cx > hi) continue;
+            if (cx < lo or cx > hi[b]) continue;
             if (!taken.contains(.{ cx, want_y })) break .{ cx, want_y };
         } else null;
         if (at) |a| {
@@ -243,37 +281,41 @@ fn top(above: []const u32, d0: u32) u32 {
     return d;
 }
 
-/// The "left of" edges of a line's column devices, each to the next.
-fn columnEdges(arena: Allocator, form: []const Form, line: []const u32, out: *std.ArrayList([2]u32)) !void {
-    var prev: u32 = none;
-    for (line) |d| {
-        if (form[d] != .vertical) continue;
-        if (prev != none) try out.append(arena, .{ prev, d });
-        prev = d;
-    }
+/// Each two neighbours of `line` as a pair, and its bridges as named by
+/// line `i`.
+fn neighbours(arena: Allocator, form: []const Form, line: []const u32, pairs: *std.ArrayList([2]u32), placed_by: []u32, i: u32) !void {
+    assert(line.len >= 2);
+    for (line[0 .. line.len - 1], line[1..]) |a, b| try pairs.append(arena, .{ a, b });
+    for (line) |d| if (form[d] != .vertical) {
+        placed_by[d] = i;
+    };
 }
 
-/// Each bridge of `line` between its nearest column devices in it.
-fn place(form: []const Form, line: []const u32, between: [][2]u32, placed_by: []u32, i: u32) !void {
-    for (line, 0..) |b, k| {
-        if (form[b] == .vertical) continue;
-        var l: u32 = none;
-        var r: u32 = none;
-        var j = k;
-        while (j > 0) {
-            j -= 1;
-            if (form[line[j]] == .vertical) {
-                l = line[j];
-                break;
+/// The "left of" edges among column devices: each to every column device
+/// a path of `pairs` reaches from it through bridges alone.
+fn columnEdges(gpa: Allocator, arena: Allocator, form: []const Form, pairs: []const [2]u32) ![]const [2]u32 {
+    var out: std.ArrayList([2]u32) = .empty;
+    var todo: std.ArrayList(u32) = .empty;
+    defer todo.deinit(gpa);
+    var seen: std.ArrayList(u32) = .empty;
+    defer seen.deinit(gpa);
+    for (pairs) |e| {
+        if (form[e[0]] != .vertical) continue;
+        seen.clearRetainingCapacity();
+        try todo.append(gpa, e[1]);
+        // Each device once a pair: at most `pairs.len + 1` of them.
+        while (todo.pop()) |d| {
+            if (std.mem.indexOfScalar(u32, seen.items, d) != null) continue;
+            try seen.append(gpa, d);
+            assert(seen.items.len <= pairs.len + 1);
+            if (form[d] == .vertical) {
+                try out.append(arena, .{ e[0], d });
+                continue;
             }
+            for (pairs) |f| if (f[0] == d) try todo.append(gpa, f[1]);
         }
-        for (line[k + 1 ..]) |d| if (form[d] == .vertical) {
-            r = d;
-            break;
-        };
-        between[b] = .{ l, r };
-        placed_by[b] = i;
     }
+    return out.items;
 }
 
 fn separated(s: *const Sequence, column_of: []const u32, a: u32, b: u32) bool {

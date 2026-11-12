@@ -362,7 +362,23 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, y_t: i32, 
     @memset(paired, false);
     const sides = s.pins.items(.side);
     const q = @max(1, @divFloor(gap, 4));
-    if (rungs) for (pins, 0..) |p, i| {
+    // From the right, then the top: the pin nearest one facing back takes
+    // it, whatever the order of the cards.
+    const from_right = try gpa.alloc(usize, pins.len);
+    defer gpa.free(from_right);
+    for (from_right, 0..) |*o, i| o.* = i;
+    const ByPlace = struct {
+        s: *const Schematic,
+        pins: []const u32,
+        fn lt(ctx: @This(), x: usize, y: usize) bool {
+            const a = pinAt(ctx.s, ctx.pins[x]);
+            const b = pinAt(ctx.s, ctx.pins[y]);
+            return a.x > b.x or (a.x == b.x and a.y < b.y);
+        }
+    };
+    std.sort.insertion(usize, from_right, ByPlace{ .s = s, .pins = pins }, ByPlace.lt);
+    if (rungs) for (from_right) |i| {
+        const p = pins[i];
         const a = pinAt(s, p);
         if (sides[p] != .right or a.y == y_t) continue;
         // The nearest pin facing back along the row.

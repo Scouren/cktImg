@@ -15,7 +15,7 @@
 //! - `Canvas.commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool`, `Canvas.fits(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
 //! - `Canvas.wall(c: *Canvas) void`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
-//! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`
+//! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`, `Canvas.onNet(c: *const Canvas, net: u32, at: Pt) bool`
 //! - `Canvas.middle2(c: *const Canvas) i32`
 //! - `Canvas.save(c: *const Canvas) Checkpoint`, `Canvas.restore(c: *Canvas, cp: Checkpoint) void`
 //! - `pub const Line = struct`, `Line.of(pts: []const Pt) Line`, `Line.push(l: *Line, p: Pt) void`, `Line.slice(l: *const Line) []const Pt`
@@ -208,15 +208,19 @@ pub const Canvas = struct {
         try c.leaf(.label, net, if (stub) end else at, side.opposite());
     }
 
-    /// An output's or input's port on a stub out from `from` toward `side`. When the
-    /// stub does not fit, a label at `from`, or at the net's top-left pin when
-    /// `from` is where another net's wire crosses (a label there would join
-    /// the two).
+    /// An output's or input's port on a stub out from `from` toward `side`,
+    /// or toward the side a `port` line asks unless that stub would run back
+    /// along the net's own wire. When the stub does not fit, a label at
+    /// `from`, or at the net's top-left pin when `from` is where another
+    /// net's wire crosses (a label there would join the two).
     pub fn port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void {
         assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
-        const toward = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
+        const asked = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
+        // A stub over the net's own wire is no stub: a netlister reads the
+        // two as apart.
+        const toward = if (c.onNet(net, stepPt(from, asked, c.len.terminal))) side else asked;
         const end = stepPt(from, toward, c.len.terminal);
-        if (try c.commit(net, &.{ from, end })) {
+        if (!c.onNet(net, end) and try c.commit(net, &.{ from, end })) {
             try c.leaf(.terminal, net, end, toward.opposite());
         } else if (c.fits(net, from, from)) {
             try c.leaf(.label, net, from, toward.opposite());
@@ -231,6 +235,12 @@ pub const Canvas = struct {
             }
             try c.labelAt(first.?);
         }
+    }
+
+    /// Whether `at` is on a wire of `net` drawn so far.
+    pub fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
+        for (c.segs.items) |g| if (g.net == net and Rect.fromCorners(g.a, g.b).contains(at)) return true;
+        return false;
     }
 
     /// Twice the middle of the devices, along x.

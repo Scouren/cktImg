@@ -128,7 +128,11 @@ gives each a verdict (`hints.Verdict`): honoured, relaxed, dropped (with
   bridge a `row` line names takes that row. `order` puts columns left to
   right (`sequence.zig`): devices one line names stand in different
   columns, the columns are reordered by a stable topological sort, and a
-  bridge goes between its neighbours. Each also states its mirror image on
+  bridge goes between its neighbours: right of every device a line names
+  just before it and left of every one just after, bridges named in a row
+  in that order; two lines on one bridge order the columns either names
+  (`order a b` and `order b c` with `b` a bridge put `a`'s column left of
+  `c`'s). Each also states its mirror image on
   mated devices, kept where it fits; a mate an order line moves off its
   mirror is dropped. `label`, `wire [ladder|trunk|route]`, `port`, `rail
   bar|each` and `first` set how a net is drawn (`netlines.zig`): a `wire`

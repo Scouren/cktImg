@@ -19,7 +19,7 @@
 //! thinned net's mirror image goes with it.
 //!
 //! Contents:
-//! - `pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool`
+//! - `pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, rank: []const u32, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -37,11 +37,12 @@ const cut_max = 2;
 
 /// Takes each net whose wires in `routes` cross more than `max` wires of
 /// other nets (rails aside) one step further from a whole wire, the worst
-/// first (the lower net on a tie), counting again without it: `auto` to
-/// `cut`, a net already `cut` to `label`; and its image in `net_mate` with
-/// it. Whether any was. `gpa` backs the work.
-pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool {
-    assert(roles.len == style.len);
+/// first (on a tie the net first in `rank`, the nets' canonical order, so
+/// the order of the cards chooses nothing), counting again without it:
+/// `auto` to `cut`, a net already `cut` to `label`; and its image in
+/// `net_mate` with it. Whether any was. `gpa` backs the work.
+pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, rank: []const u32, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool {
+    assert(roles.len == style.len and rank.len == style.len);
     // One entry per point where two nets' wires cross.
     var pairs: std.ArrayList([2]u32) = .empty;
     defer pairs.deinit(gpa);
@@ -67,7 +68,7 @@ pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, net_mate
         var worst: u32 = none;
         for (count, 0..) |k, net| {
             if (k <= (if (style[net] == .cut) cut_max else max) or !steps(roles[net], style[net], gone[net])) continue;
-            if (worst == none or k > count[worst]) worst = @intCast(net);
+            if (worst == none or k > count[worst] or (k == count[worst] and rank[net] < rank[worst])) worst = @intCast(net);
         }
         if (worst == none) break;
         any = true;
@@ -120,26 +121,32 @@ test "name: the net crossing the most wires is named first, and the count taken 
     }.f;
     const routes = [_]Route{ level(0, 5), upright(1, 10, 30), upright(2, 20, 10), upright(3, 30, 10), level(4, 20) };
     const roles: [5]Role = @splat(.internal);
+    const rank = [5]u32{ 0, 1, 2, 3, 4 };
     var style: [5]Style = @splat(.auto);
     // Net 0 crosses three wires, net 1 two, the rest one each.
-    try std.testing.expect(!try name(gpa, &routes, &roles, null, 3, &style));
-    try std.testing.expect(try name(gpa, &routes, &roles, null, 2, &style));
+    try std.testing.expect(!try name(gpa, &routes, &roles, &rank, null, 3, &style));
+    try std.testing.expect(try name(gpa, &routes, &roles, &rank, null, 2, &style));
     try std.testing.expectEqualSlices(Style, &.{ .cut, .auto, .auto, .auto, .auto }, &style);
     // Still over when counted again (the same wires): named at every pin.
-    try std.testing.expect(try name(gpa, &routes, &roles, null, 2, &style));
+    try std.testing.expect(try name(gpa, &routes, &roles, &rank, null, 2, &style));
     try std.testing.expectEqualSlices(Style, &.{ .label, .auto, .auto, .auto, .auto }, &style);
     // A budget of one: net 0 goes, and net 1 then crosses net 4 alone.
     style = @splat(.auto);
-    try std.testing.expect(try name(gpa, &routes, &roles, null, 1, &style));
+    try std.testing.expect(try name(gpa, &routes, &roles, &rank, null, 1, &style));
     try std.testing.expectEqualSlices(Style, &.{ .cut, .auto, .auto, .auto, .auto }, &style);
-    // None: net 0, then net 1 (or 4: the lower on a tie).
+    // None: net 0, then net 1 (or 4: the first in rank on a tie).
     style = @splat(.auto);
-    try std.testing.expect(try name(gpa, &routes, &roles, null, 0, &style));
+    try std.testing.expect(try name(gpa, &routes, &roles, &rank, null, 0, &style));
     try std.testing.expectEqualSlices(Style, &.{ .cut, .cut, .auto, .auto, .auto }, &style);
+    // The rank breaks the tie, not the net's number: the same deck with
+    // its cards in another order numbers its nets otherwise.
+    style = @splat(.auto);
+    try std.testing.expect(try name(gpa, &routes, &roles, &.{ 0, 4, 2, 3, 1 }, null, 0, &style));
+    try std.testing.expectEqualSlices(Style, &.{ .cut, .auto, .auto, .auto, .cut }, &style);
     // A net a line wires keeps its wire.
     style = .{ .wire, .auto, .auto, .auto, .auto };
-    try std.testing.expect(!try name(gpa, &routes, &roles, null, 2, &style));
+    try std.testing.expect(!try name(gpa, &routes, &roles, &rank, null, 2, &style));
     // Crossing a rail's wire costs nothing: net 0 crosses two others.
     style = @splat(.auto);
-    try std.testing.expect(!try name(gpa, &routes, &.{ .internal, .supply, .internal, .internal, .internal }, null, 2, &style));
+    try std.testing.expect(!try name(gpa, &routes, &.{ .internal, .supply, .internal, .internal, .internal }, &rank, null, 2, &style));
 }

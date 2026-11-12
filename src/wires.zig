@@ -268,19 +268,13 @@ fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u
         off.clearRetainingCapacity();
         var anchor: ?u32 = null;
         for (pins_of[net].items) |p| {
-            if (onNet(c, @intCast(net), pinAt(c.s, p))) {
+            if (c.onNet(@intCast(net), pinAt(c.s, p))) {
                 anchor = anchor orelse p;
             } else try off.append(gpa, p);
         }
         // A route ends on a pin and a via starts at one: some pin is on it.
         try routes.attach(c, @intCast(net), off.items, anchor.?);
     }
-}
-
-/// Whether `at` lies on one of `net`'s wires.
-fn onNet(c: *const Canvas, net: u32, at: Pt) bool {
-    for (c.segs.items) |g| if (g.net == net and Rect.fromCorners(g.a, g.b).contains(at)) return true;
-    return false;
 }
 
 /// A net joined by name between its parts: the pins standing near each

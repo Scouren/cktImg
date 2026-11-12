@@ -142,7 +142,14 @@ fn randomLines(r: std.Random, w: *std.Io.Writer, devices: u32, nets: []const []c
         switch (r.intRangeAtMost(u32, 0, 20)) {
             0 => try w.print("above {s} {s} {s}\n", .{ &a, &b, &c }),
             1 => try w.print("row {s} {s}\n", .{ &a, &b }),
-            2 => try w.print("order {s} {s} {s}\n", .{ &a, &b, &c }),
+            // Two to five names: a run of bridges between two columns is
+            // ordered too (an `order` of three never held two in a run
+            // with a column either side).
+            2 => {
+                try w.print("order {s} {s}", .{ &a, &b });
+                for (0..r.intRangeAtMost(u32, 0, 3)) |_| try w.print(" {s}", .{&dev(r, devices, letters)});
+                try w.writeAll("\n");
+            },
             3 => try w.print("face {s} g {s}\n", .{ &a, if (r.boolean()) "left" else "right" }),
             4 => try w.print("face {s} {s} up\n", .{ &a, if (r.boolean()) "a" else "d" }),
             5 => try w.writeAll("symmetry off\n"),
