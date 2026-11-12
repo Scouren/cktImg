@@ -64,6 +64,13 @@ on a device overrides the relations on it.
   engine's choices as lines, cells and places as `weak` stays; a pasted line
   holds that choice, an edited one changes it. The deck plus every line and
   `*@ grouping off` draws the same picture.
+- **Relaying.** After editing a deck you already drew (or moving devices in
+  its `d.json`), draw with `--from d.json`: devices stay where that drawing
+  has them, and only what the deck's structure now puts elsewhere, or is
+  new, is laid again. An unchanged deck gives the same bytes. `*@ weak at
+  <dev> <x> <y> [turn]` lines are the same stays written by hand; they
+  anchor the device's column and row, where a strong `*@ at` fixes the
+  device itself.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
   `weak` one (a stay). `requests` gives each line a state: `honoured`;

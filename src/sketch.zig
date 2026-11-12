@@ -32,6 +32,7 @@ const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
 const compact = @import("compact.zig");
+const relay = @import("relay.zig");
 const config = @import("config.zig");
 
 const Netlist = netlist.Netlist;
@@ -104,6 +105,14 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
             p.* = .{ @floatFromInt(geo.xs[@intCast(sk.x[d])]), @floatFromInt(geo.ys[@intCast(sk.y[d])]) };
             placed_all = placed_all and ats[d] != null;
         };
+        // A drawing relaid: its stays anchor the lattice's lines, and only
+        // what the deck's structure no longer puts there is laid again.
+        const weak = try gpa.alloc(bool, nl.hints.len);
+        defer gpa.free(weak);
+        for (weak, nl.hints) |*w, h| w.* = h.weak and h.verb == .at;
+        if (std.mem.indexOfScalar(bool, weak, true) != null) {
+            placed_all = try relay.place(gpa, s, sk, weak, geo.xs, geo.ys, ats, at);
+        }
     }
     var xy: std.ArrayList([2]f32) = .empty;
     // Closed up: the drawing as the engine alone makes it (the deck's `at`,

@@ -301,8 +301,25 @@ devices' places are kept: the wires are then drawn again on them, through
 the canvas, so every guarantee of §6 holds of the closed drawing as of the
 lattice's. Where two symbols would overlap after closing, the lattice's
 places stand. A deck that places every device itself (`*@ at`) is not
-closed up: its places are already the answer, which is what makes a
-drawing's exported lines draw it again (§6) and a relaid drawing cheap.
+closed up: its places are already the answer.
+
+**Relaying** (`relay.zig`, when the deck has `weak at` stays: a previous
+drawing's places, which `cktimg-json --from` reads out of its JSON). The
+drawing is not made again; the stays are set against the lattice the deck
+gives now. A lattice column keeps its x when its stays agree on one, and
+the columns that keep theirs stand in the skeleton's order: the heaviest
+such set, by devices (a longest increasing subsequence); rows likewise.
+Everything else is the **radius of change** and is laid again: a device
+new to the deck, one the structure now puts on another line (a pair it
+mirrors, a row it joins). A line with no place of its own stands the
+lattice's pitch after the line before it, and where that leaves no room
+the lines after it move along as one, so a mirrored drawing stays
+mirrored. A device's turn is always the skeleton's: one the structure
+turns is turned where it stands. No scratch drawing is wired and nothing
+is closed up, so a relaid drawing is wired once; a deck that did not
+change gets its drawing back exactly (§6, the fixed point). Should two
+symbols overlap, the stays are let go and the deck is laid afresh. The
+wires are all drawn again: only places are carried over.
 
 **The canvas** (`canvas.zig`) is what is drawn so far, and its `commit` the
 one way to draw a wire. A wire is drawn only where it fits: through no
@@ -443,7 +460,7 @@ through a device or touching another net is a label at its pins.
 | R1–R3, O0 | `tests/cases.zig`: `R1 roles by net name`, `R2 a net driven from ground…`, `R3 drivers of terminal nets are not drawn`, `O0 hidden pins…`; `tests/api.zig`: `placed: a driver stands apart…` |
 | structure, hints | `tests/structure.zig`: `structure: each golden figure's symmetry and blocks`, `structure: the order of the cards changes nothing`, `hints: a hinted group stands as written…`, `hints: nogroup keeps a device out of every group…`, `hints: a name the deck does not have…`; `src/hints.zig`: `read: the forms, weak…`, `admitOrder: strong before weak…` |
 | skeleton | `tests/skeleton.zig`: `skeleton: each golden figure's cells score what is recorded`, `skeleton: the order of the cards changes no cell`, `skeleton: a symmetric circuit stands as its exact mirror image`, `skeleton: a stack hint picks the link its column keeps` |
-| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: closing up reorders nothing, widens nothing…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
+| drawing | `tests/sketch.zig`: `sketch: every drawing keeps its devices, is connected, and shorts nothing`, `sketch: every AnalogIOC cell…`, `sketch: a symbol set whose unit is under four…`, `sketch: closing up reorders nothing, widens nothing…`, `lines: a deck relaid from its last drawing lays again only what its structure moved`, `relay.zig`: `axis: kept lines stay…`, `sketch: a net crossing its own wire is joined there, with a dot`, `sketch: lengths space the drawing and move nothing to another row or column`, `` sketch: `stack` lengthens the wire…``; `tests/report.zig`: `report: a deck plus its exported decisions…`, `report: the five-transistor OTA's report…`; `src/maze.zig`: `maze: …` (4); `src/canvas.zig`: `lengths: units scale…`; `src/config.zig`: `config: …` (3) |
 | lines | `tests/lines.zig`: each verb drawn as it says and each refusal's verdict (`above`/`row`/`weak`, `face` mirrored, `order` splitting a column, the symmetry verbs, `role`/`driver`/`class`, `kind`/`expand`, the net lines, malformed and unbuilt lines); `tests/steering.zig`: each golden figure's lines draw it in full, every line honoured, none redundant; `tests/report.zig`: the fixed point at rungs 1 and 2; `zig build fuzz`: random lines on random netlists |
 | the book | `tests/golden.zig`: `golden: every figure scores what is recorded`, `golden: the score sees a device the figure moves…`, `golden: the drawing does not depend on the order of the cards` |
 | suite | `tests/cases.zig`: `textbook: the same deck draws the same picture`, `random netlists: they end…` |

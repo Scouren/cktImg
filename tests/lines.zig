@@ -354,3 +354,78 @@ test "lines: route pins a net's wire from one of its pins; one off its pins is r
     const w = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ via, "\n" }));
     try expectState(w.verdict(via), .honoured, .ok);
 }
+
+const half =
+    \\Half an OTA
+    \\.model nch nmos level=1
+    \\.model pch pmos level=1
+    \\Vdd vdd 0 1.8
+    \\Vin1 vin1 0 dc 0.9 ac 1
+    \\Vb vb 0 0.7
+    \\M1 f vin1 p 0 nch
+    \\M3 f f vdd vdd pch
+    \\M5 p vb 0 0 nch
+    \\
+;
+
+/// The `weak at` stays of drawing `r`: where it has each device.
+fn staysOf(arena: std.mem.Allocator, r: *const Run, unit: i32) ![]const u8 {
+    var out: std.ArrayList(u8) = .empty;
+    for (try np.report.decisions(arena, &r.nl, &r.st, &r.sk, &r.p, unit, 4)) |line| {
+        if (std.mem.startsWith(u8, line, "*@ weak at ")) try out.print(arena, "{s}\n", .{line});
+    }
+    return out.items;
+}
+
+test "lines: a deck relaid from its last drawing lays again only what its structure moved" {
+    // Oracles: the deck laid afresh (every two devices stand in the same
+    // order along x and y: the relaid drawing shows the same structure),
+    // the last drawing (a device outside the radius of change is where it
+    // was), and the circuit's own symmetry. `run` checks the guarantees.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const Case = struct { was: []const u8, now: []const u8, moved: usize };
+    for ([_]Case{
+        // Nothing changed: nothing moves.
+        .{ .was = ota, .now = ota, .moved = 0 },
+        // A load on the output stands beside the circuit: nothing moves.
+        .{ .was = ota, .now = ota ++ "Cl vout 0 1p\n", .moved = 0 },
+        // The other half makes the circuit symmetric: the tail moves onto
+        // the axis, the first half stays.
+        .{ .was = half, .now = ota, .moved = 1 },
+    }) |c| {
+        const was = try run(f.arena(), f.lib, c.was, "");
+        const fresh = try run(f.arena(), f.lib, c.now, "");
+        const r = try run(f.arena(), f.lib, c.now, try staysOf(f.arena(), &was, f.lib.unit));
+        var moved: usize = 0;
+        for (r.p.dev_name, 0..) |name, d| {
+            if (name.len == 0) continue;
+            const at = r.p.dev_pos[d];
+            for (was.p.dev_name, was.p.dev_pos) |n, p| {
+                if (std.mem.eql(u8, n, name) and was.sk.drawn[was.nl.device(n).?.index()]) moved += @intFromBool(!p.eql(at));
+            }
+            for (r.p.dev_name[d + 1 ..], d + 1..) |other, e| {
+                if (other.len == 0) continue;
+                const a = fresh.at(name);
+                const b = fresh.at(other);
+                try std.testing.expectEqual(std.math.order(a.x, b.x), std.math.order(at.x, r.p.dev_pos[e].x));
+                try std.testing.expectEqual(std.math.order(a.y, b.y), std.math.order(at.y, r.p.dev_pos[e].y));
+                try std.testing.expect(!r.p.deviceRect(f.lib, d).intersects(r.p.deviceRect(f.lib, e)));
+            }
+        }
+        if (moved != c.moved) for (r.p.dev_name, r.p.dev_pos) |name, at| {
+            if (name.len == 0) continue;
+            std.debug.print("{s}: relaid {d},{d} fresh {d},{d}", .{ name, at.x, at.y, fresh.at(name).x, fresh.at(name).y });
+            for (was.p.dev_name, was.p.dev_pos) |n, p| if (std.mem.eql(u8, n, name)) std.debug.print(" was {d},{d}", .{ p.x, p.y });
+            std.debug.print("\n", .{});
+        };
+        try std.testing.expectEqual(c.moved, moved);
+        if (c.was.ptr != half.ptr) continue;
+        // The pair and the load level, both about the tail's drain.
+        try std.testing.expectEqual(r.at("m1").y, r.at("m2").y);
+        try std.testing.expectEqual(r.at("m3").y, r.at("m4").y);
+        try std.testing.expectEqual(r.pin("m1", 0).x + r.pin("m2", 0).x, 2 * r.pin("m5", 0).x);
+        try std.testing.expectEqual(r.pin("m3", 0).x + r.pin("m4", 0).x, 2 * r.pin("m5", 0).x);
+        try std.testing.expect(r.at("m1").eql(was.at("m1")) and r.at("m3").eql(was.at("m3")));
+    }
+}

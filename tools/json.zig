@@ -2,7 +2,7 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
@@ -13,7 +13,10 @@
 //! line's verdict, scores, the engine's decisions as `*@` lines and the
 //! lattice rows. `--decisions <rung>` prints the engine's decisions on rungs
 //! 1 to `<rung>` as `*@` lines, one per line, to stdout (the JSON then needs
-//! an output path): a deck plus them draws the same picture.
+//! an output path): a deck plus them draws the same picture. `--from
+//! last.json` relays the deck from its last drawing (this tool's JSON, as
+//! written or as someone moved things in it): only what the deck's structure
+//! no longer puts where that drawing has it is laid again (`src/relay.zig`).
 //!
 //! Two things a subcircuit library file needs and SPICE does not give it:
 //! a file whose first line is `.subckt` has no title line, so the file name
@@ -45,6 +48,9 @@ const usage =
     \\                    verdict, scores, the engine's decisions, the lattice rows
     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
     \\                    *@ lines to stdout
+    \\  --from <path>     relay the deck from its last drawing (this tool's JSON):
+    \\                    devices stay where it has them, and only what the deck's
+    \\                    structure moves, or is new to it, is laid again
     \\  -h, --help        this message
     \\
     \\Exit status: 0 written; 1 bad command line, netlist, config, symbols or manifest
@@ -61,6 +67,7 @@ const Options = struct {
     svg: ?[]const u8 = null,
     report: ?[]const u8 = null,
     decisions: ?[]const u8 = null,
+    from: ?[]const u8 = null,
 };
 
 pub fn main(init: std.process.Init) !void {
@@ -102,6 +109,14 @@ pub fn main(init: std.process.Init) !void {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
+    if (opts.from) |path| {
+        const last = cwd.readFileAlloc(io, path, arena, .limited(1 << 26)) catch |err| fatal("cannot read drawing '{s}': {t}", .{ path, err });
+        const lines = stays(arena, last, lib.unit) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => fatal("{s}: not a cktimg-json drawing", .{path}),
+        };
+        srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
+    }
     var placed = np.place(gpa, &cfg, &lib, srcs, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
@@ -172,7 +187,7 @@ pub fn main(init: std.process.Init) !void {
 
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
-fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![]const []const u8 {
+fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
     const first = std.mem.trimStart(u8, raw, " \t\r\n");
     const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
     var nl = try np.netlist.parse(gpa, &.{text}, diag);
@@ -184,6 +199,41 @@ fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const 
     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
     const roles = try portRoles(gpa, arena, &.{ body, rest }, top.ports, diag);
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ body, "\n", roles }), rest });
+}
+
+/// The `*@ weak at` stays of a drawing: one line per named device of
+/// `text` (this tool's JSON), its `pos` in units of `unit` and its turn.
+/// A device the deck no longer has, or does not draw, is a line the engine
+/// rejects and nothing more. Error: `text` is not such a document.
+fn stays(arena: Allocator, text: []const u8, unit: i32) ![]const u8 {
+    const doc = try std.json.parseFromSliceLeaky(Value, arena, text, .{});
+    if (doc != .object) return error.NotADrawing;
+    const devices = doc.object.get("devices") orelse return error.NotADrawing;
+    if (devices != .array) return error.NotADrawing;
+    var out: std.ArrayList(u8) = .empty;
+    const u: f64 = @floatFromInt(unit);
+    for (devices.array.items) |dev| {
+        if (dev != .object) return error.NotADrawing;
+        const name = dev.object.get("name") orelse return error.NotADrawing;
+        const pos = dev.object.get("pos") orelse return error.NotADrawing;
+        const rot = dev.object.get("rot") orelse return error.NotADrawing;
+        const mirror = dev.object.get("mirror") orelse return error.NotADrawing;
+        if (name != .string or pos != .array or pos.array.items.len != 2 or rot != .integer or mirror != .bool) return error.NotADrawing;
+        // A rail or port symbol the layout added: the engine places those.
+        if (name.string.len == 0 or name.string[0] == '_' or std.mem.indexOfAny(u8, name.string, " \t\r\n") != null) continue;
+        var xy: [2]f64 = undefined;
+        for (&xy, pos.array.items) |*v, c| v.* = switch (c) {
+            .integer => |i| @floatFromInt(i),
+            .float => |x| x,
+            else => return error.NotADrawing,
+        };
+        if (rot.integer < 0 or rot.integer > 3) return error.NotADrawing;
+        try out.print(arena, "*@ weak at {s} ", .{name.string});
+        // Written as `report.decisions` writes a place: whole, or to 1e-4.
+        for (xy) |v| if (@rem(v, u) == 0) try out.print(arena, "{d} ", .{v / u}) else try out.print(arena, "{d:.4} ", .{v / u});
+        try out.print(arena, "{s}{d}\n", .{ if (mirror.bool) "MR" else "R", rot.integer * 90 });
+    }
+    return out.items;
 }
 
 /// `*@ weak role` lines for the top cell's ports whose names say nothing of
@@ -343,7 +393,7 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
             std.debug.print("{s}", .{usage});
             return null;
         }
-        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else null;
+        const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;
         if (slot) |s| {
             i += 1;
             if (i >= argv.len) fatal("{s} needs a path", .{a});
@@ -470,4 +520,51 @@ test "deck: the top cell's ports that no name gives a role are inputs and output
     try std.testing.expectEqual(np.Role.output, roles[nl.net("x").?.index()]);
     try std.testing.expectEqual(np.Role.bias, roles[nl.net("vb").?.index()]); // R1's, kept
     try std.testing.expectEqual(np.Role.internal, roles[nl.net("n1").?.index()]); // no port
+}
+
+test "from: a drawing's JSON gives the stays its decisions give" {
+    // Oracle: `report.decisions`, which writes the same places from the
+    // `Placed` itself; here they are read back out of the JSON document.
+    const gpa = std.testing.allocator;
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var lib = np.Library.init(gpa);
+    defer lib.deinit();
+    var sym_diags: std.ArrayList(np.library.ZonDiagnostic) = .empty;
+    try lib.loadZon(arena, symbols, &sym_diags);
+    const deck =
+        \\Five-transistor OTA
+        \\.model nch nmos level=1
+        \\.model pch pmos level=1
+        \\Vdd vdd 0 1.8
+        \\M1 f vin1 p 0 nch
+        \\M2 vout vin2 p 0 nch
+        \\M3 f f vdd vdd pch
+        \\M4 vout f vdd vdd pch
+        \\M5 p vb 0 0 nch
+        \\
+    ;
+    var nl = try np.netlist.parse(arena, &.{deck}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
+    const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st);
+    const s = try np.layout(arena, &nl, roles, &lib, .{});
+    const p = try np.Placed.init(arena, &s, &nl);
+    var aw: Writer.Allocating = .init(arena);
+    try np.json.write(&p, &lib, &aw.writer);
+    var want: std.ArrayList(u8) = .empty;
+    for (try np.report.decisions(arena, &nl, &st, &sk, &p, lib.unit, 4)) |line| {
+        if (std.mem.startsWith(u8, line, "*@ weak at ")) try want.print(arena, "{s}\n", .{line});
+    }
+    try std.testing.expect(want.items.len > 0);
+    // The JSON also holds the driver, which the engine draws apart: its
+    // line is one the engine rejects, so it is left out of the comparison.
+    var got: std.ArrayList(u8) = .empty;
+    var lines = std.mem.tokenizeScalar(u8, try stays(arena, aw.written(), lib.unit), '\n');
+    while (lines.next()) |line| {
+        if (!std.mem.startsWith(u8, line, "*@ weak at vdd ")) try got.print(arena, "{s}\n", .{line});
+    }
+    try std.testing.expectEqualStrings(want.items, got.items);
+    try std.testing.expectError(error.NotADrawing, stays(arena, "{\"devices\": 3}", lib.unit));
 }

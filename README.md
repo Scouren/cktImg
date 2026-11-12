@@ -320,6 +320,16 @@ later line beats an earlier one, a strong one a `weak` one, and every line
 beats what the engine would decide. `--decisions 4` prints the engine's own
 decisions as these lines (cells and places as `weak` stays); a deck plus
 them draws the same picture.
+
+**Relaying a drawing.** `cktimg-json --from last.json deck.spice out.json`
+lays a deck out from its last drawing (the tool's own JSON, as written or
+with things moved in it) instead of from nothing. The engine reads the
+deck's structure as it is now and keeps every column and row that drawing
+still agrees with; only the radius of change is laid again: a device new
+to the deck, one the structure now puts elsewhere (a tail that a second
+half moves onto the mirror axis), and the lines pushed along to make room.
+A deck that did not change relays to the same bytes. A `weak at` line is
+such a stay; a strong `at` still puts a device exactly where it says.
 [`docs/research/vocabulary.md`](docs/research/vocabulary.md) has every
 verb. In a
 `.subckt`, the lines are that cell's for the Schemify import, which logs
@@ -433,7 +443,7 @@ drawn as that device; anything else becomes a block with ports `p1`..`pN`.
 ### Command line
 
 ```sh
-cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] deck.spice [out.json]
+cktimg-json   [--config lint.zon] [--symbols set.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
 cktimg-tex    [--config lint.zon] [--symbols set.zon] [--standalone] [--lint] deck.spice [out.tex]
 ```
 
