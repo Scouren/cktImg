@@ -231,8 +231,10 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         if (!drawn[d]) continue;
         const pins = c.members(EdgeId.from(d));
         if (isTwo(kind)) {
-            // Its path's ends; the switch's symbol is the taller one.
+            // Its path's ends: the reader gives every part both. The
+            // switch's symbol is the taller one.
             const path = device.of(kind).path.?;
+            assert(pins.len > path[1]);
             const t: Two = .{ .a = pins[path[0]].index(), .b = pins[path[1]].index(), .tall = kind == .vswitch or kind == .cswitch };
             p.two[d] = t;
             if (t.a != t.b) {
