@@ -29,22 +29,24 @@ const Zoir = std.zig.Zoir;
 const lint = @import("lint.zig");
 
 /// The drawing's lengths, in units, and the router's costs, in units of
-/// wire. The defaults are the look the golden figures are scored on. A
+/// wire. The defaults are the pitch people draw at (half a unit between
+/// two devices in series, a wire and a rail symbol half a unit from their
+/// pin: 5,274 hand-drawn schematics, Analog Canvas gallery). A
 /// length moves nothing to another row or column: rows, columns and order
 /// are the layout's.
 pub const Layout = struct {
     /// Between neighbouring rows: the wire between two devices of one column.
-    stack: f32 = 1.0,
+    stack: f32 = 0.5,
     /// Between neighbouring columns.
     series: f32 = 1.0,
     /// A pin to its supply or ground symbol; the supply bar over its pins.
-    rail: f32 = 1.0,
+    rail: f32 = 0.5,
     /// A pin to its input or output port.
-    terminal: f32 = 1.0,
+    terminal: f32 = 0.5,
     /// A pin to its net label.
     label: f32 = 0.5,
     /// Pins facing one way to the trunk that joins them.
-    tap: f32 = 1.0,
+    tap: f32 = 0.5,
     /// The router's room between a wire and another net's wire or point.
     clearance: f32 = 0.25,
     /// What the router pays for a bend, in wire.

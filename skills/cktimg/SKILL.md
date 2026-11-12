@@ -92,7 +92,10 @@ on a device overrides the relations on it.
   box, and `*@ expand` draws the devices instead.
 - **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
   the drawing and keep every row and column; `src/config.zig` lists each
-  with its default. The drawing is closed up to those lengths
+  with its default: a person's pitch, half a unit between stacked
+  devices and from a pin to its trunk or rail symbol (`.stack = 1, .tap = 1,
+  .rail = 1, .terminal = 1` for a roomier drawing). The drawing is closed up
+  to those lengths
   (`.compact = true`, the default); `.compact = false` keeps the roomier
   lattice, every row and column a full pitch apart. `.cross_max` (6) is the
   most other wires one internal net's wire may cross before the net is

@@ -36,7 +36,22 @@ fn placesByName(arena: std.mem.Allocator, p: *const np.Placed) ![]const Place {
     return out.items;
 }
 
-/// Device `name`'s pin `index` in `p`.
+/// `placesByName` of `deck`'s drawing `p`, the drivers aside: a driver is
+/// drawn apart from the circuit (R3) and shares no row or column with it,
+/// so which of the two stands higher says nothing of the layout.
+fn latticePlaces(arena: std.mem.Allocator, deck: []const u8, p: *const np.Placed) ![]const Place {
+    var nl = try np.netlist.parse(arena, &.{deck}, null);
+    const roles = try np.guessRoles(arena, &nl);
+    var out: std.ArrayList(Place) = .empty;
+    for (try placesByName(arena, p)) |place| {
+        const driver = for (nl.graph.edges.items(.name), 0..) |name, d| {
+            if (std.mem.eql(u8, name, place.name)) break np.schematic.isDriver(&nl.graph, roles, @intCast(d));
+        } else false;
+        if (!driver) try out.append(arena, place);
+    }
+    return out.items;
+}
+
 /// Points where a level wire of one net and an upright wire of another
 /// cross inside both.
 fn crossings(p: *const np.Placed) usize {
@@ -86,6 +101,7 @@ fn bends(p: *const np.Placed, n: usize) usize {
     return count;
 }
 
+/// Device `name`'s pin `index` in `p`.
 fn pinOf(p: *const np.Placed, name: []const u8, index: u32) np.Pt {
     for (p.dev_name, 0..) |n, d| if (std.mem.eql(u8, n, name)) return p.pin_xy[p.pinRange(d)[0] + index];
     unreachable;
@@ -217,9 +233,9 @@ test "sketch: lengths space the drawing and move nothing to another row or colum
     for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
     var bad: usize = 0;
     for (decks.items) |d| {
-        const base = try placesByName(arena, &try draw(arena, lib, &.{d[1]}, .{}));
+        const base = try latticePlaces(arena, d[1], &try draw(arena, lib, &.{d[1]}, .{}));
         const p = try draw(arena, lib, &.{d[1]}, long);
-        const wide = try placesByName(arena, &p);
+        const wide = try latticePlaces(arena, d[1], &p);
         try std.testing.expectEqual(base.len, wide.len);
         for (base, wide, 0..) |a, b, i| {
             try std.testing.expectEqualStrings(a.name, b.name);
@@ -407,8 +423,8 @@ test "sketch: closing up reorders nothing, widens nothing, and narrows the five-
     for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
     var bad: usize = 0;
     for (decks.items) |d| {
-        const lattice = try placesByName(arena, &try draw(arena, lib, &.{d[1]}, .{ .compact = false }));
-        const close = try placesByName(arena, &try draw(arena, lib, &.{d[1]}, .{ .compact = true }));
+        const lattice = try latticePlaces(arena, d[1], &try draw(arena, lib, &.{d[1]}, .{ .compact = false }));
+        const close = try latticePlaces(arena, d[1], &try draw(arena, lib, &.{d[1]}, .{ .compact = true }));
         try std.testing.expectEqual(lattice.len, close.len);
         var span: [2][2]u32 = @splat(@splat(0));
         for (lattice, close, 0..) |a, b, i| {

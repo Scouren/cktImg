@@ -294,7 +294,7 @@ fn toF(p: Pt) [2]f32 {
 }
 
 test "lengths: units scale to whole target units, at least 1" {
-    const at40 = Lengths.of(.{}, 40);
+    const at40 = Lengths.of(.{ .stack = 1 }, 40);
     try std.testing.expectEqual(40, at40.stack);
     try std.testing.expectEqual(20, at40.label);
     try std.testing.expectEqual(10, at40.clearance);

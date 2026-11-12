@@ -286,12 +286,12 @@ gets a copy node on its own line.
 
 | `.layout` key | default | the length of |
 |---|---|---|
-| `stack` | 1 | the space between neighbouring rows |
+| `stack` | 0.5 | the space between neighbouring rows |
 | `series` | 1 | the space between neighbouring columns |
-| `rail` | 1 | a pin's stub to its supply or ground symbol; the supply bar over its pins |
-| `terminal` | 1 | a pin's stub to its input or output port |
+| `rail` | 0.5 | a pin's stub to its supply or ground symbol; the supply bar over its pins |
+| `terminal` | 0.5 | a pin's stub to its input or output port |
 | `label` | 0.5 | a pin's stub to its net label |
-| `tap` | 1 | pins facing one way to the trunk that joins them |
+| `tap` | 0.5 | pins facing one way to the trunk that joins them |
 | `clearance` | 0.25 | the router's room to another net's wire or point |
 | `bend_cost` | 1 | what the router pays for a bend, in wire |
 | `cross_cost` | 2 | what the router pays to cross another net's wire, in wire |
@@ -299,7 +299,13 @@ gets a copy node on its own line.
 | `cross_max` | 6 | the most wires of other nets one internal net's wire may cross before the net is drawn as names (below) |
 
 A length moves nothing to another row or column: rows, columns and order are
-the skeleton's (tested by stretching every one).
+the skeleton's (tested by stretching every one). The defaults are a person's
+pitch: in 5,274 hand-drawn schematics two devices in series stand half a
+unit apart, pin to pin, when nothing else is on the node and about one when
+a gate or a branch joins there (two pieces of `tap`), a wire runs half a
+unit from a pin to its trunk, and a ground symbol hangs half a unit under
+its pin. `.layout = .{ .stack = 1, .rail = 1, .terminal = 1, .tap = 1 }` is
+the roomier drawing of before.
 
 **Closing up** (`compact.zig`, when `compact` is on). The lattice leaves
 room for every wire it might draw, and a drawn circuit needs less: a person
