@@ -1,3 +1,10 @@
+//! Build graph for the engine, front ends, consumer tests and codegen proof.
+//! Every generated artifact has an explicit output; checker inputs are
+//! declared files. Product targets exclude the test-only assembly probe.
+//!
+//! Contents:
+//! - `pub fn build(b: *std.Build) void`
+
 const std = @import("std");
 
 pub fn build(b: *std.Build) void {
@@ -99,6 +106,39 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(plugin_tests).step);
     test_step.dependOn(&b.addRunArtifact(fixture_tests).step);
 
+    // Fixed-target, runtime-input proof for a shared placement query.
+    // Only the test graph emits this object; product/WASM builds omit it.
+    const probe_target = b.resolveTargetQuery(.{
+        .cpu_arch = .x86_64,
+        .os_tag = .linux,
+        .cpu_model = .{ .explicit = &std.Target.x86.cpu.x86_64_v3 },
+    });
+    const probe_options = b.addOptions();
+    probe_options.addOption(bool, "latex_renderer", false);
+    probe_options.addOption(bool, "zon_config", false);
+    probe_options.addOption(bool, "c_abi", false);
+    const probe_engine = b.createModule(.{ .root_source_file = b.path("src/root.zig"), .target = probe_target, .optimize = .ReleaseFast });
+    probe_engine.addOptions("build_options", probe_options);
+    const probe = b.addObject(.{ .name = "codegen-probe", .root_module = b.createModule(.{
+        .root_source_file = b.path("tests/codegen.zig"),
+        .target = probe_target,
+        .optimize = .ReleaseFast,
+        .imports = &.{.{ .name = "NetlistParser", .module = probe_engine }},
+    }) });
+    const residue = b.addSystemCommand(&.{"python3"});
+    residue.addFileArg(b.path("tools/codegen_check.py"));
+    residue.addFileInput(b.path("tools/asm_probe.py"));
+    residue.addFileArg(probe.getEmittedAsm());
+    residue.addArgs(&.{"gen_analog_output=hand_analog_output"});
+    const probe_checks = b.addSystemCommand(&.{"python3"});
+    probe_checks.addFileArg(b.path("tools/codegen_check.py"));
+    probe_checks.addFileInput(b.path("tools/asm_probe.py"));
+    probe_checks.addArg("--self-test");
+    const codegen = b.step("test-codegen", "Check fixed-target assembly against direct implementations");
+    codegen.dependOn(&residue.step);
+    codegen.dependOn(&probe_checks.step);
+    test_step.dependOn(codegen);
+
     const fuzz = b.addExecutable(.{ .name = "fuzz", .root_module = b.createModule(.{
         .root_source_file = b.path("tests/fuzz.zig"),
         .target = target,
@@ -162,6 +202,8 @@ pub fn build(b: *std.Build) void {
 
 /// cktimg.wasm next to schemify.project (committed; `plugin cktimg path cktimg.wasm`):
 /// wasm32-freestanding, ReleaseSmall, the engine without its C ABI or ZON parser.
+// ---- private ----
+
 fn schemifyPlugin(b: *std.Build) void {
     const wasm = b.resolveTargetQuery(.{ .cpu_arch = .wasm32, .os_tag = .freestanding });
     const options = b.addOptions();

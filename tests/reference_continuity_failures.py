@@ -12,7 +12,6 @@ from pathlib import Path
 EXPECTED = [
     "reference continuity: AG2415 keeps the source VIN branch wire",
     "reference continuity: AG2428 keeps the source VIN branch wire",
-    "reference continuity: AG2436 keeps the source amplifier output gate tree",
 ]
 
 
@@ -33,7 +32,7 @@ def observed(log, exit_code):
 
 
 def checks():
-    literal = "".join(str(i + 1) + "/3 reference_continuity.test." + name +
+    literal = "".join(str(i + 1) + "/2 reference_continuity.test." + name +
                       "...diagnostic\nFAIL (TestUnexpectedResult)\n" +
                       "try testing.expect(try ink.connected(gpa, &p, &pins));\n"
                       for i, name in enumerate(EXPECTED))
@@ -41,7 +40,7 @@ def checks():
     mutations = {
         "unexpected_pass": (literal.replace("FAIL (TestUnexpectedResult)", "OK", 1), 1),
         "wrong_test_name": (literal.replace("AG2415", "AG0000", 1), 1),
-        "missing_test": (literal[:literal.index("3/3")], 1),
+        "missing_test": (literal[:literal.index("2/2")], 1),
         "different_failure": (literal.replace("TestUnexpectedResult", "OutOfMemory", 1), 1),
         "electrical_failure": (literal.replace("try testing.expect(try ink.connected(", "try support.expectConnected(", 1), 1),
         "successful_exit": (literal, 0),
@@ -52,7 +51,7 @@ def checks():
         except ValueError:
             continue
         raise AssertionError("mutation accepted: " + name)
-    return ["literal_three_physical_failures", *mutations]
+    return ["literal_two_physical_failures", *mutations]
 
 
 def main():

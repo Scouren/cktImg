@@ -16,12 +16,14 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Format | `nix develop -c zig fmt --check src tests tools build.zig build.zig.zon` | Zig formatter. |
 | Engine, API, C ABI, plugin and JSON tests | `nix develop -c zig build test -Dlatex_renderer=false --summary all` | Literal geometry, electrical connectivity, no shorts, parser examples, caller contracts and recorded source relations. |
 | TikZ option enabled | `nix develop -c zig build test -Dlatex_renderer=true --summary all` | The same contracts with renderer code included. |
+| Shared-query codegen | `nix develop -c zig build test-codegen` (also in `test`) | Runtime-input helper/direct assembly on fixed x86_64_v3 ReleaseFast; identical direct callees, no hidden tail wrappers, accepted static comparison and literal residue mutations. |
 | Random netlists | `nix develop -c zig build fuzz` | 4,000 deterministic cases checking electrical connectivity, shorts, dots, honoured hints and reversed-card determinism. |
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |
 | Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `cktimg.wasm`; size is strictly below 563,200 bytes. |
 | Real editor round trip | `python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]` | Schemify imports, netlists back and compares with `spicecmp`; omitted decks mean the complete fixture list. |
 | Full source corpus | [corpus-scorecard.md](docs/research/corpus-scorecard.md) | Exact source names and hashes, independently measured wire metrics and named structural relations. |
 | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |
+| Driven-bank physical continuity | [driven_banks_connectivity.py](docs/research/figures/driven_banks_connectivity.py), with the explicit inputs documented in [driven-banks.md](docs/research/driven-banks.md) | Every stable terminal pair on changed nets across both complete corpora, compared with actual source conductor ink; every historical mismatch is checked by name. |
 
 `zig build test` includes allocation-failure sweeps where the operation's
 contract requires rollback or unchanged caller state. Its consumer suites
@@ -82,21 +84,31 @@ source-disagreeing changes, their exact names, repeated-family dependence
 and changes to other readability measures. Electrical equivalence and a
 passing structural score do not certify human schematic equivalence.
 
+The driven-bank continuity check replays the source readers and verifies the
+complete input and reader hashes. It follows all 129 historical physical
+mismatch markers and requires the three reviewed AG2436 repairs explicitly
+through `--accept-resolved`; the other 126 remain recorded disagreements.
+Unknown source correspondences and new source regressions fail the check.
+Its nine source-supported joins do not certify symbol facing: the separate
+native-facing inventory retains the exact three unmatched gate directions.
+
 ## Manual reference-amplifier continuity gate
 
 [reference_continuity.zig](tests/reference_continuity.zig) is deliberately
-unimported while these three recorded source regressions remain unresolved.
-The ordinary green test suites do **not** cover them. The expected failure
-markers are the exact names in
+unimported while these two recorded source regressions remain unresolved.
+The repaired AG2436 gate tree now lives in the imported positive regression
+[reference_gate_tree.zig](tests/reference_gate_tree.zig); it retains the complete
+source DUT and requires one ink component joining X1.OUT, M1.G and MSEN.G.
+The ordinary green test suites do **not** cover the two remaining failures.
+The expected failure markers are the exact names in
 [reference_continuity_failures.py](tests/reference_continuity_failures.py):
 
 | Exact test name | Positive physical-source oracle |
 | --- | --- |
 | `reference continuity: AG2415 keeps the source VIN branch wire` | One ink component joins M1.S, MCHG.S and MRES.S. |
 | `reference continuity: AG2428 keeps the source VIN branch wire` | One ink component joins M1.S, M4.S and M8.S. |
-| `reference continuity: AG2436 keeps the source amplifier output gate tree` | One ink component joins X1.OUT, M1.G and MSEN.G. |
 
-All three currently fail the `ink.connected` assertion with compaction;
+Both currently fail the `ink.connected` assertion with compaction;
 electrical correctness and no-short checks pass in both compaction modes.
 [The routing study](docs/research/reference-routing.md) records the source
 ink and actual decisions. AG2434's source-separated VIN terminals remain a

@@ -53,13 +53,21 @@
 //!   do not change the canonical glyph. docs/research/reference-amplifiers.md;
 //!   `identify`, `draw`
 //!
-//! Cold, bounded work: at most eight ports, once per registered symbol.
+//! - block_symbols.10 (order: signal) Complete amplifier and reference
+//!   contracts expose their unique output to placement. The 21 selected
+//!   source banks face that output; contextual VEA belongs only to the
+//!   complete reference shape. Digital, differential and opaque contracts
+//!   supply no such certificate. docs/research/driven-banks.md; `analogOutput`
+//!
+//! Cold, bounded work: at most eight ports, once per registered symbol
+//! or participating placement candidate.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
 //!
 //! Contents:
 //! - `pub const Shape = enum(u8)`
 //! - `pub const Drawing = struct`
 //! - `pub fn identify(name: []const u8, ports: []const []const u8) Shape`
+//! - `pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3`
 //! - `pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing`
 
 const std = @import("std");
@@ -124,6 +132,29 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
     else
         seen[@backingInt(Role.input)] and !seen[@backingInt(Role.second)] and !seen[@backingInt(Role.positive)] and !seen[@backingInt(Role.negative)];
     return if (valid) shape else .box;
+}
+
+/// The unique output index of a complete amplifier or reference-amplifier
+/// contract, or null for any other shape or incomplete declaration. The
+/// index is below the existing eight-port limit. Borrows only for this call
+/// and allocates nothing; contextual VEA does not alter generic port roles.
+/// Inlines the bounded scan in both placement callers and the codegen probe.
+pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3 {
+    const reference = switch (identify(name, ports)) {
+        .amplifier => false,
+        .reference_amplifier => true,
+        else => return null,
+    };
+    assert(ports.len >= 2);
+    assert(ports.len <= ports_max);
+    for (ports, 0..) |port, i| {
+        const is_output = if (reference)
+            std.ascii.eqlIgnoreCase(port, "out") or std.ascii.eqlIgnoreCase(port, "vea")
+        else
+            lib.portRole(ports, port) == .out;
+        if (is_output) return @intCast(i);
+    }
+    unreachable;
 }
 
 /// Draws a previously verified non-box `shape`. `pitch` is half the distance

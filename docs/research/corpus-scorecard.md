@@ -1276,3 +1276,78 @@ The plugin is **556,733 bytes**, SHA-256
 byte-identical. The next bounded placement study addresses externally
 driven gate banks and their source-backed exceptions; this checkpoint does
 not claim handwritten equivalence.
+
+
+## Nineteenth measured pass: externally driven analog banks
+
+The frozen executable is
+`7e30dbb2d84bb5a03d944729039048da5cfcae9e03af0bf5e54dc867a9801e41`.
+The [driven-bank study](driven-banks.md) independently selects 21 complete
+analog output contracts from 58 broad named-output observations. All 42
+actual source MOS gate leads face left toward the driver. Seventeen banks
+have unequal source rows, and two individual gates are physically separate
+from their output despite sharing its net name. The bounded placement rule
+changes facing only, preserves placement mates and caller requests, and
+recognizes contextual VEA in the existing block-passage placement. It adds
+no row, input-bus, continuous-wire or generic digital-output policy.
+
+The [native-facing audit](figures/driven_banks_native.py) improves matching
+gate directions from **21 to 39 of 42** and complete source-facing banks
+from **zero to 18 of 21**. The remaining mismatches are exactly **AG2428 M1,
+AG2435 M5 and AG2443 M1**. Their structural mates are absent, but the
+[private placement trace](figures/driven_bank_guards_cases.json) proves
+inferred column mates M8, M9 and M8 respectively. The rule preserves those
+mates; these are not exact whole-circuit symmetry exceptions. The guard
+reconstruction retains every complete input, engine-source hash, logging
+patch and actual trace, and refuses a different source snapshot.
+
+Exactly **18 AG drawings and reports change**; the other 2,918 are
+byte-identical, including all 734 AMS drawings. The changed-name inventory
+is frozen and checked. Device axes and block flow remain unchanged; the
+eighteen changed gate directions all improve source agreement. The partial
+all-relation result rises from **289 to 290/2,202 AG**, with AG735 the sole
+new match, while AMS remains **243/734**. AG crossings rise from **4,988 to
+4,997** and bends from **20,668 to 20,675**. AMS stays at 203 crossings and
+1,545 bends. These partial scores do not measure whole-drawing equivalence.
+
+The separate [stable-pin connectivity audit](figures/driven_banks_connectivity.py)
+finds **nine newly connected pairs, all supported by actual source ink,
+and zero losses or unsupported transitions**. The observations are
+correlated, not nine independent circuit improvements. Three resolve the
+AG2436 output/gate losses recorded in pass18; its complete source fixture
+now passes as an ordinary regression. The six earlier VIN losses in
+AG2415 and AG2428 remain named failures. All 129 historical mismatch
+identities are checked, accepting only the three AG2436 resolutions.
+The two source-separated AG2435/2443 gates remain explicit negative
+controls. Facing evidence does not imply a continuous-wire requirement.
+
+The source, native-facing, private-guard and all-pair inventories replay
+exactly, including actual SVG leads, binding checks, contact-dot junctions
+and full artifact provenance. Earlier power, reservoir, converter-loop,
+auxiliary-bus, input-resistor and glyph cohorts retain their recorded
+relations. The final inline-query build reproduces all 2,936 drawing and
+report payloads from the preceding candidate byte for byte.
+
+The shared complete-contract output query has a declared-input assembly
+gate, included in both test configurations. The fixed x86_64 ReleaseFast
+comparison is **IDENTICAL: 90 instructions, ten branches and the same two
+callees** for the inlined helper and direct implementation. The direct
+path remains at its original 90-instruction cost. A compiled runtime-work
+mutation fails as **RESIDUE, 99 versus 90 instructions**. Earlier apparent
+savings with different callees and a later wrapper-call result were
+rejected. This is an abstraction-cost check, not a speed claim.
+
+Validation passes **414 tests without LaTeX and 415 with it**, 4,000 fuzz
+cases, global formatting and changed-file style checks apart from the same
+five legacy API findings. All 31 gallery SVG names and bytes are unchanged.
+Real release-host round trips retain **98 exact fixture comparisons** and
+the two named capacity refusals. The 21 selected complete source decks
+yield **51 exact subcircuits on both release and current hosts**, with
+ordered names and source hashes checked. The two manual VIN tests retain
+their exact physical failures and pass the expected-failure marker gate.
+
+The plugin is **558,107 bytes**, SHA-256
+`1b125c81bcea45c64d1297ddf16b71f6ac1de20836d9a2f722a965ada54b6cab`,
+5,093 bytes below the strict cap. Repeated native and plugin builds are
+byte-identical. The measured gain leaves the three inferred-mate facing
+exceptions and two VIN placement cases visible for later rules.

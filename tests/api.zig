@@ -522,4 +522,6 @@ test {
     _ = @import("wrap_above.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
+    _ = @import("driven_banks.zig");
+    _ = @import("reference_gate_tree.zig");
 }

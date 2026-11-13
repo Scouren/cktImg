@@ -59,7 +59,8 @@
 //!   People: 266 of 320 blocks whose output drives a gate stand left of
 //!   every such gate, and 522 of the 590 that drive none stand right of
 //!   every upright device on their inputs' nets, in 5,263 hand-drawn
-//!   schematics. `passage`
+//!   schematics. Complete reference-amplifier contracts also resolve VEA
+//!   as an output (AG2427); generic port roles stay unchanged. `passage`
 //! - bridges.16 (order: signal) A flat transistor bridges its channel's
 //!   two nets. Its gate and body do not select its columns: the signal
 //!   crosses the channel, as in AnalogGenie ag-385 and ag-386. `chainOf`
@@ -115,6 +116,7 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const forms = @import("forms.zig");
 const library = @import("library.zig");
+const block_symbols = @import("block_symbols.zig");
 const transmission = @import("transmission.zig");
 const power_paths = @import("power_paths.zig");
 
@@ -465,7 +467,8 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
 }
 
 /// Where the signal's order stands block `d`, its ports' roles their names'
-/// (`library.portRole`): left of the leftmost column with a gate its
+/// (`library.portRole`, plus a complete analog output contract): left of
+/// the leftmost column with a gate its
 /// output drives, level with that gate, and right of the rightmost column
 /// on an input's net left of it when no column stands between the two;
 /// with no such gate, right of the rightmost column on an input's net, on
@@ -477,9 +480,10 @@ fn passage(nl: *const Netlist, drawn: []const bool, form: []const Form, upper: [
     const pins = c.members(EdgeId.from(d));
     if (def.ports.len != pins.len) return null;
     // The leftmost gate its output drives (the upper of two in a column).
+    const analog = block_symbols.analogOutput(def.name, def.ports);
     var gate: ?u32 = null;
-    for (pins, def.ports) |p, name| {
-        if (library.portRole(def.ports, name) != .out) continue;
+    for (pins, def.ports, 0..) |p, name, i| {
+        if (library.portRole(def.ports, name) != .out and (analog == null or analog.? != i)) continue;
         for (c.incident(p)) |e| {
             const v = e.index();
             if (!drawn[v] or form[v] != .vertical or upper[v] == p.index() or lower[v] == p.index()) continue;

@@ -55,6 +55,13 @@
 //!   rule of its own: skeleton.9 turns each gate (people turn all of one
 //!   left, the rule retired as skeleton.12, in 12 of 1,103 such mirrors
 //!   and 88 of 380 banks). `gates`
+//! - skeleton.15 (habit, bounded) A two-MOS bank with one complete analog
+//!   block output and otherwise only capacitors on its gate net faces an
+//!   exterior driver. All 42 actual source gates in 21 selected banks do
+//!   so. Keep existing mates, ambiguous incidences and an interior driver;
+//!   explicit faces still run last. No source row or universal wire-tree
+//!   policy follows: 17 banks occupy unequal rows and two have a detached
+//!   remote gate. docs/research/driven-banks.md; `bankDriver`, `gates`
 //! - skeleton.13 (choice) A flat part `forms.crooked` stands upright
 //!   (forms.15) is placed by laying the whole drawing again, not moved
 //!   alone: it then follows every rule an upright part does. `place`
@@ -78,6 +85,7 @@ const symmetry = @import("symmetry.zig");
 const columns = @import("columns.zig");
 const levels = @import("levels.zig");
 const bridges = @import("bridges.zig");
+const block_symbols = @import("block_symbols.zig");
 const relations = @import("relations.zig");
 const sequence = @import("sequence.zig");
 const mates = @import("mates.zig");
@@ -524,9 +532,57 @@ fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []
         if (k == .stack or ms.len != 2) continue;
         const a, const z = if (x[ms[0]] <= x[ms[1]]) .{ ms[0], ms[1] } else .{ ms[1], ms[0] };
         if (x[a] == x[z]) continue;
+        if (k == .bank) if (bankDriver(nl, roles, mate, drawn, form, .{ a, z })) |driver| {
+            if (x[driver] < x[a] or x[driver] > x[z]) {
+                gate_right[a] = x[driver] > x[a];
+                gate_right[z] = x[driver] > x[z];
+                continue;
+            }
+        };
         gate_right[a] = k != .pair;
         gate_right[z] = k == .pair;
     }
+}
+
+/// One complete analog output on the bank's shared gate, with no other
+/// incident device except capacitor loads. Each member must touch this net
+/// only at its gate, including optional body pins. The caller supplies two
+/// distinct bank handles; all scans borrow existing CSR and placement rows.
+fn bankDriver(nl: *const Netlist, roles: []const Role, mate: []const u32, drawn: []const bool, form: []const Form, pair: [2]u32) ?u32 {
+    const c = &nl.graph;
+    const kinds = c.edges.items(.kind);
+    assert(pair[0] != pair[1]);
+    assert(pair[0] < c.edgeCount() and pair[1] < c.edgeCount());
+    for (pair) |d| if (!drawn[d] or form[d] != .vertical or kinds[d] != .mosfet or mate[d] != none) return null;
+    const a = c.members(EdgeId.from(pair[0]));
+    const z = c.members(EdgeId.from(pair[1]));
+    const gate = a[1];
+    if (gate != z[1] or isRail(roles[gate.index()])) return null;
+    const polarity = device.polarity(nl.modelType(EdgeId.from(pair[0])));
+    if (polarity == .other or polarity != device.polarity(nl.modelType(EdgeId.from(pair[1])))) return null;
+    for (pair) |d| {
+        const pins = c.members(EdgeId.from(d));
+        if (pins[0] == pins[2]) return null;
+        for (pins, 0..) |p, i| if (p == gate and i != 1) return null;
+    }
+    var driver: u32 = none;
+    for (c.incident(gate)) |edge| {
+        const d = edge.index();
+        if (!drawn[d]) return null;
+        if (d == pair[0] or d == pair[1] or kinds[d] == .capacitor) continue;
+        if (driver != none) {
+            if (driver != d) return null;
+            continue;
+        }
+        const def = nl.defOf(edge) orelse return null;
+        const pins = c.members(edge);
+        if (pins.len != def.ports.len) return null;
+        const output = block_symbols.analogOutput(def.name, def.ports) orelse return null;
+        if (pins[output] != gate) return null;
+        for (pins, 0..) |p, i| if (p == gate and i != output) return null;
+        driver = d;
+    }
+    return if (driver == none) null else driver;
 }
 
 /// Two devices on one cell is a bug of the placement above.

@@ -1,0 +1,1575 @@
+{
+  "decks": [
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2415",
+      "normalized_sha256": "833b1c482ad3b00992b2344569502538754fe559acf5c60211838e1c514b4c6d",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vref",
+          "vin",
+          "vout",
+          "verr"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "4659fe6fb05802d93164f8b5167c42dfc9b752d83a8d55c03c26d69af0e3a45f",
+        ".human.json": "a48700eb30f0f685b4343731c79216eba991ef4c4ed6988774dd6c92a8c0ccd8",
+        ".svg": "b89612ffe6b0cd9ae17ecaca6f653bef20091d317162d02302d535cc4d754c76"
+      },
+      "text": "ag-2415 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out\n.ends aea\n.subckt dut vdd vss vref vin vout verr\n.ends dut\nm1 net3 net4 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net0 net0 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net0 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net1 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net0 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net2 net2 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net2 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net2 net4 net1 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net4 aea\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2418",
+      "normalized_sha256": "ec0dba014652f404d87a718b7aa4edd712e360b7a52fcb557383e2be4734176b",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "nb",
+          "pb",
+          "vout",
+          "verr",
+          "vref"
+        ],
+        "opamp": [
+          "vdd",
+          "vss",
+          "inn",
+          "out"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "f71222dcc021a752026234665b84aa26764c672f2103b85a6dd72fdcb9dbbba2",
+        ".human.json": "2e2c3580331be1012f02b3a3eee2b41b077b580203ae8da7c64176a282565533",
+        ".svg": "c5b35ab52a1163e050c366832059b8443cf0e6e00c4ddf11e1d4edc1120c29c0"
+      },
+      "text": "ag-2418 guard probe\n.model nch nmos\n.model pch pmos\n.subckt opamp vdd vss inn out\n.ends opamp\n.subckt dut vdd vss vin nb pb vout verr vref\n.ends dut\nm1 net3 net1 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net0 net0 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net0 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net0 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net4 net4 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net4 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net4 net1 net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net1 opamp\n*@ weak role nb input\n*@ weak role pb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2420",
+      "normalized_sha256": "96ac646a04916ca6012de4a5543a29e6fff57fbe83d7a626418b31c1e8d246f8",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vref",
+          "vout",
+          "verr",
+          "pb"
+        ],
+        "erroramp": [
+          "vdd",
+          "vss",
+          "vref",
+          "out"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "123939b1186e51a0a347504550df62c796c4730b19e26d040959ea1d6e530618",
+        ".human.json": "93683352484071b360df17e84553c7e2c4c62960b3cbeb41962c6c92c0c76ffd",
+        ".svg": "be655ec0fbe8a06ee8038d81a075ad1496d8b3d4f59f494aff398221dbc95727"
+      },
+      "text": "ag-2420 guard probe\n.model nch nmos\n.model pch pmos\n.subckt erroramp vdd vss vref out\n.ends erroramp\n.subckt dut vdd vss vin vref vout verr pb\n.ends dut\nm1 net0 veaout vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net2 net2 net0 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net2 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net3 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net2 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net1 net1 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net1 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net1 veaout net3 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref veaout erroramp\n*@ weak role verr output\n*@ weak role pb input\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2421",
+      "normalized_sha256": "0467ac9e259a77977597648de8f7512187eefb4dbc8f521991e6f8f51bca8ff0",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "vbn",
+          "out"
+        ],
+        "bias": [
+          "vdd",
+          "vss",
+          "vb1",
+          "vbn"
+        ],
+        "dut": [
+          "vss",
+          "vin",
+          "pb",
+          "nb",
+          "vout",
+          "verr",
+          "vref",
+          "vb1"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "9e9b13f5a4cf9e99ce0d7f3e8b933ff5e823f32bef89e20ed885dfaefd5c7b86",
+        ".human.json": "7eb57079affc74ec985c0e3af230c39ac2244660cdd6651e0acbf16271c2febb",
+        ".svg": "93a8c1c9e3f1b771c03cadb8d1600ba2edefa02da7d78b6433c9934768ea39af"
+      },
+      "text": "ag-2421 guard probe\n.model nch nmos\n.model pch pmos\n.subckt bias vdd vss vb1 vbn\n.ends bias\n.subckt aea vdd vss vref vbn out\n.ends aea\n.subckt dut vss vin pb nb vout verr vref vb1\n.ends dut\nm1 net4 net5 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net4 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net3 net3 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net3 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net3 net5 net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net0 net5 aea\nx2 vdd vss vb1 net0 bias\n*@ weak role pb input\n*@ weak role nb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2422",
+      "normalized_sha256": "d941c6ed1a08153da9d3cc63d4fee23142d1155034a9ddf1a39b2d8ea5013440",
+      "ordered_declarations": {
+        "bias": [
+          "vdd",
+          "vss",
+          "vbn",
+          "vb1"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vref",
+          "vb1",
+          "vin",
+          "pb",
+          "nb",
+          "vout",
+          "verr"
+        ],
+        "error_amp": [
+          "vdd",
+          "vss",
+          "vref",
+          "vbn",
+          "out"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "756b28d330efa3b9f79583bec5dd9a446314584d883c548078b58dd4c9981271",
+        ".human.json": "30b6907a028bd7006f62bd348ff4ad29e36b967ef59217fc4dacc34a1bd7a065",
+        ".svg": "5abfcf0a5a507f14748dd7ace300671bd423d8fb080238e1ff98b22f6aa3faa1"
+      },
+      "text": "ag-2422 guard probe\n.model nch nmos\n.model pch pmos\n.subckt error_amp vdd vss vref vbn out\n.ends error_amp\n.subckt bias vdd vss vbn vb1\n.ends bias\n.subckt dut vdd vss vref vb1 vin pb nb vout verr\n.ends dut\nm1 net0 vea vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net4 net4 net0 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net4 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net4 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net1 net1 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net1 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net1 vea net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net3 vea error_amp\nx2 vdd vss net3 vb1 bias\n*@ weak role pb input\n*@ weak role nb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2423",
+      "normalized_sha256": "3ff4618cdb34557e139031f1a87096eb567cae715560a7c77e0ebaf229aea4f0",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "inn",
+          "out",
+          "vb"
+        ],
+        "bias_circuit": [
+          "vdd",
+          "vss",
+          "vb"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout",
+          "verr",
+          "vref"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "616944abea9ad75eca96209373272711fd80cf0f885a2b586689eaec8a43dd37",
+        ".human.json": "3647987bdd28a20a937a0de260b5d01b65e27aea3cde86d00939e61e9bef4c77",
+        ".svg": "e4f6bec9ff2704187e54a662da7fb177ffb5c054a6c4a36bbe4cc1954eeae39c"
+      },
+      "text": "ag-2423 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss inn out vb\n.ends aea\n.subckt bias_circuit vdd vss vb\n.ends bias_circuit\n.subckt dut vdd vss vin vout verr vref\n.ends dut\nm1 net2 veaout vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net4 net4 net2 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net4 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net1 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net4 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net3 net3 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net3 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net3 veaout net1 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref veaout net0 aea\nx2 vdd vss net0 bias_circuit\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2425",
+      "normalized_sha256": "34353b2c57cb0a57307643f35d703f633d9c368a27926ba0f2c1a465235beee5",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vref",
+          "nb",
+          "pb",
+          "vout",
+          "vin"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "08313d1249d09a906918bc2f590d3daac4f73eaf764bb8951296c5629998e3fb",
+        ".human.json": "543349004e175d3e530b860bb841e3a28ff5a09ab48b66aa7ab953266169d3fb",
+        ".svg": "7717354a6ccb110bc4ac7b9c97ce6f5e69749d8c6b1c64f5b98f93b0712a9cda"
+      },
+      "text": "ag-2425 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out\n.ends aea\n.subckt dut vdd vss vref nb pb vout vin\n.ends dut\nm1 net3 veaout vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net0 net0 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net0 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net0 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net1 net1 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net1 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net1 veaout net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref veaout aea\n*@ weak role nb input\n*@ weak role pb input\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2427",
+      "normalized_sha256": "57d42e355d4d2cd7ee10f3214cedb11acd33d739a8d29f374d81b8f9c0d7e2c1",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout"
+        ],
+        "error_amplifier": [
+          "vss",
+          "vref",
+          "vea"
+        ]
+      },
+      "requests": [],
+      "source_sha256": {
+        ".cir": "0d0e2084e76d7c9e9f19400114c0afffc896124d78a3827836f17df9fc1ea6bb",
+        ".human.json": "bacf83191046ff52a675a35e9c83dc101d61fb162ee9ede8bc5e45a705630d8a",
+        ".svg": "f54c3f7baec737d09a159953dcb6f56631f6225451a0f96c6c262a0cad145b9d"
+      },
+      "text": "ag-2427 guard probe\n.model nch nmos\n.model pch pmos\n.global VDD\n.subckt error_amplifier vss vref vea\n.ends error_amplifier\n.subckt dut vdd vss vin vout\n.ends dut\nm1 net1 vea vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net2 net2 net1 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net2 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net3 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net2 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net0 net0 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net0 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net0 vea net3 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vss vref vea error_amplifier\n\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m5"
+      ],
+      "id": "ag-2428",
+      "normalized_sha256": "cfa2d2f723f8d2ca7bd237b57402f9754c3a2eaec1d85411cba2b42d4d199c7c",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out",
+          "vb1"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "pb",
+          "nb",
+          "vout",
+          "verr",
+          "vref",
+          "vb1"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "59c1993836dfd4723b09d8e892ab8659373b1125862100d1a807c3812a25b964",
+        ".human.json": "458a28c366de6e8625808234f969116ac06dd8ddec36d1f9d3fca4f50dc6f554",
+        ".svg": "cd1251252126c144ca9e32f6176946d886f47e379d82217fdc7f44ec9a239f21"
+      },
+      "text": "ag-2428 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out vb1\n.ends aea\n.subckt dut vdd vss vin pb nb vout verr vref vb1\n.ends dut\nm1 net2 veaout vin vdd pch l=0.15 w=1 nf=1 m=1\nm10 verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net2 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nm4 net0 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nm5 net3 veaout net0 vdd pch l=0.15 w=1 nf=1 m=1\nm6 net3 net3 vss vss nch l=0.15 w=1 nf=1 m=1\nm7 verr net3 vss vss nch l=0.15 w=1 nf=1 m=1\nm8 vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nm9 verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref veaout vb1 aea\n*@ weak role pb input\n*@ weak role nb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2434",
+      "normalized_sha256": "bc251ae02c013c52af326651d276a261df228f9aeb90dc7cb52d927fc06bafb4",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout",
+          "verr",
+          "vref"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "90bfaf8f9167bec7634f84413937db76a05c7ffa8151eb0cf51b9a541aaa2067",
+        ".human.json": "b8794ff6c7ee55f044945f6e54a253975d8dd16ea4eafb31524bf0593f2dd7d6",
+        ".svg": "e8e174574d1f5559a5248c1d8c67c7a1b06dd96f1fd8ec2b24bd36b4e6068e1b"
+      },
+      "text": "ag-2434 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out\n.ends aea\n.subckt dut vdd vss vin vout verr vref\n.ends dut\nm1 net3 net2 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net4 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net0 net0 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net0 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net0 net2 net4 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net2 aea\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m5"
+      ],
+      "id": "ag-2435",
+      "normalized_sha256": "1058cf699ef93320071710f45405d72afb3f5cd86b0af684f6602b7ddd8b56c1",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "pb",
+          "vin",
+          "vout",
+          "verr"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "c1390e595ec54fbb990493d86d9135895231ad36758a414a67a07c93336cfe99",
+        ".human.json": "4de33c8746a9d2a24dc2dc14da6ae51b2c16530d8db7ae66ac2cfeaa41d076a1",
+        ".svg": "1aa70d75094e60a90d66b831978f70d7b25c719c75aabba44d69e34b38e3688d"
+      },
+      "text": "ag-2435 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out\n.ends aea\n.subckt dut vdd vss pb vin vout verr\n.ends dut\nm1 net1 veaout vin vdd pch l=0.15 w=1 nf=1 m=1\nm10 verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nm2 vc vc net1 vdd pch l=0.15 w=1 nf=1 m=1\nm3 vc nb vss vss nch l=0.15 w=1 nf=1 m=1\nm4 net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nm5 net0 veaout net2 vdd pch l=0.15 w=1 nf=1 m=1\nm6 net0 net0 vss vss nch l=0.15 w=1 nf=1 m=1\nm7 verr net0 vss vss nch l=0.15 w=1 nf=1 m=1\nm8 vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nm9 verr vc vout vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref veaout aea\n*@ weak role pb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2436",
+      "normalized_sha256": "ae8f3bdfd29ff08d6d53e0ee6b822e9886f865421df8ea0f4ed19904221171a4",
+      "ordered_declarations": {
+        "bias": [
+          "vdd",
+          "vss",
+          "vb1",
+          "nb"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout",
+          "verr",
+          "vref",
+          "vb1"
+        ],
+        "error_amp": [
+          "vdd",
+          "vss",
+          "vref",
+          "nb",
+          "out"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "4de769b21202bb2925faa35dcdfc34907d125d7683e390a68e6e232f1b243265",
+        ".human.json": "cf3142bc15ac6898a6e0be06a661a8f27d72e1c7ef7978374de6f8a4f1f6daac",
+        ".svg": "36e66ba0b331d4337ebe78c8b87ba07ec74dc39ee13d99667be8dad90ef09043"
+      },
+      "text": "ag-2436 guard probe\n.model nch nmos\n.model pch pmos\n.subckt bias vdd vss vb1 nb\n.ends bias\n.subckt error_amp vdd vss vref nb out\n.ends error_amp\n.subckt dut vdd vss vin vout verr vref vb1\n.ends dut\nm1 net3 net4 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net5 net5 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net5 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net5 net4 net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net0 net4 error_amp\nx2 vdd vss vb1 net0 bias\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2440",
+      "normalized_sha256": "5b24588dfa489d71bfb353b4bd60fac9d9ca24e9fa2b387246dbfab951d6e5fb",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "vbn",
+          "out"
+        ],
+        "bias": [
+          "vdd",
+          "vss",
+          "vc",
+          "vb2",
+          "vb1",
+          "vbn"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vb1",
+          "vb2",
+          "vref",
+          "vin",
+          "pb",
+          "nb",
+          "vout",
+          "verr"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "93ec0801ec5af72062e8a4f9c230be25738b279f4692be8b941e0f499540d6d4",
+        ".human.json": "1818b812eea6afe57c02113d0ef583971a4c2078cd37543076ff42eb5a25243b",
+        ".svg": "e2619fa7b83d8cfe883c7e22f8aa79b07a274594d7f2dac6c8eda4a8c7cef17d"
+      },
+      "text": "ag-2440 guard probe\n.model nch nmos\n.model pch pmos\n.subckt bias vdd vss vc vb2 vb1 vbn\n.ends bias\n.subckt aea vdd vss vref vbn out\n.ends aea\n.subckt dut vdd vss vb1 vb2 vref vin pb nb vout verr\n.ends dut\nm1 net1 net3 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 vc vc net1 vdd pch l=0.15 w=1 nf=1 m=1\nm3 vc nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net2 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr vc vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net0 net0 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net0 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net0 net3 net2 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vc vb2 vb1 vbn bias\nx2 vdd vss vref vbn net3 aea\n*@ weak role pb input\n*@ weak role nb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2441",
+      "normalized_sha256": "c24c24b3408363f6f2c9f31a6d9e7c06f43cfd6dbbd9e018e5692c57af049ff0",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "out",
+          "vbn"
+        ],
+        "bias": [
+          "vdd",
+          "vss",
+          "vb2",
+          "vb1",
+          "vbn"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout",
+          "verr",
+          "pb",
+          "nb",
+          "vref",
+          "vb1",
+          "vb2"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "3497cc4588e609cfc0231d193ed0ba9a1ec57317a61c82fa3db5900427ef99ca",
+        ".human.json": "9d9b19e5bc253505a455d683993ef328bec4d07067924b15ac71755ac2835e74",
+        ".svg": "c3f4387c8b82a985c987ac3f0b8bc8ca379cc960125bbaa02be74718b6172425"
+      },
+      "text": "ag-2441 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref out vbn\n.ends aea\n.subckt bias vdd vss vb2 vb1 vbn\n.ends bias\n.subckt dut vdd vss vin vout verr pb nb vref vb1 vb2\n.ends dut\nm1 net5 net2 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net5 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net4 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net3 net3 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net3 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net3 net2 net4 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net2 net0 aea\nx2 vdd vss vb2 vb1 net0 bias\n*@ weak role verr output\n*@ weak role pb input\n*@ weak role nb input\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m5"
+      ],
+      "id": "ag-2443",
+      "normalized_sha256": "6a27925b8bb2eb6a40553c40000c531729cf4408393327e3948cee4d69806f69",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "nb",
+          "out"
+        ],
+        "bias": [
+          "vdd",
+          "vss",
+          "vb1",
+          "vb2",
+          "nb"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "pb",
+          "nb",
+          "vout",
+          "verr",
+          "vref",
+          "vb1",
+          "vb2"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "c099464caf8d46ba38a9062a43162afed48f0042f61af24e584bd7b247f1307f",
+        ".human.json": "03b5a403feffbdc085488bdb5b93b28f84b174e08c4add1c582361f4d9dc166b",
+        ".svg": "5c7cba915dae6514ca25aa40459f75c8848c3ee9da838999aaa5c649c460a730"
+      },
+      "text": "ag-2443 guard probe\n.model nch nmos\n.model pch pmos\n.subckt bias vdd vss vb1 vb2 nb\n.ends bias\n.subckt aea vdd vss vref nb out\n.ends aea\n.subckt dut vdd vss vin pb nb vout verr vref vb1 vb2\n.ends dut\nm1 net2 vea vin vdd pch l=0.15 w=1 nf=1 m=1\nm10 verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nm2 net1 net1 net2 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net1 nb vss vss nch l=0.15 w=1 nf=1 m=1\nm4 net3 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nm5 net4 vea net3 vdd pch l=0.15 w=1 nf=1 m=1\nm6 net4 net4 vss vss nch l=0.15 w=1 nf=1 m=1\nm7 verr net4 vss vss nch l=0.15 w=1 nf=1 m=1\nm8 vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nm9 verr net1 vout vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net0 vea aea\nx2 vdd vss vb1 vb2 net0 bias\n*@ weak role pb input\n*@ weak role nb input\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2444",
+      "normalized_sha256": "b2d54d1ee5cb7e4dff209d8bddf13e25dde895d50536d7e6fa3316f623d7edf0",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "vbn",
+          "out"
+        ],
+        "bias_circuit": [
+          "vdd",
+          "vss",
+          "vbn"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vref",
+          "vout",
+          "verr"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "592e6a7b30150af4c40b040a1c2ef9cce82809ecb7b3d65aa42d9123d2f18db2",
+        ".human.json": "88641e7e35c210c415f193476ddf853394c0b3cea609f6a63ba9f334dc825a8e",
+        ".svg": "e691bec1ff6d87343c7128556d51fc79f253135f73942b8906f411abe1838eb9"
+      },
+      "text": "ag-2444 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref vbn out\n.ends aea\n.subckt bias_circuit vdd vss vbn\n.ends bias_circuit\n.subckt dut vdd vss vin vref vout verr\n.ends dut\nm1 net1 net2 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net0 net0 net1 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net0 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net5 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net0 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net4 net4 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net4 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net4 net2 net5 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss net3 bias_circuit\nx2 vdd vss vref net3 net2 aea\n*@ weak role verr output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "msen"
+      ],
+      "id": "ag-2447",
+      "normalized_sha256": "dbd718d53470062eb3b47d74246b636b04163064cb18b21586d7636e6379fc2d",
+      "ordered_declarations": {
+        "aea": [
+          "vdd",
+          "vss",
+          "vref",
+          "vbn",
+          "out"
+        ],
+        "bias": [
+          "vdd",
+          "vss",
+          "vb1",
+          "vbn",
+          "vb2"
+        ],
+        "dut": [
+          "vdd",
+          "vss",
+          "vin",
+          "vout",
+          "verr",
+          "vref",
+          "vb1",
+          "vb2",
+          "pb",
+          "nb"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ weak role verr output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ weak role pb input"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ weak role nb input"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "bffaa46e672a38313dbe0d818eb5362710682ab13f57a4a30a10be6bef811440",
+        ".human.json": "5f8fdceceaee48540a72c39d834ce2d5b4187ffd496f7f5872a6b1fe9a4d3d27",
+        ".svg": "49609dece03f25f0d5b7c97fd7538f9cdfb3aa8c89a08985b3f8f037663094a9"
+      },
+      "text": "ag-2447 guard probe\n.model nch nmos\n.model pch pmos\n.subckt aea vdd vss vref vbn out\n.ends aea\n.subckt bias vdd vss vb1 vbn vb2\n.ends bias\n.subckt dut vdd vss vin vout verr vref vb1 vb2 pb nb\n.ends dut\nm1 net2 net5 vin vdd pch l=0.15 w=1 nf=1 m=1\nm2 net0 net0 net2 vdd pch l=0.15 w=1 nf=1 m=1\nm3 net0 nb vss vss nch l=0.15 w=1 nf=1 m=1\nmbias verr nb vss vss nch l=0.15 w=1 nf=1 m=1\nmchg net4 pb vin vdd pch l=0.15 w=1 nf=1 m=1\nmctrl verr net0 vout vdd pch l=0.15 w=1 nf=1 m=1\nmgen net1 net1 vss vss nch l=0.15 w=1 nf=1 m=1\nminj verr net1 vss vss nch l=0.15 w=1 nf=1 m=1\nmres vout verr vin vdd pch l=0.15 w=1 nf=1 m=1\nmsen net1 net5 net4 vdd pch l=0.15 w=1 nf=1 m=1\nx1 vdd vss vref net3 net5 aea\nx2 vdd vss vb1 net3 vb2 bias\n*@ weak role verr output\n*@ weak role pb input\n*@ weak role nb input\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m2"
+      ],
+      "id": "ag-735",
+      "normalized_sha256": "c91cb84bb482e61eb677e9d7540212d850456f1afe95d122f597a6ab00068d28",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "vref",
+          "iout"
+        ],
+        "icm_opamp_vdd_vss": [
+          "vdd",
+          "vss",
+          "vip",
+          "vin",
+          "vout"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 7,
+          "state": "honoured",
+          "text": "*@ weak role iout output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "088862708dcf71eaf8b70952e044d7a9e6802ad45d135acf9d81000033b1cd85",
+        ".human.json": "8896d26da1e84bf8ea4a1cf8843b70626fab895b7ee7b8b3190bcad58c396522",
+        ".svg": "5a7f7426f628eb4db3b3ee20000b9373205d8fe5214ef6a395373c0afcc8e0ef"
+      },
+      "text": "ag-735 guard probe\n.model pch pmos\n.subckt icm_opamp_vdd_vss vdd vss vip vin vout\n.ends icm_opamp_vdd_vss\n.subckt dut vdd vss vref iout\n.ends dut\nm1 net0 net1 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm2 iout net1 vdd vdd pch l=0.15 w=1 nf=1 m=1\nr net0 vss 1k\nx1 vdd vss net0 vref net1 icm_opamp_vdd_vss gain=1e6\n*@ weak role iout output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m2"
+      ],
+      "id": "ag-952",
+      "normalized_sha256": "55ce89f8a2c1b2a8ab1a33251221c7d12537109419d6fa7833aba2abe3b8e2bd",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "iref"
+        ],
+        "icm_opamp_vdd_vss": [
+          "vdd",
+          "vss",
+          "vip",
+          "vin",
+          "vout"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 12,
+          "state": "honoured",
+          "text": "*@ weak role iref output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "efa6b0300735920e7a3b5c715b9ea336343bbe0be2b585416412039a402d72c1",
+        ".human.json": "720d1222104471536446aebec5c91e967d6b572688b7d3b1a47a1165329d419a",
+        ".svg": "74b109dc8e26e23bdcac9be6aa7c9dc791a0d924a09f6cd18c902fad5b1c5f29"
+      },
+      "text": "ag-952 guard probe\n.model pch pmos\n.model qpnp pnp\n.subckt icm_opamp_vdd_vss vdd vss vip vin vout\n.ends icm_opamp_vdd_vss\n.subckt dut vdd vss iref\n.ends dut\nm1 net1 net4 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm2 iref net4 vdd vdd pch l=0.15 w=1 nf=1 m=1\nq1 vss vss net0 qpnp m=1\nq2 vss vss net3 qpnp m=1\nr1 net2 net0 1k\nr2 net1 net2 1k\nr3 net1 net3 1k\nr4 net1 vss 1k\nx1 vdd vss net3 net2 net4 icm_opamp_vdd_vss gain=1e6\n*@ weak role iref output\n"
+    },
+    {
+      "bank": [
+        "m11",
+        "m13"
+      ],
+      "id": "ag-981",
+      "normalized_sha256": "8d624cfc0e2ae6012095f07553eed25f7078c4168f5307d8a1504c3ca39f2626",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "vb3",
+          "vx",
+          "vpbias1",
+          "vpbias2",
+          "vnbias2",
+          "vnbias1"
+        ],
+        "icm_opamp_vdd_vss": [
+          "vdd",
+          "vss",
+          "vip",
+          "vin",
+          "vout"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 34,
+          "state": "honoured",
+          "text": "*@ weak role vx output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 35,
+          "state": "honoured",
+          "text": "*@ weak role vpbias1 output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 36,
+          "state": "honoured",
+          "text": "*@ weak role vpbias2 output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 37,
+          "state": "honoured",
+          "text": "*@ weak role vnbias2 output"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 38,
+          "state": "honoured",
+          "text": "*@ weak role vnbias1 output"
+        }
+      ],
+      "source_sha256": {
+        ".cir": "1ccc23e33801499fff7b2283ada966c7917adcd9d9c0b6e532641f6db55d185b",
+        ".human.json": "cac7e2d40c2248b6843aa84919b652e68dc35db382cb62601c9641892e0bdfe3",
+        ".svg": "54c80a0ffa73734447782285e8ed622a1247ee0e4770cd09c5dd42a5215b16c3"
+      },
+      "text": "ag-981 guard probe\n.model nch nmos\n.model pch pmos\n.model qpnp pnp\n.subckt icm_opamp_vdd_vss vdd vss vip vin vout\n.ends icm_opamp_vdd_vss\n.subckt dut vdd vss vb3 vx vpbias1 vpbias2 vnbias2 vnbias1\n.ends dut\nm1 net18 net4 net17 vss nch l=0.15 w=1 nf=1 m=1\nm10 vbg net11 net13 vdd pch l=0.15 w=1 nf=1 m=1\nm11 net15 vx vdd vdd pch l=0.15 w=1 nf=1 m=1\nm12 net10 vb3 net15 vdd pch l=0.15 w=1 nf=1 m=1\nm13 net5 vx vdd vdd pch l=0.15 w=1 nf=1 m=1\nm14 vnbias2 vb3 net5 vdd pch l=0.15 w=1 nf=1 m=1\nm1a vnbias1 vnbias2 net2 vss nch l=0.15 w=1 nf=1 m=1\nm2 net14 net4 net7 vss nch l=0.15 w=1 nf=1 m=1\nm2a net2 vnbias1 vss vss nch l=0.15 w=1 nf=1 m=1\nm3 net4 net8 net18 vss nch l=0.15 w=1 nf=1 m=1\nm3a vpbias2 vnbias2 net0 vss nch l=0.15 w=1 nf=1 m=1\nm4 net11 net8 net14 vss nch l=0.15 w=1 nf=1 m=1\nm4a net0 vnbias1 vss vss nch l=0.15 w=1 nf=1 m=1\nm5 net8 net11 net12 vdd pch l=0.15 w=1 nf=1 m=1\nm5a vpbias1 vpbias2 net9 vdd pch l=0.15 w=1 nf=1 m=1\nm6 net6 net11 net3 vdd pch l=0.15 w=1 nf=1 m=1\nm6a net9 vpbias1 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm7 net12 net6 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm8 net3 net6 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm9 net13 net6 vdd vdd pch l=0.15 w=1 nf=1 m=1\nq1 vss vss net17 qpnp m=1\nq2 vss vss net16 qpnp m=1\nq3 vss vss net1 qpnp m=1\nr1 net7 net16 1k\nr1a vnbias2 vnbias1 1k\nr2 vbg net1 1k\nr2a vpbias1 vpbias2 1k\nr3 net8 net4 1k\nr4 net6 net11 1k\nrext net10 vss 1k\nx1 vdd vss net10 vbg vx icm_opamp_vdd_vss gain=1e6\n*@ weak role vx output\n*@ weak role vpbias1 output\n*@ weak role vpbias2 output\n*@ weak role vnbias2 output\n*@ weak role vnbias1 output\n"
+    },
+    {
+      "bank": [
+        "m1",
+        "m2"
+      ],
+      "id": "ag-994",
+      "normalized_sha256": "1900b9b331050e221176e8099f3382f7c66291482401a69338180f26775a0de1",
+      "ordered_declarations": {
+        "dut": [
+          "vdd",
+          "vss",
+          "gnd",
+          "vinn",
+          "vinp",
+          "vout"
+        ],
+        "opamp": [
+          "vdd",
+          "vss",
+          "vip",
+          "vin",
+          "vout"
+        ]
+      },
+      "requests": [],
+      "source_sha256": {
+        ".cir": "00ad77a676d2bee7983f2c5f76b7df5c63ff41fe873194062cb9867acdffe8b9",
+        ".human.json": "8386240b990275e5aa19b472aaa01a282f31258172eb4991d9c85153d0592868",
+        ".svg": "f9bd863e8ce6cf28839a1b235a9fb5e19058531fc85e90064f58f740ad7b80c6"
+      },
+      "text": "ag-994 guard probe\n.model nch nmos\n.model pch pmos\n.subckt opamp vdd vss vip vin vout\n.ends opamp\n.subckt dut vdd vss gnd vinn vinp vout\n.ends dut\nc1 vin1 net2 8pf\nc2 vin1 net1 5pf\ni1 net0 gnd dc 100ua\nm1 net2 vin1 vss vss nch l=0.15 w=1 nf=1 m=1\nm2 net1 vin1 vss vss nch l=0.15 w=1 nf=1 m=1\nm3 net2 net0 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm4 net1 net0 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm5 vout net2 vss vss nch l=0.15 w=1 nf=1 m=1\nm6 vout net1 vdd vdd pch l=0.15 w=1 nf=1 m=1\nm7 net0 net0 vdd vdd pch l=0.15 w=1 nf=1 m=1\nrl vout gnd 1k\nx1 0 0 vinp vinn vin1 opamp gain=1e6\n\n"
+    }
+  ],
+  "engine_source_sha256": {
+    "abi.zig": "cef2f4b95ae4101737d16da93be276321d9011d81c9df091914ebefdff1f759a",
+    "analysis.zig": "d53f3a30665ce1b449cbb0aaeb50a0a5899196e4b8ed5240a6238256edb95f27",
+    "block_symbols.zig": "205f882774268ebad02026a9dc6c741f43bfda1ab21cdbef227e0526052aa5ea",
+    "bridges.zig": "46c156d8089a440fdd49f281f18d8018a93f27c50924b00f4ab6baff10638bce",
+    "canvas.zig": "bac2333ea5ba9a5fdb62b0a0e8d20d787c4e0a746e3f7d0f748abc33b814c029",
+    "cells.zig": "622bc4e2826bc42d86ac0879227c01734d47c5f7fdb2a9a95390bc19ccad5d25",
+    "checks.zig": "022cd9b73dd49d9272405f761e7ce6dfc82a8b4ee071fd957e7204905d2135ed",
+    "columns.zig": "cdf103d4c11954af1bed5afbcf9b709d573a2ef3c8a2dced1079cbae7ffe12a4",
+    "compact.zig": "308837d33b24bbbcd7e17670a09a3001f23283ca068fab392b4e88dd613e2b24",
+    "config.zig": "c3a50f8f8211e6562bb14b4228559d26d4b5fc62986aadf47ed7b47dad1bc0e6",
+    "csr.zig": "7c0733dd123a557693fc0e151fe19c096f114422cb7b81fd1915680d5454147c",
+    "device.zig": "a43849ba54f2a7469d9f375605e3db39e5c5e26e536868d8558fd53dc9f02e0d",
+    "dots.zig": "3c13630ca5e6a016feaf5524866b0612386e688584cc1ba2e4204d5df31c6281",
+    "forms.zig": "43f0c6b4307a0357e5316902c04e22012ed26bbb2e98707068efdd9739e758fd",
+    "geom.zig": "1740223dc8ec5ebacaff432e4a3774fad9253e8ed78ef7a46d6ee10fadf000e5",
+    "hints.zig": "bab48b0d3b65a1cd7244ddd2ea86e9f3737e5b5229edadc48b4095722d2c3b5a",
+    "input_place.zig": "110df57d26ed8cb2e33feaa2b61c4b9e813ec261c9d88f840228367522255b56",
+    "input_resistors.zig": "df673976ffd151a198343efcfb35b6b5d66c5e36db1db564096c36fb586d1603",
+    "json.zig": "2dfc511dfc1cc465bbc8da1a0ea20be6fa91dc08912b6e21692448a67abe3b67",
+    "latex.zig": "33b81861b2bade643db534a6c9e946716adb1a8ffc5d84fdb154497eb68a574a",
+    "levels.zig": "dde4b1ca09844349ad0129f3f860a300048cc700b75e1c563f3f61100f33d31a",
+    "library.zig": "3006357a721897ba54548ffb1ee538ad78d3e4e993f24773cfea0368bcfcf385",
+    "lint.zig": "4c88dbf811f7a56b6c09aca9e1ba6cb3dfbd6ae99e0b08f1c81b9373f1af2ac0",
+    "loop_place.zig": "11d12052aca9f625a06da1dff6a616dbe370d7b788c66884ef471b0f83e00de5",
+    "mates.zig": "4c846b670ceaa32fa857541c46ea69b7c1b75839164ee8a707ac402900fb596b",
+    "maze.zig": "cfc4279115843252fb69754907785fc17c785cdb09ab5a0254a436af7f118afe",
+    "netlines.zig": "7752bb801de63ccc10b46f6dac36a70c8bb6a5a63a64ca000ad120d900c9ade9",
+    "netlist.zig": "eb27d9ae77bdf73ebf553bf5f02f65224e6ceabb548aa7a923708d40fee25825",
+    "opamp.zig": "36d310befb06b65f2467d3e6706ef2294378b934a0dff57baaf84bd6c1daad70",
+    "opamp_grow.zig": "c49e7a1132c8fd3ccd3e0ab7f46b99668cfabff6837c747975aa3bf723b76b27",
+    "pinned.zig": "cf7777afe86da652bd0f3c4038d9195853adfa6b01c16dd2b842a8eacaeec7f3",
+    "placed.zig": "7ddefacf5b6f8308a3b5307af0931f58465c57232f3776b9be081df79697e733",
+    "power_compact.zig": "3d530cd30415cad7346225c0b22efde3f8638636831aa84f8e382b6085a80694",
+    "power_loop_wires.zig": "7cc7e4a2f12b72f655e9c29a806033be81d0db6d2926c7549ceeefad28820019",
+    "power_loops.zig": "431100f05e12daa0db4ad58b05e88b3514ec142cbad9f50b04d18d1672d914f2",
+    "power_paths.zig": "a2a514173b4152c4f4c14044a7e9751170ef9618b3bf62ba4c1ce7012fd0df31",
+    "relations.zig": "5dc99acf6bd049ddf406238e162de5b6bade369a0455e0f6e3406384fa8febf9",
+    "relay.zig": "cb395308eaedbfea02ab731a14f3f9caa19ac25230bd49392e729e8541ae7e73",
+    "report.zig": "d6635e3a8275cfc8ec3cccd15fee1c64facd2a468ac0e518b297d9ebfd45cccc",
+    "root.zig": "c09402929f7a44d44f76d99fd5bbf60e4ffb9647c68ecf458975245f7b73a366",
+    "routes.zig": "c272ac15c4a24b3182bc18d3eea781853708312f1978d0110f8f08ee45d16de4",
+    "schematic.zig": "dac8eacdd0685db11b53dca75a6be8a44cfcb41760e081ebe1f39e49ad20519b",
+    "sequence.zig": "6e31b243e94684d51344c217f9c78837710199fd66d6a9af787104b228b9587c",
+    "skeleton.zig": "84fd28a21a67e024f6e2016f29916b687be4720248e18e0bbf8dc7f4090db073",
+    "sketch.zig": "df5a6727d27a15f23d2b8ade4a1ab57ee09696e8aee6b31905bd9b66b2672921",
+    "span.zig": "9cabfb947b4107700d778cc1d81918a27a5d9803bff4916b521a3d299d186470",
+    "structure.zig": "d0755ca1ff80313d6088fa2bdb97c0f0b96c335d092fc0e45f9a64f53117eef5",
+    "symmetry.zig": "e5fb186cf61244b690d328a2653c1496416ce087a9ba474fdd31f85db1a62a65",
+    "thin.zig": "3966c6daf9a0a9cb52732bee6e121c5a4b3f6d9ab4783a5f0f9bbc100d479831",
+    "thin_parts_test.zig": "c01e0ba12d04c38bf5fe91f786f6adc81957f752ea7704e6660d53626d689958",
+    "transmission.zig": "fdcd15f1eecfe81ea5ccd6faa479b535722cd176914123292e64d00449813451",
+    "trunk.zig": "bd1c86348409cfbee88fde2ce0da0259e6c2f0d0df728a1276fb1bf011bdf601",
+    "trunk_row_test.zig": "11488b650fb2d7d35c4d0aaeaef6cb94b1722639becde088a037c5f3b9a15dd0",
+    "trunk_taps_test.zig": "09d80084f1743099c02721c6bfceda4892026e74fdd61f83eaf65ac107d9cf84",
+    "wires.zig": "267c6336a444dbe798588ef3f2231d9668c07d138bd82e26d1e0e56b82e0fa51",
+    "wrap.zig": "0a23a72cfe9f5e4056bedb87ba6a769cd09f8e13a25052c13a35928acf8f50db"
+  },
+  "guarded_cases": [
+    {
+      "bank_member": "m1",
+      "id": "ag-2428",
+      "placement_mate": "m8",
+      "self": false,
+      "structural_mate": null
+    },
+    {
+      "bank_member": "m5",
+      "id": "ag-2435",
+      "placement_mate": "m9",
+      "self": false,
+      "structural_mate": null
+    },
+    {
+      "bank_member": "m1",
+      "id": "ag-2443",
+      "placement_mate": "m8",
+      "self": false,
+      "structural_mate": null
+    }
+  ],
+  "instrumented_skeleton_sha256": "2edfe96c0db2116fea7376d46912ec4fcdb7160998c4c6729d630a1c72a11934",
+  "logging_insertion": {
+    "before": "        if (k == .bank) if (bankDriver(nl, roles, mate, drawn, form, .{ a, z })) |driver| {",
+    "insert": "        if (k == .bank) {\n            const names = nl.graph.edges.items(.name);\n            const d = bankDriver(nl, roles, mate, drawn, form, .{ a, z });\n            std.debug.print(\"PLACEMENT_BANK {s}:{s} mate_a={s} self_a={} mate_z={s} self_z={} x_a={d} x_z={d} driver={s} driver_x={d}\\n\", .{names[a], names[z], if(mate[a] == none) \"none\" else names[mate[a]], mate[a] == a, if(mate[z] == none) \"none\" else names[mate[z]], mate[z] == z, x[a], x[z], if(d) |driver| names[driver] else \"none\", if(d) |driver| x[driver] else -1});\n        }\n"
+  },
+  "observations": [
+    {
+      "id": "ag-2415",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2415 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2415 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2415 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2415 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false",
+        "GROUP ag-2415 bank m3 mbias",
+        "GROUP ag-2415 mirror m2 mctrl",
+        "GROUP ag-2415 mirror mgen minj",
+        "GROUP ag-2415 bank m1 msen",
+        "GROUP ag-2415 stack m1 m2 m3",
+        "GROUP ag-2415 stack mchg msen mgen",
+        "GROUP ag-2415 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2418",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2418 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2418 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2418 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2418 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false",
+        "GROUP ag-2418 bank m3 mbias",
+        "GROUP ag-2418 mirror m2 mctrl",
+        "GROUP ag-2418 bank m1 msen",
+        "GROUP ag-2418 mirror mgen minj",
+        "GROUP ag-2418 stack m1 m2 m3",
+        "GROUP ag-2418 stack mchg msen mgen",
+        "GROUP ag-2418 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2420",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2420 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2420 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2420 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2420 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false",
+        "GROUP ag-2420 bank m3 mbias",
+        "GROUP ag-2420 mirror mgen minj",
+        "GROUP ag-2420 mirror m2 mctrl",
+        "GROUP ag-2420 bank m1 msen",
+        "GROUP ag-2420 stack m1 m2 m3",
+        "GROUP ag-2420 stack mchg msen mgen",
+        "GROUP ag-2420 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2421",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2421 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2421 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2421 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2421 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false",
+        "GROUP ag-2421 bank m3 mbias",
+        "GROUP ag-2421 mirror m2 mctrl",
+        "GROUP ag-2421 mirror mgen minj",
+        "GROUP ag-2421 bank m1 msen",
+        "GROUP ag-2421 stack m1 m2 m3",
+        "GROUP ag-2421 stack mchg msen mgen",
+        "GROUP ag-2421 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2422",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2422 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2422 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2422 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2422 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false",
+        "GROUP ag-2422 bank m3 mbias",
+        "GROUP ag-2422 mirror mgen minj",
+        "GROUP ag-2422 mirror m2 mctrl",
+        "GROUP ag-2422 bank m1 msen",
+        "GROUP ag-2422 stack m1 m2 m3",
+        "GROUP ag-2422 stack mchg msen mgen",
+        "GROUP ag-2422 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2423",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2423 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2423 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2423 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2423 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false",
+        "GROUP ag-2423 bank m3 mbias",
+        "GROUP ag-2423 mirror mgen minj",
+        "GROUP ag-2423 mirror m2 mctrl",
+        "GROUP ag-2423 bank m1 msen",
+        "GROUP ag-2423 stack m1 m2 m3",
+        "GROUP ag-2423 stack mchg msen mgen",
+        "GROUP ag-2423 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2425",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2425 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2425 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2425 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2425 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false",
+        "GROUP ag-2425 bank m3 mbias",
+        "GROUP ag-2425 mirror m2 mctrl",
+        "GROUP ag-2425 mirror mgen minj",
+        "GROUP ag-2425 bank m1 msen",
+        "GROUP ag-2425 stack m1 m2 m3",
+        "GROUP ag-2425 stack mchg msen mgen",
+        "GROUP ag-2425 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2427",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2427 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2427 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2427 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2427 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false",
+        "GROUP ag-2427 bank m3 mbias",
+        "GROUP ag-2427 mirror mgen minj",
+        "GROUP ag-2427 mirror m2 mctrl",
+        "GROUP ag-2427 bank m1 msen",
+        "GROUP ag-2427 stack m1 m2 m3",
+        "GROUP ag-2427 stack mchg msen mgen",
+        "GROUP ag-2427 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2428",
+      "placement": [
+        "PLACEMENT_BANK m3:m10 mate_a=m7 self_a=false mate_z=none self_z=false x_a=-8 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:m5 mate_a=m8 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2428 axis2=18 origin={ -9, 0 } symmetry_off=false",
+        "MEMBER ag-2428 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2428 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=true",
+        "MEMBER ag-2428 m5 structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false",
+        "GROUP ag-2428 bank m3 m10",
+        "GROUP ag-2428 mirror m2 m9",
+        "GROUP ag-2428 mirror m6 m7",
+        "GROUP ag-2428 bank m1 m5",
+        "GROUP ag-2428 stack m1 m2 m3",
+        "GROUP ag-2428 stack m4 m5 m6",
+        "GROUP ag-2428 stack m8 m9"
+      ]
+    },
+    {
+      "id": "ag-2434",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2434 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2434 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2434 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2434 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false",
+        "GROUP ag-2434 bank m3 mbias",
+        "GROUP ag-2434 mirror mgen minj",
+        "GROUP ag-2434 mirror m2 mctrl",
+        "GROUP ag-2434 bank m1 msen",
+        "GROUP ag-2434 stack m1 m2 m3",
+        "GROUP ag-2434 stack mchg msen mgen",
+        "GROUP ag-2434 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2435",
+      "placement": [
+        "PLACEMENT_BANK m3:m10 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m5:m1 mate_a=m9 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2435 axis2=18 origin={ -9, 0 } symmetry_off=false",
+        "MEMBER ag-2435 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2435 m1 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false",
+        "MEMBER ag-2435 m5 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=true",
+        "GROUP ag-2435 bank m3 m10",
+        "GROUP ag-2435 mirror m6 m7",
+        "GROUP ag-2435 mirror m2 m9",
+        "GROUP ag-2435 bank m1 m5",
+        "GROUP ag-2435 stack m1 m2 m3",
+        "GROUP ag-2435 stack m4 m5 m6",
+        "GROUP ag-2435 stack m8 m9"
+      ]
+    },
+    {
+      "id": "ag-2436",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2436 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2436 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2436 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2436 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false",
+        "GROUP ag-2436 bank m3 mbias",
+        "GROUP ag-2436 mirror m2 mctrl",
+        "GROUP ag-2436 bank m1 msen",
+        "GROUP ag-2436 mirror mgen minj",
+        "GROUP ag-2436 stack m1 m2 m3",
+        "GROUP ag-2436 stack mchg msen mgen",
+        "GROUP ag-2436 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2440",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x2 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2440 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-2440 x2 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false",
+        "MEMBER ag-2440 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false",
+        "MEMBER ag-2440 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false",
+        "GROUP ag-2440 bank m3 mbias",
+        "GROUP ag-2440 mirror mgen minj",
+        "GROUP ag-2440 bank m1 msen",
+        "GROUP ag-2440 mirror m2 mctrl",
+        "GROUP ag-2440 stack m1 m2 m3",
+        "GROUP ag-2440 stack mchg msen mgen",
+        "GROUP ag-2440 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2441",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2441 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2441 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2441 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2441 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false",
+        "GROUP ag-2441 bank m3 mbias",
+        "GROUP ag-2441 mirror m2 mctrl",
+        "GROUP ag-2441 bank m1 msen",
+        "GROUP ag-2441 mirror mgen minj",
+        "GROUP ag-2441 stack m1 m2 m3",
+        "GROUP ag-2441 stack mchg msen mgen",
+        "GROUP ag-2441 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2443",
+      "placement": [
+        "PLACEMENT_BANK m3:m10 mate_a=m7 self_a=false mate_z=none self_z=false x_a=-8 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:m5 mate_a=m8 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2443 axis2=18 origin={ -9, -1 } symmetry_off=false",
+        "MEMBER ag-2443 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2443 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=true",
+        "MEMBER ag-2443 m5 structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false",
+        "GROUP ag-2443 bank m3 m10",
+        "GROUP ag-2443 mirror m2 m9",
+        "GROUP ag-2443 mirror m6 m7",
+        "GROUP ag-2443 bank m1 m5",
+        "GROUP ag-2443 stack m1 m2 m3",
+        "GROUP ag-2443 stack m4 m5 m6",
+        "GROUP ag-2443 stack m8 m9"
+      ]
+    },
+    {
+      "id": "ag-2444",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x2 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2444 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2444 x2 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2444 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2444 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false",
+        "GROUP ag-2444 bank m3 mbias",
+        "GROUP ag-2444 mirror m2 mctrl",
+        "GROUP ag-2444 bank m1 msen",
+        "GROUP ag-2444 mirror mgen minj",
+        "GROUP ag-2444 stack m1 m2 m3",
+        "GROUP ag-2444 stack mchg msen mgen",
+        "GROUP ag-2444 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-2447",
+      "placement": [
+        "PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-2447 axis2=null origin={ -1, -1 } symmetry_off=false",
+        "MEMBER ag-2447 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false",
+        "MEMBER ag-2447 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false",
+        "MEMBER ag-2447 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false",
+        "GROUP ag-2447 bank m3 mbias",
+        "GROUP ag-2447 mirror m2 mctrl",
+        "GROUP ag-2447 mirror mgen minj",
+        "GROUP ag-2447 bank m1 msen",
+        "GROUP ag-2447 stack m1 m2 m3",
+        "GROUP ag-2447 stack mchg msen mgen",
+        "GROUP ag-2447 stack mres mctrl"
+      ]
+    },
+    {
+      "id": "ag-735",
+      "placement": [
+        "PLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-735 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-735 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=0 gate_right=false",
+        "MEMBER ag-735 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=0 gate_right=false",
+        "MEMBER ag-735 m2 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false",
+        "GROUP ag-735 bank m1 m2"
+      ]
+    },
+    {
+      "id": "ag-952",
+      "placement": [
+        "PLACEMENT_BANK m2:m1 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1",
+        "PLACEMENT_BANK m2:m1 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1"
+      ],
+      "public": [
+        "BANK ag-952 axis2=null origin={ -1, 0 } symmetry_off=false",
+        "MEMBER ag-952 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=0 gate_right=false",
+        "MEMBER ag-952 m1 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false",
+        "MEMBER ag-952 m2 structural_mate=none self=false drawn=true form=vertical x=1 y=0 gate_right=false",
+        "GROUP ag-952 bank m1 m2"
+      ]
+    },
+    {
+      "id": "ag-981",
+      "placement": [
+        "PLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m3:m4 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1",
+        "PLACEMENT_BANK m12:m14 mate_a=none self_a=false mate_z=none self_z=false x_a=24 x_z=32 driver=none driver_x=-1",
+        "PLACEMENT_BANK m2a:m4a mate_a=none self_a=false mate_z=none self_z=false x_a=32 x_z=40 driver=none driver_x=-1",
+        "PLACEMENT_BANK m1a:m3a mate_a=none self_a=false mate_z=none self_z=false x_a=32 x_z=40 driver=none driver_x=-1",
+        "PLACEMENT_BANK m11:m13 mate_a=none self_a=false mate_z=none self_z=false x_a=24 x_z=32 driver=x1 driver_x=20"
+      ],
+      "public": [
+        "BANK ag-981 axis2=null origin={ 0, 0 } symmetry_off=false",
+        "MEMBER ag-981 x1 structural_mate=none self=false drawn=true form=horizontal x=20 y=0 gate_right=false",
+        "MEMBER ag-981 m11 structural_mate=none self=false drawn=true form=vertical x=24 y=0 gate_right=false",
+        "MEMBER ag-981 m13 structural_mate=none self=false drawn=true form=vertical x=32 y=0 gate_right=false",
+        "GROUP ag-981 bank m1 m2",
+        "GROUP ag-981 bank m7 m8 m9",
+        "GROUP ag-981 bank m3 m4",
+        "GROUP ag-981 bank m5 m6 m10",
+        "GROUP ag-981 bank m12 m14",
+        "GROUP ag-981 bank m2a m4a",
+        "GROUP ag-981 bank m1a m3a",
+        "GROUP ag-981 bank m11 m13",
+        "GROUP ag-981 stack m1a m2a",
+        "GROUP ag-981 stack m3 m1 q1",
+        "GROUP ag-981 stack m3a m4a",
+        "GROUP ag-981 stack m4 m2",
+        "GROUP ag-981 stack m6a m5a",
+        "GROUP ag-981 stack m7 m5",
+        "GROUP ag-981 stack m8 m6",
+        "GROUP ag-981 stack m9 m10",
+        "GROUP ag-981 stack m11 m12",
+        "GROUP ag-981 stack m13 m14"
+      ]
+    },
+    {
+      "id": "ag-994",
+      "placement": [
+        "PLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=8 x_z=16 driver=x1 driver_x=7",
+        "PLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=8 x_z=24 driver=x1 driver_x=7"
+      ],
+      "public": [
+        "BANK ag-994 axis2=null origin={ 0, 0 } symmetry_off=false",
+        "MEMBER ag-994 x1 structural_mate=none self=false drawn=true form=horizontal x=7 y=2 gate_right=false",
+        "MEMBER ag-994 m1 structural_mate=none self=false drawn=true form=vertical x=8 y=2 gate_right=false",
+        "MEMBER ag-994 m2 structural_mate=none self=false drawn=true form=vertical x=24 y=2 gate_right=false",
+        "GROUP ag-994 mirror m3 m4 m7",
+        "GROUP ag-994 bank m1 m2",
+        "GROUP ag-994 stack m3 m1",
+        "GROUP ag-994 stack m4 m2",
+        "GROUP ag-994 stack m6 m5"
+      ]
+    }
+  ],
+  "private_probe_log": "warning: Git tree '/home/omare/Documents/Projects/EDA-Tools/Schematic/Plugins/cktImg' is dirty\ncktimg: zig 0.17.0\n  zig build test                         every suite\n  zig build -Dschemify_plugin=true       cktimg.wasm (the Schemify plugin)\n  zig build gallery -- --svgs out/       draw the textbook circuits\n1/1 probe.test.guard observation: complete driven banks...PLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2415 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2415 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2415 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2415 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false\nGROUP ag-2415 bank m3 mbias\nGROUP ag-2415 mirror m2 mctrl\nGROUP ag-2415 mirror mgen minj\nGROUP ag-2415 bank m1 msen\nGROUP ag-2415 stack m1 m2 m3\nGROUP ag-2415 stack mchg msen mgen\nGROUP ag-2415 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2418 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2418 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2418 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2418 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false\nGROUP ag-2418 bank m3 mbias\nGROUP ag-2418 mirror m2 mctrl\nGROUP ag-2418 bank m1 msen\nGROUP ag-2418 mirror mgen minj\nGROUP ag-2418 stack m1 m2 m3\nGROUP ag-2418 stack mchg msen mgen\nGROUP ag-2418 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2420 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2420 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2420 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2420 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false\nGROUP ag-2420 bank m3 mbias\nGROUP ag-2420 mirror mgen minj\nGROUP ag-2420 mirror m2 mctrl\nGROUP ag-2420 bank m1 msen\nGROUP ag-2420 stack m1 m2 m3\nGROUP ag-2420 stack mchg msen mgen\nGROUP ag-2420 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2421 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2421 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2421 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2421 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false\nGROUP ag-2421 bank m3 mbias\nGROUP ag-2421 mirror m2 mctrl\nGROUP ag-2421 mirror mgen minj\nGROUP ag-2421 bank m1 msen\nGROUP ag-2421 stack m1 m2 m3\nGROUP ag-2421 stack mchg msen mgen\nGROUP ag-2421 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2422 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2422 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2422 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2422 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false\nGROUP ag-2422 bank m3 mbias\nGROUP ag-2422 mirror mgen minj\nGROUP ag-2422 mirror m2 mctrl\nGROUP ag-2422 bank m1 msen\nGROUP ag-2422 stack m1 m2 m3\nGROUP ag-2422 stack mchg msen mgen\nGROUP ag-2422 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2423 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2423 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2423 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2423 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false\nGROUP ag-2423 bank m3 mbias\nGROUP ag-2423 mirror mgen minj\nGROUP ag-2423 mirror m2 mctrl\nGROUP ag-2423 bank m1 msen\nGROUP ag-2423 stack m1 m2 m3\nGROUP ag-2423 stack mchg msen mgen\nGROUP ag-2423 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2425 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2425 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2425 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2425 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false\nGROUP ag-2425 bank m3 mbias\nGROUP ag-2425 mirror m2 mctrl\nGROUP ag-2425 mirror mgen minj\nGROUP ag-2425 bank m1 msen\nGROUP ag-2425 stack m1 m2 m3\nGROUP ag-2425 stack mchg msen mgen\nGROUP ag-2425 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2427 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2427 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2427 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2427 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false\nGROUP ag-2427 bank m3 mbias\nGROUP ag-2427 mirror mgen minj\nGROUP ag-2427 mirror m2 mctrl\nGROUP ag-2427 bank m1 msen\nGROUP ag-2427 stack m1 m2 m3\nGROUP ag-2427 stack mchg msen mgen\nGROUP ag-2427 stack mres mctrl\nPLACEMENT_BANK m3:m10 mate_a=m7 self_a=false mate_z=none self_z=false x_a=-8 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:m5 mate_a=m8 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1\nBANK ag-2428 axis2=18 origin={ -9, 0 } symmetry_off=false\nMEMBER ag-2428 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2428 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=true\nMEMBER ag-2428 m5 structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false\nGROUP ag-2428 bank m3 m10\nGROUP ag-2428 mirror m2 m9\nGROUP ag-2428 mirror m6 m7\nGROUP ag-2428 bank m1 m5\nGROUP ag-2428 stack m1 m2 m3\nGROUP ag-2428 stack m4 m5 m6\nGROUP ag-2428 stack m8 m9\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2434 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2434 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2434 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2434 msen structural_mate=none self=false drawn=true form=vertical x=17 y=2 gate_right=false\nGROUP ag-2434 bank m3 mbias\nGROUP ag-2434 mirror mgen minj\nGROUP ag-2434 mirror m2 mctrl\nGROUP ag-2434 bank m1 msen\nGROUP ag-2434 stack m1 m2 m3\nGROUP ag-2434 stack mchg msen mgen\nGROUP ag-2434 stack mres mctrl\nPLACEMENT_BANK m3:m10 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m5:m1 mate_a=m9 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1\nBANK ag-2435 axis2=18 origin={ -9, 0 } symmetry_off=false\nMEMBER ag-2435 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2435 m1 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false\nMEMBER ag-2435 m5 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=true\nGROUP ag-2435 bank m3 m10\nGROUP ag-2435 mirror m6 m7\nGROUP ag-2435 mirror m2 m9\nGROUP ag-2435 bank m1 m5\nGROUP ag-2435 stack m1 m2 m3\nGROUP ag-2435 stack m4 m5 m6\nGROUP ag-2435 stack m8 m9\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x1 driver_x=-1\nBANK ag-2436 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2436 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2436 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2436 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false\nGROUP ag-2436 bank m3 mbias\nGROUP ag-2436 mirror m2 mctrl\nGROUP ag-2436 bank m1 msen\nGROUP ag-2436 mirror mgen minj\nGROUP ag-2436 stack m1 m2 m3\nGROUP ag-2436 stack mchg msen mgen\nGROUP ag-2436 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x2 driver_x=-1\nBANK ag-2440 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-2440 x2 structural_mate=none self=false drawn=true form=horizontal x=0 y=2 gate_right=false\nMEMBER ag-2440 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=2 gate_right=false\nMEMBER ag-2440 msen structural_mate=none self=false drawn=true form=vertical x=9 y=2 gate_right=false\nGROUP ag-2440 bank m3 mbias\nGROUP ag-2440 mirror mgen minj\nGROUP ag-2440 bank m1 msen\nGROUP ag-2440 mirror m2 mctrl\nGROUP ag-2440 stack m1 m2 m3\nGROUP ag-2440 stack mchg msen mgen\nGROUP ag-2440 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2441 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2441 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2441 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2441 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false\nGROUP ag-2441 bank m3 mbias\nGROUP ag-2441 mirror m2 mctrl\nGROUP ag-2441 bank m1 msen\nGROUP ag-2441 mirror mgen minj\nGROUP ag-2441 stack m1 m2 m3\nGROUP ag-2441 stack mchg msen mgen\nGROUP ag-2441 stack mres mctrl\nPLACEMENT_BANK m3:m10 mate_a=m7 self_a=false mate_z=none self_z=false x_a=-8 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:m5 mate_a=m8 self_a=false mate_z=none self_z=false x_a=-8 x_z=0 driver=none driver_x=-1\nBANK ag-2443 axis2=18 origin={ -9, -1 } symmetry_off=false\nMEMBER ag-2443 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2443 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=true\nMEMBER ag-2443 m5 structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false\nGROUP ag-2443 bank m3 m10\nGROUP ag-2443 mirror m2 m9\nGROUP ag-2443 mirror m6 m7\nGROUP ag-2443 bank m1 m5\nGROUP ag-2443 stack m1 m2 m3\nGROUP ag-2443 stack m4 m5 m6\nGROUP ag-2443 stack m8 m9\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=x2 driver_x=-1\nBANK ag-2444 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2444 x2 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2444 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2444 msen structural_mate=none self=false drawn=true form=vertical x=17 y=3 gate_right=false\nGROUP ag-2444 bank m3 mbias\nGROUP ag-2444 mirror m2 mctrl\nGROUP ag-2444 bank m1 msen\nGROUP ag-2444 mirror mgen minj\nGROUP ag-2444 stack m1 m2 m3\nGROUP ag-2444 stack mchg msen mgen\nGROUP ag-2444 stack mres mctrl\nPLACEMENT_BANK m3:mbias mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=16 driver=none driver_x=-1\nPLACEMENT_BANK m1:msen mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-2447 axis2=null origin={ -1, -1 } symmetry_off=false\nMEMBER ag-2447 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=3 gate_right=false\nMEMBER ag-2447 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=3 gate_right=false\nMEMBER ag-2447 msen structural_mate=none self=false drawn=true form=vertical x=9 y=3 gate_right=false\nGROUP ag-2447 bank m3 mbias\nGROUP ag-2447 mirror m2 mctrl\nGROUP ag-2447 mirror mgen minj\nGROUP ag-2447 bank m1 msen\nGROUP ag-2447 stack m1 m2 m3\nGROUP ag-2447 stack mchg msen mgen\nGROUP ag-2447 stack mres mctrl\nPLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-735 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-735 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=0 gate_right=false\nMEMBER ag-735 m1 structural_mate=none self=false drawn=true form=vertical x=1 y=0 gate_right=false\nMEMBER ag-735 m2 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false\nGROUP ag-735 bank m1 m2\nPLACEMENT_BANK m2:m1 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nPLACEMENT_BANK m2:m1 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=x1 driver_x=-1\nBANK ag-952 axis2=null origin={ -1, 0 } symmetry_off=false\nMEMBER ag-952 x1 structural_mate=none self=false drawn=true form=horizontal x=0 y=0 gate_right=false\nMEMBER ag-952 m1 structural_mate=none self=false drawn=true form=vertical x=9 y=0 gate_right=false\nMEMBER ag-952 m2 structural_mate=none self=false drawn=true form=vertical x=1 y=0 gate_right=false\nGROUP ag-952 bank m1 m2\nPLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m3:m4 mate_a=none self_a=false mate_z=none self_z=false x_a=0 x_z=8 driver=none driver_x=-1\nPLACEMENT_BANK m12:m14 mate_a=none self_a=false mate_z=none self_z=false x_a=24 x_z=32 driver=none driver_x=-1\nPLACEMENT_BANK m2a:m4a mate_a=none self_a=false mate_z=none self_z=false x_a=32 x_z=40 driver=none driver_x=-1\nPLACEMENT_BANK m1a:m3a mate_a=none self_a=false mate_z=none self_z=false x_a=32 x_z=40 driver=none driver_x=-1\nPLACEMENT_BANK m11:m13 mate_a=none self_a=false mate_z=none self_z=false x_a=24 x_z=32 driver=x1 driver_x=20\nBANK ag-981 axis2=null origin={ 0, 0 } symmetry_off=false\nMEMBER ag-981 x1 structural_mate=none self=false drawn=true form=horizontal x=20 y=0 gate_right=false\nMEMBER ag-981 m11 structural_mate=none self=false drawn=true form=vertical x=24 y=0 gate_right=false\nMEMBER ag-981 m13 structural_mate=none self=false drawn=true form=vertical x=32 y=0 gate_right=false\nGROUP ag-981 bank m1 m2\nGROUP ag-981 bank m7 m8 m9\nGROUP ag-981 bank m3 m4\nGROUP ag-981 bank m5 m6 m10\nGROUP ag-981 bank m12 m14\nGROUP ag-981 bank m2a m4a\nGROUP ag-981 bank m1a m3a\nGROUP ag-981 bank m11 m13\nGROUP ag-981 stack m1a m2a\nGROUP ag-981 stack m3 m1 q1\nGROUP ag-981 stack m3a m4a\nGROUP ag-981 stack m4 m2\nGROUP ag-981 stack m6a m5a\nGROUP ag-981 stack m7 m5\nGROUP ag-981 stack m8 m6\nGROUP ag-981 stack m9 m10\nGROUP ag-981 stack m11 m12\nGROUP ag-981 stack m13 m14\nPLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=8 x_z=16 driver=x1 driver_x=7\nPLACEMENT_BANK m1:m2 mate_a=none self_a=false mate_z=none self_z=false x_a=8 x_z=24 driver=x1 driver_x=7\nBANK ag-994 axis2=null origin={ 0, 0 } symmetry_off=false\nMEMBER ag-994 x1 structural_mate=none self=false drawn=true form=horizontal x=7 y=2 gate_right=false\nMEMBER ag-994 m1 structural_mate=none self=false drawn=true form=vertical x=8 y=2 gate_right=false\nMEMBER ag-994 m2 structural_mate=none self=false drawn=true form=vertical x=24 y=2 gate_right=false\nGROUP ag-994 mirror m3 m4 m7\nGROUP ag-994 bank m1 m2\nGROUP ag-994 stack m3 m1\nGROUP ag-994 stack m4 m2\nGROUP ag-994 stack m6 m5\nOK\nAll 1 tests passed.\n",
+  "probe_zig": "const std = @import(\"std\");\nconst np = @import(\"NetlistParser\");\nconst Case = struct { id: []const u8, driver: []const u8, bank: [2][]const u8, source: []const u8 };\nconst cases = [_]Case{\n.{ .id = \"ag-2415\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2415.cir\") },\n.{ .id = \"ag-2418\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2418.cir\") },\n.{ .id = \"ag-2420\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2420.cir\") },\n.{ .id = \"ag-2421\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2421.cir\") },\n.{ .id = \"ag-2422\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2422.cir\") },\n.{ .id = \"ag-2423\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2423.cir\") },\n.{ .id = \"ag-2425\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2425.cir\") },\n.{ .id = \"ag-2427\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2427.cir\") },\n.{ .id = \"ag-2428\", .driver = \"x1\", .bank = .{ \"m1\", \"m5\" }, .source = @embedFile(\"ag-2428.cir\") },\n.{ .id = \"ag-2434\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2434.cir\") },\n.{ .id = \"ag-2435\", .driver = \"x1\", .bank = .{ \"m1\", \"m5\" }, .source = @embedFile(\"ag-2435.cir\") },\n.{ .id = \"ag-2436\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2436.cir\") },\n.{ .id = \"ag-2440\", .driver = \"x2\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2440.cir\") },\n.{ .id = \"ag-2441\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2441.cir\") },\n.{ .id = \"ag-2443\", .driver = \"x1\", .bank = .{ \"m1\", \"m5\" }, .source = @embedFile(\"ag-2443.cir\") },\n.{ .id = \"ag-2444\", .driver = \"x2\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2444.cir\") },\n.{ .id = \"ag-2447\", .driver = \"x1\", .bank = .{ \"m1\", \"msen\" }, .source = @embedFile(\"ag-2447.cir\") },\n.{ .id = \"ag-735\", .driver = \"x1\", .bank = .{ \"m1\", \"m2\" }, .source = @embedFile(\"ag-735.cir\") },\n.{ .id = \"ag-952\", .driver = \"x1\", .bank = .{ \"m1\", \"m2\" }, .source = @embedFile(\"ag-952.cir\") },\n.{ .id = \"ag-981\", .driver = \"x1\", .bank = .{ \"m11\", \"m13\" }, .source = @embedFile(\"ag-981.cir\") },\n.{ .id = \"ag-994\", .driver = \"x1\", .bank = .{ \"m1\", \"m2\" }, .source = @embedFile(\"ag-994.cir\") },\n};\ntest \"guard observation: complete driven banks\" {\n for(cases) |case| {\n  var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);\n  defer arena.deinit();\n  const a = arena.allocator();\n  var nl = try np.netlist.parse(a, &.{case.source}, null);\n  const roles = try np.guessRoles(a,&nl);\n  const st = try np.schematic.structure.analyze(a,a,&nl,roles);\n  const sk = try np.schematic.skeleton.place(a,a,&nl,roles,&st,.{});\n  const names = nl.graph.edges.items(.name);\n  std.debug.print(\"BANK {s} axis2={any} origin={any} symmetry_off={}\\n\",.{case.id,sk.axis2,sk.origin,st.symmetry_off});\n  for ([_][]const u8{case.driver,case.bank[0],case.bank[1]}) |name| {\n   const d=nl.device(name).?.index(); const mate=st.device_mate[d];\n   std.debug.print(\"MEMBER {s} {s} structural_mate={s} self={} drawn={} form={t} x={d} y={d} gate_right={}\\n\",.{case.id,name,if(mate==np.schematic.structure.none) \"none\" else names[mate],mate==d,sk.drawn[d],sk.form[d],sk.x[d],sk.y[d],sk.gate_right[d]});\n  }\n  for(st.block_kind,0..) |kind,b| {\n   const members=st.members(b);\n   std.debug.print(\"GROUP {s} {t}\",.{case.id,kind});\n   for(members) |d| std.debug.print(\" {s}\",.{names[d]});\n   std.debug.print(\"\\n\",.{});\n  }\n }\n}\n",
+  "reader_sha256": "144ad91c06a5bc687ad5ae67dc4852df96bee6d19c7a9f07ffd8a78436297cb0",
+  "recorded_log_sha256": "30fe8df13fe97cd4464048d8cbe25523188d5c02b47f2c2ccc9f9edefc8a13f9",
+  "source_inventory_sha256": "364730eed147be3bcd92a0cfe5aae74093f4da815332e20a00471653323c6e94"
+}
