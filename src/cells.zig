@@ -5,10 +5,20 @@
 //! devices they displaced on the nearest free cell of their row, the mates
 //! no longer mirrored dropped, and a verdict per line.
 //!
-//! Lines are admitted strongest first (`hints.admitOrder`): a cell a
-//! stronger line holds, or a device it placed, drops the line, blocked by
-//! it; the engine's own cells give way. A line on one of a mated pair puts
-//! the unnamed mate on the mirror cell (the core stands about x = 0 here).
+//! Human Rules:
+//! - cells.1 (invariant) `cell <dev> <col> <row>` puts the device on that
+//!   lattice cell; the engine's own cells give way. `apply`
+//! - cells.2 (choice) Of `cell` lines on one cell or one device, the
+//!   strongest stands and the rest are dropped, blocked by it: the deck's
+//!   own ranking of its lines. `apply`
+//! - cells.3 (choice) A device a line displaces moves to the nearest free
+//!   cell of its row, right before left: moving as little as possible.
+//!   `put`
+//! - cells.4 (unmeasured) A `cell` line on one of a mated pair puts the
+//!   unnamed mate on the mirror cell (the core stands about x = 0 here),
+//!   unless a stronger line holds that cell. `apply`
+//! - cells.5 (invariant) Mates a line moved off each other's mirror cell
+//!   are drawn as mates no more. `apply`
 //!
 //! Contents:
 //! - `pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []const bool, mate: []u32, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`

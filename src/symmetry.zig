@@ -7,14 +7,41 @@
 //! with its terminal. Colour refinement (1-dimensional Weisfeiler-Leman)
 //! with individualization: two copies are refined, a vertex individualized
 //! in one and a candidate image in the other, depth first, until both
-//! colourings are discrete; the map is then read off the colours. Of the
-//! maps that are involutions, keep every device's pins, and move a net
-//! other than a rail, the one moving the most devices that are not sources
-//! wins: the Gilbert cell has three, and the book draws that one. Budgets
-//! bound the search on circuits of many identical cells.
+//! colourings are discrete; the map is then read off the colours.
 //!
 //! Cites: B. McKay, A. Piperno, "Practical graph isomorphism, II", J.
 //! Symbolic Computation 60, 2014.
+//!
+//! Human Rules:
+//! - symmetry.1 (unmeasured) A circuit that maps onto itself by swapping
+//!   devices and nets in pairs is drawn as a mirror image about one axis,
+//!   each device opposite one of its own kind, polarity and pin count, each
+//!   net opposite one of its own role; what maps to itself stands on the
+//!   axis. `find`
+//! - symmetry.2 (unmeasured) An input and a bias net count as one role: a
+//!   pair driven with `ac` on one input and dc only on the other is still
+//!   drawn mirrored. `initialColours`
+//! - symmetry.3 (unmeasured) A device's mirror image keeps its terminals:
+//!   gate opposite gate, drain opposite drain; a path's two ends may trade
+//!   places only where the part does not tell them apart (a resistor's or
+//!   a switch's may, a diode's may not). `preservesPins`
+//!   Narrowing: each family keeps the label numbers it had, which order
+//!   the colours and so which of equal symmetries is met first
+//!   (`pinLabel`).
+//! - symmetry.4 (unmeasured) A swap that moves no net but a rail (two
+//!   parallel devices traded) is not drawn as a mirror. `movesSignal`
+//! - symmetry.5 (book) Of the symmetries, the drawing shows the one that
+//!   moves the most devices that are not sources: the Gilbert cell has
+//!   three, and the book draws that one (no book named). `consider`
+//!   Narrowing: only voltage sources are left out of the count; the device
+//!   table's sources also take I, E, G, F and H (`movedDevices`).
+//! - symmetry.6 (choice) Of symmetries that move as many devices, the
+//!   first met in the canonical order is drawn: something must break the
+//!   tie, and the order of the cards may not. `consider`
+//! - symmetry.7 (choice) The search stops after `refines_max` (64)
+//!   refinements or `candidates_max` (16) complete maps: a circuit of many
+//!   identical cells has many symmetries, and the first few are as good as
+//!   any. `complete`
 //!
 //! Contents:
 //! - `pub const none: u32`

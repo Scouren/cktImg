@@ -2,13 +2,9 @@
 //! alone. In: the netlist and its nets' roles. Out, per device and net in
 //! card order:
 //!
-//! - a canonical order: devices by name (a natural sort, `m2` before `m10`),
-//!   so nothing that breaks a tie by it depends on the order of the cards;
-//! - blocks, the groups a designer draws as one unit: differential pairs,
-//!   cross-coupled pairs, transistors of one type on one gate (a mirror when
-//!   one of them is diode-connected, else a bank), and series stacks;
-//! - the left-right symmetry (`symmetry.zig`): an involution on devices and
-//!   nets that maps the circuit onto itself and moves the most devices.
+//! - a canonical order of devices and of nets;
+//! - blocks, the groups a designer draws as one unit;
+//! - the left-right symmetry (`symmetry.zig`), under the deck's lines.
 //!
 //! Data: one row per device and per net (u32 handles, `none` = no mate);
 //! blocks as kind + start offsets + members (each device in at most one row
@@ -18,6 +14,52 @@
 //! Cites: T. Massier, H. Graeb, U. Schlichtmann, "The Sizing Rules Method
 //! for CMOS and Bipolar Analog Integrated Circuit Synthesis", IEEE TCAD
 //! 27(12), 2008 (blocks as groups of transistor pairs); symmetry.zig's.
+//!
+//! Human Rules:
+//! - structure.1 (invariant) The drawing does not depend on the order of
+//!   the cards: every tie is broken by the canonical order of device and
+//!   net names. `rankByName`
+//! - structure.2 (choice) The canonical order is natural: a run of digits
+//!   reads as a number (`m2` before `m10`), the rest bytewise: a tie needs
+//!   a breaker that the cards' order cannot be. `nameLess`
+//! - structure.3 (invariant) A `symmetric a b` line draws a and b as each
+//!   other's mirror image, an `axis x` line puts x on the mirror axis, and
+//!   `symmetry off` draws no mirror at all, not even a block's. `mates`
+//! - structure.4 (choice) Of `symmetric` and `axis` lines that no one
+//!   symmetry satisfies together, the strongest stand and the rest are
+//!   dropped; `symmetry off` drops them all: the deck's own ranking of
+//!   its lines. `mates`
+//! - structure.5 (invariant) A `group` line's devices are drawn as one
+//!   block of the kind it names, as written (a stack top to bottom); a
+//!   device a `nogroup` line names is in no block; `grouping off` leaves
+//!   only the named groups. `groupLines`
+//! - structure.6 (choice) Of `group` lines that name one device, the
+//!   strongest takes it (a stack line and another kind may share it): the
+//!   deck's own ranking of its lines. `groupLines`
+//! - structure.7 (book) Two transistors of one type, each one's gate on the
+//!   other's drain (neither net a rail), are drawn as one block, a
+//!   cross-coupled pair. Massier, Graeb and Schlichtmann (Cites). `blocks`
+//! - structure.8 (book) The only two transistor sources on a net that is no
+//!   rail and holds no gate, of one type, with distinct gates and distinct
+//!   drains, are drawn as one block, a differential pair. Massier, Graeb
+//!   and Schlichtmann (Cites). `blocks`
+//! - structure.9 (book) Two or more transistors of one kind and polarity
+//!   on one gate net (no rail), one of them diode-connected, are drawn as
+//!   one block, a current mirror. Massier, Graeb and Schlichtmann (Cites).
+//!   `blocks`
+//! - structure.10 (book) The same with none diode-connected (current
+//!   sources on a bias line, cascodes) are drawn as one block, a bank.
+//!   Massier, Graeb and Schlichtmann (Cites). `blocks`
+//! - structure.11 (book) Transistors in series, each one's lower end alone
+//!   with the next one's upper end on a net that is not a rail, are drawn
+//!   as one block, a stack, top to bottom. Massier, Graeb and Schlichtmann
+//!   (Cites). `blocks`
+//! - structure.12 (unmeasured) A transistor is in at most one of a
+//!   cross-coupled pair, a differential pair and a mirror or bank, taken in
+//!   that order; a stack may share it. `blocks`
+//!   Narrowing: of one gate net's groups of a polarity, MOSFETs' are
+//!   listed first; the device table's own order has them last
+//!   (`transistors`).
 //!
 //! Contents:
 //! - `pub const none: u32`

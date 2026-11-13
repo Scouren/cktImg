@@ -2,11 +2,33 @@
 //! the structure, each device's column and its neighbours in it. Out: each
 //! column device's mate (itself on the axis), or `none`.
 //!
-//! The symmetry's mates where it has one (none under `*@ symmetry off`);
-//! else each pair's and two-member mirror's, carried up and down their
-//! columns. Kept only where each column's mates stand in one column, since
-//! columns mirror whole; and, of pairs the circuit does not wire half to
-//! half, only those about one axis: a drawing has one.
+//! Human Rules:
+//! - mates.1 (unmeasured) In a circuit with a symmetry, each upright device
+//!   stands opposite its image; a flat part is not mirrored. `find`
+//! - mates.2 (unmeasured) In a circuit with none, the two of each
+//!   differential pair, cross-coupled pair and two-member mirror stand
+//!   mirrored, with the devices of one kind above and below them in their
+//!   two columns. `pairMates`
+//! - mates.3 (unmeasured) A bank's two are not mirrored: a tail and a
+//!   second stage's source share a bias line. `pairMates`
+//! - mates.4 (unmeasured) A pair's loads mirror with the pair before they
+//!   mirror as some mirror's other half. `pairMates`
+//! - mates.5 (invariant) Columns mirror whole: a column's devices stand
+//!   mirrored only when all their images stand in one column whose images
+//!   stand in it. `mirrorable`
+//! - mates.6 (unmeasured) Two mated pairs of columns share one axis when
+//!   the circuit wires them half to half: a net (no rail, no bias) joins a
+//!   column of one to a column of the other, and another net joins their
+//!   two images (a pair and its folded branches, two pairs on the same
+//!   inputs). `oneAxis`
+//!   Narrowing: nets only; pairs joined half to half through bridges (a
+//!   coil each side) are not one cluster: tried on 5,263 reference
+//!   circuits, it drew 3 with fewer crossings and 10 with more.
+//! - mates.7 (choice) A drawing has one mirror axis: of clusters not wired
+//!   half to half, the largest holding a differential or cross-coupled pair
+//!   keeps its mates (the lowest rank on a tie), the rest stand free side
+//!   by side, and none keeps them when none holds such a pair: the
+//!   skeleton, the wires and the closing up carry one axis. `oneAxis`
 //!
 //! Contents:
 //! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32`

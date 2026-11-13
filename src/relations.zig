@@ -5,12 +5,48 @@
 //! a verdict per line.
 //!
 //! Rows and their order are difference constraints: `row a b` an equality,
-//! `above a b` an edge. Lines are admitted strongest first
-//! (`hints.admitOrder`), each when it closes no cycle with those already in,
-//! else dropped with its preferred conflict. A line on one of a mated pair
-//! also states its mirror image, kept where it fits. The engine's own
-//! decisions (column links, mates, blocks, the ground drop) come after, and
-//! give way.
+//! `above a b` an edge.
+//!
+//! Human Rules:
+//! - relations.1 (invariant) `driver <dev> apart` draws a two-pin
+//!   independent source apart, left of the circuit, upright between its
+//!   net's symbol and ground; `driver <dev> inline` draws a device in the
+//!   circuit. `drivers`
+//! - relations.2 (invariant) A device an `upright` line names stands in a
+//!   column, one a `bridge` line names lies flat between columns; a
+//!   transistor only stands. `forms`
+//!   Narrowing: no controlled source (E, G, F, H) is taken, which the
+//!   general form admits (`twoPin`).
+//! - relations.3 (choice) Of lines setting one value (a device's form, an
+//!   end, a driver), the preferred stands, applied last: the deck's own
+//!   ranking of its lines. `forms`
+//! - relations.4 (invariant) `face <dev> <end> up|down` puts that end of
+//!   an upright device up or down. `ends`
+//! - relations.5 (invariant) The upright devices a `row` line names stand
+//!   on one row; a bridge it names takes the row of its first upright
+//!   device. `rows`
+//! - relations.6 (invariant) Each upright device an `above` line names
+//!   stands on a row above the next one's. `rows`
+//! - relations.7 (choice) Of `row` and `above` lines that close a cycle,
+//!   the strongest stand and the rest are dropped with their preferred
+//!   conflict: the deck's own ranking of its lines. `rows`
+//! - relations.8 (unmeasured) A `row` or `above` line on mated devices also
+//!   holds for their mirror images, where those are drawn upright and the
+//!   image contradicts no line; a bridge's mate takes the image row. `rows`
+//! - relations.9 (choice) The engine's own column links, mates, blocks and
+//!   ground drop give way to the `row` and `above` lines: the deck is the
+//!   user's word. `Relations.refuses`
+//! - relations.10 (invariant) `face <dev> g left|right` puts a transistor's
+//!   gate (or base) on that side; on a flat part, the named end stands on
+//!   that side. `faces`
+//!   Narrowing: a flat part by its pin count, as `sketch.fits` turns it;
+//!   the device model's flat part also takes a four-pin switch and leaves
+//!   out a two-port box.
+//! - relations.11 (unmeasured) A `face` line on one of a mated pair turns
+//!   the unnamed mate's gate the other way; a flat part's mate is not
+//!   turned with it. `faces`
+//! - relations.12 (invariant) A drawing whose mated pair's gates a line
+//!   turned to face the same way is not drawn mirrored. `faces`
 //!
 //! Contents:
 //! - `pub const Relations = struct`, `Relations.find(r: *const Relations, d: u32) u32`, `Relations.refuses(r: *const Relations, gpa: Allocator, below: []const u32, u: u32, l: u32) Allocator.Error!bool`

@@ -4,16 +4,31 @@
 //! the columns reordered, bridges set between their neighbours (and on the
 //! rows `row` lines give them), and a verdict per line.
 //!
-//! Each two neighbours of an order line are a pair "left of", admitted
-//! strongest first; a line that closes a cycle is dropped with its preferred
-//! conflict. Column devices a path of pairs joins through bridges alone
-//! stand in that order (two lines on one bridge order the columns either
-//! names), and devices one line names stand in different columns, so a link
-//! the engine would make between them is not made. A bridge stands right of
-//! every device before it and left of every one after it. A line on mated
-//! devices also states its mirror image (reversed), weighed after every
-//! line and kept where it fits; the columns' order then drops the mates it
-//! no longer mirrors.
+//! Human Rules:
+//! - sequence.1 (invariant) The devices an `order` line names stand left to
+//!   right in that order, each left of the next. `read`
+//! - sequence.2 (choice) Of `order` lines that close a cycle, the strongest
+//!   stand and the rest are dropped with their preferred conflict: the
+//!   deck's own ranking of its lines. `read`
+//! - sequence.3 (unmeasured) An `order` line on mated devices also holds
+//!   for their mirror images, reversed, where every device it names has a
+//!   mate of its form and the image closes no cycle with any line. `read`
+//! - sequence.4 (invariant) Upright devices that a chain of "left of" pairs
+//!   joins through bridges alone stand in that order: `order a b` and
+//!   `order b c` with b a bridge put a's column left of c's. `read`
+//! - sequence.5 (invariant) Two upright devices one line orders stand in
+//!   different columns: the engine makes no link between them.
+//!   `Sequence.refuses`
+//! - sequence.6 (choice) The columns move as little as the lines allow: a
+//!   stable order by present x, and columns that shared an x and that no
+//!   line separates keep sharing it. `columns`
+//! - sequence.7 (invariant) A bridge an `order` line names stands right of
+//!   every device before it in a line and left of every one after it; with
+//!   no free cell there it stays, its line relaxed. `bridges`
+//! - sequence.8 (choice) A bridge a line places takes the free cell nearest
+//!   its own (on the row a `row` line gives it), bridges a line puts first
+//!   placed first, then in canonical order: moving as little as possible.
+//!   `bridges`
 //!
 //! Contents:
 //! - `pub const Sequence = struct`, `Sequence.refuses(s: *const Sequence, gpa: Allocator, above: []const u32, u: u32, l: u32) Allocator.Error!bool`
