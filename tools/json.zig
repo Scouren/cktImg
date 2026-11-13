@@ -252,13 +252,10 @@ fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, di
     return out.written();
 }
 
-/// `*@ weak role` lines for the top cell's nets: only a cell's ports carry
-/// symbols. A port whose name says nothing of its role (R1 leaves it
-/// internal) is an input when only gates hang on it, any other an output,
-/// so a port on one gate is no dangling pin. A net that is no port is
-/// internal whatever its name says (an inner `vb1` is no bias port): people
-/// put a symbol on 49 of 23,393 such nets in 5,263 hand-drawn cells. A rail
-/// keeps its symbol: in SPICE a supply is global, port or not.
+/// `*@ weak role` lines for the top cell's ports whose names say nothing of
+/// their role (R1 leaves them internal): a port only gates hang on is an
+/// input, any other an output. So every port is drawn as one, and a port on
+/// one gate is no dangling pin.
 fn portRoles(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, diag: *np.netlist.Diagnostic) ![]const u8 {
     var nl = try np.netlist.parse(gpa, sources, diag);
     defer nl.deinit(gpa);
@@ -277,16 +274,11 @@ fn portRoles(gpa: Allocator, arena: Allocator, sources: []const []const u8, port
             if (!transistor or pin == 0 or pin == 2) driven[net.index()] = true;
         }
     }
-    const port = try gpa.alloc(bool, roles.len);
-    defer gpa.free(port);
-    @memset(port, false);
-    for (ports) |name| if (nl.net(name)) |net| {
-        port[net.index()] = true;
-    };
     var out: Writer.Allocating = .init(arena);
-    for (roles, port, driven, nl.graph.vertices.items(.name)) |role, is_port, drives, name| {
-        if (role.isRail() or (role == .internal) != is_port) continue;
-        try out.writer.print("*@ weak role {s} {s}\n", .{ name, if (!is_port) "internal" else if (drives) "output" else "input" });
+    for (ports) |port| {
+        const net = nl.net(port) orelse continue;
+        if (roles[net.index()] != .internal) continue;
+        try out.writer.print("*@ weak role {s} {s}\n", .{ port, if (driven[net.index()]) "output" else "input" });
     }
     return out.written();
 }
@@ -568,34 +560,6 @@ test "deck: the top cell's ports that no name gives a role are inputs and output
     try std.testing.expectEqual(np.Role.output, roles[nl.net("x").?.index()]);
     try std.testing.expectEqual(np.Role.bias, roles[nl.net("vb").?.index()]); // R1's, kept
     try std.testing.expectEqual(np.Role.internal, roles[nl.net("n1").?.index()]); // no port
-}
-
-test "deck: a top cell's net that is no port is internal, whatever its name" {
-    // Oracle: people. Of 23,393 nets that are no port of their cell in
-    // 5,263 hand-drawn cells, 49 carry a symbol (1,029 of the engine's 1,363
-    // were inner `vb*`/`bias*` nets). `vdd` is no port here and stays a
-    // supply: people draw a supply symbol on 47 of 63 such nets.
-    const gpa = std.testing.allocator;
-    var arena_state: std.heap.ArenaAllocator = .init(gpa);
-    defer arena_state.deinit();
-    var diag: np.netlist.Diagnostic = .{};
-    const srcs = try deckSources(gpa, arena_state.allocator(), "mirror.spice",
-        \\.subckt dut vss iin out
-        \\M1 iin iin vss vss nch
-        \\M2 vb1 iin vss vss nch
-        \\M3 vb1 vb1 vdd vdd pch
-        \\M4 out vb1 vdd vdd pch
-        \\M5 inner_out out vss vss nch
-        \\.ends dut
-    , &diag);
-    var nl = try np.netlist.parse(gpa, srcs, &diag);
-    defer nl.deinit(gpa);
-    const roles = try np.guessRoles(gpa, &nl);
-    defer gpa.free(roles);
-    try std.testing.expectEqual(np.Role.internal, roles[nl.net("vb1").?.index()]);
-    try std.testing.expectEqual(np.Role.internal, roles[nl.net("inner_out").?.index()]);
-    try std.testing.expectEqual(np.Role.supply, roles[nl.net("vdd").?.index()]);
-    try std.testing.expectEqual(np.Role.output, roles[nl.net("out").?.index()]); // a port, by R1
 }
 
 test "from: a drawing's JSON gives the stays its decisions give" {
