@@ -34,9 +34,8 @@ test "report: a deck plus its exported decisions, rungs 1 to 4, recognition off,
     var decks: std.ArrayList(struct { []const u8, []const u8 }) = .empty;
     for (golden.decks) |d| try decks.append(arena, .{ d.name, d.spice });
     for (textbook.all ++ textbook.beyond) |c| try decks.append(arena, .{ c.name, c.spice });
-    // A drawing wrapped into shelves: its cells give its shelves back. The
-    // deck says the width, so the skeleton's options and the layout's agree.
-    try decks.append(arena, .{ "wide_chain", support.wide_chain ++ "*@ shelf 8\n" });
+    // A drawing wrapped into shelves: its cells give its shelves back.
+    try decks.append(arena, .{ "wide_chain", support.wide_chain });
     // A drawing placed along its signal: its places are its decisions.
     try decks.append(arena, .{ "inverting_amp", support.inverting_amp });
     var bad: usize = 0;

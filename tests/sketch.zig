@@ -1241,17 +1241,16 @@ test "sketch: two blocks stacked in one column stand clear, no pin of one on a p
 }
 
 test "sketch: a net between two shelves is joined by name, a shelf's own nets by wire" {
-    // Oracle: the wires themselves. Twelve stages in a chain wrap, at eight
-    // columns a row, into two shelves of six: the one net that passes from
-    // the sixth stage to the seventh carries names and no wire runs from
-    // shelf to shelf; every other stage's net is a wire with no name;
-    // nothing crosses.
+    // Oracle: the wires themselves. Twelve stages in a chain wrap into two
+    // shelves of six: the one net that passes from the sixth stage to the
+    // seventh carries names and no wire runs from shelf to shelf; every
+    // other stage's net is a wire with no name; nothing crosses.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
-    const p = try draw(arena_state.allocator(), lib, &.{support.wide_chain}, .{ .shelf = 8 });
+    const p = try draw(arena_state.allocator(), lib, &.{support.wide_chain}, .{});
     var named: usize = 0;
     for (p.net_name, 0..) |name, net| {
         var names: usize = 0;
@@ -1612,10 +1611,7 @@ test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck
     // Oracle: the key's own definition (`config.Layout.shelf`). Twelve
     // stages in a chain stand in rows of at most `shelf` columns: three
     // rows of four at 4, one row at 0, and two rows of six where the deck
-    // itself says `*@ shelf 6`. The key is read from a `lint.zon`. By
-    // default the twelve stand in one row: of the 686 reference circuits
-    // eight columns a row wrapped, people draw 504 in one band of rows
-    // (5,263 hand-drawn schematics).
+    // itself says `*@ shelf 6`. The key is read from a `lint.zon`.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1627,7 +1623,6 @@ test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck
     for ([_]struct { deck: []const u8, layout: np.config.Layout, rows: usize, widest: usize }{
         .{ .deck = support.wide_chain, .layout = cfg.layout, .rows = 3, .widest = 4 },
         .{ .deck = support.wide_chain, .layout = .{ .shelf = 0 }, .rows = 1, .widest = 12 },
-        .{ .deck = support.wide_chain, .layout = .{}, .rows = 1, .widest = 12 },
         .{ .deck = support.wide_chain ++ "*@ shelf 6\n", .layout = cfg.layout, .rows = 2, .widest = 6 },
     }) |case| {
         const p = try draw(arena, lib, &.{case.deck}, case.layout);
