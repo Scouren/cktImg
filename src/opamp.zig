@@ -105,6 +105,7 @@ pub const Placer = struct {
     anch_cv: []u32,
     placed: []bool,
     pending: []bool,
+    flat_shunt: []bool,
     at: []?Put,
     canvases: std.ArrayList(Canvas) = .empty,
     cv: u32 = 0,
@@ -217,6 +218,7 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         .anch_cv = try arena.alloc(u32, nets),
         .placed = try arena.alloc(bool, n),
         .pending = try arena.alloc(bool, nets),
+        .flat_shunt = try arena.alloc(bool, nets),
         .at = try arena.alloc(?Put, n),
     };
     @memset(p.two, null);
@@ -227,6 +229,7 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
     @memset(p.anch_cv, none);
     @memset(p.placed, false);
     @memset(p.pending, false);
+    @memset(p.flat_shunt, false);
     @memset(p.at, null);
     for (roles, 0..) |role, v| {
         p.rail[v] = role.isRail();
