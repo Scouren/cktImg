@@ -4,26 +4,86 @@
 //! drawing's mirror if it has one. Out: its routes, terminal and label
 //! nodes, and the nets drawn as labels.
 //!
-//! - Rails: a ground symbol under each pin on ground; the supply a bar over
-//!   its pins with one symbol; a reference that is no ground a bar with
-//!   none. Inputs: pins standing near each other on one
-//!   wire with one port at its left end, else a port at each pin. Outputs:
-//!   a port at the outer end of the net's wire.
-//! - A bias net: a gate line between the two facing gates of one row,
-//!   named; else a label at each pin.
-//! - Any other net: pins facing each other in pairs on two rows or more as
-//!   a ladder (a rung between each pair, one upright through them all, as a
-//!   CMFB midpoint meets its gate line); else down its column when its pins
-//!   stand in one; else a trunk along its tap row (or a free track beside
-//!   it) with each pin brought to it. A net none of these fits is routed by
-//!   `routes.zig` after every pattern.
-//!
-//! Nets go rails and nets driven from outside first, then by name, so the
-//! drawing does not depend on card order. The deck's net lines
-//! (`netlines.zig`) come first: `first` nets lead, `label` names a net,
-//! `wire` wires it by the pattern named (names where none fits), `port`
-//! sets a port's side and `rail` a rail's bar (ground too) or a symbol per
-//! pin.
+//! Human Rules:
+//! - wires.1 (choice) Rails are wired first, then the nets driven from
+//!   outside (inputs, biases), then the rest, each group in the canonical
+//!   net order: a net wired earlier claims its room first, and the order
+//!   of the cards chooses nothing. `wire`
+//! - wires.2 (choice) A `via` line's wire runs from the net's top-left pin
+//!   to each point in turn by one L, along the row first, and skips a
+//!   point neither L reaches: the line names points, not the path.
+//!   `pinned`
+//! - wires.3 (habit) A rail drawn as a bar takes each of its pins that
+//!   faces the bar (up for a supply, down for ground) and stands no more
+//!   than two units from it; a pin farther off has a symbol of its own.
+//!   People: of 9,149 upright supply runs in 5,263 hand-drawn schematics,
+//!   97% are no longer. `bar`
+//! - wires.4 (unmeasured) A rail pin that does not face its bar, every
+//!   pin when fewer than two reach the bar, and a pin whose stub to it
+//!   does not fit, each have a rail symbol of their own. `bar`
+//! - wires.5 (choice) A rail's bar stands one rail stub (`rail`) past the
+//!   outermost of its pins facing it: the outermost pin meets it on the
+//!   stub its symbol would have had. `bar`
+//! - wires.6 (unmeasured) A rail's bar carries one symbol on each unbroken
+//!   run of it, at the run's middle stub. `bar`
+//! - wires.7 (habit) A supply bar's run of two stubs or more goes on
+//!   `rail` past its outer pins, where that fits. People: 1,258 of 2,506
+//!   supply bars (`config.Layout.rail_past`). `bar`
+//!   Narrowing: a supply's bar only; a ground drawn as a bar ends on its
+//!   outer pins.
+//! - wires.8 (unmeasured) No other net's wire crosses a rail's bar or its
+//!   run past its pins. `bar`
+//! - wires.9 (unmeasured) A rail drawn as a plain bar brings every pin
+//!   facing it to the bar however far; where the bar breaks or a pin does
+//!   not reach it, each run and each pin off it carries the net's name,
+//!   and a bar in one piece carries none. `bar`
+//! - wires.10 (unmeasured) A rail symbol, or a port at a pin, stands one
+//!   stub out from its pin, toward the side a `port` line asks, else the
+//!   way the pin faces; a name on the pin where neither stub fits.
+//!   `terminal`
+//!   Narrowing: no name's stub is tried before the pin, as
+//!   `Canvas.labelAt` would.
+//! - wires.11 (unmeasured) A bias net of two gates facing each other on
+//!   one row is one straight gate line between them, named at its middle
+//!   (at its first pin when another net's wire crosses the middle).
+//!   `ported`
+//! - wires.12 (habit) An input's or a bias's pins standing near each other
+//!   (the box round them no more than 6 units around half) are one wire
+//!   with one port at a free end. People wire 87% of their inputs of two
+//!   pins or more to one symbol and cut a connection past 5.5 to 7.5
+//!   units (5,274 drawings). `near`
+//!   Narrowing: one cut for every pin kind; per-edge cuts (gate to gate 3,
+//!   gate to other 5.5, other 7.5) once the pitch is the human one.
+//! - wires.13 (habit) An input or a bias whose pins stand farther apart, or
+//!   whose wire has no free end for its port, has a port on a stub at each
+//!   pin; a bias is never a written name. People: of 4,378 nets named
+//!   `vb*` or `bias*` in 5,263 hand-drawn schematics, 3,228 carry port
+//!   symbols and none a written name. `ported`
+//! - wires.14 (choice) Any other net takes the first pattern that fits: a
+//!   ladder, then a column or a trunk (`trunk.zig`); one no pattern fits
+//!   is routed (`routes.zig`) after every pattern: a pattern is the shape
+//!   a reader knows, the router what is left. `patterned`
+//! - wires.15 (unmeasured) An internal net whose pins face each other in
+//!   pairs along rows, one pair a row on two rows or more, is a ladder: a
+//!   rung between each pair and one upright through them all at the
+//!   mirror axis when it lies within every rung, else at the rungs' shared
+//!   middle, as a CMFB midpoint meets its gate line. `ladder`
+//! - wires.16 (choice) A bias a `wire` line wires, or a `route` or `via`
+//!   line pins, carries its name once, at its top-left pin: the name
+//!   joins it to its sources drawn apart, and card order chooses nothing.
+//!   `wire`
+//! - wires.17 (habit) A net joined by name falls into parts, each pin no
+//!   farther from another of its part (along x plus along y) than 15, 11
+//!   or 6 half units as neither, one or both of the two face sideways.
+//!   People: fitted on the connections people wire and name in 5,274
+//!   hand-drawn schematics (93.6% of nets right on those held out).
+//!   `within`
+//! - wires.18 (unmeasured) Each part of two pins or more of a net joined
+//!   by name is one trunk with one name at a free end; a pin alone, or a
+//!   part no trunk fits, carries the name at each pin. `parts`
+//! - wires.19 (choice) A net joined by name that is all one part is named
+//!   at every pin: it was cut because its one wire crossed too much.
+//!   `parts`
 //!
 //! Contents:
 //! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void`

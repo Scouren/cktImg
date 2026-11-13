@@ -1,11 +1,60 @@
 //! The trunk pattern (issue #8, stage 4): one net with no symbol of its own
 //! as a trunk along a row, or down a column, with each pin brought to it,
-//! or a column's pins joined in order. Of the tracks that fit it takes the
-//! cheapest as the router counts a path: the wire's length and `bend_cost`
-//! a corner (people draw a net at the fewest corners its pins allow in
-//! 93.8% of the nets of 5,263 hand-drawn schematics). In: the canvas, the
-//! net and its pins, placed. Out: the net's wires on the canvas (an
-//! output's or an input's port too), or nothing drawn when no track fits.
+//! or a column's pins joined in order. In: the canvas, the net and its
+//! pins, placed. Out: the net's wires on the canvas (an output's or an
+//! input's port too), or nothing drawn when no track fits.
+//!
+//! Human Rules:
+//! - trunk.1 (unmeasured) Pins all in one column, each facing up or down,
+//!   are joined in order down that column. `draw`
+//! - trunk.2 (habit) Of the tracks that fit, a net takes the one whose
+//!   wire costs least: its length plus `bend_cost` a corner, a corner
+//!   being a point the wire leaves exactly two ways at a right angle (a T,
+//!   a crossing of its own and a straight joint are none). People draw a
+//!   net at the fewest corners its pins allow in 93.8% of the nets of
+//!   5,263 hand-drawn schematics. `cost`
+//! - trunk.3 (invariant) No wire of a trunk has a spur: a track on which
+//!   two pins' ways run on together past where they meet is never taken.
+//!   `corners`
+//! - trunk.4 (unmeasured) The rows a trunk tries first, and keeps on a
+//!   tie, are level with a pin facing sideways that stands below every
+//!   pin facing down and above every pin facing up (a gate level with a
+//!   column's junction), so that pin joins it straight: people's wires
+//!   run pin to pin or pin to T. `levelRows`
+//! - trunk.5 (unmeasured) A net's tap row lies midway between its lowest
+//!   pin facing down and its highest facing up; `tap` past its pins when
+//!   they face one way; else its topmost pin's row. `tapY`
+//! - trunk.6 (choice) The rows tried after those, in order: the tap row, a
+//!   quarter unit either side, a half unit either side; half a unit past
+//!   the pins' devices, the side away from the drawing's middle first (a
+//!   gate line over the top row's gates, under the bottom's); each pin's
+//!   own row, top down; the first on a tie: a fixed order, so the cards'
+//!   order chooses nothing. `draw`
+//! - trunk.7 (book) Two pins facing each other along a row (a mirror's
+//!   gates) are joined straight first, a gate line, and its middle
+//!   brought to the trunk, as the book draws it. `trunkLines`
+//! - trunk.8 (unmeasured) A pin comes to its trunk straight when it faces
+//!   it; out half a unit and along when it faces sideways; round its own
+//!   device, through the channel on its right, when it faces away.
+//!   `wayTo`
+//! - trunk.9 (choice) A net of at most 12 pins may run its trunk upright,
+//!   where that costs less: down the column of a pin facing up or down,
+//!   midway between two neighbouring pins, half a unit either side of a
+//!   pin, or on a pin facing sideways, each kind nearest the pins' middle
+//!   first, then nearest the drawing's middle: the bound keeps the search
+//!   small. `uprightColumns`
+//!   Narrowing: only for a net with no port or name on its wire.
+//! - trunk.10 (order: signal) A port or a name leaves a trunk from its
+//!   free end, the left (where the signal enters) before the right; an
+//!   end some pin of the net stands beyond is not free. `freeEnd`
+//! - trunk.11 (choice) An input or a bias whose trunk has no free end for
+//!   its port is not drawn as one trunk; a part of a net joined by name
+//!   with none carries its name at its top-left pin, so card order
+//!   chooses nothing. `draw`
+//! - trunk.12 (unmeasured) An output's port leaves from the outer end of
+//!   its trunk, or of its column at its tap, on the drawing's nearer
+//!   side: the right when the trunk's right end reaches the drawing's
+//!   middle; a lone pin's port leaves from the pin. `draw`
 //!
 //! Contents:
 //! - `pub const End = enum { port, name }`

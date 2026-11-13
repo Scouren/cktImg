@@ -3,17 +3,30 @@
 //! boxes, everything drawn so far, the pin and its side, the net. Out: the
 //! path's corners, pin first, or null.
 //!
-//! The grid is every x and y a wire may run on: a lattice of `step` over
-//! the drawing, plus every coordinate a pin, a box edge or a wire has, so a
-//! path meets any of them exactly. A state is a grid point and the way it
-//! was entered; a step costs its length, a bend `bend`, crossing another
-//! net's wire `cross` (after M. Wybrow, K. Marriott and P. J. Stuckey,
-//! "Orthogonal Connector Routing", Graph Drawing 2009). A path never runs
-//! inside a box, along or within `clear` of another net's wire, within
-//! `clear` of another net's point, or through a point of its own net that
-//! is no target; it crosses another net's wire straight and never ends on
-//! one. Routing one half of a symmetric net, it keeps to the axis's left
-//! and may end on the axis.
+//! Human Rules:
+//! - maze.1 (choice) A routed wire runs on a lattice of `step` (a quarter
+//!   unit, at least 1) or on a line a pin, a box edge or another wire
+//!   already has, so it meets any of them exactly. `route`
+//! - maze.2 (book) A routed wire is the cheapest orthogonal path: its
+//!   length, plus `bend` a bend, plus `cross` each crossing of another
+//!   net's wire. After M. Wybrow, K. Marriott and P. J. Stuckey,
+//!   "Orthogonal Connector Routing", Graph Drawing 2009. `route`
+//! - maze.3 (book) Crossing a rail's wire costs a quarter of `cross`: the
+//!   book crosses supply stubs freely. `route`
+//! - maze.4 (invariant) A routed wire never runs inside a device's box,
+//!   along or within `clear` of another net's wire, within `clear` of
+//!   another net's point, across a wall (a rail's short stub, its bar), or
+//!   through a point of its own net that is not where it ends. `route`
+//! - maze.5 (invariant) A routed wire crosses another net's wire straight,
+//!   never bends on it and never ends on it. `route`
+//! - maze.6 (invariant) A routed wire leaves its pin the way the pin faces,
+//!   never turns straight back, and enters the pin it runs to from that
+//!   pin's side. `route`
+//! - maze.7 (choice) The cheapest path is sought round the pin and its
+//!   nearest target first, then round the whole net, then over the whole
+//!   drawing: most connections are local. `route`
+//! - maze.8 (choice) A grid of more than 65,536 points is not searched,
+//!   and the pin is named instead: it bounds the work. `route`
 //!
 //! Contents:
 //! - `pub const Wire = struct`

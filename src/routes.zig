@@ -3,14 +3,28 @@
 //! net's pins, and the drawing's mirror if it has one. Out: their wires,
 //! ports and labels.
 //!
-//! - A net the symmetry maps to itself: its left pins joined to each other
-//!   or to the axis, the axis between the points reached (and the net's
-//!   pins on it) as a spine, and the left half's mirror image.
-//! - A net and its mate: the net joined, then the mate as its mirror image.
-//! - Else, or where those do not fit: from the topmost (then leftmost) pin,
-//!   the unjoined pin nearest a joined one next, each by the cheapest path
-//!   to the net's wires. A pin with no path gets a label, and so does the
-//!   first. An output's port goes out from its wires' outermost point.
+//! Human Rules:
+//! - routes.1 (unmeasured) A net the mirror maps to itself is drawn
+//!   mirrored: its left pins joined to each other or to the axis, the
+//!   axis between the points reached (and the net's pins on it) as a
+//!   spine, and the left half's mirror image. `halves`
+//!   Narrowing: only when the axis falls on the grid, every pin off it has
+//!   its mirror image, and every pin on it faces along the spine from its
+//!   end; else the net is routed as any other.
+//! - routes.2 (unmeasured) A net's mirror mate is drawn as the mirror
+//!   image of the net's wires (the cross-coupled pair's X: each output
+//!   runs to the opposite gates). `mirrored`
+//!   Narrowing: only when every pin of the net was joined and the mate's
+//!   pins are its pins' images; else the mate is routed on its own.
+//! - routes.3 (choice) A routed net grows from its topmost (then leftmost)
+//!   pin, the unjoined pin nearest a joined one next (the upper on a tie),
+//!   each by the cheapest path to the net's wires so far: one fixed order,
+//!   so card order chooses nothing. `join`
+//! - routes.4 (invariant) A net stays one net: a pin no path reaches
+//!   carries the net's name, and then so does its first pin. `finish`
+//! - routes.5 (unmeasured) An output's port leaves from the topmost of
+//!   its wires' outermost points, on the drawing's nearer side: the right
+//!   when the wires' middle is at or right of the drawing's. `port`
 //!
 //! Contents:
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`

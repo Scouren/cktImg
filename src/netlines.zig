@@ -3,18 +3,47 @@
 //! the nets to wire first, and a verdict per line. A pure function of the
 //! deck, so the drawing (`wires`) and the report read the same.
 //!
-//!     *@ label vb1               names at its pins, no wire
+//!     *@ label vb1
 //!     *@ wire vb1 [ladder|trunk|route]
-//!     *@ port out right          an input's or output's port side
-//!     *@ rail 0 bar              a rail as one bar, a symbol per pin (`each`),
-//!                                or one bar with no symbol (`plain`)
-//!     *@ first n1 n2             wired before the rest, in this order
-//!     *@ route n1 2,0 2,3 5,3    a polyline of the net, in symbol units
-//!     *@ via n1 4,1 4,6          points its wire passes, in order
+//!     *@ port out right
+//!     *@ rail 0 bar|each|plain
+//!     *@ first n1 n2
+//!     *@ route n1 2,0 2,3 5,3
+//!     *@ via n1 4,1 4,6
 //!
-//! A `wire` the canvas cannot draw falls back to names (the report says so);
-//! of two lines setting one net's style, port or rail, the preferred one
-//! (`hints.admitOrder`) stands.
+//! Human Rules:
+//! - netlines.1 (invariant) `label`: the net is a name at each of its pins
+//!   and has no wire. `read`
+//! - netlines.2 (invariant) `wire`: the net is a wire, by the pattern
+//!   named or any that fits; one the canvas cannot draw falls back to
+//!   names, and the report says so. `read`
+//! - netlines.3 (invariant) `port`: an input's or an output's port leaves
+//!   on the side named, where its stub fits. `read`
+//! - netlines.4 (invariant) `rail`: the rail is one bar past its pins with
+//!   a symbol on each unbroken run (`bar`), a symbol at each pin (`each`),
+//!   or one bar and no symbol (`plain`). `read`
+//! - netlines.5 (invariant) `first`: the nets named are wired before every
+//!   other, in the order of the lines in the file. `read`
+//! - netlines.6 (invariant) `route`: the net's wire has this polyline (in
+//!   symbol units, as a `via`'s points are), each piece level or upright
+//!   and one end on a pin of the net, drawn whole or not at all, before
+//!   every net no such line pins. `read`
+//! - netlines.7 (invariant) `via`: the net's wire passes these points, in
+//!   order. `read`
+//! - netlines.8 (choice) Of two lines setting one net's style, port or
+//!   rail, the preferred one (`hints.admitOrder`) stands: one answer
+//!   whatever the order of the lines. `read`
+//! - netlines.9 (unmeasured) A rail is its symbols: no line names it or
+//!   wires it, and only `rail` styles it; an input is a port at its pins,
+//!   never wired by a line; only an input or an output takes `port`.
+//!   `admits`
+//! - netlines.10 (unmeasured) Unless a line says, a supply is one bar over
+//!   its pins. `read`
+//! - netlines.11 (book) Unless a line says, a ground is a symbol at each
+//!   pin, one per branch, as the book draws it. `read`
+//! - netlines.12 (unmeasured) Unless a line says, the reference the engine
+//!   gave a circuit with no ground is its bottom wire, as people draw it:
+//!   one bar and no symbol. `read`
 //!
 //! Contents:
 //! - `pub const Style`, `pub const Rail`, `pub const NetLines = struct`
