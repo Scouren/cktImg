@@ -1107,6 +1107,55 @@ test "sketch: a mirror's facing gates are joined by one straight gate line" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: two gates facing on a row are joined straight, whatever row the trunk tries first" {
+    // Oracle: the hand drawings. Two gates facing each other on one row
+    // with nothing between are joined by one straight wire in 4,328 of
+    // 4,394 pairs (5,263 schematics); this two-stage amplifier is ag-1032.
+    // The gate line was tried only on the first track, the gates' own row,
+    // where it has no rung: the mirror's gates each dropped to the trunk.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Two stage
+        \\.model nch nmos
+        \\.model pch pmos
+        \\CII vout gnd 1p
+        \\M1 net3 vin- net1 vss nch
+        \\M10 vout net4 vdd vdd pch
+        \\M11 vout net4 vss vss nch
+        \\M2 net2 vin+ net1 vss nch
+        \\M3 net3 net3 vdd vdd pch
+        \\M4 net2 net3 vdd vdd pch
+        \\M5 net1 vbias vss vss nch
+        \\M6 net0 net2 vdd vdd pch
+        \\M7 net0 vbias vss vss nch
+        \\M8 net4 net0 vdd vdd pch
+        \\M9 net4 net0 vss vss nch
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const g3 = pinOf(&p, "m3", 1);
+    const g4 = pinOf(&p, "m4", 1);
+    try std.testing.expectEqual(g3.y, g4.y);
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "net3")) break i;
+    } else unreachable;
+    // The wire of `net3` along the gates' row, between the gates.
+    var covered: i32 = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        if (a.y != g3.y or b.y != g3.y) continue;
+        covered += @max(0, @min(@max(a.x, b.x), @max(g3.x, g4.x)) - @max(@min(a.x, b.x), @min(g3.x, g4.x)));
+    };
+    try std.testing.expectEqual(@as(i32, @intCast(@abs(g4.x - g3.x))), covered);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+
 test "sketch: a bias gate line carries a port hanging from its middle, not a written name" {
     // Oracle: the hand drawings. Of 264 bias nets of two facing gates in
     // the 5,263 reference drawings, 197 carry a port symbol; the engine
