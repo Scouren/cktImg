@@ -2,25 +2,37 @@
 //! went, in the target's integer coordinates (y down). No accessor is needed
 //! to read it — every column is a slice — and it points at nothing but its
 //! own arena, so it outlives the netlist and the schematic it came from.
-//!
-//! ## What becomes a device
-//!
-//! In order: the netlist's devices that are drawn (a pinless `K` card is
+//! In: a laid-out `Schematic` and its netlist. Out: `Placed`, its devices in
+//! this order: the netlist's devices that are drawn (a pinless `K` card is
 //! not), then one rail or port device per terminal symbol the layout drew
 //! (unnamed: `dev_name` is empty, the net is on its one pin), then the
-//! terminal symbols of the driver islands.
+//! driver islands' sources and their terminal symbols.
 //!
-//! A driver (R3: a source from a supply, input or bias net to ground) is not
-//! wired into the circuit — its terminal symbols stand for it there — but it
-//! is still a device a simulator needs, so it is drawn apart: left of the
-//! circuit, standing between its own terminal symbol and a ground symbol.
-//!
-//! ## Where a wire meets a pin
-//!
-//! The layout routes to the point on a device's row or column line where the
-//! pins facing that way reach. A class whose pin sits off that line (the
-//! second input of an op-amp, split onto its own copy) gets a short lead from
-//! there to the pin, so every wire ends exactly on its pin.
+//! Human Rules:
+//! - placed.1 (invariant) Every wire ends exactly on its pin: a pin off the
+//!   row or column line the layout routed to (an op-amp's second input)
+//!   gets a short lead, along the pin's side first, then onto it. `run`
+//! - placed.2 (unmeasured) A terminal net is drawn as the symbol of its
+//!   role: a supply as a power rail, the sink as a ground rail, an input or
+//!   a bias net as an input port, an output as an output port. `roleClass`
+//! - placed.3 (choice) Where the library has no symbol for a net's role,
+//!   the net's name is written there instead: something must stand for the
+//!   net. `terminal`
+//! - placed.4 (unmeasured) A terminal symbol's or a label's name runs away
+//!   from the wire that meets it; left when no wire does. `leafSide`
+//! - placed.5 (unmeasured) A driver (R3: a source from a supply, input or
+//!   bias net to ground) is not wired into the circuit but drawn apart,
+//!   left of it, between its own net's symbol above and a ground symbol
+//!   below. `islands`
+//! - placed.6 (order: potential) A driver apart stands upright with the end
+//!   of its path off the ground up. `islands`
+//! - placed.7 (choice) Drivers apart stand in name order, two units apart,
+//!   the nearest a unit and a half clear of the circuit: the order of the
+//!   cards changes nothing. `islands`
+//! - placed.8 (invariant) A wire that runs through a junction dot is split
+//!   there, so every wire that meets a dot ends on it and a netlister that
+//!   joins wires only at their ends (xschem) reads one net.
+//!   `splitAtJunctions`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

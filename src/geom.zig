@@ -2,6 +2,22 @@
 //! own: where a symbol's stroke lands, and where a device's name fits. Two
 //! renderers that each placed their own names would disagree, so both the
 //! C accessors and the TikZ emitter ask here (as in cktImg).
+//!
+//! Human Rules:
+//! - geom.1 (unmeasured) A device's name stands right of its symbol, level
+//!   with its origin, else a line above or below that, else the same on the
+//!   left: the first spot clear of symbols, wires and the names placed
+//!   before it, or the first spot tried when none is clear. `refdesAnchors`
+//! - geom.2 (choice) A `*@ refdes` line's side is tried before the rest:
+//!   above or below the symbol, centred, only when asked. `refdesAnchors`
+//! - geom.3 (choice) Names are placed device by device, each clear of the
+//!   ones before: one pass, so a renderer and the C accessors agree.
+//!   `refdesAnchors`
+//! - geom.4 (unmeasured) A pin's net name stands on the side away from the
+//!   wire that meets it (a port whose wire leaves right is named on its
+//!   left); right when no wire meets it. `nameSide`
+//! - geom.5 (unmeasured) A ground rail on net "0" carries no name.
+//!   `namesRail`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

@@ -1,8 +1,15 @@
-//! Junction dots: where a net's wires leave a point in three or more
-//! directions (a device lead counts as one), and where a net's wire crosses
-//! another of its own (the two join there, so the crossing reads as the
-//! junction it is, not as two nets crossing). In: a laid-out `Schematic`'s
-//! routes and pins. Out: the points, rounded to the target's units.
+//! Junction dots: where a drawing marks that wires meet. In: a laid-out
+//! `Schematic`'s routes and pins. Out: the points, each once, rounded to the
+//! target's units.
+//!
+//! Human Rules:
+//! - dots.1 (unmeasured) A dot stands wherever one net's wires leave a
+//!   point in three or more directions, a device's lead counting as one: a
+//!   four-way meeting as much as a T; never where two nets' wires only
+//!   cross. `find`
+//! - dots.2 (choice) Where a net's level wire crosses one of its own upright
+//!   wires, the two join there with a dot: an undotted crossing reads as two
+//!   nets crossing. `find`
 //!
 //! Contents:
 //! - `pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error![]Pt`

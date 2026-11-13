@@ -1,9 +1,40 @@
 //! The drawing's guarantees, checked on a finished `Placed` alone, however it
-//! was drawn (docs/research/steering.md §6): every net one piece as a
-//! netlister reads it, no wire on another net's point, and dots exactly where
-//! a net's wires meet. A finding names its rule, its net, a point, and what
-//! else it involves; the drawing code never produces one, so a finding is a
-//! bug in it, or in a caller's edit between the stages.
+//! was drawn (docs/research/steering.md §6), and what each `*@` line means
+//! read off a drawing. In: a `Placed` and its library (or its netlist and
+//! one line). Out: findings, each naming its rule, its net, a point, and
+//! what else it involves; the drawing code never produces one, so a finding
+//! is a bug in it, or in a caller's edit between the stages. And for a
+//! line: whether the drawing shows it, or null when no drawing can.
+//!
+//! Human Rules:
+//! - checks.1 (invariant) Every net with two or more shown pins is one
+//!   piece as a netlister reads it: wires join where their points meet, a
+//!   name written on a wire names it, and a net's names, ports, rails and
+//!   ground-reference pins join by name. `connected`
+//! - checks.2 (invariant) No wire runs through or onto another net's point
+//!   (a pin, a label, a wire's end or bend); crossing another net's wire
+//!   between its points is allowed. `shorts`
+//! - checks.3 (invariant) A dot stands exactly where a net leaves a point
+//!   in three or more directions (a pin's lead toward its device one way),
+//!   nowhere else, and never two at one point. `dots`
+//! - checks.4 (invariant) No net crosses its own wire without a dot there.
+//!   `dots`
+//! - checks.5 (choice) `row`, `above` and `order` read off device origins:
+//!   a `row` on one y, `above` y growing down the list, `order` x growing
+//!   along it: the meaning the report holds each honoured line to.
+//!   `drawnAs`
+//! - checks.6 (choice) `face` reads off the pin: left or right of its
+//!   device's origin, or above or below the other end of its path: the
+//!   meaning the report holds each honoured line to. `drawnAs`
+//! - checks.7 (choice) `label` holds when the net has a name written or no
+//!   wire, `wire` when the named devices' pins on the net are one piece by
+//!   wires alone, `port` when a port symbol on the net stands past all its
+//!   devices' pins on that side: the meaning the report holds each honoured
+//!   line to. `drawnAs`
+//! - checks.8 (choice) `at` holds when the device's origin (and turn) is
+//!   the one asked, `route` and `via` when every point asked (and for
+//!   `route`, every point between them) lies on the net's wires: the
+//!   meaning the report holds each honoured line to. `drawnAs`
 //!
 //! Contents:
 //! - `pub const Rule = enum`, `pub const Finding = struct`

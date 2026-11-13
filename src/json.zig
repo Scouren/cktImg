@@ -12,6 +12,9 @@
 //!   "no_connects": [ [x, y] ] }
 //! ```
 //!
+//! Human Rules: none of its own; it writes `Placed`, whose rules are
+//! placed.zig's and dots.zig's.
+//!
 //! `pins` holds one entry per class terminal the card has. `bulk` is there
 //! only when the card has one node past them (a MOS body on a three-terminal
 //! symbol): its net, with no point, since the symbol draws no pin for it.

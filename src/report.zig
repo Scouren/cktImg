@@ -13,6 +13,17 @@
 //!   lines, under `*@ grouping off`, draws the same picture.
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
+//! Human Rules:
+//! - report.1 (choice) A crossing is a level wire of one net and an upright
+//!   wire of another meeting strictly inside both; a touch at an end, a T or
+//!   a bend is none: it is the measure the drawings are compared by.
+//!   `crossings`
+//! - report.2 (choice) A corner is a point with no pin on it that a net's
+//!   wire leaves exactly two ways at a right angle; a T, a net's crossing of
+//!   its own and a straight joint are none, and a trunk drawn in pieces has
+//!   its corners where two pieces end: it is the measure the drawings are
+//!   compared by. `bends`
+//!
 //! Contents:
 //! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
 //! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8`

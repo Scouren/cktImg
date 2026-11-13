@@ -1,6 +1,9 @@
 //! SPICE netlist in, placed schematic out. See docs/API.md for the usage code
 //! this surface was written from, and docs/ALGORITHM.md for the layout.
 //!
+//! Human Rules: none of its own; it runs the stages, whose files list the
+//! rules.
+//!
 //! Tiers, coarse to fine — each is the one below it with the choices made:
 //!
 //! | call | gives you |

@@ -1,15 +1,24 @@
 //! CircuiTikZ emitter: a `Placed` as a `circuitikz` picture that `pdflatex`
 //! draws. Compiled only with `-Dlatex_renderer=true` (`root.latex` is `void`
-//! otherwise, so a stale reference names the missing option).
+//! otherwise, so a stale reference names the missing option). Needs
+//! `\usepackage[american]{circuitikz}`.
 //!
-//! A device whose class is in the layout's vocabulary is drawn as the
-//! CircuiTikZ component for it: two-pin parts as `to[R]`, `to[C]`, … between
-//! their pin points, transistors and the op-amp as nodes turned to the
-//! device's placement, with a lead from each anchor to its pin point (the
-//! components are not the size of the library's symbols; the wires end on
-//! the pins either way). Rails, ports and junction dots are `vdd`, `ground`,
-//! `ocirc` and `circ` nodes. Any other class — a generated box, a subcircuit
-//! block — is drawn from its strokes. Needs `\usepackage[american]{circuitikz}`.
+//! Human Rules:
+//! - latex.1 (choice) A device whose class CircuiTikZ has a component for
+//!   is drawn as that component: two-pin parts as `to[R]`, `to[C]`, …
+//!   between their pins; rails, ports and dots as `vdd`, `ground`, `ocirc`
+//!   and `circ`; any other class (a generated box, a subcircuit block) from
+//!   its strokes: a paper figure in CircuiTikZ's standard symbols.
+//!   `writeComponent`
+//! - latex.2 (choice) A transistor or op-amp node takes the turn and mirror
+//!   that best points each anchor at its pin, with a lead from the anchor
+//!   out, then across onto the pin: the component is not the library
+//!   symbol's size, and the wires still end on the pins. `writeComponent`
+//! - latex.3 (choice) An op-amp is drawn as CircuiTikZ's only when nothing
+//!   is wired to its reference pin, which that symbol lacks; else from its
+//!   strokes. `writeComponent`
+//! - latex.4 (unmeasured) A power rail's net name stands above it, a ground
+//!   rail's below, a port's on the side away from its wire. `write`
 //!
 //! The one emitter inside the library, as in cktImg: a paper figure is a
 //! user-facing feature, so it comes from the library a user links, not a

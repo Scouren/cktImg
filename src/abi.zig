@@ -1,6 +1,9 @@
 //! The C ABI (`include/cktimg.h`): a view over `Placed`, not a copy. Names
 //! and wire points are handed out as pointers into the result's own arrays.
 //!
+//! Human Rules: none of its own; it hands out `Placed` (placed.zig) and
+//! the name anchors of geom.zig.
+//!
 //! What changed from cktImg's, and why (docs/API.md): classes are added to
 //! a library the caller owns, in one call per class, instead of through a
 //! process-global begin/pin/register builder; placement is told which
