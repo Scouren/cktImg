@@ -198,6 +198,8 @@ test "named block glyphs preserve X semantics and semantic ports through Schemif
     // and XOR. SPICE's X card keeps its definition and positional port order.
     const cases = [_]struct { []const u8, []const u8, []const u8 }{
         .{ "icm_opamp_vdd_vss", "VDD VSS VIP VIN VOUT", "poly " },
+        .{ "opamp", "VDD VSS VIP VIN VOUT VB1 VB2 VB3", "poly " },
+        .{ "opamp_differential", "VDD VSS VIP VIN VOP VON", "poly " },
         .{ "inverter", "VDD VSS A Y", "circle " },
         .{ "xor_gate", "VDD VSS A B Y", "poly " },
     };
@@ -205,9 +207,10 @@ test "named block glyphs preserve X semantics and semantic ports through Schemif
         var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
         const a = arena.allocator();
-        const amp = mem.eql(u8, row[0], "icm_opamp_vdd_vss");
-        const output = if (amp) "VOUT" else "Y";
-        const input = if (amp) "VIN" else "A";
+        const amp = mem.eql(u8, row[0], "icm_opamp_vdd_vss") or mem.eql(u8, row[0], "opamp");
+        const differential = mem.eql(u8, row[0], "opamp_differential");
+        const output = if (amp) "VOUT" else if (differential) "VOP" else "Y";
+        const input = if (amp or differential) "VIN" else "A";
         const text = try a.print("* glyph\n.subckt {s} {s}\nR1 VDD VSS 1meg\n.ends\nX1 {s} {s}\nRL {s} 0 1k\nCF {s} {s} 1p\n", .{ row[0], row[1], row[1], row[0], output, output, input });
         var c = try Converter.init(testing.allocator, a, "glyph.sp", text);
         defer c.deinit();

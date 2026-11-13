@@ -10,7 +10,7 @@ whole layout is one pass, with no relayout rounds.
 | 1. Roles | `schematic.zig` | a role per net |
 | 2. Structure | `structure.zig`, `symmetry.zig`, `hints.zig` | a canonical order, blocks, the left-right symmetry |
 | 3. Skeleton | `skeleton.zig`, `forms.zig`, `levels.zig`, `columns.zig`, `span.zig`, `bridges.zig`, `wrap.zig` | each device's cell on a lattice, its form and gate side |
-| 3a. Op-amp circuits | `opamp.zig`, `opamp_grow.zig` | for a circuit of amplifier blocks and two-pin parts: a place and a turn for every device, in the lattice's stead |
+| 3a. Op-amp circuits | `opamp.zig`, `opamp_grow.zig` | amplifier blocks with two-pin parts or independently controlled MOS switches: a place and a turn for every device, in the lattice's stead |
 | 4. Drawing | `sketch.zig`, `canvas.zig`, `wires.zig`, `trunk.zig`, `routes.zig`, `maze.zig` | coordinates, orientations, wires, terminal symbols, labels |
 | Result | `placed.zig`, `dots.zig` | `Placed`: plain data in the target's units |
 
@@ -62,12 +62,15 @@ is ground.
 
 **Subcircuits.** An `X` card whose `.subckt` is defined in the netlist is one
 device, a **block**: the library's class named after the subcircuit, or else a
-generated symbol with the ports on its sides. Known amplifier, comparator,
-buffer, inverter and two-input logic-gate names use conventional glyphs
+generated symbol with the ports on its sides. Known amplifier (including
+fully differential), comparator, buffer, inverter and two-input logic-gate names use conventional glyphs
 when every port has an unambiguous role (`block_symbols.zig`). The symbol
-retains every port in SPICE order, including supplies. Unknown families,
-extra control or bias ports, duplicate roles and differential outputs keep
-a box. A caller-supplied class or explicit side directive takes precedence.
+retains every port in SPICE order, including supplies. An amplifier's known
+VB1/VB2/VB3 bias pins remain distinct below its triangle. Unknown families,
+extra control ports and duplicate roles keep a box. A fully
+differential amplifier has two distinct signed outputs; its default sign
+arrangement is crossed, as in seven of twelve source glyphs. A
+caller-supplied class or explicit side directive takes precedence.
 The native drawing and Schemify share the glyph geometry; a triangle or gate
 is still electrically an `X` subcircuit. Comments inside the definition
 steer it: `*@ left inp inn` (likewise `right`, `top`, `bottom`) puts those
@@ -264,13 +267,27 @@ A MOS channel is horizontal when its distinct drain and source, neither
 on a rail or tied to its gate, meet a qualifying capacitor and either:
 the channel has no DC path to any rail; or the capacitor end has no other
 DC path and the opposite channel end drives another transistor's gate or
-base. A capacitor shorted or returned to that MOS's gate or opposite
+base, or a block's semantically named input. A capacitor shorted or returned to that MOS's gate or opposite
 channel end does not qualify. This separates sampling and series
 compensation paths from ordinary upright current stacks (`forms.19`).
-The measured habit holds for 239 of 243 selected devices in AnalogGenie
+The measured habit holds for 315 of 319 selected devices in AnalogGenie
 and 20 of 23 in AMSNet; the [study](research/analoggenie.md) records the
 source drawings, predicate, counterexamples and reproducer. An explicit
 `upright` line takes precedence.
+
+A source-degeneration MOS bridge lies flat between two distinct gain
+devices' source nodes when all three share polarity and a body rail, both
+source nodes have a direct DC return to that rail, and the bridge gate
+has no DC-path incidence. This selects six horizontal source devices;
+the gate condition excludes nine upright clamps (`forms.20`).
+
+Converter paths have a separate certificate (`power_paths.zig`): an
+off-rail inductor with a grounded NMOS shunt identifies a switching node.
+Its main PMOS channels connect to capacitor reservoirs, or share an input
+bus of independently controlled PMOS paths. Their qualifying inductor stays
+horizontal too. The source study selects 649 horizontal PMOS and 252
+horizontal inductors. Nearby bias mirrors and capacitor-free auxiliary
+branches keep their ordinary form; inductor adjacency alone is insufficient.
 
 A flat part is there to join two pins on one row. So once the skeleton is
 laid, a bridge between two nets that both hold an upright device's pin, of
@@ -375,8 +392,17 @@ axis when an end net lies on it, else toward an input's side or away from the
 axis; the member whose tip is on that column stands next to it. A flat
 transistor uses its drain and source (collector and emitter) as its ends,
 so neither its gate nor its body chooses its columns. A compensation MOS
-and its series capacitor therefore share one row in path order. Any
-other bridge (an op-amp) stands midway between the nearest
+and its series capacitor therefore share one row in path order. A flat
+complementary transmission pair instead shares one column, NMOS above
+PMOS, with the gates facing outward. A converter's uniquely identified
+PMOS–inductor–PMOS path keeps that sequence on one row even where shunts
+join the intermediate nodes (`power_paths.series`). It stands above its
+externally controlled ground shunts and active gate drivers. A block driving
+one main switch stands below that switch in its lattice column; exact output
+pin alignment remains separate work. Shelf cuts keep the certified main
+path and those controls together, preserving these relations through wrapping.
+Unrelated bias devices retain their ordinary placement. Explicit spatial
+instructions retain precedence. Any other bridge (an op-amp) stands midway between the nearest
 columns of its first and its last net that is no rail: its input and its
 output, as a subcircuit lists its ports (not the supply an op-amp's first
 port is on). A chain whose mate stands already mirrors it; taken slots
@@ -446,6 +472,29 @@ two give the same places for 170, and the reference declines the other 29
 output), which stay on the lattice. Laid so, the 199 cross 65 wires where
 the lattice crossed 299 and their hand drawings 10.
 
+Switched-capacitor circuits can use the same placement when their remaining
+parts are resistors, capacitors, independent voltage sources and MOS switches.
+At least one capacitor must be present. Each MOS has distinct channel and
+gate nets, neither channel end is a supply, and its gate net touches only
+MOS gates or an independent voltage source to a rail. Complementary
+transmission pairs retain their separate placement. These conditions exclude
+active gain stages, diode-connected devices and amplifier-driven pass devices.
+The source study selects 83 circuits; floating channels lie along the local
+signal path and grounded shunts stand beside their node. Rectangular feedback
+cells use a local rule: a two-part capacitor/MOS feedback path whose shared
+node holds exactly one additional ground MOS puts the capacitor and ground
+switch on one row, with the signal MOS upright outside the amplifier and its
+gate facing outward. Paired cells share the capacitor column. If a direct
+feedback capacitor is present, the series path stays flat and that direct
+capacitor takes the outer row. Longer paths, extra junction incidences and
+vertical buffer groups retain the ordinary traversal.
+
+MOS channel endpoints are normalized from the actual library geometry;
+moving the symbol's local origin does not move its electrical pins in the
+drawing. A class that cannot fit the reserved body frame falls back to the
+lattice. Canonical device order breaks traversal ties, so reordering cards
+preserves the named device geometry.
+
 A deck with a line that places or turns a device (`upright`, `bridge`,
 `row`, `above`, `order`, `face`, `cell`, a strong `at`) is the lines' to
 place: the lattice lays it out as before. `--decisions` states the
@@ -466,6 +515,15 @@ end on the net of the nearest device beside it facing that device, and
 every flat device with a path turned by its path's two pins (people 4,414
 of 4,471, and 1,684 of 1,719). A `face` line on it comes before all of
 that.
+
+A flat MOS gate faces its active drivers when they all occupy strictly
+higher rows or all strictly lower rows. Transistor channel terminals and
+semantically named block outputs count; other gates, bodies and passive
+loads do not. Same-row or opposing drivers retain the class's default.
+A complementary transmission pair's outward gates take precedence. The
+source observation uses terminal coordinates; the implementation uses
+lattice rows, and the study records exceptions involving separate drawing
+groups (`sketch.controlSide`).
 
 | id | pattern | rule | example | test |
 |----|---------|------|---------|------|

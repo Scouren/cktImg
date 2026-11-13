@@ -24,9 +24,26 @@
 //!   the other in the order begun, 1.5 units apart; a group a part joins to
 //!   a node of an earlier one stands with that part's end at the node's x.
 //!   `place`
+//! - opamp.4 (habit, bounded) A capacitor circuit of amplifier blocks,
+//!   resistors, voltage sources and externally controlled MOS switches
+//!   follows the signal too: AG759/762/799. A control net may touch only
+//!   MOS gates and a voltage source to a rail; a channel cannot touch a
+//!   supply. Driven stages (AG807/2209), diode/current steering (AG1042)
+//!   and complementary parallel pairs (AG751) stay on the lattice.
+//!   These are admission limits, not a universal definition of a switch.
+//!   Only D/S enter the path; flat gates face up. Local return loops may
+//!   turn a channel upright (AG800/801). `applies`, `externalGate`, `place`
+//!   A MOS class must have a flat, one-unit channel and its gate above it;
+//!   its whole symbol must fit the reserved switch frame. Other caller
+//!   frames retain lattice placement (`place`, `channelFits`).
+//!
+//! Data: reads the netlist's existing pin rows and roles. `place` owns one
+//! optional channel midpoint per device until export (library coordinates,
+//! `Pt` is two i32s); null means no MOS. D/S alone append path incidences.
+//! The phase arena owns the table; no electrical pins or classes change.
 //!
 //! Contents:
-//! - `pub fn applies(nl: *const Netlist, drawn: []const bool) bool`
+//! - `pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) bool`
 //! - `pub fn steered(nl: *const Netlist) bool`
 //! - `pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At`
 //! - for `opamp_grow.zig`: `pub const none`, `unit`, `quarter`, `tries`; `pub const P`, `R`, `Kind`, `Link`, `Pin`, `Block`, `Two`, `Canvas`, `Put`
@@ -42,6 +59,8 @@ const sch = @import("schematic.zig");
 const library = @import("library.zig");
 const pinned = @import("pinned.zig");
 const relations = @import("relations.zig");
+const structure = @import("structure.zig");
+const transmission = @import("transmission.zig");
 const grow_mod = @import("opamp_grow.zig");
 
 const Netlist = netlist.Netlist;
@@ -71,8 +90,9 @@ pub const Pin = struct { net: u32, off: P, role: library.PortRole };
 /// drawn) and which its output.
 pub const Block = struct { pins: []Pin, ins: [2]u8, n_ins: u8, out: u8 };
 
-/// A two-pin part: its first and second net; a switch stands taller.
-pub const Two = struct { a: u32, b: u32, tall: bool };
+/// A path's canonical ends and frame; capacitor identity orders feedback cells.
+/// The two booleans share the existing padding: this row remains 12 bytes.
+pub const Two = struct { a: u32, b: u32, tall: bool, capacitor: bool };
 
 /// One group of placed bodies and the wire runs kept clear, in its own
 /// frame until the groups are stacked.
@@ -87,12 +107,23 @@ pub const Canvas = struct {
 
 pub const Put = struct { x: i32, y: i32, turn: Orient, canvas: u32 };
 
+comptime {
+    assert(@sizeOf(Two) == 12);
+    assert(@sizeOf(library.Pt) == 8);
+}
+
 /// The placement's working tables, one entry per device or per net.
 pub const Placer = struct {
     arena: Allocator,
+    /// Canonical device rank and its inverse, using `structure.nameLess`.
+    rank: []const u32,
+    order: []u32,
     two: []?Two,
+    /// Per device: a MOS channel midpoint in library coordinates, or null.
+    /// Placement centers the channel, then subtracts this offset at export.
+    mos_mid: []?library.Pt,
     blocks: []?Block,
-    /// Per net: its two-pin parts and each one's other net, in card order.
+    /// Per net: its paths and each one's other net, in canonical name order.
     on: []std.ArrayList(Link),
     /// Per net: the first block it is the output of.
     out_of: []u32,
@@ -161,25 +192,46 @@ pub const Placer = struct {
             cy += step.y;
         }
         const quarters: u2 = if (kind == .flat) (if (node_first) 0 else 2) else (if (node_first) 1 else 3);
-        try p.add(d, cx, cy, .{ .rot = quarters }, r);
+        const turn: Orient = if (p.mos_mid[d] != null and kind == .flat) .{ .mirror = !node_first } else .{ .rot = quarters };
+        try p.add(d, cx, cy, turn, r);
         return .{ .x = cx, .y = cy };
     }
 };
 
 /// Whether the op-amp placement is this circuit's: every drawn device a
 /// two-pin part or an amplifier block (one or two inputs and one output by
-/// its port names, the rest rails), and at least one block.
-pub fn applies(nl: *const Netlist, drawn: []const bool) bool {
+/// its port names, the rest rails), and at least one block. Also admits
+/// capacitor circuits whose other parts are R/C/V and MOS channels with
+/// external gate-only controls, no supply endpoint or complementary pair.
+/// `roles` is the existing `guessRoles` result, one entry per net.
+pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) bool {
     const c = &nl.graph;
     assert(drawn.len == c.edgeCount());
+    assert(roles.len == c.vertexCount());
     var blocks: usize = 0;
+    var switches: usize = 0;
+    var cap = false;
+    var rc = true;
     for (c.edges.items(.kind), 0..) |kind, d| {
-        if (!drawn[d] or relations.twoPin(kind)) continue;
+        if (!drawn[d]) continue;
+        if (relations.twoPin(kind)) {
+            cap = cap or kind == .capacitor;
+            rc = rc and (kind == .resistor or kind == .capacitor or kind == .vsource);
+            continue;
+        }
+        if (kind == .mosfet) {
+            const pins = c.members(EdgeId.from(d));
+            if (pins[0] == pins[2] or pins[1] == pins[0] or pins[1] == pins[2]) return false;
+            if (roles[pins[0].index()] == .supply or roles[pins[2].index()] == .supply) return false;
+            if (!externalGate(nl, roles, pins[1]) or transmission.mate(nl, @intCast(d)) != null) return false;
+            switches += 1;
+            continue;
+        }
         const def = nl.defOf(EdgeId.from(d)) orelse return false;
         if (kind != .subckt or def.ports.len != c.members(EdgeId.from(d)).len or amplifier(def.ports) == null) return false;
         blocks += 1;
     }
-    return blocks > 0;
+    return blocks > 0 and (switches == 0 or (cap and rc));
 }
 
 /// Whether a line of the deck says where a device stands or how it is
@@ -199,14 +251,17 @@ pub fn steered(nl: *const Netlist) bool {
 /// drawing units, or null when the deck is `steered`, `applies` says no, or
 /// a block's symbol has an input right of its output. `classes` is each device's class in `lib`.
 pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At {
-    if (steered(nl) or !applies(nl, drawn)) return null;
+    if (steered(nl) or !applies(nl, roles, drawn)) return null;
     const c = &nl.graph;
     const n = c.edgeCount();
     const nets = c.vertexCount();
     assert(classes.len == n);
     var p: Placer = .{
         .arena = arena,
+        .rank = try structure.rankByName(arena, arena, c.edges.items(.name)),
+        .order = try arena.alloc(u32, n),
         .two = try arena.alloc(?Two, n),
+        .mos_mid = try arena.alloc(?library.Pt, n),
         .blocks = try arena.alloc(?Block, n),
         .on = try arena.alloc(std.ArrayList(Link), nets),
         .out_of = try arena.alloc(u32, nets),
@@ -221,7 +276,9 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         .flat_shunt = try arena.alloc(bool, nets),
         .at = try arena.alloc(?Put, n),
     };
+    for (p.rank, 0..) |rank, d| p.order[rank] = @intCast(d);
     @memset(p.two, null);
+    @memset(p.mos_mid, null);
     @memset(p.blocks, null);
     for (p.on) |*l| l.* = .empty;
     @memset(p.out_of, none);
@@ -237,14 +294,28 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         p.port[v] = role.isPort();
     }
     for (c.edges.items(.kind), p.source) |kind, *s| s.* = device.of(kind).source == .independent;
-    for (c.edges.items(.kind), 0..) |kind, d| {
+    for (p.order) |d| {
         if (!drawn[d]) continue;
+        const kind = c.edges.items(.kind)[d];
         const pins = c.members(EdgeId.from(d));
-        if (relations.twoPin(kind)) {
+        if (relations.twoPin(kind) or kind == .mosfet) {
             // Its path's ends: the reader gives every part both. The
             // switch's symbol is the taller one.
             const a, const b = nl.path(EdgeId.from(d)).?;
-            const t: Two = .{ .a = a, .b = b, .tall = kind == .vswitch or kind == .cswitch };
+            var t: Two = .{ .a = a, .b = b, .tall = kind == .vswitch or kind == .cswitch or kind == .mosfet, .capacitor = kind == .capacitor };
+            if (kind == .mosfet) {
+                const terms = lib.at(classes[d]).terminals;
+                if (terms.len < 3) return null;
+                const drain = terms[0].at;
+                const gate = terms[1].at;
+                const source = terms[2].at;
+                // This procedure's paths span one unit. Other symbol frames
+                // retain lattice placement; the library owns their geometry.
+                if (drain.y != source.y or @abs(drain.x - source.x) != lib.unit or gate.y >= drain.y or @mod(drain.x + source.x, 2) != 0) return null;
+                p.mos_mid[d] = .{ .x = @divExact(drain.x + source.x, 2), .y = drain.y };
+                if (!channelFits(lib.at(classes[d]), p.mos_mid[d].?, lib.unit)) return null;
+                if (drain.x > source.x) std.mem.swap(u32, &t.a, &t.b);
+            }
             p.two[d] = t;
             if (t.a != t.b) {
                 try p.on[t.a].append(arena, .{ .part = @intCast(d), .other = t.b });
@@ -288,7 +359,9 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         shift[k] = .{ .x = dx, .y = dy };
         for (cv.devs.items) |d| {
             const at = p.at[d].?;
-            out[d] = .{ .origin = .{ .x = toDrawing(at.x + dx, lib.unit), .y = toDrawing(at.y + dy, lib.unit) }, .orient = at.turn, .line = none };
+            const center: library.Pt = .{ .x = toDrawing(at.x + dx, lib.unit), .y = toDrawing(at.y + dy, lib.unit) };
+            const offset = at.turn.apply(p.mos_mid[d] orelse .zero);
+            out[d] = .{ .origin = center.sub(offset), .orient = at.turn, .line = none };
         }
         ybase = box.y1 + dy + 150;
     }
@@ -297,12 +370,14 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
 }
 
 /// The room a two-pin part takes: flat, a unit long; upright, with its
-/// rail symbol past its far end.
+/// rail symbol past its far end. Tall controls reserve three quarters of
+/// a unit above a flat channel, or on either side when it stands upright.
 pub fn partRect(kind: Kind, cx: i32, cy: i32, tall: bool) R {
+    const side: i32 = if (tall) 75 else 20;
     return switch (kind) {
-        .flat => .{ .x0 = cx - 50, .y0 = cy - @as(i32, if (tall) 60 else 20), .x1 = cx + 50, .y1 = cy + 20 },
-        .down => .{ .x0 = cx - 20, .y0 = cy - 50, .x1 = cx + 20, .y1 = cy + 100 },
-        .up => .{ .x0 = cx - 20, .y0 = cy - 100, .x1 = cx + 20, .y1 = cy + 50 },
+        .flat => .{ .x0 = cx - 50, .y0 = cy - side, .x1 = cx + 50, .y1 = cy + 20 },
+        .down => .{ .x0 = cx - side, .y0 = cy - 50, .x1 = cx + side, .y1 = cy + 100 },
+        .up => .{ .x0 = cx - side, .y0 = cy - 100, .x1 = cx + side, .y1 = cy + 50 },
     };
 }
 
@@ -321,6 +396,35 @@ pub fn roundEven(num: i64, den: i64) i32 {
 }
 
 // ---- private ----
+
+/// A control net that touches only MOS gates and independent voltage
+/// sources whose opposite terminal is a rail. Read every incidence, even
+/// for sources drawn apart: hiding a driver does not change its function.
+fn externalGate(nl: *const Netlist, roles: []const Role, gate: netlist.VertexId) bool {
+    const c = &nl.graph;
+    for (c.incident(gate)) |e| {
+        const kind = c.edges.items(.kind)[e.index()];
+        const pins = c.members(e);
+        if (kind != .mosfet and kind != .vsource) return false;
+        for (pins, 0..) |net, i| {
+            if (net != gate) continue;
+            if (kind == .mosfet and i != 1) return false;
+            if (kind == .vsource and !roles[pins[1 - i].index()].isRail()) return false;
+        }
+    }
+    return true;
+}
+
+/// Pins and strokes must fit the same reserved frame used while placing.
+/// Cross multiplication keeps this edge check exact for any library unit.
+fn channelFits(class: library.Class, mid: library.Pt, lib_unit: i32) bool {
+    const box = class.bbox();
+    const room = partRect(.flat, 0, 0, true);
+    return (@as(i64, box.min.x) - mid.x) * unit >= @as(i64, room.x0) * lib_unit and
+        (@as(i64, box.min.y) - mid.y) * unit >= @as(i64, room.y0) * lib_unit and
+        (@as(i64, box.max.x) - mid.x) * unit <= @as(i64, room.x1) * lib_unit and
+        (@as(i64, box.max.y) - mid.y) * unit <= @as(i64, room.y1) * lib_unit;
+}
 
 /// A block's inputs and its output among `ports`, by their names, its
 /// `pins` still to fill; null when it is no amplifier: one or two inputs,

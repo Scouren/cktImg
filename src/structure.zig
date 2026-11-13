@@ -277,7 +277,8 @@ pub fn rankByName(arena: Allocator, gpa: Allocator, names: []const []const u8) A
     const order = try gpa.alloc(u32, names.len);
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
-    std.mem.sort(u32, order, names, struct {
+    // Index breaks every name tie: stability cannot change this total order.
+    std.sort.heap(u32, order, names, struct {
         fn lt(ns: []const []const u8, x: u32, y: u32) bool {
             return nameLess(ns[x], ns[y]) or (!nameLess(ns[y], ns[x]) and x < y);
         }

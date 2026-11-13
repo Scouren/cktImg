@@ -10,7 +10,9 @@ device.zig. Subcircuit calls remain opaque, as they do in the layout engine.
 
 Study predicate: distinct D/S/G, neither channel end a rail, and a capacitor
 at an end whose DC component reaches no rail; or whose DC degree is one
-while the opposite channel end drives another transistor's gate/base.
+while the opposite channel end drives another transistor's gate/base or
+a named block input. Port roles use the library's whole input spellings;
+the block's family name and chosen glyph do not affect that role.
 The capacitor's other end must not be this MOS's gate or opposite channel
 end: its own terminal capacitance does not establish a series signal path.
 Capacitors do not conduct DC; gates, bodies and control pins are not paths.
@@ -54,8 +56,9 @@ def main():
             digest.update(len(name).to_bytes(8, "big") + name)
             digest.update(len(data).to_bytes(8, "big") + data)
         human = json.loads(human_path.read_text())
-        cards = read_cards(deck_path.read_text())
-        rows = inspect(human, cards)
+        source = deck_path.read_text()
+        cards = read_cards(source)
+        rows = inspect(human, cards, input_nets(source, cards))
         for row in rows:
             orientation[row["human_orientation"]] += 1
             if row["human_orientation"] == "horizontal":
@@ -66,10 +69,10 @@ def main():
     groups = {"all": selected}
     for split in ("discovery", "holdout"):
         groups[split] = [row for row in selected if row["split"] == split]
-    for family in ("compensation", "floating_capacitor"):
+    for family in ("compensation", "floating_capacitor", "block_input"):
         groups[family] = [row for row in selected if family in row["families"]]
     result = {
-        "predicate": "MOS: distinct D/S/G, no D/S rail; nonparasitic capacitor at an endpoint with no rail-reachable DC component, or DC degree 1 and opposite end driving another gate/base",
+        "predicate": "MOS: distinct D/S/G, no D/S rail; nonparasitic capacitor at an endpoint with no rail-reachable DC component, or DC degree 1 and opposite end driving another gate/base or named block input",
         "oracle": "D/S endpoint coordinates in the independent human drawing",
         "corpus_sha256": digest.hexdigest(),
         "split": "numeric source ID modulo 5: zero = holdout, others = discovery; related variants may cross the split",
@@ -127,7 +130,39 @@ def read_cards(text):
     return cards
 
 
-def inspect(human, cards):
+def input_nets(text, cards):
+    """Binds declared X ports to nets; matches library.portRole input spellings."""
+    definitions = {}
+    for raw in text.lower().splitlines():
+        words = raw.split()
+        if not words or words[0] != ".subckt":
+            continue
+        if words[1] in definitions:
+            raise ValueError("duplicate subcircuit: " + words[1])
+        ports = []
+        for word in words[2:]:
+            if "=" in word or word == "params:":
+                break
+            ports.append(word)
+        definitions[words[1]] = ports
+    inputs = set()
+    spellings = set("vin in a vip inp in+ vp vin+ inn in- vn vin-".split())
+    for name, words in cards.items():
+        if name[0] != "x":
+            continue
+        tail = next((i for i, word in enumerate(words) if "=" in word or word == "params:"), len(words))
+        model = words[tail - 1]
+        if model not in definitions:
+            raise ValueError("missing block definition: " + model)
+        ports = definitions[model]
+        nets = words[1:tail - 1]
+        if len(nets) != len(ports):
+            raise ValueError("block port count mismatch: " + name)
+        inputs.update(net for net, port in zip(nets, ports) if port in spellings)
+    return inputs
+
+
+def inspect(human, cards, block_inputs=()):
     """Separates the topology predicate from the coordinate oracle."""
     paths = {}
     capacitors = []
@@ -188,9 +223,12 @@ def inspect(human, cards):
                     other = second if first == net else first if second == net else None
                     if other is not None and other not in (net, gate, opposite):
                         ends_with_cap.add(net)
-            if any(net in ends_with_cap and len(adjacency[net]) == 1 and opposite in gates
-                   for net, opposite in ((drain, source), (source, drain))):
+            leaves = [(net, opposite) for net, opposite in ((drain, source), (source, drain))
+                      if net in ends_with_cap and len(adjacency[net]) == 1]
+            if any(opposite in gates or opposite in block_inputs for _, opposite in leaves):
                 families.append("compensation")
+            if any(opposite in block_inputs for _, opposite in leaves):
+                families.append("block_input")
             if drain not in reached and source not in reached and ends_with_cap:
                 families.append("floating_capacitor")
         numeric_id = int(human["id"].rsplit("-", 1)[1])

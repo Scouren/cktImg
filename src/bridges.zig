@@ -63,6 +63,26 @@
 //! - bridges.16 (order: signal) A flat transistor bridges its channel's
 //!   two nets. Its gate and body do not select its columns: the signal
 //!   crosses the channel, as in AnalogGenie ag-385 and ag-386. `chainOf`
+//! - bridges.17 (habit) A flat complementary transmission pair shares one
+//!   column, NMOS above PMOS, rather than becoming a series chain. Both
+//!   source pairs selected by forms.19 (ag-386, ag-751) do so. Spatial
+//!   instructions applied afterward take precedence. `place`
+//! - bridges.18 (habit) A converter's inductor and its unique main PMOS
+//!   at each end share one row in channel order, despite shunts on the
+//!   intermediate nets. All 252 selected source coils lie between those
+//!   switches; 243 share their exact row. Nine have a small offset on one
+//!   switch (named in the power-path study). Ambiguous branches and an
+//!   upright instruction keep the ordinary placement. `power_paths.series`
+//! - bridges.19 (habit, bounded) A certified converter path stands above
+//!   its grounded external-gate shunts and active gate drivers, before
+//!   the generic outside-column fallback. A block whose named output
+//!   drives one main switch stands below that switch in its column:
+//!   all 75 source outputs are below the path. They also align with the
+//!   driven gate, but this pass aligns lattice columns; exact output-pin
+//!   alignment needs the later symbol geometry. An occupied cell moves
+//!   the block downward.
+//!   No order is imposed on unrelated bias devices; explicit deck
+//!   instructions run afterward. `power_paths.controlBounds`, `powerGate`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -77,6 +97,8 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const forms = @import("forms.zig");
 const library = @import("library.zig");
+const transmission = @import("transmission.zig");
+const power_paths = @import("power_paths.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -111,7 +133,24 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
     defer slots.deinit(gpa);
     for (order) |d| {
         if (!drawn[d] or form[d] != .horizontal or placed[d]) continue;
-        const tips = try chainOf(gpa, nl, roles, drawn, form, upper, lower, placed, d, &chain);
+        const pair = if (transmission.mate(nl, d)) |m| (if (drawn[m] and form[m] == .horizontal and !placed[m]) m else null) else null;
+        const power = if (power_paths.series(nl, roles, drawn, form, d)) |members| available: {
+            for (members) |v| if (placed[v]) break :available null;
+            break :available members;
+        } else null;
+        const tips = if (pair) |m| paired: {
+            chain.clearRetainingCapacity();
+            const first_n = device.polarity(nl.modelType(EdgeId.from(d))) == .n;
+            try chain.appendSlice(gpa, if (first_n) &.{ d, m } else &.{ m, d });
+            break :paired nl.path(EdgeId.from(chain.items[0])).?;
+        } else if (power) |members| ordered: {
+            chain.clearRetainingCapacity();
+            try chain.appendSlice(gpa, &members);
+            const coil = nl.path(EdgeId.from(members[1])).?;
+            const first = nl.path(EdgeId.from(members[0])).?;
+            const last = nl.path(EdgeId.from(members[2])).?;
+            break :ordered .{ first[@intFromBool(first[0] == coil[0])], last[@intFromBool(last[0] == coil[1])] };
+        } else try chainOf(gpa, nl, roles, drawn, form, upper, lower, placed, d, &chain);
         slots.clearRetainingCapacity();
         // Mirrored when every member's mate stands as a bridge already: one
         // that stands upright (a line of the deck's) has no slot to mirror.
@@ -119,7 +158,12 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
             const mb = st.device_mate[b];
             if (mb == none or mb == b or !placed[mb]) break false;
         } else true;
-        if (mirrored) {
+        if (pair != null) {
+            try chainSlots(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y, axis2, chain.items[0..1], tips, &slots);
+            const middle = slots.items[0];
+            slots.items[0][1] -= 1;
+            try slots.append(gpa, .{ middle[0], middle[1] + 1 });
+        } else if (mirrored) {
             // The mirror image of the mate's chain, member by member.
             for (chain.items) |b| {
                 const mb = st.device_mate[b];
@@ -128,6 +172,9 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
         } else {
             try chainSlots(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y, axis2, chain.items, tips, &slots);
         }
+        if (power) |members| if (power_paths.controlBounds(nl, roles, drawn, form, members, y)) |bounds| {
+            for (slots.items) |*slot| slot[1] = bounds[0] - 1;
+        };
         // Outward until every slot is free.
         const step: i32 = if (axis2 != null and 2 * slots.items[0][0] < axis2.?) -1 else 1;
         var shift: i32 = 0;
@@ -147,9 +194,49 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
             placed[b] = true;
         }
     }
+    // All main paths now stand, regardless of the block's card/rank order.
+    // A block's output supplies the semantic relation, not its port order.
+    for (order) |d| {
+        if (!drawn[d] or form[d] != .horizontal) continue;
+        const main = powerGate(nl, roles, drawn, form, d) orelse continue;
+        const removed = taken.remove(.{ x[d], y[d] });
+        assert(removed);
+        var row = y[main] + 1;
+        var tries: usize = 0;
+        while (taken.contains(.{ x[main], row })) : (tries += 1) {
+            assert(tries <= taken.count());
+            row += 1;
+        }
+        try taken.put(gpa, .{ x[main], row }, {});
+        x[d] = x[main];
+        y[d] = row;
+    }
 }
 
 // ---- private ----
+
+/// The unique certified main switch driven by a named output of block
+/// `d`. Multiple distinct targets leave the ordinary block placement.
+fn powerGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?u32 {
+    const c = &nl.graph;
+    const def = nl.defOf(EdgeId.from(d)) orelse return null;
+    const pins = c.members(EdgeId.from(d));
+    if (pins.len != def.ports.len) return null;
+    var found: ?u32 = null;
+    for (pins, def.ports) |pin, name| {
+        if (library.portRole(def.ports, name) != .out) continue;
+        for (c.incident(pin)) |e| {
+            const v = e.index();
+            if (!drawn[v] or form[v] != .horizontal or c.edges.items(.kind)[v] != .mosfet) continue;
+            if (c.members(e)[1] != pin) continue;
+            const group = power_paths.series(nl, roles, drawn, form, v) orelse continue;
+            if (v != group[0] and v != group[2]) continue;
+            if (found) |old| if (old != v) return null;
+            found = v;
+        }
+    }
+    return found;
+}
 
 /// The bridges in series with `d` (two-pin parts and MOS channels joined
 /// by nets that hold just those paths), in order, into `out`; returns its end

@@ -108,6 +108,11 @@ def geometry(h, d):
         ins, outs = ['in+', 'in-'], [k for k in ('out', 'out+', 'out-') if k in hp]
     elif h["type"] == 'voltage-amplifier':
         ins, outs = ['in'], ['out']
+    elif h["type"].startswith('hierarchical-symbol-'):
+        # Authored port names measure geometry even when the source's symbol
+        # type is an opaque asset ID. No generated family/class participates.
+        ins = [k for k in ('in', 'inp', 'inn', 'in+', 'in-', 'vip', 'vin') if k in hp]
+        outs = [k for k in ('out', 'out+', 'out-', 'vout', 'vo', 'vop', 'von') if k in hp]
     hf = df = None
     if ins and outs and all(k in matched for k in ins + outs):
         hf = direction(midpoint([hp[k] for k in outs]), midpoint([hp[k] for k in ins]))
@@ -212,6 +217,17 @@ def self_test(score):
     got = geometry(amp, dict(pins=pins))
     assert got[:2] == ([-20.0, 0.0], [-20.0, 0.0]), got
     assert got[-2:] == ("right", "right"), got
+    # The source may name a custom triangular symbol by an opaque asset ID.
+    # Its authored INN/OUT terminals still define a measurable flow axis.
+    custom = dict(type="hierarchical-symbol-example", terminals={"INN": [0, 20], "OUT": [0, -20]},
+                  nets={"INN": "i", "OUT": "o"})
+    custom_native = dict(pins=[dict(term="inn", net="i", xy=[-20, 0]),
+                              dict(term="out", net="o", xy=[20, 0])])
+    assert geometry(custom, custom_native)[-2:] == ("up", "right")
+    # Arbitrary port names carry no input/output assertion.
+    opaque = dict(type="hierarchical-symbol-example", terminals={"p": [0, 20], "q": [0, -20]},
+                  nets={"p": "i", "q": "o"})
+    assert geometry(opaque, custom_native)[-2:] == (None, None)
 
 
 def issues(results):

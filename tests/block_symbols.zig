@@ -25,7 +25,7 @@ fn circles(c: np.Class) usize {
 }
 
 fn kindsSigned(name: []const u8) bool {
-    return std.mem.eql(u8, name, "icm_opamp_vdd_vss") or std.mem.eql(u8, name, "icm_ideal_comparator_vdd");
+    return std.mem.eql(u8, name, "icm_opamp_vdd_vss") or std.mem.eql(u8, name, "icm_ideal_comparator_vdd") or std.mem.eql(u8, name, "opamp_differential");
 }
 
 test "block glyphs: textbook amplifiers and gates retain every ordered SPICE port" {
@@ -33,6 +33,7 @@ test "block glyphs: textbook amplifiers and gates retain every ordered SPICE por
     // signed differential inputs, curved gates and output inversion bubbles.
     const cases = [_]struct { []const u8, []const u8, bool }{
         .{ "icm_opamp_vdd_vss", "VDD VSS VIP VIN VOUT", false },
+        .{ "opamp_differential", "VDD VSS VIP VIN VOP VON", false },
         .{ "voltage_amplifier", "VDD VSS VIN VOUT", false },
         .{ "icm_ideal_comparator_vdd", "VDD VIP VIN VOUT", false },
         .{ "inverter", "VDD VSS A Y", true },
@@ -67,21 +68,24 @@ test "block glyphs: textbook amplifiers and gates retain every ordered SPICE por
             for (c.draw) |op| if (op == .text) {
                 signs += @intFromBool(std.mem.eql(u8, op.text.s, "+") or std.mem.eql(u8, op.text.s, "-"));
             };
-            try testing.expectEqual(@as(usize, 2), signs);
+            try testing.expectEqual(@as(usize, if (std.mem.eql(u8, row[0], "opamp_differential")) 4 else 2), signs);
         }
     }
 }
 
 test "block glyphs: side directives and caller symbols win; ambiguous contracts stay boxes" {
     // Oracle: explicit drawing instructions outrank name recognition; the extra
-    // bias/control port of AG1677 and the custom blocks of AG1070 stay visible.
+    // extra control port of AG1677 and the custom blocks of AG1070 stay visible.
     const decks = [_][]const u8{
         "t\n.subckt opamp VDD VSS VIP VIN VOUT\n*@ right VIP\n.ends\n",
-        "t\n.subckt opamp VDD VSS VIP VIN VOUT VB1\n.ends\n",
+        "t\n.subckt opamp VDD VSS VIP VIN VOUT VA\n.ends\n",
+        "t\n.subckt opamp VDD VSS VIP VIN VOUT VB VB1\n.ends\n",
         "t\n.subckt inverter VDD VSS A B Y\n.ends\n",
         "t\n.subckt charge_pump VDD VSS VIP VIN VOUT\n.ends\n",
         "t\n.subckt opamp VDD VSS inp vip inn out\n.ends\n",
         "t\n.subckt opamp V+ V- VIP VIN VOUT\n.ends\n",
+        "t\n.subckt opamp_differential VDD VSS VIP VIN VOP VON VB\n.ends\n",
+        "t\n.subckt opamp_differential VDD VIP VIN VOP OUTP\n.ends\n",
     };
     for (decks, 0..) |text, k| {
         var nl = try np.netlist.parse(testing.allocator, &.{text}, null);
@@ -96,5 +100,54 @@ test "block glyphs: side directives and caller symbols win; ambiguous contracts 
         defer own.deinit();
         const custom = try own.register(.{ .name = nl.defs[0].name, .terminals = &.{.{ .name = "p", .at = .zero }} });
         try testing.expectEqual(custom, try own.blockFor(&nl.defs[0]));
+    }
+}
+
+test "block glyphs: a fully differential amplifier keeps both signed outputs" {
+    // Oracle: AG479/782 source triangles have two signal inputs and two
+    // separate, signed outputs. The redraw omits power leads; the SPICE
+    // contract retains them. AG782's crossed sign arrangement is the default.
+    const gpa = testing.allocator;
+    var nl = try np.netlist.parse(gpa, &.{"t\n.subckt opamp_differential VON VIN VSS VOP VIP VDD\n.ends\n"}, null);
+    defer nl.deinit(gpa);
+    var lib = np.Library.init(gpa);
+    defer lib.deinit();
+    const c = lib.at(try lib.blockFor(&nl.defs[0]));
+    try testing.expect(diagonal(c));
+    try testing.expectEqual(np.Side.right, c.side(0, .r0).?);
+    try testing.expectEqual(np.Side.right, c.side(3, .r0).?);
+    try testing.expectEqual(np.Side.left, c.side(1, .r0).?);
+    try testing.expectEqual(np.Side.left, c.side(4, .r0).?);
+    try testing.expectEqual(c.terminals[0].at.x, c.terminals[3].at.x);
+    try testing.expect(c.terminals[3].at.y < c.terminals[0].at.y);
+    try testing.expect(c.terminals[1].at.y < c.terminals[4].at.y);
+    for (nl.defs[0].ports, c.terminals) |name, terminal| try testing.expectEqualStrings(name, terminal.name);
+}
+
+test "block glyphs: named amplifier bias pins retain a triangle and separate terminals" {
+    // Oracle: 85 source instances with this complete signal/rail/bias contract
+    // have triangular outlines, including AG1561/1661/1700/2223. A named
+    // bias terminal changes the port count, not the amplifier's identity.
+    const gpa = testing.allocator;
+    for ([_][]const u8{
+        "VDD VSS INP INN OUT VB1 VB2 VB3",
+        "VB3 OUT INN VSS VB2 INP VB1 VDD",
+        "VDD VSS INP INN OUT VB1",
+    }) |ports| {
+        const text = try std.fmt.allocPrint(gpa, "t\n.subckt opamp {s}\n.ends\n", .{ports});
+        defer gpa.free(text);
+        var nl = try np.netlist.parse(gpa, &.{text}, null);
+        defer nl.deinit(gpa);
+        var lib = np.Library.init(gpa);
+        defer lib.deinit();
+        const c = lib.at(try lib.blockFor(&nl.defs[0]));
+        try testing.expect(diagonal(c));
+        try testing.expectEqual(nl.defs[0].ports.len, c.terminals.len);
+        for (nl.defs[0].ports, c.terminals, 0..) |name, terminal, i| {
+            try testing.expectEqualStrings(name, terminal.name);
+            try testing.expect(!terminal.hidden);
+            if (std.mem.startsWith(u8, name, "vb")) try testing.expectEqual(np.Side.down, c.side(i, .r0).?);
+            for (c.terminals[i + 1 ..]) |other| try testing.expect(!std.meta.eql(terminal.at, other.at));
+        }
     }
 }

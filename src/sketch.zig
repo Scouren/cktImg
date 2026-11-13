@@ -72,6 +72,24 @@
 //!   input) is wired from its own line. `placeDevices`
 //! - sketch.19 (unmeasured) A device pin with no other pin on its net
 //!   carries a no-connect cross. `noConnects`
+//! - sketch.20 (habit) A flat complementary transmission pair's gates face
+//!   outward while its members still share a column on separate rows,
+//!   after cell and row instructions. People: ag-386 and ag-751, both
+//!   source pairs selected by forms.19. An explicit `at` turn takes
+//!   precedence when devices are placed. `fits`
+//! - sketch.21 (habit) A flat MOS control faces its drawn active drivers
+//!   when every driver stands strictly above it or every driver below it.
+//!   Active terminals are transistor paths and named block outputs; other
+//!   gates, bodies, sources and passive loads do not vote. A same-row or
+//!   opposing driver leaves the class's side unchanged. People: 107/107
+//!   qualifying converter controls face their drivers (75 block outputs,
+//!   18 two-drain and 14 four-drain networks). Source terminal coordinates
+//!   qualify that observation; distinct lattice rows are the placement
+//!   proxy here. External controls abstain, and sketch.20 takes priority.
+//!   Across all flat MOS, 139/142 qualifying sources agree; ag-809:m10,
+//!   ag-813:m7 and ag-3103:m12 keep upward labelled controls from separate
+//!   drawing groups. This habit does not yet recognize those local groups.
+//!   `controlSide`, `fits`; docs/research/figures/gate_facing.py
 //!
 //! Contents:
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
@@ -87,6 +105,7 @@ const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const opamp = @import("opamp.zig");
+const transmission = @import("transmission.zig");
 const wires = @import("wires.zig");
 const netlines = @import("netlines.zig");
 const pinned = @import("pinned.zig");
@@ -342,8 +361,9 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
         if (!sk.drawn[d]) continue;
         const class = s.lib.at(info.items(.class)[d]);
         const base = sch.form(info.items(.orientation)[d]);
+        const gate_side = if (vertical) null else controlSide(nl, s.roles, sk, @intCast(d));
         for (flips) |f| {
-            if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical)) continue;
+            if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical, gate_side)) continue;
             info.items(.flip_x)[d] = f[0];
             info.items(.flip_y)[d] = f[1];
             break;
@@ -352,11 +372,52 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     sch.settleDevices(s, c);
 }
 
+/// A flat MOS gate's side: a parallel pair's exterior first, otherwise
+/// unanimous active drivers on strictly different rows. Reads existing
+/// CSR incidences and cells once per device; no storage survives the call.
+fn controlSide(nl: *const Netlist, roles: []const Role, sk: *const Skeleton, d: u32) ?Side {
+    const c = &nl.graph;
+    assert(d < c.edgeCount());
+    assert(roles.len == c.vertexCount());
+    if (c.edges.items(.kind)[d] != .mosfet) return null;
+    if (transmission.mate(nl, d)) |m| {
+        if (sk.drawn[m] and sk.form[m] == .horizontal and sk.x[d] == sk.x[m] and sk.y[d] != sk.y[m]) {
+            return if (sk.y[d] < sk.y[m]) .up else .down;
+        }
+    }
+    const pins = c.members(EdgeId.from(d));
+    if (pins[0] == pins[2] or pins[1] == pins[0] or pins[1] == pins[2] or roles[pins[1].index()].isRail()) return null;
+    var side: ?Side = null;
+    for (c.incident(pins[1])) |e| {
+        const v = e.index();
+        if (v == d or !sk.drawn[v]) continue;
+        const kind = c.edges.items(.kind)[v];
+        const q = c.members(e);
+        const active = if (device.isTransistor(kind)) blk: {
+            const path = device.of(kind).path.?;
+            break :blk q[path[0]] == pins[1] or q[path[1]] == pins[1];
+        } else if (kind == .subckt) blk: {
+            const def = nl.defOf(e) orelse break :blk false;
+            if (def.ports.len != q.len) break :blk false;
+            for (q, def.ports) |net, port| {
+                if (net == pins[1] and library.portRole(def.ports, port) == .out) break :blk true;
+            }
+            break :blk false;
+        } else false;
+        if (!active) continue;
+        if (sk.y[v] == sk.y[d]) return null;
+        const toward: Side = if (sk.y[v] < sk.y[d]) .up else .down;
+        if (side != null and side.? != toward) return null;
+        side = toward;
+    }
+    return side;
+}
+
 /// Whether turn `o` puts drawn device `d` on its line as the drawing's two
 /// orders have it. Upright, the rows': its end on the skeleton's upper net
 /// faces up, and its gate the skeleton's side. Flat, the columns': its
 /// path's first pin faces left when it is the left end (`firstLeft`).
-fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool) bool {
+fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool, gate_side: ?Side) bool {
     assert(sk.drawn[d]);
     const pins = nl.graph.members(EdgeId.from(d));
     if (vertical) {
@@ -371,6 +432,10 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
         const gate = device.of(nl.graph.edges.items(.kind)[d]).gate orelse return true;
         const g = class.side(gate, o) orelse return true;
         return (g == .right) == sk.gate_right[d];
+    }
+    if (gate_side) |side| {
+        const gate = class.side(1, o) orelse return true;
+        if (gate != side) return false;
     }
     // Its ends are its path's, whatever else is on its card (a gate, a
     // control pair); a box of two ports has its two pins. People turn a

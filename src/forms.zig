@@ -17,7 +17,8 @@
 //!   of where it stands. People: 414 of 414 in 5,263 hand-drawn
 //!   schematics. `isDependent`
 //! - forms.4 (unmeasured) A transistor stands upright, except a shorted
-//!   channel (forms.12) or a capacitor-coupled MOS channel (forms.19).
+//!   channel (forms.12), a capacitor-coupled MOS channel (forms.19), or a
+//!   source-degeneration bridge (forms.20). Converter paths are forms.21.
 //!   `classify`
 //! - forms.5 (unmeasured) A part with an end on a rail stands upright, a
 //!   capacitor too. `classify`
@@ -71,15 +72,29 @@
 //!   neither channel end on a rail, lies flat when an end meets a capacitor
 //!   and either the channel cannot reach a rail through DC paths, or no
 //!   other DC path ends at that capacitor node and the opposite channel
-//!   end drives another gate/base. A capacitor across the channel, from
-//!   gate to channel, or shorted gives no evidence. A gate and body give
-//!   no path to a rail.
+//!   end drives another gate/base or a block's named input. A capacitor
+//!   across the channel, from gate to channel, or shorted gives no evidence.
+//!   A gate and body give no path to a rail.
 //!   This includes samplers (ag-385, ag-386) and series compensation
-//!   (ag-738, ag-995), but not an ordinary loaded cascode. People: 239 of
-//!   243 selected MOS in 2,202 AnalogGenie drawings lie flat; 20 of 23 in
-//!   the 734 AMSNet drawings. Upright reset and clamp devices are exceptions
+//!   (ag-738, ag-995), including named block inputs (ag-782), but not an
+//!   ordinary loaded cascode. People: 315 of 319 selected MOS in 2,202
+//!   AnalogGenie drawings lie flat; 20 of 23 in the 734 AMSNet drawings.
+//!   Upright reset and clamp devices are exceptions
 //!   (ag-1039, ag-1054); an `upright` line wins. Evidence and named exceptions:
 //!   docs/research/analoggenie.md. `classify`
+//! - forms.20 (habit) A MOS joining two other MOS source nodes lies flat
+//!   when all three have the same polarity and body rail, both channel
+//!   ends have a direct DC path to that rail, and its gate has no incident
+//!   DC path. Drain, gate and source are distinct on each device. The two
+//!   gain devices have distinct drains and gates, with neither drain on
+//!   the bridge. People: all six selected MOS in ag-769, ag-770, ag-771 and
+//!   ag-954 lie flat; AMSNet has no qualifying examples. The gate condition
+//!   excludes nine upright clamps (ag-2460 through ag-2468). Neither bridge
+//!   end is a rail; an `upright` line wins. Evidence and scope:
+//!   docs/research/analoggenie.md. `isDegeneration`
+//! - forms.21 (habit) A recognized converter path lies horizontally
+//!   through its switches and inductor. `power_paths` owns the conditional
+//!   topology and evidence; its inductor keeps that form in `crooked`.
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -92,12 +107,14 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const library = @import("library.zig");
 const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const relations = @import("relations.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
+const power_paths = @import("power_paths.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -116,7 +133,8 @@ const none = structure.none;
 /// never a two-pin device
 /// between two nets the symmetry swaps, which straddles the axis, nor a
 /// device whose current path is shorted (a MOS dummy: no current flows).
-/// A capacitor-coupled MOS channel lies flat under forms.19's conditions.
+/// A capacitor-coupled MOS channel or source-degeneration bridge lies flat
+/// under forms.19 or forms.20's conditions.
 pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -160,10 +178,18 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
                 const opposite = if (net == a) b else a;
                 if (!isolated) {
                     if (count[net] != 1) continue;
-                    const drives = for (c.incident(VertexId.from(opposite))) |e| {
+                    const drives = input: for (c.incident(VertexId.from(opposite))) |e| {
                         if (!drawn[e.index()]) continue;
-                        const side = device.of(kinds[e.index()]).gate orelse continue;
-                        if (c.members(e)[side].index() == opposite) break true;
+                        if (device.of(kinds[e.index()]).gate) |side| {
+                            if (c.members(e)[side].index() == opposite) break true;
+                        }
+                        if (nl.defOf(e)) |def| for (c.members(e), def.ports) |pin, name| {
+                            if (pin.index() != opposite) continue;
+                            switch (library.portRole(def.ports, name)) {
+                                .inp, .inn, .in => break :input true,
+                                else => {},
+                            }
+                        };
                     } else false;
                     if (!drives) continue;
                 }
@@ -177,6 +203,9 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
             break :coupled false;
         };
         if (capacitive) continue;
+        if (kinds[d] == .mosfet and !on_rail and
+            count[c.members(EdgeId.from(d))[k.gate.?].index()] == 0 and
+            isDegeneration(nl, roles, drawn, @intCast(d))) continue;
         const series = k.dc and count[a] == 2 and count[b] == 2;
         // On the way down: people stand 262 of 305 such resistors and 18
         // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
@@ -190,6 +219,7 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         const source = (k.current and k.source == .independent) or isDependent(nl, roles, @intCast(d));
         if (device.isTransistor(kinds[d]) or ((on_rail or series or down or source) and !straddles)) f.* = .vertical;
     }
+    try power_paths.classify(gpa, nl, roles, drawn, form);
 }
 
 /// Each upright device's path ends, the one nearer the supply `upper`: a
@@ -244,6 +274,7 @@ pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk
     var any = false;
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoEnded(nl, @intCast(d))) continue;
+        if (power_paths.inductor(nl, roles, sk.drawn, @intCast(d))) continue;
         const a = c.members(EdgeId.from(d))[0].index();
         const b = c.members(EdgeId.from(d))[1].index();
         if (a == b or isRail(roles[a]) or isRail(roles[b]) or st.net_mate[a] == b) continue;
@@ -323,6 +354,43 @@ pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool {
 /// for the one path the table names that is drawn as a box (`isAmplifier`).
 fn pathNets(nl: *const Netlist, roles: []const Role, d: u32) ?[2]u32 {
     return if (isAmplifier(nl, roles, d)) null else nl.path(EdgeId.from(d));
+}
+
+fn isDegeneration(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) bool {
+    const c = &nl.graph;
+    const kinds = c.edges.items(.kind);
+    assert(kinds[d] == .mosfet);
+    assert(drawn.len == c.edgeCount());
+    const pins = c.members(EdgeId.from(d));
+    const a, const b = .{ pins[0], pins[2] };
+    const body = pins[3];
+    const polarity = device.polarity(nl.modelType(EdgeId.from(d)));
+    if (a == b or pins[1] == a or pins[1] == b or !isRail(roles[body.index()]) or polarity == .other) return false;
+    // A bias branch at each source returns directly to the shared body
+    // rail. A body/control pin on that rail supplies no such path.
+    for ([_]VertexId{ a, b }) |net| {
+        const returns = for (c.incident(net)) |e| {
+            if (!drawn[e.index()] or !device.of(kinds[e.index()]).dc) continue;
+            const path = pathNets(nl, roles, e.index()) orelse continue;
+            if ((path[0] == net.index() and path[1] == body.index()) or
+                (path[1] == net.index() and path[0] == body.index())) break true;
+        } else false;
+        if (!returns) return false;
+    }
+    for (c.incident(a)) |left| {
+        if (left.index() == d or !drawn[left.index()] or kinds[left.index()] != .mosfet) continue;
+        const lp = c.members(left);
+        if (lp[2] != a or lp[3] != body or device.polarity(nl.modelType(left)) != polarity) continue;
+        if (lp[0] == a or lp[0] == b or lp[1] == lp[0] or lp[1] == lp[2]) continue;
+        for (c.incident(b)) |right| {
+            if (right.index() == d or !drawn[right.index()] or kinds[right.index()] != .mosfet) continue;
+            const rp = c.members(right);
+            if (rp[2] != b or rp[3] != body or device.polarity(nl.modelType(right)) != polarity) continue;
+            if (rp[0] == a or rp[0] == b or rp[1] == rp[0] or rp[1] == rp[2]) continue;
+            if (lp[0] != rp[0] and lp[1] != rp[1]) return true;
+        }
+    }
+    return false;
 }
 
 /// The one exception to the device table: the book's ideal amplifier, an

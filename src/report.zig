@@ -176,7 +176,7 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     const n = c.edgeCount();
     // An op-amp circuit is placed along its signal, not on the lattice
     // (`opamp.zig`): its places are the decision, every device's.
-    if (p != null and !opamp.steered(nl) and opamp.applies(nl, sk.drawn)) {
+    if (p != null and !opamp.steered(nl) and opamp.applies(nl, try sch.guessRoles(arena, nl), sk.drawn)) {
         try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, p.?, unit);
         return out.items;
     }

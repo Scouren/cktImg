@@ -25,6 +25,13 @@
 //!   a shelf's rows that only another shelf's columns filled are closed
 //!   up: the shelves are read off the cells, so the engine's own decisions
 //!   pasted back give the shelves they came from. `shelves`
+//! - wrap.7 (habit, bounded) A certified converter's main PMOS–coil–PMOS
+//!   path and its required grounded shunts and active gate drivers stay
+//!   on one shelf. A cut must not undo their channel order or put the
+//!   power path below its controls. Source: the 252 groups and 365/92
+//!   shunt/driver relations in the power-path study. Unrelated bias
+//!   columns may still wrap. Cell/at instructions and shelf-off retain
+//!   their existing precedence. `cutCost`, `power_paths.controlBounds`
 //!
 //! Contents:
 //! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
@@ -36,6 +43,7 @@ const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
+const power_paths = @import("power_paths.zig");
 
 const Netlist = netlist.Netlist;
 const VertexId = netlist.VertexId;
@@ -49,9 +57,10 @@ const none: u32 = std.math.maxInt(u32);
 /// that far apart are two shelves wherever the cells come from.
 const shelf_gap = 6;
 
-/// Wraps the cells `x`, `y` of the drawn devices into shelves of at most
-/// `columns` device columns (0: none; or what a `*@ shelf` line says, its
-/// verdict into `verdicts`), and writes each device's shelf to `shelf`:
+/// Wraps the cells `x`, `y` of the drawn devices toward `columns` device
+/// columns per shelf; protected groups may exceed that target (0: none;
+/// or what a `*@ shelf` line says, its verdict into `verdicts`). Writes
+/// each device's shelf to `shelf`:
 /// the bands of rows `shelf_gap` apart, wrapped here or not. `mate` is
 /// each device's mirror image, or `none`: a pair is never parted.
 pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void {
@@ -132,7 +141,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         var best: ?usize = null;
         var best_cost: u64 = std.math.maxInt(u64);
         for (@max(first + 1, ideal -| slack)..@min(cols, ideal + slack + 1)) |j| {
-            const cost = cutCost(nl, roles, drawn, mate, x, col[first], col[j]) orelse continue;
+            const cost = cutCost(nl, roles, drawn, form, mate, x, col[first], col[j]) orelse continue;
             // Fewest nets cut, then nearest its place.
             const key = (@as(u64, cost) << 32) | @abs(@as(i64, @intCast(j)) - @as(i64, @intCast(ideal)));
             if (key < best_cost) {
@@ -225,13 +234,25 @@ fn shelfOf(starts: []const i32, x: i32) usize {
 /// How many nets but rails have a device on both sides of a cut before the
 /// column at `at`, among the devices at or right of `from`; null where the
 /// cut would part a device from its mate, or two devices a `row` or `order`
-/// line names together (they would stand level, or left to right, no more).
-fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, mate: []const u32, x: []const i32, from: i32, at: i32) ?u32 {
+/// line names together, or a certified power path from its required
+/// controls (their existing row/order relation would no longer hold).
+fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []const i32, from: i32, at: i32) ?u32 {
     const c = &nl.graph;
     assert(from < at);
     for (mate, 0..) |m, d| {
         if (m == none or !drawn[d] or !drawn[m]) continue;
         if ((x[d] < at) != (x[m] < at)) return null;
+    }
+    for (c.edges.items(.kind), 0..) |kind, d| {
+        if (kind != .inductor) continue;
+        const group = power_paths.series(nl, roles, drawn, form, @intCast(d)) orelse continue;
+        var lo = @min(x[group[0]], @min(x[group[1]], x[group[2]]));
+        var hi = @max(x[group[0]], @max(x[group[1]], x[group[2]]));
+        if (power_paths.controlBounds(nl, roles, drawn, form, group, x)) |bounds| {
+            lo = @min(lo, bounds[0]);
+            hi = @max(hi, bounds[1]);
+        }
+        if (lo < at and hi >= at) return null;
     }
     for (nl.hints) |h| {
         if (h.verb != .row and h.verb != .order) continue;

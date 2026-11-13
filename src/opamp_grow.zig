@@ -30,7 +30,7 @@
 //!   instead of hanging upright. `grow`
 //! - opamp_grow.7 (choice) Of a node's series parts, the one nearest a
 //!   block still to be placed goes first, then the larger tree, then the
-//!   earlier card: one order, whatever the circuit. `grow`
+//!   earlier canonical device name: card permutation changes no tie. `grow`
 //! - opamp_grow.8 (unmeasured) A part between two nodes that both stand
 //!   lies in the first row past every body between them, or upright beside
 //!   them when one is over the other. `close`
@@ -41,6 +41,16 @@
 //!   first level part at a pin only clears a real overlap); a taken place
 //!   moves by half a unit: the procedure's clearance and its step.
 //!   `Placer.put`
+//! - opamp_grow.11 (habit, bounded) A two-part C/MOS feedback path whose
+//!   junction has only one ground MOS forms a rectangle: capacitor and
+//!   ground switch share a row, signal switch returns upright outside the
+//!   amplifier. Parallel cells share capacitor columns (AG800/801). A
+//!   direct feedback capacitor instead takes the outer row, leaving the
+//!   switched branch flat (AG803). Eight source cells satisfy 55/55 local
+//!   geometry checks; four in AG805/813 remain outside admission. Longer
+//!   paths retain their own axes (AG799). `cellShunt`, `feedbackCell`
+//!   All seven rectangular source cells face the return gate away from
+//!   the amplifier; reflecting across its vertical channel preserves D/S.
 //!
 //! Contents:
 //! - `pub fn run(p: *Placer) Allocator.Error!void`
@@ -80,8 +90,8 @@ pub fn run(p: *Placer) Allocator.Error!void {
         try newCanvas(p);
         try block(p, b, 0, 0, -1);
     }
-    for (p.two, 0..) |two, d| {
-        const t = two orelse continue;
+    for (p.order) |d| {
+        const t = p.two[d] orelse continue;
         if (p.placed[d]) continue;
         try newCanvas(p);
         const first: u32 = if (!p.rail[t.a]) t.a else if (!p.rail[t.b]) t.b else none;
@@ -104,7 +114,7 @@ fn newCanvas(p: *Placer) Allocator.Error!void {
 }
 
 /// The blocks, the one farthest from the inputs first; among equals one
-/// that drives no other, then the later card.
+/// that drives no other, then the later canonical name.
 fn rootOrder(p: *Placer) Allocator.Error![]u32 {
     var names: std.ArrayList(u32) = .empty;
     for (p.blocks, 0..) |b, d| if (b != null) try names.append(p.arena, @intCast(d));
@@ -114,14 +124,15 @@ fn rootOrder(p: *Placer) Allocator.Error![]u32 {
     const Ctx = struct {
         dep: []const u32,
         drives: []const bool,
+        rank: []const u32,
         fn key(c: @This(), d: u32) [3]i64 {
-            return .{ if (c.dep[d] < far) -@as(i64, c.dep[d]) else 1, @intFromBool(c.drives[d]), -@as(i64, d) };
+            return .{ if (c.dep[d] < far) -@as(i64, c.dep[d]) else 1, @intFromBool(c.drives[d]), -@as(i64, c.rank[d]) };
         }
         fn lt(c: @This(), a: u32, b: u32) bool {
             return std.mem.order(i64, &c.key(a), &c.key(b)) == .lt;
         }
     };
-    std.sort.insertion(u32, names.items, Ctx{ .dep = dep, .drives = drives }, Ctx.lt);
+    std.sort.insertion(u32, names.items, Ctx{ .dep = dep, .drives = drives, .rank = p.rank }, Ctx.lt);
     return names.items;
 }
 
@@ -308,7 +319,7 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
     if (ins.len == 2 and !p.rail[b.pins[ins[1]].net] and b.pins[ins[1]].net != onet) p.flat_shunt[b.pins[ins[0]].net] = true;
     // An input's tree: the upper pin's side is over the block (-1), the
     // lower pin's under it; `row` its next feedback row on that side.
-    const Tree = struct { net: u32, at: P, side: i32, row: i32 };
+    const Tree = struct { net: u32, at: P, side: i32, row: i32, defer_cap: bool = false };
     var trees: [2]Tree = undefined;
     var n_trees: usize = 0;
     for (ins, 0..) |i, k| {
@@ -324,8 +335,18 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
     }
     const xc = xin + opamp.roundEven(@as(i64, x - xin) * 43, 2500) * opamp.quarter;
     for (trees[0..n_trees]) |*t| {
+        var cell = false;
+        var cap = false;
+        for (p.on[t.net].items) |l| {
+            cap = cap or (l.other == onet and p.two[l.part].?.capacitor);
+            var buf: [3]Step = undefined;
+            const path = fbPath(p, l.part, t.net, l.other, onet, &buf) orelse continue;
+            cell = cell or cellShunt(p, path) != null;
+        }
+        t.defer_cap = cell and cap;
         for (p.on[t.net].items) |l| {
             if (l.other != onet or p.placed[l.part]) continue;
+            if (t.defer_cap and p.two[l.part].?.capacitor) continue;
             const at = try p.put(l.part, .flat, xc, t.row, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
             t.row = at.y + t.side * 100;
         }
@@ -334,6 +355,13 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
         for (p.on[t.net].items) |l| {
             var buf: [3]Step = undefined;
             const path = fbPath(p, l.part, t.net, l.other, onet, &buf) orelse continue;
+            if (!t.defer_cap) if (cellShunt(p, path)) |shunt| {
+                const cap_first = p.two[path[0].part].?.capacitor;
+                const sx = if (cap_first) x + 100 else t.at.x - 100;
+                const row = try feedbackCell(p, path, shunt, xc, sx, t.row, t.side);
+                t.row = row + t.side * 200;
+                continue;
+            };
             if (path.len == 2 and p.port[l.other]) {
                 // The cell's output is past a series part: feedback from there.
                 _ = try p.put(path[1].part, .flat, x + 100, y, .{ .x = 0, .y = 50 }, p.aOn(path[1].part, onet), gap);
@@ -353,8 +381,8 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
             var xs: [3]i32 = undefined;
             for (0..path.len) |i| xs[i] = xc + (6 * @as(i32, @intCast(i)) - 3 * (k - 1)) * opamp.quarter;
             // The whole row moves as one.
-            while (for (xs[0..path.len]) |cx| {
-                if (!p.free(opamp.partRect(.flat, cx, row, false), gap, 20)) break true;
+            while (for (path, xs[0..path.len]) |s, cx| {
+                if (!p.free(opamp.partRect(.flat, cx, row, p.two[s.part].?.tall), gap, 20)) break true;
             } else false) row += t.side * 50;
             for (path, xs[0..path.len]) |s, cx| _ = try p.put(s.part, .flat, cx, row, .{ .x = 0, .y = t.side * 50 }, p.aOn(s.part, s.near), gap);
             for (path[0 .. path.len - 1], xs[0 .. path.len - 1]) |s, cx| {
@@ -366,6 +394,11 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
             }
             t.row = row + t.side * @as(i32, if (t.side < 0 or !hangs) 100 else 250);
         }
+        if (t.defer_cap) for (p.on[t.net].items) |l| {
+            if (l.other != onet or p.placed[l.part]) continue;
+            const at = try p.put(l.part, .flat, xc, t.row, .{ .x = 0, .y = t.side * 50 }, p.aOn(l.part, t.net), gap);
+            t.row = at.y + t.side * 100;
+        };
     }
     // The lower pin's tree first: the upper one's shunts go round it.
     var k = n_trees;
@@ -374,6 +407,50 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
         try grow(p, trees[k].net, trees[k].at, trees[k].side, -1, d, true);
     }
     try grow(p, onet, .{ .x = x, .y = y }, 1, 1, d, true);
+}
+
+/// Exactly C/MOS plus one ground MOS, with no other junction incidence.
+fn cellShunt(p: *const Placer, path: []const Step) ?u32 {
+    if (path.len != 2 or p.port[path[0].far]) return null;
+    const a = path[0].part;
+    const b = path[1].part;
+    if (!((p.two[a].?.capacitor and p.mos_mid[b] != null) or (p.two[b].?.capacitor and p.mos_mid[a] != null))) return null;
+    const links = p.on[path[0].far].items;
+    if (links.len != 3) return null;
+    for (links) |l| {
+        if (l.part == a or l.part == b) continue;
+        if (p.placed[l.part] or p.mos_mid[l.part] == null or !p.rail[l.other] or p.rail_up[l.other]) return null;
+        return l.part;
+    }
+    return null;
+}
+
+/// One local rectangle; all three bodies move together to retain its axes.
+fn feedbackCell(p: *Placer, path: []const Step, shunt: u32, xc: i32, sx: i32, row0: i32, side: i32) Allocator.Error!i32 {
+    assert(path.len == 2);
+    assert(side == -1 or side == 1);
+    const first = p.two[path[0].part].?.capacitor;
+    const cap = path[@intFromBool(!first)];
+    const signal = path[@intFromBool(first)].part;
+    const dir: i32 = if (first) 1 else -1;
+    const zx = sx + dir * 100;
+    const kind: opamp.Kind = if (side < 0) .down else .up;
+    var row = row0;
+    for (0..opamp.tries) |_| {
+        if (p.free(opamp.partRect(.flat, xc, row, false), gap, 20) and
+            p.free(opamp.partRect(kind, sx, row - side * 100, true), gap, 20) and
+            p.free(opamp.partRect(.flat, zx, row, true), gap, 20)) break;
+        row += side * 50;
+    }
+    _ = try p.put(cap.part, .flat, xc, row, .{ .x = 0, .y = side * 50 }, p.aOn(cap.part, cap.near), gap);
+    _ = try p.put(signal, kind, sx, row - side * 100, .{ .x = dir * 50, .y = 0 }, p.aOn(signal, path[0].far) == (side < 0), gap);
+    // Canonical gates are above flat channels: R90 faces right, R270 left.
+    // A world-x reflection leaves the upright channel's endpoints in place.
+    const at = &p.at[signal].?;
+    if ((at.turn.rot == 1) != first) at.turn = at.turn.flipped(true, false);
+    _ = try p.put(shunt, .flat, zx, row, .{ .x = dir * 50, .y = 0 }, p.aOn(shunt, path[0].far) == first, gap);
+    p.anchor(path[0].far, .{ .x = sx, .y = row });
+    return row;
 }
 
 /// Two or three parts in series from input net `net` (first `part`, to
@@ -461,8 +538,8 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
     }
     const edge = if (last) |lx| lx + d * @as(i32, if (at_pin) 75 else 25) else at.x + d * @as(i32, if (at_pin) 100 else 50);
     var j: i32 = 0;
-    if (d == -1) for (p.blocks, 0..) |blk, bd| {
-        const b = blk orelse continue;
+    if (d == -1) for (p.order) |bd| {
+        const b = p.blocks[bd] orelse continue;
         if (p.placed[bd] or b.pins[b.out].net != net) continue;
         try p.wire(at, .{ .x = edge - 50, .y = at.y });
         try block(p, @intCast(bd), edge - 50, at.y, side);
@@ -470,15 +547,15 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
         break;
     };
     // The series parts: nearest a block still to be placed first, then the
-    // larger tree, then card order.
+    // larger tree, then canonical device name.
     const Keyed = struct { l: Link, to: u32, size: u32 };
     const keyed = try a.alloc(Keyed, series.items.len);
     for (keyed, series.items) |*k, l| k.* = .{ .l = l, .to = try toDriver(p, l.other, net), .size = try size(p, l.other, net) };
-    std.sort.insertion(Keyed, keyed, {}, struct {
-        fn lt(_: void, x: Keyed, y: Keyed) bool {
+    std.sort.insertion(Keyed, keyed, p.rank, struct {
+        fn lt(rank: []const u32, x: Keyed, y: Keyed) bool {
             if (x.to != y.to) return x.to < y.to;
             if (x.size != y.size) return x.size > y.size;
-            return x.l.part < y.l.part;
+            return rank[x.l.part] < rank[y.l.part];
         }
     }.lt);
     const Item = struct { l: Link, tag: Tag };

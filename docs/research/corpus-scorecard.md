@@ -133,3 +133,245 @@ roles. Other substantial families are switched-capacitor signal networks
 (AG795, 800/801), pass-transistor decoder trees (AG812) and logic paths
 (AG1067). A complementary pair sharing channel endpoints is insufficient:
 only 16 of 42 such source devices in a preliminary scan were horizontal.
+
+## Inductive converter follow-up
+
+[power_paths.py](figures/power_paths.py) studies two converter arrangements
+without using their titles, device names or coordinates to select them.
+An inductor away from the named rails, with a grounded NMOS channel at
+either end, supplies the switching nodes. PMOS channels with distinct
+drain, source and gate, and neither channel endpoint on a rail, lie flat
+in these bounded cases:
+
+- A channel connects a switching node to a capacitor-to-ground reservoir
+  (AG1363 and AG1383).
+- A channel belongs to a shared input bus whose current paths are all
+  PMOS with gate-only controls, and its other end reaches that inductor
+  or a nonparasitic capacitor (AG1250's main and flying-capacitor branches).
+
+The source geometry puts all 649 selected PMOS and all 252 adjacent
+inductors horizontally. These are 252 related converter drawings, with
+359 reservoir switches and 290 input-bus branches. The 734 AMSNet drawings
+select none; they provide no external positive validation of this rule.
+Against the checkpoint above, 613 selected PMOS and 230 selected inductors
+were upright. This predicts orientation opportunities, not a measured
+improvement of the completed drawings.
+
+The input bus alone is insufficient. Including its auxiliary supply
+branches selects 433 horizontal and two upright PMOS: AG1199:M1 and
+AG1202:M5. Excluding capacitor/inductor-free auxiliary branches leaves
+143 horizontal converter switches unresolved. Likewise, an inductor's
+bias mirror remains upright (AG1250:MP10), and inductive amplifiers and
+LC oscillators reject broader adjacency rules (AG491, AG1109, AG1111).
+These source drawings were inspected as SVGs as well as terminal data.
+
+Run the study independently of the native executable:
+
+```sh
+python3 -B -I docs/research/figures/power_paths.py \
+  external/examples/analoggenie /tmp/power-paths-ag.json
+python3 -B -I docs/research/figures/power_paths.py \
+  external/examples/amsnet /tmp/power-paths-amsnet.json
+```
+
+The JSON records every selected and unresolved device, named exceptions,
+inductors and source/deck hashes. AnalogGenie's paired-input digest was
+`d0b46b9c401de5e07816935bc6c3ebaf0c114032c5bde53db12187ca1ae54c33`;
+AMSNet's was
+`530bf39d99b7b1daa2466904b3bc68ac050181e35da390046168ccc5f69afe17`.
+The public-placement regression also checks the whole MP3–LRX–MP2 series
+order and row: getting each device's orientation right is insufficient.
+
+The next source constraint concerns the control connection, not an entire
+bias column. In all 252 certified main paths the coil lies between the
+two main switches; 243 share exactly one row. AG1215, 1235, 1284, 1303,
+1305, 1317, 1323, 1332 and 1352 offset one switch by 10–20 source units.
+Among devices attached to those paths, the script records:
+
+| Independently selected relation | Source agreement |
+|---|---:|
+| Grounded NMOS shunt with gate-only external control: both channel pins below the power row | 365 / 365 |
+| MOS channel directly driving a main switch's gate: both channel pins below the power row | 92 / 92 |
+| Named block output driving a main switch's gate: below the power row | 75 / 75 |
+| That output's x equal to the driven gate's x | 75 / 75 |
+| Reservoir-only main switch's gate faces down | 214 / 214 |
+
+The 92 active transistor drivers occur in 32 drawings and include
+diode-connected devices. The 75 output blocks occur in 75 drawings;
+AG1373's output touches the gate directly, while the other 74 lie below
+it. A source block's center is not a reliable substitute for its output
+terminal: omitted supplies and asymmetric terminals can shift that mean.
+These are observed constraints, not a claim that current placement satisfies
+them. `gate_drivers`, `ground_shunts`, `block_outputs` and `gate_directions`
+retain every named source coordinate in the study output.
+
+Add `--native /tmp/cktimg-ag-checkpoint` to the study command to check
+those same named control relations in a retained native checkpoint. This
+records each native JSON hash and every disagreement; a missing drawing,
+device or terminal fails instead of reducing the denominator. It uses the
+actual block output pin for alignment, not the block's lattice column.
+Keeping a controller's lattice column under its main switch can improve
+ordering without yet aligning the two electrical terminals.
+
+The bounds matter. The flying-capacitor family has 159 downward-facing
+and 131 upward-facing main-switch gates, so the reservoir direction rule
+does not extend to it. Nor can all bias devices touching the coil be moved
+below it: 110 of 140 nonselected PMOS channels at those nodes are level
+with or above the main path. AG1250:MP10 being below is not a general rule.
+
+The reservoir-only discriminator is structural: both outer ends of the
+certified main path have qualifying capacitors to ground. This selects
+107 paths. Each has one actively driven main gate and one gate-only external
+control; both point down in the source. The fourth checkpoint already faces
+all 107 active gates correctly and leaves all 107 external gates facing up.
+The `--native` audit records these two populations separately. A direction
+fallback for the external control must retain the two-reservoir condition;
+all 290 main gates in the flying/input-bus family are externally controlled,
+and their source directions differ.
+
+## Second measured pass: forms and groups
+
+The next frozen native executable had SHA256
+`2018208cb09b98ef16b505cff93ba707c1df96df76797569cc0d97665236b825`.
+It includes transmission pairs, source degeneration, converter series paths,
+switched-capacitor amplifier placement and fully differential symbols.
+All 2,202 AnalogGenie drawings still render with no new named source issues,
+missing devices, native findings or independent wire-metric disagreements.
+
+| Measure | First pass | Second pass | Eligible |
+|---|---:|---:|---:|
+| Wire crossings | 4,910 | 5,022 | Human: 2,691 |
+| Wire bends | 24,087 | 24,353 | Human: 20,590 |
+| Orientation agreement | 29,384 | 30,350 | 32,000 |
+| Gate-direction agreement | 13,121 | 13,669 | 23,252 |
+| Left/right pair order | 203,875 | 205,360 | 338,266 |
+| Above/below pair order | 208,195 | 204,879 | 320,423 |
+| All scored relations | 253 | 287 | 2,202 |
+
+This is a mixed intermediate result. Converter channel axes and series order
+improve, but their control circuitry is often placed above or beside the
+power path instead of beneath it. The orientation rule alone is incomplete;
+the next placement rule must account for actual gate drivers and grounded
+shunts. No previously complete scored match was lost. The native/source SVGs
+were inspected for AG1363, 1250, 769, 782, 751, 759, 800 and 803.
+
+The 83 admitted switched-capacitor drawings improve separately: crossings
+58→31, bends 783→302, labelled nets 28→15, orientation agreement 323→486
+of 519 and gate direction 115→243 of 319. Their remaining crossing increases
+are AG3437 (1→5), AG797 (2→5), AG803 (1→4) and AG804 (1→2).
+Local feedback rectangles, vertical buffer groups and paired-stage alignment
+remain incomplete.
+
+All 734 AMSNet drawings also render without source or native findings. Their
+crossings stay at 189, bends change 1,682→1,680 and complete scored matches
+stay at 243. Orientation and pair-order agreements are unchanged; gate
+agreement changes 1,414→1,416 of 1,851.
+
+The scorer now measures custom source symbols' signal axis from their
+authored IN/INP/INN/OUT-style terminal names, even when the asset type is an
+opaque `hierarchical-symbol-…` identifier. An independent coordinate example
+first failed, then passed; arbitrary terminal names still make no assertion.
+Rescoring both frozen executables with this same adapter changes block-flow
+coverage from 143 to 683 source instances: agreement is 446→491 of 683.
+The table above and the count of complete scored matches are unchanged.
+
+Validation at this intermediate point passed 259 tests without LaTeX and
+260 with it, 4,000 generated netlists, the SVG gallery and format checks.
+The Schemify module was 561,080 bytes. All 91 named round-trip fixtures were
+accounted for: 89 equivalent and the two named capacity refusals. Ten selected
+source decks also passed the current Schemify host, including differential
+amplifiers, transmission pairs, degeneration, switched-capacitor networks and
+both converter families. These electrical checks do not establish visual
+equivalence.
+
+## Amplifier bias terminals
+
+[biased_amplifiers.py](figures/biased_amplifiers.py) selects the named `opamp`
+family only when the declaration has two distinct signed inputs, one output,
+optional rails and unique VB1/VB2/VB3 roles. All 85 selected AnalogGenie
+instances have a closed triangular source outline; AMSNet selects none.
+AG1401's one-input amplifier is outside this contract and remains unresolved.
+An unknown VA/VX control or duplicate bias alias does not qualify.
+
+The independent oracle reads the actual source SVG path, matching its asset
+type because exported instance labels may differ from converted card names.
+The output records each selected card, declared ports, source asset and hashes
+of the SVG, terminal data and netlist. The paired-source digest is
+`f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07`.
+Native and Schemify tests preserve every ordered pin; bias and ground
+terminals have distinct coordinates. The positive triangle check was red
+before implementation. Unknown controls and caller geometry retain their
+separate regression cases.
+
+```sh
+python3 -B -I docs/research/figures/biased_amplifiers.py \
+  external/examples/analoggenie /tmp/biased-amplifiers-ag.json
+```
+
+## Fourth measured pass: preserve local groups
+
+The frozen native executable is
+`9052da1b689bb4a5386b8c11d3e4bfc57af4b470262818ca0c5b146bfc5f2db3`.
+All 2,202 AnalogGenie and 734 AMSNet drawings render, with no missing devices,
+native findings or wire-metric disagreements. The same two named source
+limitations remain. All comparisons below use the same source geometry.
+
+The block-flow adapter now also reads explicit IN/INP/INN/OUT terminals on
+custom source symbols, independently of engine recognition. This increases
+the eligible block-flow inventory from 143 to 683. Rescoring the frozen
+baseline gives 446/683; the current drawing gives 491/683. Historical
+143-port totals above must not be compared directly with that denominator.
+A custom source with an upward output and a generated rightward output is
+an independent failing example in the adapter's self-check.
+
+| Measure | Original complete checkpoint | Fourth pass |
+|---|---:|---:|
+| Wire crossings | 4,910 | 5,136 |
+| Wire bends | 24,087 | 24,545 |
+| Part/channel orientation agreement, of 32,000 | 29,384 | 30,357 |
+| Gate-direction agreement, of 23,252 | 13,121 | 13,787 |
+| Left/right pair agreement, of 338,266 | 203,875 | 206,588 |
+| Above/below pair agreement, of 320,423 | 208,195 | 204,991 |
+| Circuits matching every scored relation, of 2,202 | 253 | 288 |
+
+The fourth pass changes 90 geometry hashes from the third: only certified
+converter circuits and AG800/801. None of the third pass's 287 fully matching
+circuits loses that status; AG800 gains it. This also checks that replacing
+stable sorting with heap sorting in `rankByName` changes no unrelated
+geometry: its name/index comparator already defines a total order. The
+literal repeated-name rank oracle and existing card-reversal checks pass.
+
+The converter oracle now passes all 252 main-path row/order checks, all
+365 selected ground-shunt and 92 active-driver below-path checks, and all
+75 block-output below-path checks. Source row equality itself has nine
+small-offset exceptions, recorded in the source study. Before shelf protection,
+only 204 native main paths shared a row and 206 kept the coil between their
+switches: wrapping had split a correctly placed local group. Exact-source
+regressions for AG1250/1383 failed on that interaction before the fix.
+
+Preserving those groups is not a routing improvement by itself. Within the
+252 converter circuits, third-to-fourth crossings rise from 814 to 933 and
+bends from 4,503 to 4,781. Crossings worsen in 56 circuits and improve in 16;
+AG1213 adds eight, and AG1248/1347 add seven each. Exact block output/gate
+horizontal alignment remains 0/75. Source drawings separate control and
+bias groups more effectively; their composition and wiring remain work.
+
+The four admitted local feedback cells pass 30/30 checks, including their
+outward return gates, and AG801's paired cells pass 2/2. The complete source
+inventory is eight cells and 62/62 checks; native geometry passes 44/62,
+with four complete cells. Excluded AG805/813 stay in the inventory. Across
+the same 83 switched-amplifier circuits, third-to-fourth crossings remain
+30 and bends rise from 299 to 301; only AG800/801 change geometry.
+
+AMSNet remains at 243/734 circuits satisfying all scored relations. Its
+crossings change from 189 to 188, bends from 1,682 to 1,677, gate agreement
+from 1,414 to 1,417 of 1,851, and orientation/x/y agreement is unchanged.
+These source predicates do not select AMSNet converter or feedback cells.
+
+Validation for this checkpoint: 275 tests without the LaTeX renderer and
+276 with it; fuzz, formatting and the gallery; 89 fixture decks preserve
+their circuits through the real Schemify host, with the same two named
+capacity refusals. The rebuilt plugin is 557,714 bytes, below 563,200, with
+SHA-256 `1bca2e98eb09f5673744e661860aba38fe5a7470bd8efcd9a37a7db0bb33883f`.
+The remaining disagreements and the unscored features above prevent a claim
+of equivalence to the human drawings.

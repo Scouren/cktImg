@@ -6,6 +6,13 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 AnalogGenie pattern study (#8):
 
+- Engine: preserve certified converter paths and their control devices through shelf wrapping; orient flat MOS gates toward unanimous active drivers, retaining transmission-pair and explicit-placement precedence (#8).
+- Engine: place two-part switched-capacitor feedback cells as local rectangles with outward return gates; a direct feedback capacitor selects the straight-branch arrangement instead (#8).
+- Engine: place externally controlled switched-capacitor amplifier networks along their signal, normalize MOS channel geometry from the caller's symbol and break traversal ties by canonical name; oversized custom frames retain lattice placement (#8).
+- Engine: keep complementary transmission pairs together with outward gates; recognize source-degeneration bridges and PMOS–inductor converter paths from connectivity. The source predicates select six horizontal degeneration devices, 649 horizontal converter PMOS and 252 horizontal inductors; every selected coil lies between its two main switches (#8).
+- Engine: compensation paths also recognize a block's named input, extending the AnalogGenie predicate to 315 horizontal devices among 319 selected; unknown port roles retain the existing behavior (#8).
+- Engine and Schemify: fully differential amplifiers use a triangle with two signed outputs, preserving all six ordered SPICE ports and caller overrides (#8).
+- Engine and Schemify: recognized amplifiers with VB1/VB2/VB3 bias ports retain a triangle and distinct ordered terminals; all 85 selected source instances have triangular outlines, while unknown controls and duplicate bias roles retain a box (#8).
 - Engine: capacitor-coupled floating MOS channels and leaf compensation channels lie along their signal; MOS and passive series paths share a row using drain/source endpoints, including a body tied to the source. The predicate selects 239 horizontal devices among 243 selected in AnalogGenie and 20 among 23 in AMS-Net; named exceptions and source provenance are recorded in `docs/research/analoggenie.md`.
 - Engine and Schemify: recognized amplifier, comparator, buffer, inverter and two-input logic blocks use conventional symbols while preserving every ordered SPICE port and their subcircuit implementations; custom symbols and explicit pin-side directives take precedence (#8).
 - Engine: pinless coupling cards retain their electrical meaning without registering an empty symbol; all 2,202 AnalogGenie decks now render, including the eight that previously failed with `NoTerminals` (#8).

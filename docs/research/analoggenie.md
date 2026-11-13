@@ -63,7 +63,7 @@ These stages already express much of the textbook grammar. The gap studied
 here is the exception to `forms.4`: a MOS channel can belong to a horizontal
 signal or compensation path even though its gate and body remain connected.
 
-## Sixteen source observations
+## Source observations
 
 Every link opens the person's drawing. Device names below are the paired
 deck's names; a redraw can print a different name on the symbol.
@@ -79,6 +79,7 @@ deck's names; a redraw can print a different name on the symbol.
 | [ag-514](../../external/examples/analoggenie/ag-514.svg) | Four mixer switches have horizontal channels and vertical LO controls. Their crossed connections do not make their channels vertical. |
 | [ag-738](../../external/examples/analoggenie/ag-738.svg) | M6, printed Q1, and Cc lie in the compensation path between stages. Its connection to an active stage does not make the switch part of that stage's vertical current column. |
 | [ag-995](../../external/examples/analoggenie/ag-995.svg) | MR1 is horizontal in series with Cc1 although its gate is tied to a rail. Clock-name recognition would miss this nulling resistor. |
+| [ag-782](../../external/examples/analoggenie/ag-782.svg) | M7 and M8 lie horizontally in capacitor feedback branches terminating at the fully differential amplifier's inputs. An explicitly named block input supplies the same control-terminal evidence as a transistor gate. |
 | [ag-343](../../external/examples/analoggenie/ag-343.svg) | M15 is horizontal beside CC, controlled by a separate bias network. A transistor's channel and the circuit that drives its gate have separate layout roles. |
 | [ag-769](../../external/examples/analoggenie/ag-769.svg) | M9, printed Q9, bridges the two source-side nodes horizontally. The surrounding gain and bias devices remain upright. This is a symmetry-spanning degeneration element, not a sampler. |
 | [ag-771](../../external/examples/analoggenie/ag-771.svg) | M3 and M4 form two horizontal paths between Vx and Vy; their gates face away from the space between them. Parallel paths need their own rows. |
@@ -103,8 +104,9 @@ For a drawn MOS device with channel ends a and b and gate g:
 3. Lay the channel horizontally if its DC component reaches no supply or
    ground. Otherwise require both that the capacitor-bearing endpoint has
    no other DC channel element and that the opposite channel endpoint
-   drives another transistor's gate or base. Retain upright form when
-   neither condition holds.
+   drives another transistor's gate or base, or a block port identified as
+   an input by `library.portRole`. Retain upright form when neither
+   condition holds.
 4. Place the bridge using the actual drain and source nets; its gate lies
    on a side perpendicular to that path. A body connection must not be
    mistaken for a bridge endpoint.
@@ -142,6 +144,13 @@ capacitor-loaded device above a current source, and
 cascode branches with a capacitor at a free channel end. The latter also
 shows why a capacitor across the device's own channel is insufficient.
 
+The block-input extension comes from ag-782 M7/M8. It binds actual nets to
+the subcircuit's declared port order and uses the shared input-port contract;
+it does not require a recognized glyph or amplifier family name. A renamed
+block with reordered `VIP`/`VIN` ports remains eligible, while unknown port
+labels supply no evidence. [mos_compensation.zig](../../tests/mos_compensation.zig)
+checks those cases and excludes capacitors between the MOS's own terminals.
+
 ## Measured evidence and limits
 
 [mos_forms.py](figures/mos_forms.py) independently parses the last
@@ -157,20 +166,25 @@ python3 docs/research/figures/mos_forms.py external/examples/amsnet /tmp/amsnet_
 The denominator is the MOS devices the predicate selects, not all MOS
 devices and not the number of generated schematics that look good.
 AnalogGenie's 2,202 drawings contain 21,495 MOS devices, of which 1,455 are
-horizontal in the source. The rule selects 239 of those horizontal devices;
+horizontal in the source. The rule selects 315 of those horizontal devices;
 it addresses the stated conditions rather than all reasons for drawing a
 MOS horizontally.
 
 | Source subset | Horizontal in the source / selected | Circuits |
 |---|---:|---:|
-| AnalogGenie, union of both conditions | 239 / 243 | 143 |
-| AnalogGenie, leaf endpoint with opposite gate/base load | 56 / 58 | 53 |
+| AnalogGenie, union of both conditions | 315 / 319 | 217 |
+| AnalogGenie, leaf endpoint with opposite gate/base or block-input load | 136 / 138 | 130 |
+| AnalogGenie, leaf endpoint with opposite named block input | 80 / 80 | 78 |
 | AnalogGenie, isolated DC component with a qualifying capacitor | 186 / 188 | 93 |
-| AnalogGenie, source ID modulo five nonzero | 197 / 201 | 117 |
-| AnalogGenie, source ID modulo five zero | 42 / 42 | 26 |
+| AnalogGenie, source ID modulo five nonzero | 258 / 262 | 176 |
+| AnalogGenie, source ID modulo five zero | 57 / 57 | 41 |
 | AMS-Net, union of both conditions | 20 / 23 | 19 |
 
-Three AnalogGenie devices meet both conditions. The modulo-five split is
+Seven AnalogGenie devices meet both conditions. The named block-input
+extension adds 76 horizontal devices to the original 243-device selection;
+74 are also covered by the converter-path rule, leaving ag-782 M7/M8 as
+the two distinct additions. AMSNet has no eligible block-input case.
+The modulo-five split is
 reproducible, but related textbook variants cross it: the second subset
 is not an independent holdout. AMS-Net supplied additional counterexamples
 while narrowing the rule, so its final result is not an untouched holdout
@@ -202,6 +216,62 @@ above; the counts do not prove parallel switch row placement, full
 schematic quality or circuit preservation. Those require their own
 placement and electrical checks. No test result is implied by agreement
 with source coordinates.
+
+## Source-degeneration bridges
+
+A second, independent exception to upright MOS form joins the source nodes
+of two gain devices. In [ag-769](../../external/examples/analoggenie/ag-769.svg),
+M9 lies between those nodes while M1 and M2 remain upright; the p-channel
+counterpart is [ag-770](../../external/examples/analoggenie/ag-770.svg).
+[ag-771](../../external/examples/analoggenie/ag-771.svg) and
+[ag-954](../../external/examples/analoggenie/ag-954.svg) use two parallel
+bridges. Their channel orientation is distinct from the later decision
+about bridge rows and gate-facing direction.
+
+The conservative condition requires a MOS with distinct drain, gate and
+source, neither channel end on a rail, and its body on a named rail. Each
+channel endpoint must have a direct DC path to that same body rail and be
+the source of another MOS of the same polarity and body. Those two gain
+devices need distinct drains and gates; neither drain may be either bridge
+endpoint, and each device's drain, gate and source must be distinct. Finally,
+the bridge's gate must have no incident DC path. Gate and body connections
+do not count as DC paths. Explicit upright hints still take precedence.
+
+| Corpus | Selected | Horizontal | Additional beyond the capacitor rule |
+|---|---:|---:|---:|
+| AnalogGenie discovery | 5 | 5 | 5 |
+| AnalogGenie holdout | 1 | 1 | 1 |
+| AMSNet | 0 | 0 | 0 |
+
+The complete positive manifest is **ag-769:M9, ag-770:M7, ag-771:M3/M4,
+ag-954:M6/M7**. There are no selected upright examples. The holdout is
+ag-770 under the same numeric-ID modulo-five split used above; its close
+relation to ag-769 limits its independence. AMSNet contains no qualifying
+examples, so it supplies no validation of this additional habit.
+
+Removing the gate-path condition admits exactly nine upright devices:
+**ag-2460:MD3 through ag-2468:MD3**. Their gates also terminate DC paths in
+converter control circuitry. A rule that merely connects source-side nodes
+would therefore overgeneralize. The public placement tests in
+[mos_degeneration.zig](../../tests/mos_degeneration.zig) use the source
+cards and terminal coordinates as the oracle, include that common clamp
+topology, reverse bridge channels, rename and reorder cards, and preserve
+upright hints.
+
+Reproduce the complete device manifests and gate-condition ablation with
+[mos_bridges.py](figures/mos_bridges.py):
+
+```sh
+python3 -B docs/research/figures/mos_bridges.py external/examples/analoggenie /tmp/analoggenie-bridges.json
+python3 -B docs/research/figures/mos_bridges.py external/examples/amsnet /tmp/amsnet-bridges.json
+```
+
+The script uses model declarations and connectivity only for selection;
+human D/S coordinates enter only the orientation oracle. It records the
+same paired corpus hashes as the capacitor study, an explicit selected
+device list, the split, and whether each choice was already covered by that
+rule. Unknown cards and MOS models fail instead of disappearing from the
+study.
 
 ## Symbol and import checkpoint
 
@@ -252,13 +322,25 @@ and the upright bank between two mixer buses in
 [ag-598](../../external/examples/analoggenie/ag-598.svg) follow their local
 branch. Recognizing a clock spelling cannot resolve either case.
 
-**A channel between swapped nets is horizontal** is promising for
-degeneration, but is not implemented by the selected rule. A lone MOS
+**A channel between swapped nets is horizontal** cannot identify
+degeneration reliably. A lone MOS
 bridge such as ag-769's distinguishes its drain from its source and can
 prevent the existing exact symmetry from swapping its endpoints. Testing
 `st.net_mate[a] == b` alone therefore misses the intended case. Relaxing
 pin identity globally would change the meaning of circuit symmetry; a
-later rule needs evidence about the two endpoint branches instead.
+source-degeneration rule uses the endpoint branches described above instead.
+
+**A four-switch ring is horizontal** remains research. Requiring a rail-free
+DC component with exactly four same-polarity MOS, a four-node channel cycle,
+and two alternating gate controls outside that cycle selects 32 horizontal
+and four upright MOS. The upright exception is ag-1044:M0/M1/M2/M3, whose
+clock-swapping drawing uses the same channel topology. Requiring both
+controls to be explicit ports of the selected subcircuit narrows this to
+24/24 horizontal devices in ag-511, ag-512, ag-514, ag-574, ag-786 and
+ag-813. Twelve are additional to the capacitor rule. All 24 are in the
+discovery split, and AMSNet has no qualifying cases. This boundary is
+recorded by `mos_bridges.py`; its absent holdout and external evidence keep
+it out of the production rule for now.
 
 **Parallel transmission gates** remain further work. Among the 143
 selected AnalogGenie circuits, exactly two pairs have the same unordered
@@ -284,3 +366,139 @@ stages one above the other with a horizontal supply switch beside the
 lower latch. The present skeleton carries one mirror axis; changing forms
 does not implement multiple local axes or stage composition. These
 decisions need their own examples, counterexamples and placement oracles.
+
+## Local switched-feedback cells
+
+[ag-800](../../external/examples/analoggenie/ag-800.svg) and
+[ag-801](../../external/examples/analoggenie/ag-801.svg) show why a switch's
+form also depends on its branch. A capacitor and MOS channel form a
+two-part feedback path between an amplifier input and output. Their shared
+node has exactly one additional part, a ground-shunt MOS. The capacitor
+and ground switch share a horizontal row, while the signal switch returns
+vertically outside the amplifier. Paired cells share the capacitor column;
+the branch starting with a capacitor at the input is nearer the amplifier.
+In ag-800, the direct reset switch occupies the nearer feedback row.
+
+[ag-803](../../external/examples/analoggenie/ag-803.svg) supplies the
+conditional exception: a direct feedback capacitor is also present. It
+takes the outer row, while the series capacitor and signal switch share
+a straight row with the ground switch upright. The longer three-part
+feedback path in [ag-799](../../external/examples/analoggenie/ag-799.svg)
+does not meet this cell predicate and retains its existing local axes.
+
+The independent [opamp_feedback.py](figures/opamp_feedback.py) selects
+cells from SPICE connectivity and declared block ports, then reads human
+terminal coordinates as its geometric oracle. It finds eight cells in
+ag-800, ag-801, ag-803, ag-805 and ag-813: **55/55** axis, row, column and
+branch-order checks agree with the source. Three pairs add **6/6** shared
+column and relative-row checks. The modulo-five discovery split has five
+cells and 33/33 checks; holdout has three and 22/22. AMSNet's 734 drawings
+contain no eligible cell. The corpus hashes are the paired-source hashes
+listed above. These textbook variants are correlated observations.
+
+Four cells in ag-800/801/803 are inside the current switched-amplifier
+admission. ag-805's control-generation transistors and ag-813's channel
+connections to gate nets keep the other four on the general placement
+path. Before this local rule, the iteration-two native drawings satisfied
+21/55 cell checks and no complete cell; this includes the excluded cases.
+The script reports them explicitly instead of changing admission to fit
+the result. Its selector also checks source-card and D/S reversal,
+removal of the ground switch, and an extra path on the shared node.
+
+With the local rule, all four admitted cells pass **27/27** geometry checks
+and ag-801's pair passes **2/2** shared-column/order checks. The four
+excluded cells retain 12/28, giving 39/55 over the complete observed set.
+Across the same 83 switched-amplifier circuits, iteration two to three
+reduces crossings from 31 to 30 and bends from 302 to 299; orientation
+agreement rises from 486/519 to 492/519. Only ag-800/801/803 change their
+geometry hashes; ag-799 is byte-identical. The new native binary's SHA-256
+is `c387abe2f133ecaad6e67d309e8015c6b0a7e93470fcab016ae502d602858b51`.
+Visual inspection then found inward-facing return gates on ag-800:M5 and
+ag-801:M6. All seven source rectangles face those gates away from the
+amplifier. An added gate-side oracle went red, including a D/S-reversal
+metamorphism; reflecting the return symbol across its vertical channel
+now preserves both connected endpoints and satisfies that condition.
+The admitted cells pass 30/30 checks and ag-801's pair passes 2/2; across
+all eight source cells, human geometry passes 62/62 and native geometry
+44/62. The excluded ag-805/813 cases remain explicit exceptions.
+
+Iteration four changes only ag-800/801 in the 83-circuit cohort. Gate-side
+agreement increases from 247/319 to 249/319, with ag-800 at 5/5 and ag-801
+at 6/6. Crossings stay at 30; bends rise from 299 to 301, both extra bends
+in ag-801. The native binary SHA-256 is
+`9052da1b689bb4a5386b8c11d3e4bfc57af4b470262818ca0c5b146bfc5f2db3`.
+ag-803's other input branch remains misplaced. Passing the feedback-cell
+oracle does not imply complete figure equivalence.
+
+[opamp_feedback.zig](../../tests/opamp_feedback.zig) turns the admitted
+source cases into actual placed-pin regressions. Its two positive tests
+failed before the placement change and pass after it; AG799, card reversal
+and an explicit upright hint already passed. The implementation remains
+in the existing feedback-path procedure and does not change the global
+MOS form rule.
+
+## Internal return banks: remaining research
+
+In [ag-803](../../external/examples/analoggenie/ag-803.svg), the internal
+node `VG` joins only the sources of M8/M9/M10. These three same-polarity
+devices share an external gate control and rail body; their distinct
+drains form a two-capacitor chain, C3/C4. The return channels are upright
+on a common row below the capacitor row. M3 connects the chain's middle
+node to the main amplifier input vertically, between the two signal rows.
+The expanded circuit [ag-3473](../../external/examples/analoggenie/ag-3473.svg)
+has the same arrangement at `net1`: M4/M6/M8, C3/C4 and bridge M5.
+
+[opamp_returns.py](figures/opamp_returns.py) records this narrower topology
+without using either node's spelling. It requires exactly three exclusive
+source incidences on a nonrail, nonport node, one shared external gate-only
+control, one rail body and polarity, distinct drains joined by exactly two
+capacitors, and one same-polarity bridge with a different external control
+from the middle node to a separate nonrail node. A token-incidence guard
+also rejects hidden loads and conservatively excludes token collisions
+with model/value names. Card reversal, a missing capacitor and declaring
+the common node as a port are explicit selector checks.
+
+The full AnalogGenie scan finds these two banks and six return MOS; all
+18 source geometry checks pass, compared with 7/18 for iteration-three
+native drawings. Both are discovery cases; the holdout and AMSNet have
+no matching example. They are related textbook circuits, so the evidence
+does not establish a broad rule. This remains research, and `VG` is never
+promoted to an electrical rail. The remaining solution needs a lower
+signal row and its return bank as one group; changing that node's role
+alone would still flatten the inter-row bridge in the current traversal.
+
+## Single-input amplifier glyphs
+
+The explicitly named family and complete port contract distinguish an
+intentional single-input block from a block whose meaning is unknown.
+[ag-1401](../../external/examples/analoggenie/ag-1401.svg) declares an
+`opamp` with INN, OUT, rails and three bias pins; its triangle carries a
+minus. [ag-1432](../../external/examples/analoggenie/ag-1432.svg) declares
+a `comparator` with INP and OUT plus supply/bias pins; its triangle has a
+plus. [ag-1422](../../external/examples/analoggenie/ag-1422.svg) uses IN and
+OUT with a supply; its triangle is unsigned. None needs an invented second
+input terminal.
+
+[single_input_amplifiers.py](figures/single_input_amplifiers.py) selects
+only the known `opamp`, `icm_opamp_vdd_vss`, `comparator` and
+`icm_ideal_comparator_vdd` families, with exactly one signed/unsigned input,
+one output and unique optional supply, ground and VB1/VB2/VB3 roles.
+The independent oracle reads the closed triangular SVG path and the line
+segments strictly inside it: one horizontal line is minus, crossing
+horizontal/vertical lines are plus, and no interior mark is unsigned.
+
+All **39/39** selected AnalogGenie source glyphs are triangular and all
+**39/39** signs match the declared input: 28 negative, one positive and
+ten unsigned. There are 32 discovery and seven modulo-five holdout cases;
+AMSNet contains none. The script includes each source ID, complete port
+list, asset ID and source hashes. Hashing all human JSON, SPICE and SVG
+triples gives AnalogGenie
+`f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07`
+and AMSNet
+`c0d304c90b355b63e2d69655f4a68d51e10b9910f907416dfa4c418c5393c725`.
+
+Unknown controls remain explicit exclusions: ag-1355/1357/1360/1389 have
+VX, ag-1372/1373/1384 have TAIL, and ag-1405 has VB4. A missing input,
+duplicate input or bias role, extra unknown control and unfamiliar family
+are selector negatives. Reordering declared ports preserves recognition;
+electrical pin count and order still come from that declaration.

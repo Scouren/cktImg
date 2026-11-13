@@ -81,6 +81,11 @@ fn hinted(arena: std.mem.Allocator, hints: []const u8) ![]const u8 {
 }
 
 test "structure: names sort by their numbers" {
+    // Oracle: literal natural order, with bytewise numeric ties and repeated
+    // names ordered by index; independent of the sorting algorithm.
+    const ranks = try structure.rankByName(std.testing.allocator, std.testing.allocator, &.{ "m10", "m1", "m01", "m1", "m2" });
+    defer std.testing.allocator.free(ranks);
+    try std.testing.expectEqualSlices(u32, &.{ 4, 1, 0, 2, 3 }, ranks);
     try std.testing.expect(structure.nameLess("m2", "m10"));
     try std.testing.expect(!structure.nameLess("m10", "m2"));
     try std.testing.expect(structure.nameLess("m5:m6", "mt"));
