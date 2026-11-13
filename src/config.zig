@@ -57,11 +57,12 @@
 //!   writes about as many names as they do (10,492 against their 11,371
 //!   over 5,263 hand-drawn schematics; two writes 12,241).
 //!   `Layout.cross_max`
-//! - config.9 (habit) A row of the drawing holds eight device columns
+//! - config.9 (habit) A row of the drawing holds twelve device columns
 //!   before it wraps into rows of columns, one under the other, unless a
-//!   `*@ shelf` line says otherwise. People: 4,444 of 5,274 hand drawings
-//!   are at most eight columns wide; drawn so, 5,263 reference circuits
-//!   are as wide as their hand drawings at the median. `Layout.shelf`
+//!   `*@ shelf` line says otherwise. People: of the 686 circuits eight
+//!   columns wrapped, 504 are drawn in one band of rows, 18.0 units wide
+//!   and 9.0 high at the median (eight: 14.8 by 15.2; twelve: 17.2 by
+//!   13.2), in 5,263 hand-drawn schematics. `Layout.shelf`
 //! - config.10 (choice) Wires are drawn blue (`1565c0`) 1.5 pt wide,
 //!   symbols 1.2 pt: the TikZ emitter's own style. `Render`
 //! - config.11 (choice) A rail symbol stands half a unit from its pin.
@@ -136,11 +137,11 @@ pub const Layout = struct {
     /// schematics; two writes 12,241).
     cross_max: u32 = 3,
     /// Device columns a row of the drawing holds before it wraps into rows
-    /// of columns, one under the other (`wrap.zig`); 0 keeps one row. Eight
-    /// is a person's page: 4,444 of 5,274 hand drawings are no wider, and
-    /// drawn so 5,263 reference circuits are as wide as their hand drawings
-    /// at the median. A deck's `*@ shelf` line says otherwise for that deck.
-    shelf: u32 = 8,
+    /// of columns, one under the other (`wrap.zig`); 0 keeps one row. Twelve
+    /// is a person's page: of the 686 reference circuits eight wrapped,
+    /// people draw 504 in one band, 18.0 by 9.0 units at the median. A
+    /// deck's `*@ shelf` line says otherwise for that deck.
+    shelf: u32 = 12,
 };
 
 /// How the TikZ emitter strokes a drawing.
