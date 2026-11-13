@@ -5,12 +5,15 @@
 //! `sketch.zig`, and `placed.zig` exports the result.
 //!
 //! Human Rules:
-//! - schematic.1 (unmeasured) A net named `vdd…`, `vcc…`, `avdd…`,
-//!   `dvdd…`, `vpp` or `v+` is a supply, drawn with a supply symbol (R1).
+//! - schematic.1 (habit) A net named `vdd…`, `vcc…`, `avdd…`, `dvdd…`,
+//!   `vpp…` or `v+` is a supply, drawn with a supply symbol (R1). People:
+//!   rail symbols and no port on 4,010 of the 4,157 nets so named in 5,263
+//!   hand-drawn schematics, a numbered one (`vdd1`, `vcc2`) in 22 of 22.
 //!   `roleFromName`
-//! - schematic.2 (unmeasured) Net 0, and a net named `gnd`, `vss`, `vee`,
-//!   `agnd`, `dgnd`, `vssa`, `gnda` or `v-`, is a ground, drawn with a
-//!   ground symbol (R1). `guessRoles`
+//! - schematic.2 (habit) Net 0, and a net named `gnd…`, `vss…`, `vee…`,
+//!   `agnd…`, `dgnd…` or `v-`, is a ground, drawn with a ground symbol
+//!   (R1). People: rail symbols and no port on 5,467 of the 5,535 nets so
+//!   named, a numbered one (`vss1`, `vee2`) in 10 of 10. `guessRoles`
 //! - schematic.3 (unmeasured) A net named `vb…` or `bias…` is a bias line,
 //!   drawn as a port with its name (R1). `roleFromName`
 //! - schematic.4 (unmeasured) A net named `vin…`, `in…` or `vref…` is an

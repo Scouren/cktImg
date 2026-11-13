@@ -37,14 +37,19 @@
 //! - library.4 (order: potential) A generated block's supply port
 //!   (`vdd…`, `vcc…`, `avdd…`, `dvdd…`, `vpp…`) stands on top, its ground
 //!   (`gnd…`, `vss…`, `vee…`, `agnd…`, `dgnd…`, `0`) at the bottom, where
-//!   no `*@` line of its definition places it (netlist.6). `defaultSide`
-//!   Narrowing: the side's reader takes some spellings by their start
-//!   where the net's reader takes them whole (`vpp…`, `gnd…`, `agnd…`),
-//!   and takes `v+` and `v-` not at all: they stay left. `spellings`
+//!   no `*@` line of its definition places it (netlist.6): the names a
+//!   net is a rail by (schematic.1, .2), read the same way. People: a
+//!   supply port on top in 833 of 1,003 ports of the blocks of 5,263
+//!   hand-drawn schematics, a ground below in 328 of 328, in the symbol's
+//!   own frame (740 and 235 as drawn: the rest stand on blocks the person
+//!   flipped). `defaultSide`, `spellings`
 //! - library.5 (habit) A generated block's bias line `vb`, `vb1`, `vb2`…
-//!   comes in from below; a `vbias` port stays left. People: `vb1` to
-//!   `vb3` in 399 of 618 ports of 5,263 hand-drawn schematics, left in 61.
-//!   `defaultSide`
+//!   comes in from below; a `vbn` or `vbias` port stays left. People: a
+//!   tendency, 413 of 674 such ports of 5,263 hand-drawn schematics (right
+//!   114, top 74, left 73), and the type of the gates the line drives
+//!   inside does not split them (298 of 421 below for p-type, 132 of 313
+//!   for n-type); of the 64 other `vb…` ports 17 stand below, 32 right, 9
+//!   left. `defaultSide`
 //! - library.6 (habit) A generated block's output (`out…`, `vout…`, `vo`,
 //!   `o`, `vop`, `von`, `vo+`, `vo-`) leaves on the right; every other
 //!   port enters on the left. People: of the blocks in 5,263 reference
@@ -591,21 +596,33 @@ const Reader = enum(u8) { net, side, role };
 
 /// The one table of what a name says: spellings (one string, a blank
 /// between two: slices of them cost the plugin 135 B), what they name, and
-/// how each `Reader` takes them, in its order. A reader that takes a
-/// spelling `whole`, or not at all, where another takes its `start` is
-/// narrower than the general form, and the drawings stand on it. No reader
-/// takes a name two ways.
+/// how each `Reader` takes them, in its order. No reader takes a name two
+/// ways.
+///
+/// A rail is read one way by all three, by its start: in 5,263 hand-drawn
+/// schematics a numbered ground (`vss1`, `vee2`) is a rail in 10 of 10
+/// nets, as a numbered supply is in 22 of 22, and no block has a port a
+/// narrower reading would tell apart.
+///
+/// Any other spelling is read by the readers it holds for, and a reader
+/// that takes it `whole`, or not at all, where another takes its `start`
+/// is narrower on purpose. As a port of a block `y`, `a`, `vp` and `vn`
+/// are its output and inputs; as a net they are an inner net people draw
+/// no port on (`y` 453 of 552, `vn` 161 of 164, `a` 68 of 175) or the
+/// other way round (`vp` an output in 140 of 193).
 const spellings = [_]struct { []const u8, Named, [3]Match }{
-    .{ "vdd vcc", .supply, .{ .start, .start, .start } },
-    .{ "avdd dvdd", .supply, .{ .start, .start, .no } },
-    .{ "vpp", .supply, .{ .whole, .start, .no } },
+    .{ "vdd vcc avdd dvdd vpp", .supply, @splat(.start) },
+    .{ "gnd vss vee agnd dgnd", .ground, @splat(.start) },
+    // A rail in 8 of the 18 nets so named, a port in 9, and no block's
+    // port: a net's rail by its whole name, as it was, and no side.
     .{ "v+", .supply, .{ .whole, .no, .no } },
-    .{ "gnd vss vee", .ground, .{ .whole, .start, .start } },
-    .{ "agnd dgnd", .ground, .{ .whole, .start, .no } },
-    .{ "vssa gnda v-", .ground, .{ .whole, .no, .no } },
+    .{ "v-", .ground, .{ .whole, .no, .no } },
     // Net 0 is the ground by its index, whatever it is called.
-    .{ "0", .ground, .{ .no, .whole, .no } },
-    // Only `vb`, `vb1`, … come in from below: a `vbias` port stays left.
+    .{ "0", .ground, @splat(.whole) },
+    // Only `vb`, `vb1`, … come in from below: a `vbn` port stays left
+    // (of 64 such ports people draw 17 below, 32 right, 9 left; taking
+    // them all from below draws 35 corners and 12 crossings more over
+    // 5,263 circuits).
     .{ "vb", .bias, .{ .start, .numbered, .no } },
     .{ "bias", .bias, .{ .start, .no, .no } },
     .{ "vref", .ref, .{ .start, .no, .no } },
@@ -669,8 +686,9 @@ pub fn named(name: []const u8, reader: Reader) ?Named {
 fn defaultSide(port: []const u8) netlist.PortSide {
     return switch (named(port, .side) orelse return .left) {
         .supply => .top,
-        // A bias line comes in from below, as people draw a block's: `vb1` to
-        // `vb3` in 399 of 618 ports of 5,263 hand-drawn schematics, left in 61.
+        // A bias line comes in from below, as people tend to draw a block's:
+        // `vb`, `vb1`, … in 413 of 674 ports of 5,263 hand-drawn schematics
+        // (right 114, top 74, left 73).
         .ground, .bias => .bottom,
         .out => .right,
         .ref, .inp, .inn, .in => .left,
@@ -914,18 +932,24 @@ test "library: a generated block has an output named vo on its right and its bia
     try testing.expect(c.terminals[5].at.y < c.terminals[4].at.y);
 }
 
-test "library: one table reads a name three ways, each as its own list did" {
-    // Oracle: the three lists `spellings` replaced (R1's names, a block's
-    // sides, a port's roles), read off them by hand where they differ.
+test "library: a rail's name is read one way; any other by the readers it holds for" {
+    // Oracle: the hand drawings. A numbered ground (`vss1`, `vee2`) is a
+    // rail in 10 of 10 nets of 5,263 hand-drawn schematics and a numbered
+    // supply in 22 of 22, where the net's reader took a ground by its whole
+    // name only; `v+` and `v-` are a rail in 8 of 18 nets and a port in 9.
+    // The rest: the three lists `spellings` replaced, where they differ
+    // (`y` is an inner net with no port in 453 of 552 nets, `vn` in 161 of
+    // 164).
     const cases = [_]struct { []const u8, ?Named, netlist.PortSide, PortRole }{
         .{ "vdd3", .supply, .top, .rail },
-        .{ "avdd", .supply, .top, .other },
-        .{ "vpp2", null, .top, .other },
+        .{ "avdd", .supply, .top, .rail },
+        .{ "vpp2", .supply, .top, .rail },
         .{ "v+", .supply, .left, .other },
-        .{ "gnd1", null, .bottom, .rail },
-        .{ "agnd", .ground, .bottom, .other },
+        .{ "gnd1", .ground, .bottom, .rail },
+        .{ "vss1", .ground, .bottom, .rail },
+        .{ "agnd", .ground, .bottom, .rail },
         .{ "v-", .ground, .left, .other },
-        .{ "0", null, .bottom, .other },
+        .{ "0", .ground, .bottom, .rail },
         .{ "vb2", .bias, .bottom, .other },
         .{ "vbias", .bias, .left, .other },
         .{ "vref1", .ref, .left, .other },
