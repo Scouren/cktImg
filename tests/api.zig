@@ -384,3 +384,31 @@ test "geom: a ground symbol carries no name; of two ground nets, the one that is
     try testing.expect(np.geom.namesRail(&two, lib, vss2));
     try testing.expect(!np.geom.namesRail(&two, lib, zero));
 }
+
+test "geom: a device's name stands on a side of its symbol no pin of it stands on" {
+    // Oracle: the hand drawings. 40,958 of 45,982 named devices in 5,263
+    // hand-drawn schematics carry the name on the first side no pin stands
+    // on (right, left, above, below): 9,409 of 10,213 upright transistors
+    // whose gate faces right carry it on the left, 3,265 of 4,256 two-pin
+    // parts lying flat carry it above.
+    const gpa = testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var stage = try placeText(lib, "Gate right\n.model nch nmos\nM1 out in 0 0 nch\nR1 vdd out 1k\n*@ face m1 g right\n");
+    defer stage.deinit();
+    const m1 = np.checks.deviceIn(&stage, "m1").?;
+    // Its gate faces right, its drain and source up and down: only the left is free.
+    try testing.expect(stage.pin_xy[stage.dev_pin0[m1] + 1].x > stage.dev_pos[m1].x);
+    const at = try np.geom.refdesAnchors(gpa, &stage, lib);
+    defer gpa.free(at);
+    try testing.expect(np.geom.refdesRect(at[m1], "m1").max.x <= stage.deviceRect(lib, m1).min.x);
+
+    var flat = try placeText(lib, "Flat part\nR1 in out 1k\nC1 out 0 1p\n*@ bridge r1\n");
+    defer flat.deinit();
+    const r1 = np.checks.deviceIn(&flat, "r1").?;
+    // It lies flat, a pin left and a pin right: above is the first free side.
+    try testing.expectEqual(flat.pin_xy[flat.dev_pin0[r1]].y, flat.pin_xy[flat.dev_pin0[r1] + 1].y);
+    const over = try np.geom.refdesAnchors(gpa, &flat, lib);
+    defer gpa.free(over);
+    try testing.expect(np.geom.refdesRect(over[r1], "r1").max.y <= flat.deviceRect(lib, r1).min.y);
+}
