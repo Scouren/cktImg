@@ -22,6 +22,11 @@
 //! - maze.6 (invariant) A routed wire leaves its pin the way the pin faces,
 //!   never turns straight back, and enters the pin it runs to from that
 //!   pin's side. `route`
+//! - maze.9 (habit) A routed wire ends on its net's wire, never on another
+//!   pin of the net: a pin is an end of its wire, which branches off it.
+//!   People: 87,922 of 93,770 pins of wired nets that are no rail have one
+//!   wire, leaving the way the pin faces (5,263 hand-drawn schematics).
+//!   `route`
 //! - maze.7 (choice) The cheapest path is sought round the pin and its
 //!   nearest target first, then round the whole net, then over the whole
 //!   drawing: most connections are local. `route`
@@ -67,6 +72,9 @@ pub const Query = struct {
     /// Routes in x <= `half` only, a free point on x = `half` a target too
     /// (one half of a symmetric net, to be mirrored).
     half: ?i32 = null,
+    /// The net's pins: a path ends on none of them but `to`, since a pin is
+    /// an end of its wire and the wire branches off it. Empty: none known.
+    pins: []const Pt = &.{},
     /// Per net: a rail, whose wires cost a quarter of `cross` to cross (the
     /// book crosses supply stubs freely). Empty: none is.
     rails: []const bool = &.{},
@@ -442,6 +450,11 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
             if (!g.target[i]) g.closed[i] = true;
         }
     }
+    // A pin is an end of its wire: no path ends on one but `to`.
+    for (q.pins) |p| if (indexOf(g, p)) |i| {
+        g.target[i] = false;
+        g.closed[i] = true;
+    };
     if (q.to) |t| g.target[indexOf(g, t.at).?] = true;
     if (q.half) |h| {
         const i = std.sort.binarySearch(i32, g.xs, h, order).?;
@@ -561,4 +574,24 @@ test "maze: a path ends on the net's wire and keeps clear of another net's point
     try std.testing.expect(path[0].eql(a.at));
     try std.testing.expectEqual(@as(i32, 40), path[path.len - 1].y);
     for (path[0 .. path.len - 1], path[1..]) |p, q| try std.testing.expect(!Rect.fromCorners(p, q).contains(other));
+}
+
+test "maze: a path ends on the net's wire, on no pin of the net" {
+    // Oracle: the hand drawings. A pin is an end of its wire, which leaves
+    // it the way the pin faces, in 87,922 of 93,770 pins of wired nets that
+    // are no rail (5,263 schematics): a wire branches off its pins.
+    // `b`, a pin of the net, ends its wire straight under `a`: the short
+    // way down from `a` would end on `b`.
+    const a: Pin = .{ .at = .{ .x = 40, .y = 0 }, .side = .down };
+    const b: Pt = .{ .x = 40, .y = 40 };
+    const own = [_]Wire{.{ .a = .{ .x = -40, .y = 40 }, .b = b, .net = 0 }};
+    const marks = [_]Mark{ .{ .at = a.at, .net = 0 }, .{ .at = own[0].a, .net = 0 }, .{ .at = b, .net = 0 } };
+    var q = query(a, null, &.{}, &own, &marks);
+    q.pins = &.{ a.at, b };
+    const path = (try route(std.testing.allocator, q)).?;
+    defer std.testing.allocator.free(path);
+    const end = path[path.len - 1];
+    try std.testing.expect(path[0].eql(a.at));
+    try std.testing.expectEqual(@as(i32, 40), end.y);
+    try std.testing.expect(end.x < b.x and end.x >= -40);
 }

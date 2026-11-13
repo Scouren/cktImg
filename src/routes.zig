@@ -140,6 +140,10 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
     const first = topLeft(s, pins);
     if (half == null and !onto) joined[first] = true;
     const sides = s.pins.items(.side);
+    // A pin is an end of its wire: no path ends on another of these pins.
+    const ats = try gpa.alloc(Pt, pins.len);
+    defer gpa.free(ats);
+    for (ats, pins) |*at, p| at.* = pinAt(s, p);
     var wired = onto;
     for (0..pins.len - @intFromBool(half == null and !onto)) |_| {
         var pick: ?usize = null;
@@ -161,6 +165,7 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
             .from = .{ .at = pinAt(s, pins[i]), .side = sides[pins[i]] },
             .to = to,
             .half = half,
+            .pins = ats,
             .boxes = c.boxes,
             .wires = c.segs.items,
             .marks = c.points.items,

@@ -16,19 +16,25 @@
 //! - trunk.3 (invariant) No wire of a trunk has a spur: a track on which
 //!   two pins' ways run on together past where they meet is never taken.
 //!   `corners`
-//! - trunk.4 (unmeasured) The rows a trunk tries first, and keeps on a
-//!   tie, are level with a pin facing sideways that stands below every
-//!   pin facing down and above every pin facing up (a gate level with a
-//!   column's junction), so that pin joins it straight: people's wires
-//!   run pin to pin or pin to T. `levelRows`
-//! - trunk.5 (unmeasured) A net's tap row lies midway between its lowest
-//!   pin facing down and its highest facing up; `tap` past its pins when
-//!   they face one way; else its topmost pin's row. `tapY`
-//! - trunk.6 (choice) The rows tried after those, in order: the tap row, a
-//!   quarter unit either side, a half unit either side; half a unit past
-//!   the pins' devices, the side away from the drawing's middle first (a
-//!   gate line over the top row's gates, under the bottom's); each pin's
-//!   own row, top down; the first on a tie: a fixed order, so the cards'
+//! - trunk.4 (habit) The rows a trunk tries first, and keeps on a tie, are
+//!   those of its pins facing sideways, nearest the tap row first: such a
+//!   pin joins the trunk straight. People: a level wire runs along the
+//!   row of a gate standing between a pin facing down and a pin facing up
+//!   in 3,898 of 3,955 such nets (5,263 hand-drawn schematics).
+//!   `levelRows`
+//! - trunk.5 (habit) A level trunk stands `tap` (half a unit) out from the
+//!   tips of the pins facing up or down that it joins: under the lowest
+//!   facing down, over the highest facing up (midway where they stand two
+//!   taps apart), and half a `tap` out only where neither row has room.
+//!   People: a level wire past two pins or more facing one way stands
+//!   half a unit out in 729 of 1,404 nets and a quarter in 76; between a
+//!   pin facing down and one facing up it stands off both tips in 9,466
+//!   of 11,252, midway in 5,134 (5,263 hand-drawn schematics). `tapRows`
+//! - trunk.6 (choice) The rows tried after those, in order: `tap` under
+//!   the pins facing down, `tap` over those facing up, half a `tap` each
+//!   way; half a unit past the pins' devices, the side away from the
+//!   drawing's middle first (a gate line over the top row's gates, under
+//!   the bottom's); the first on a tie: a fixed order, so the cards'
 //!   order chooses nothing. `draw`
 //! - trunk.7 (book) Two pins facing each other along a row (a mirror's
 //!   gates) are joined straight first, a gate line, and its middle
@@ -39,10 +45,9 @@
 //!   `wayTo`
 //! - trunk.9 (choice) A net of at most 12 pins may run its trunk upright,
 //!   where that costs less: down the column of a pin facing up or down,
-//!   midway between two neighbouring pins, half a unit either side of a
-//!   pin, or on a pin facing sideways, each kind nearest the pins' middle
-//!   first, then nearest the drawing's middle: the bound keeps the search
-//!   small. `uprightColumns`
+//!   midway between two neighbouring pins, or half a unit either side of
+//!   a pin, each kind nearest the pins' middle first, then nearest the
+//!   drawing's middle: the bound keeps the search small. `uprightColumns`
 //!   Narrowing: only for a net with no port or name on its wire.
 //! - trunk.10 (order: signal) A port or a name leaves a trunk from its
 //!   free end, the left (where the signal enters) before the right; an
@@ -55,6 +60,11 @@
 //!   its trunk, or of its column at its tap, on the drawing's nearer
 //!   side: the right when the trunk's right end reaches the drawing's
 //!   middle; a lone pin's port leaves from the pin. `draw`
+//! - trunk.13 (habit) A pin is an end of its wire, which leaves it the way
+//!   the pin faces: no track runs through the tip of a pin facing across
+//!   it or turns on one, and the wire branches off its pins. People:
+//!   87,922 of 93,770 pins of wired nets that are no rail (5,263
+//!   hand-drawn schematics). `corners`
 //!
 //! Contents:
 //! - `pub const End = enum { port, name }`
@@ -84,8 +94,6 @@ pub const End = enum {
     name,
 };
 
-/// The rows tried for a trunk before the tap row.
-const level_max = 4;
 /// The most pins of a net an upright trunk is tried for: four columns a
 /// pin, each a full set of lines, so the search stays small.
 const upright_pins_max = 12;
@@ -145,27 +153,25 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     const needs_end = role == .input and end == .port or role == .bias and end == .name;
     // A trunk takes, of the tracks no other net's wire or point is on, the
     // one whose lines cost the least (`cost`), the first of them on a tie:
-    // the row of a pin facing sideways level with the junction, the tap
-    // row, a quarter gap either side, then half; a half gap past its pins'
-    // devices, away from the drawing's middle first (a gate line over the
-    // top row's gates, under the bottom's); then each pin's own row.
-    const tap = tapY(s, pins, c.len.tap);
-    const q = @divFloor(c.len.unit, 4);
+    // the row of a pin facing sideways (it joins straight); a tap out from
+    // the pins facing down, then from those facing up, and half a tap only
+    // where neither has room; a half gap past its pins' devices, away from
+    // the drawing's middle first (a gate line over the top row's gates,
+    // under the bottom's). No row through the tip of a pin facing up or
+    // down: a pin is an end of its wire (`corners`).
+    const taps = tapRows(s, pins, c.len.tap);
+    const tap = taps[0];
     const past = pastDevices(c, pins);
-    const tracks = try c.gpa.alloc(i32, level_max + 7 + pins.len);
+    const tracks = try c.gpa.alloc(i32, pins.len + 6);
     defer c.gpa.free(tracks);
-    const level = levelRows(s, pins, tap, tracks[0..level_max]);
-    @memcpy(tracks[level..][0..7], &[_]i32{ tap, tap - q, tap + q, tap - 2 * q, tap + 2 * q, past[0], past[1] });
-    for (pins, tracks[level + 7 ..][0..pins.len]) |p, *t| t.* = pinAt(s, p).y;
-    // From the top down, so the order of the cards chooses nothing.
-    std.mem.sort(i32, tracks[level + 7 ..][0..pins.len], {}, std.sort.asc(i32));
+    const level = levelRows(s, pins, tap, tracks[0..pins.len]);
+    @memcpy(tracks[level..][0..6], &[_]i32{ taps[1], taps[2], taps[3], taps[4], past[0], past[1] });
     // An upright trunk's columns: of a pin facing up or down (the link
     // between two devices of a column, a gate a straight stub to it), midway
-    // between two pins, a half gap either side of a pin, then of a pin
-    // facing sideways.
+    // between two pins, a half gap either side of a pin.
     // ponytail: only for a net with no port or name on its wire; the stub's
     // place on an upright trunk when outputs should have one too.
-    var columns: [5 * upright_pins_max]i32 = undefined;
+    var columns: [4 * upright_pins_max]i32 = undefined;
     const uprights: []const i32 = if (!column and !ended and role != .output and pins.len <= upright_pins_max) uprightColumns(s, pins, @divFloor(c.len.unit, 2), c.middle2(), &columns) else &.{};
     var lo: i32 = 0;
     var hi: i32 = 0;
@@ -179,18 +185,28 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     const lays: []const Lay = if (column) &.{.column} else &.{ .rungs, .level, .upright };
     for (lays) |lay| {
         const among = switch (lay) {
-            .column => tracks[level..][0..1],
-            .rungs, .level => tracks[0 .. level + 7 + pins.len],
+            .column => taps[0..1],
+            .rungs, .level => tracks[0 .. level + 6],
             .upright => uprights,
         };
-        for (among) |track| {
+        const rows = lay == .rungs or lay == .level;
+        // Whether a row a tap out from the pins has room.
+        var tapped = false;
+        for (among, 0..) |track, k| {
+            const tap_row = rows and k >= level and k < level + 2;
+            if (rows and k >= level + 2 and k < level + 4 and tapped) continue;
             tried.clearRetainingCapacity();
             var t_lo: i32 = std.math.maxInt(i32);
             var t_hi: i32 = std.math.minInt(i32);
             const drawn = try trunkLines(c.gpa, s, pins, track, c.len.unit, lay, &tried, &t_lo, &t_hi);
             if (lay == .rungs and !drawn) break;
-            const count = cost(c, pins, tried.items, fewest);
-            if (count >= fewest or !linesFit(c, net, tried.items)) continue;
+            // A tap row is costed in full: whether it has room is asked
+            // even when another track is cheaper.
+            const count = cost(c, pins, tried.items, if (tap_row) std.math.maxInt(i64) else fewest);
+            if (!tap_row and count >= fewest) continue;
+            if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
+            tapped = tapped or tap_row;
+            if (count >= fewest) continue;
             // An upright trunk has no end to mark: its ends are not read.
             const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
             if (needs_end and t_free == null) continue;
@@ -266,9 +282,17 @@ fn cost(c: *const Canvas, pins: []const u32, lines: []const Line, under: i64) i6
 /// The corners of a net's lines as a reader counts them: the points its
 /// wire leaves exactly two ways at a right angle, a pin's device one of
 /// the ways. A T, a crossing of its own and a straight joint are none.
-/// Null when a line ends on nothing: two pins' ways to the trunk run
-/// together past where they meet, a spur no wire should have.
+/// Null when a line ends on nothing (two pins' ways to the trunk run
+/// together past where they meet, a spur no wire should have), or when a
+/// pin is no end of the wire: the wire leaves a pin one way, the way the
+/// pin faces, and branches off it. People: 87,922 of 93,770 pins of wired
+/// nets that are no rail in 5,263 hand-drawn schematics.
 fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) ?u32 {
+    for (pins) |p| {
+        // Straight through the pin's point: its device one way, the wire on.
+        const straight: u4 = if (s.pins.items(.side)[p].isHorizontal()) 0b0011 else 0b1100;
+        if (canvas.ways(s, pins, lines, pinAt(s, p)) != straight) return null;
+    }
     var count: u32 = 0;
     for (lines, 0..) |*l, li| for (l.slice(), 0..) |p, pi| {
         // Each point once, where it first stands.
@@ -286,13 +310,13 @@ fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) ?u32 {
 }
 
 /// The columns tried for an upright trunk, into `out`, in the order tried:
-/// each pin's facing up or down, midway between each two neighbours, `half`
-/// either side of each pin, each pin's facing sideways. Within each kind
-/// the column nearest the middle of the pins first, then the one nearer the
+/// each pin's facing up or down (it joins straight), midway between each
+/// two neighbours, `half` either side of each pin. Within each kind the
+/// column nearest the middle of the pins first, then the one nearer the
 /// drawing's middle (twice it, `middle2`), so neither the order of the
 /// cards nor a mirror image chooses another.
 fn uprightColumns(s: *const Schematic, pins: []const u32, half: i32, middle2: i32, out: []i32) []const i32 {
-    assert(pins.len >= 2 and out.len >= 5 * pins.len);
+    assert(pins.len >= 2 and out.len >= 4 * pins.len);
     var lo: i32 = std.math.maxInt(i32);
     var hi: i32 = std.math.minInt(i32);
     for (pins) |p| {
@@ -302,13 +326,13 @@ fn uprightColumns(s: *const Schematic, pins: []const u32, half: i32, middle2: i3
     const order: Nearest = .{ .box2 = lo + hi, .middle2 = middle2 };
     const sides = s.pins.items(.side);
     var n: usize = 0;
-    for (0..4) |kind| {
+    for (0..3) |kind| {
         const from = n;
         for (pins) |p| {
             const x = pinAt(s, p).x;
             switch (kind) {
-                // On a pin: first one facing up or down, last one sideways.
-                0, 3 => if (sides[p].isHorizontal() == (kind == 3)) {
+                // On a pin facing up or down.
+                0 => if (!sides[p].isHorizontal()) {
                     out[n] = x;
                     n += 1;
                 },
@@ -448,39 +472,40 @@ fn pastDevices(c: *const Canvas, pins: []const u32) [2]i32 {
     return if (top + bottom < lo + hi) .{ over, under } else .{ under, over };
 }
 
-/// The rows of the pins facing sideways that every pin facing down stands
-/// over and every pin facing up under (the junction between two devices
-/// of a column; the row a lone drain comes down to), nearest `tap` first,
-/// into `out`; how many. A trunk along such a row joins that pin straight
-/// and bends no other: people's wires run pin to pin or pin to T.
+/// The rows of the pins facing sideways, each once, nearest `tap` first
+/// (the upper of two as near), into `out`; how many. A trunk along such a
+/// row joins that pin straight: people run a level wire along the row of
+/// a gate standing between a pin facing down and a pin facing up in 3,898
+/// of 3,955 such nets (5,263 hand-drawn schematics).
 fn levelRows(s: *const Schematic, pins: []const u32, tap: i32, out: []i32) usize {
-    var down: i32 = std.math.minInt(i32);
-    var up: i32 = std.math.maxInt(i32);
-    for (pins) |p| switch (s.pins.items(.side)[p]) {
-        .down => down = @max(down, pinAt(s, p).y),
-        .up => up = @min(up, pinAt(s, p).y),
-        else => {},
-    };
-    if (down == std.math.minInt(i32) and up == std.math.maxInt(i32)) return 0;
+    assert(out.len >= pins.len);
     var n: usize = 0;
     for (pins) |p| {
         const y = pinAt(s, p).y;
-        if (!s.pins.items(.side)[p].isHorizontal() or y <= down or y >= up) continue;
-        if (std.mem.indexOfScalar(i32, out[0..n], y) != null or n == out.len) continue;
+        if (!s.pins.items(.side)[p].isHorizontal() or std.mem.indexOfScalar(i32, out[0..n], y) != null) continue;
         out[n] = y;
         n += 1;
     }
     std.sort.insertion(i32, out[0..n], tap, struct {
         fn lt(t: i32, a: i32, b: i32) bool {
-            return @abs(a - t) < @abs(b - t);
+            return if (@abs(a - t) != @abs(b - t)) @abs(a - t) < @abs(b - t) else a < b;
         }
     }.lt);
+    assert(n <= pins.len);
     return n;
 }
 
-/// Between the lowest pin facing down and the highest facing up; a gap
-/// past the pins when only one way faces; else the topmost pin's row.
-fn tapY(s: *const Schematic, pins: []const u32, gap: i32) i32 {
+/// Where a level trunk stands off the tips of the pins facing up or down.
+/// First the net's tap row: between the lowest pin facing down and the
+/// highest facing up, `gap` past the pins when they face one way, the
+/// topmost pin's row when none faces up or down. Then the rows tried:
+/// `gap` under the lowest pin facing down, `gap` over the highest facing
+/// up, and half of `gap` each way (the tap row for a way no pin faces).
+/// People: a level wire past two pins or more facing one way stands half a
+/// unit out in 729 of 1,404 nets and a quarter in 76; between a pin facing
+/// down and one facing up it stands off both tips in 9,466 of 11,252
+/// (5,263 hand-drawn schematics).
+fn tapRows(s: *const Schematic, pins: []const u32, gap: i32) [5]i32 {
     assert(pins.len >= 1);
     assert(gap > 0);
     var down: ?i32 = null;
@@ -495,10 +520,15 @@ fn tapY(s: *const Schematic, pins: []const u32, gap: i32) i32 {
             else => {},
         }
     }
-    if (down != null and up != null) return @divFloor(down.? + up.?, 2);
-    if (down) |d| return d + gap;
-    if (up) |u| return u - gap;
-    return top;
+    const tap = if (down != null and up != null) @divFloor(down.? + up.?, 2) else if (down) |d| d + gap else if (up) |u| u - gap else top;
+    const half = @divFloor(gap, 2);
+    return .{
+        tap,
+        if (down) |d| d + gap else tap,
+        if (up) |u| u - gap else tap,
+        if (down) |d| d + half else tap,
+        if (up) |u| u - half else tap,
+    };
 }
 
 fn sameX(s: *const Schematic, pins: []const u32) bool {

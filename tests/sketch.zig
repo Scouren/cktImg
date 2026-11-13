@@ -110,20 +110,42 @@ fn looseEnds(p: *const np.Placed, n: usize) usize {
         var held = false;
         for (p.pin_xy, p.pin_net) |xy, net| held = held or (net == n and xy.x == at.x and xy.y == at.y);
         for (p.labels) |l| held = held or (l.net == n and l.at.x == at.x and l.at.y == at.y);
-        // The ways out: left, right, up, down.
-        var arms: u4 = 0;
-        var jt = p.segments(n);
-        while (jt.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
-            if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
-            for ([_]np.Pt{ a, b }) |e| {
-                if (e.x < at.x) arms |= 1;
-                if (e.x > at.x) arms |= 2;
-                if (e.y < at.y) arms |= 4;
-                if (e.y > at.y) arms |= 8;
-            }
-        };
-        count += @intFromBool(!held and @popCount(arms) < 2);
+        count += @intFromBool(!held and @popCount(arms(p, n, at)) < 2);
     };
+    return count;
+}
+
+/// The ways net `n`'s wire leaves `at`, a bit a `Side` in its order: left,
+/// right, up, down.
+fn arms(p: *const np.Placed, n: usize, at: np.Pt) u4 {
+    var out: u4 = 0;
+    var it = p.segments(n);
+    while (it.next()) |q| for (q[0 .. q.len - 1], q[1..]) |a, b| {
+        if (at.x < @min(a.x, b.x) or at.x > @max(a.x, b.x) or at.y < @min(a.y, b.y) or at.y > @max(a.y, b.y)) continue;
+        for ([_]np.Pt{ a, b }) |e| {
+            if (e.x < at.x) out |= 1;
+            if (e.x > at.x) out |= 2;
+            if (e.y < at.y) out |= 4;
+            if (e.y > at.y) out |= 8;
+        }
+    };
+    return out;
+}
+
+/// The device pins of net `n` that are no end of its wire leaving the way
+/// the pin faces: a pin the wire runs through, turns on, or does not reach.
+fn pinsOffEnd(p: *const np.Placed, lib: *const np.Library, n: usize) usize {
+    var count: usize = 0;
+    for (0..p.deviceCount()) |d| {
+        // A rail's or a port's symbol stands on its stub's end.
+        if (p.dev_name[d].len == 0) continue;
+        const from, const to = p.pinRange(d);
+        for (from..to) |k| {
+            if (p.pin_net[k] != n) continue;
+            const side = lib.at(p.dev_class[d]).side(k - from, p.dev_orient[d]) orelse continue;
+            count += @intFromBool(arms(p, n, p.pin_xy[k]) != @as(u4, 1) << @backingInt(side));
+        }
+    }
     return count;
 }
 
@@ -815,10 +837,15 @@ test "sketch: devices dealt to any cells still draw connected, short-free and do
     try std.testing.expectEqual(0, bad);
 }
 
-test "sketch: a pin level with a column's junction is joined along its own row" {
-    // Oracle: a certificate. Three pins cannot be joined with less wire
-    // than half the perimeter of the box around them; a trunk on the tap
-    // row instead of the side pin's row spends a jog more.
+test "sketch: three pins are joined with the least wire that leaves each the way it faces" {
+    // Oracle: a certificate, and the hand drawings. Three pins cannot be
+    // joined with less wire than half the perimeter of the box around
+    // them, and that tree branches at their median point: here the tip of
+    // the transistor's source. A pin is an end of its wire, which leaves
+    // it the way the pin faces (87,922 of 93,770 pins of wired nets that
+    // are no rail in 5,263 hand-drawn schematics), so the branch stands
+    // off that tip by a quarter unit at the least: that much more wire,
+    // and no more.
     // The block is held right of the stack (`order`), its pin toward the
     // junction: facing away, no wire reaches that length.
     // The junction's net is on the block's lower input: its two inputs
@@ -859,8 +886,42 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
     while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
         wire += @intCast(@abs(b.x - a.x) + @abs(b.y - a.y));
     };
-    try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y, wire);
+    try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y + @divExact(lib.unit, 4), wire);
+    try std.testing.expectEqual(0, pinsOffEnd(&p, lib, net));
     try support.expectConnected(&p, lib);
+}
+
+test "sketch: a wire leaves each pin the way it faces and branches off the pins" {
+    // Oracle: the hand drawings. A pin is an end of its wire, which leaves
+    // it the way the pin faces, in 87,922 of 93,770 pins of wired nets that
+    // are no rail (5,263 schematics); the engine drew 66,857 of 84,247 so.
+    // An inverter's output joins two drains facing each other and a
+    // resistor, its input two gates and two resistors: the output's trunk
+    // ran through the lower drain's tip, the input's along the gates' tips.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Inverter
+        \\.model nch nmos
+        \\.model pch pmos
+        \\M1 vout net0 vss vss nch
+        \\M2 vout net0 vdd vdd pch
+        \\R1 vin net0 1k
+        \\R2 net0 vout 1k
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    for ([_][]const u8{ "vout", "net0" }) |name| {
+        const net = for (p.net_name, 0..) |n, i| {
+            if (std.mem.eql(u8, n, name)) break i;
+        } else unreachable;
+        try std.testing.expectEqual(0, pinsOffEnd(&p, lib, net));
+    }
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
 test "sketch: a lone drain comes straight down to the row of the gate it drives" {
@@ -1093,12 +1154,16 @@ test "sketch: a net between two shelves is joined by name, a shelf's own nets by
 
 test "sketch: a trunk is the cheapest track that fits, not the first" {
     // Oracle: no wire over three pins is shorter than half the perimeter of
-    // the box around them (the rectilinear Steiner tree of three points). A
-    // stage's base net joins a coupling capacitor, a feedback resistor and
-    // the base: the two parts' pins face each other on one row, the base
-    // stands off it, and the net's wire is exactly that long. The first
-    // track that fit (the tap row under both parts) was longer, with five
-    // corners.
+    // the box around them (the rectilinear Steiner tree of three points),
+    // and the hand drawings: a wire branches off its pins (a pin is an end
+    // of its wire in 87,922 of 93,770 pins of wired nets that are no rail,
+    // 5,263 schematics). A stage's base net joins a coupling capacitor, a
+    // feedback resistor and the base: the two parts' pins face each other
+    // on one row, the base stands off it past the resistor, so that tree
+    // branches on the resistor's pin. The wire branches at the middle of
+    // the line between the two parts instead (a gate line, trunk.7), and
+    // is longer by half that line and no more. The first track that fit
+    // (the tap row under both parts) was longer still, with five corners.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1136,7 +1201,8 @@ test "sketch: a trunk is the cheapest track that fits, not the first" {
     while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
         length += @abs(a.x - b.x) + @abs(a.y - b.y);
     };
-    try std.testing.expectEqual(@abs(base.x - c1.x) + @abs(base.y - c1.y), length);
+    try std.testing.expectEqual(@abs(base.x - c1.x) + @abs(base.y - c1.y) + @abs(@divExact(r1.x - c1.x, 2)), length);
+    try std.testing.expectEqual(0, pinsOffEnd(&p, lib, net));
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
