@@ -1506,6 +1506,40 @@ test "sketch: a supply bar runs on past its outer pins, so its ends are T's; rai
     try std.testing.expectEqual(2, bends(&ended, netOf(&ended, "vdd")));
 }
 
+test "sketch: a rail symbol stands on a two-pin part's end, and a stub out from a transistor's" {
+    // Oracle: the hand drawings. Of 8,367 rail symbols at a two-pin part's
+    // end in the 5,263 reference drawings, 6,883 stand on the pin; of 8,921
+    // at a transistor's path end, 3,612 (the rest on a stub).
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const p = try draw(arena, lib, &.{
+        \\Common source, its gate on a divider
+        \\.model nch nmos
+        \\M1 d g 0 0 nch
+        \\RD vdd d 1k
+        \\R1 vdd g 1k
+        \\R2 g 0 1k
+        \\
+    }, .{});
+    const gnd = lib.findRole(.ground_rail).?;
+    var on_r2 = false;
+    var on_m1 = false;
+    for (p.dev_name, p.dev_class, 0..) |n, class, d| {
+        if (n.len != 0 or class != gnd) continue;
+        const at = p.pin_xy[p.pinRange(d)[0]];
+        on_r2 = on_r2 or at.eql(pinOf(&p, "r2", 1));
+        on_m1 = on_m1 or at.eql(pinOf(&p, "m1", 2));
+    }
+    try std.testing.expect(on_r2);
+    try std.testing.expect(!on_m1);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: a block stands left of the transistor whose gate it drives" {
     // Oracle: the hand drawings. Of 487 blocks whose output net holds a
     // transistor's gate in the 5,263 reference drawings, 346 stand left of

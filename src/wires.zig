@@ -37,10 +37,12 @@
 //!   facing it to the bar however far; where the bar breaks or a pin does
 //!   not reach it, each run and each pin off it carries the net's name,
 //!   and a bar in one piece carries none. `bar`
-//! - wires.10 (unmeasured) A rail symbol, or a port at a pin, stands one
-//!   stub out from its pin, toward the side a `port` line asks, else the
-//!   way the pin faces; a name on the pin where neither stub fits.
-//!   `terminal`
+//! - wires.10 (habit) A rail symbol on a two-pin part's end stands on the
+//!   pin; on any other pin, and a port at a pin, one stub out from it,
+//!   toward the side a `port` line asks, else the way the pin faces; a
+//!   name on the pin where neither stub fits. People: on the pin 6,883 of
+//!   8,367 rail symbols at a two-pin part's end in 5,263 hand-drawn
+//!   schematics, 3,612 of 8,921 at a transistor's path end. `terminal`
 //!   Narrowing: no name's stub is tried before the pin, as
 //!   `Canvas.labelAt` would.
 //! - wires.11 (unmeasured) A bias net of two gates facing each other on
@@ -412,6 +414,12 @@ fn terminal(c: *Canvas, p: u32) !void {
     const side = c.s.pins.items(.side)[p];
     const net = c.s.pins.items(.net)[p];
     const rail = c.rails[net];
+    const d = c.s.pins.items(.device)[p];
+    // A rail symbol stands on a two-pin part's end, no stub: people 6,883
+    // of 8,367; on a transistor's path end 3,612 of 8,921 (the stub stays).
+    if (rail and d != sch.none and c.s.device_pin_count[d] == 2) {
+        return c.leaf(.terminal, net, pinAt(c.s, p), (c.port_side[net] orelse side).opposite());
+    }
     if (try c.markAt(.terminal, p, &.{ c.port_side[net] orelse side, side }, if (rail) c.len.rail else c.len.terminal)) {
         // A rail's stub is a wall.
         if (rail) c.wall();

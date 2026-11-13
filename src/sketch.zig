@@ -31,8 +31,10 @@
 //!   tall as its tallest device's (its body, where that reaches more than
 //!   `stack` past its pins). `coordinates`
 //! - sketch.8 (unmeasured) A pin on a port or rail net has room beyond it
-//!   for its symbol: the symbol's stub, and a unit more on a left or right
-//!   side; a supply pin facing up takes none (its bar runs over the top).
+//!   for its symbol: the symbol's stub (none for a rail symbol on a
+//!   two-pin part, which stands on the pin: wires.10), and a unit more on
+//!   a left or right side; a supply pin facing up takes none (its bar runs
+//!   over the top).
 //!   `coordinates`
 //! - sketch.9 (choice) Neighbouring columns stand `series` apart and rows
 //!   `stack` apart, and a lattice column with no device takes no room: the
@@ -482,9 +484,11 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
         for (c.members(EdgeId.from(d)), 0..) |net, i| {
             const side = s.pinSide(@intCast(d), i) orelse continue;
             const role = s.roles[net.index()];
-            // A symbol's stub out from the pin, and a unit for a symbol
+            // A symbol's stub out from the pin (none for a rail's on a
+            // two-pin part: `wires.terminal`), and a unit for a symbol
             // beside the device; the supply's bar over the top aside.
-            const stub = if (role.isPort()) len.terminal else if (role.isRail()) len.rail else continue;
+            const two = c.members(EdgeId.from(d)).len == 2;
+            const stub = if (role.isPort()) len.terminal else if (role.isRail()) (if (two) 0 else len.rail) else continue;
             if (role == .supply and side == .up) continue;
             need[@backingInt(side)] = r[@backingInt(side)] + stub + if (side.isHorizontal()) len.unit else 0;
         }
