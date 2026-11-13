@@ -23,7 +23,7 @@ const recorded = [golden.decks.len][]const u8{
     "strongarm x 49/49 y 38/46 rows 9+8-0 cols 6+0-0 sym 6/6 gates 7/7 labels +[] -[]",
     "gilbert x 34/36 y 28/29 rows 7+1-0 cols 0+2-0 sym 0/0 gates 4/6 labels +[] -[]",
     "cmfb_two_stage x 70/74 y 64/64 rows 14+0-0 cols 4+0-0 sym 7/7 gates 8/8 labels +[] -[]",
-    "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 4/6 labels +[] -[]",
+    "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 5/6 labels +[] -[]",
     "cascode_mirror x 6/6 y 8/8 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/4 labels +[] -[]",
     "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 5/5 labels +[] -[]",
     "beta_multiplier x 11/11 y 13/13 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/5 labels +[] -[]",
@@ -192,6 +192,35 @@ test "skeleton: a mirror of three turns each gate to the rest of its gate line, 
     try std.testing.expect((x[ref] < x[fed[0]]) == (x[ref] < x[fed[1]]));
     for (fed) |d| try std.testing.expectEqual(x[ref] > x[d], l.sk.gate_right[d]);
     try std.testing.expectEqual(x[fed[0]] > x[ref], l.sk.gate_right[ref]);
+}
+
+test "skeleton: a gate with nothing in the drawing to face turns left; one with a mate, away from its mate" {
+    // Oracle: how people draw it. A transistor alone on its gate net (a
+    // bias, an input) or with its gate on a rail has nothing in the drawing
+    // to face: people turn it left, the side a signal enters by, in 2,684
+    // of 3,317 such transistors of the 5,263 hand-drawn schematics, and
+    // away from the drawing's middle, the rule before, in 1,914 of 3,043.
+    // Reference drawing ag-50 is the first deck: the flat resistor left of
+    // the column put the middle on the gates' left, and both faced right.
+    // One with a mate elsewhere faces away from it (283 of 367): the mirror
+    // image, as the two followers of the second deck.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    {
+        const l = try lay(arena, "Cascode\n.model nch nmos level=1\n.model pch pmos level=1\nVDD vdd 0 1.8\nM1 out vb1 n0 0 nch\nM2 out vb2 vdd vdd pch\nRS in n0 1k\n");
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        for ([_][]const u8{ "m1", "m2" }) |name| try std.testing.expect(!l.sk.gate_right[l.nl.device(name).?.index()]);
+    }
+    {
+        const l = try lay(arena, "Followers\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 vdd in1 o1 0 nch\nM2 vdd in2 o2 0 nch\nR1 o1 0 1k\nR2 o2 0 1k\n");
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        const m1 = l.nl.device("m1").?.index();
+        const m2 = l.nl.device("m2").?.index();
+        try std.testing.expect(l.sk.x[m1] != l.sk.x[m2]);
+        try std.testing.expectEqual(l.sk.x[m1] > l.sk.x[m2], l.sk.gate_right[m1]);
+        try std.testing.expectEqual(l.sk.x[m2] > l.sk.x[m1], l.sk.gate_right[m2]);
+    }
 }
 
 test "skeleton: a resistor on the way down stands upright under the emitter it leaves, a current source upright anywhere" {

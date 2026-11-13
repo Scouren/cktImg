@@ -15,7 +15,7 @@ const figures = [_]Lines{
     .{ .deck = "folded_cascode", .lines = "*@ above M9 Iss\n*@ above Iss M7\n*@ above M7 M1\n*@ above M1 M3\n*@ face M3 g left\n*@ face M5 g left\n*@ face M7 g left\n*@ face M9 g left\n" },
     .{ .deck = "strongarm", .lines = "*@ above M3 S3\n*@ above S3 M5\n" },
     .{ .deck = "gilbert", .lines = "*@ symmetry off\n*@ order RD1 M1 M5 M2 Iss M3 M6 M4 RD2\n*@ above RD1 RD2\n*@ face M2 g left\n*@ face M4 g left\n" },
-    .{ .deck = "bandgap_ptat", .lines = "*@ face Q3 b left\n*@ face M3 g left\n" },
+    .{ .deck = "bandgap_ptat", .lines = "*@ face M3 g left\n" },
     .{ .deck = "wide_swing", .lines = "*@ above Iin Ibias\n*@ above Ibias M4\n*@ above M4 M5\n*@ above M5 M3\n" },
     .{ .deck = "beta_multiplier", .lines = "*@ face M5 g left\n" },
     .{ .deck = "two_stage_pmos", .lines = "*@ row M1 Rc Cc\n" },

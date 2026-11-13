@@ -36,9 +36,16 @@
 //!   whose column left the axis, is mated no more. `lay`
 //! - skeleton.8 (invariant) No two drawn devices share a cell.
 //!   `expectDistinctCells`
-//! - skeleton.9 (unmeasured) A transistor's gate faces the mean of the rest
-//!   of its gate net; on a rail or alone, away from the drawing's middle.
-//!   `gates`
+//! - skeleton.9 (habit) A transistor's gate faces the mean of the rest of
+//!   its gate net, what drives it and what it drives with it. People:
+//!   4,558 of 5,685 transistors of no block in 5,263 hand-drawn schematics
+//!   (3,982 of 4,374 where a current path drives the net). `gates`
+//! - skeleton.14 (order: signal) A gate with nothing in the drawing to face
+//!   (alone on its net, or on a rail) faces left, the side its signal
+//!   enters by; one with a mate elsewhere faces away from its mate, the
+//!   mirror image (skeleton.7). People: 2,684 of 3,317 left, 283 of 367
+//!   away from the mate; away from the drawing's middle, the rule this
+//!   replaces, 1,914 of 3,043. `gates`
 //! - skeleton.10 (habit) A differential pair's gates face out. People:
 //!   1,396 of 1,579 pairs in 5,263 hand-drawn schematics. `gates`
 //! - skeleton.11 (habit) The two of a mirror or cross-coupled pair face
@@ -285,7 +292,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     try cells.apply(gpa, arena, nl, drawn, mate, x, y, verdicts);
     mated = false;
     for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
-    gates(nl, roles, st, drawn, form, x, gate_right);
+    gates(nl, roles, st, mate, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
     const shelf = try arena.alloc(u32, n);
@@ -472,20 +479,15 @@ fn reachesRail(roles: []const Role, upper: []const u32, lower: []const u32, chai
     return false;
 }
 
-/// Every transistor's gate faces the rest of its gate net, or away from the
-/// middle when that is a rail or it has none; then a differential pair's
-/// face out and the two of a mirror, bank or cross-coupled pair face each
-/// other.
-fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, x: []const i32, gate_right: []bool) void {
+/// Every transistor's gate faces the rest of its gate net; where that is a
+/// rail or holds nothing else, left, or away from its mate (`mate`, as
+/// `mates.find` gives it); then a differential pair's face out and the two
+/// of a mirror, bank or cross-coupled pair face each other.
+fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []const u32, drawn: []const bool, form: []const Form, x: []const i32, gate_right: []bool) void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     assert(gate_right.len == c.edgeCount());
-    var lo: i32 = std.math.maxInt(i32);
-    var hi: i32 = std.math.minInt(i32);
-    for (0..c.edgeCount()) |d| if (drawn[d]) {
-        lo = @min(lo, x[d]);
-        hi = @max(hi, x[d]);
-    };
+    assert(mate.len == c.edgeCount());
     for (0..c.edgeCount()) |d| {
         if (!drawn[d] or form[d] != .vertical) continue;
         const gate = c.members(EdgeId.from(d))[device.of(kinds[d]).gate orelse continue];
@@ -498,8 +500,13 @@ fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: [
             count += 1;
         };
         // Twice the coordinates, so a middle between columns is exact.
+        // With nothing in the drawing to face, a gate faces left, the side
+        // its signal enters by (people: 2,684 of 3,317 such gates in 5,263
+        // hand-drawn schematics; away from the drawing's middle, as here
+        // before, 1,914 of 3,043); one with a mate elsewhere faces away
+        // from it, the mirror image (283 of 367).
         const own: i64 = 2 * @as(i64, x[d]);
-        gate_right[d] = if (count > 0) @divFloor(2 * sum, count) > own else own > @as(i64, lo) + hi;
+        gate_right[d] = if (count > 0) @divFloor(2 * sum, count) > own else mate[d] != none and x[d] > x[mate[d]];
     }
     // A block of two only: a larger mirror's or bank's gates face the rest
     // of their net as any gate does. People turn all of one left in 12 of
