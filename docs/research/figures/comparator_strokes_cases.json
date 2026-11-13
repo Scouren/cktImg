@@ -1,0 +1,214 @@
+{
+  "corpora": {
+    "amsnet": {
+      "cmp": {
+        "box": [],
+        "plain_triangle": [],
+        "stepped_triangle": []
+      },
+      "comp": {
+        "box": [],
+        "plain_triangle": [],
+        "stepped_triangle": []
+      },
+      "comparator": {
+        "box": [],
+        "plain_triangle": [],
+        "stepped_triangle": []
+      },
+      "icm_ideal_comparator_vdd": {
+        "box": [],
+        "plain_triangle": [],
+        "stepped_triangle": []
+      }
+    },
+    "analoggenie": {
+      "cmp": {
+        "box": [
+          "ag-1362:x1",
+          "ag-1418:x1"
+        ],
+        "plain_triangle": [
+          "ag-1358:x1",
+          "ag-1367:x1",
+          "ag-1376:x1",
+          "ag-1393:x1",
+          "ag-1407:x1",
+          "ag-1456:x1"
+        ],
+        "stepped_triangle": []
+      },
+      "comp": {
+        "box": [],
+        "plain_triangle": [
+          "ag-1354:x1",
+          "ag-1363:x1",
+          "ag-1364:x1",
+          "ag-1366:x1",
+          "ag-1369:x1",
+          "ag-1370:x1",
+          "ag-1377:x1",
+          "ag-1386:x1",
+          "ag-1396:x1",
+          "ag-1420:x1",
+          "ag-1427:x1",
+          "ag-1433:x1",
+          "ag-1437:x1",
+          "ag-1442:x1",
+          "ag-1446:x1"
+        ],
+        "stepped_triangle": []
+      },
+      "comparator": {
+        "box": [
+          "ag-1390:x1"
+        ],
+        "plain_triangle": [
+          "ag-1355:x1",
+          "ag-1357:x1",
+          "ag-1360:x1",
+          "ag-1361:x1",
+          "ag-1365:x1",
+          "ag-1368:x1",
+          "ag-1371:x1",
+          "ag-1372:x1",
+          "ag-1384:x1",
+          "ag-1389:x1",
+          "ag-1391:x1",
+          "ag-1394:x1",
+          "ag-1395:x1",
+          "ag-1397:x1",
+          "ag-1398:x1",
+          "ag-1400:x1",
+          "ag-1403:x1",
+          "ag-1406:x1",
+          "ag-1408:x1",
+          "ag-1413:x1",
+          "ag-1414:x1",
+          "ag-1416:x1",
+          "ag-1417:x1",
+          "ag-1421:x1",
+          "ag-1422:x1",
+          "ag-1424:x1",
+          "ag-1425:x1",
+          "ag-1426:x1",
+          "ag-1429:x1",
+          "ag-1430:x1",
+          "ag-1432:x1",
+          "ag-1434:x1",
+          "ag-1436:x1",
+          "ag-1438:x1",
+          "ag-1441:x1",
+          "ag-1444:x1",
+          "ag-1445:x1",
+          "ag-1448:x1",
+          "ag-1449:x1",
+          "ag-1452:x1",
+          "ag-1453:x1",
+          "ag-1454:x1",
+          "ag-1455:x1",
+          "ag-1460:x1",
+          "ag-3492:x2",
+          "ag-3493:x2",
+          "ag-3495:x2",
+          "ag-808:x2"
+        ],
+        "stepped_triangle": []
+      },
+      "icm_ideal_comparator_vdd": {
+        "box": [],
+        "plain_triangle": [],
+        "stepped_triangle": [
+          "ag-806:x1",
+          "ag-809:x2"
+        ]
+      }
+    }
+  },
+  "native_contracts": {
+    "amsnet": {
+      "complete_contracts": [],
+      "excluded_contracts": []
+    },
+    "analoggenie": {
+      "complete_contracts": [
+        "ag-1363:x1",
+        "ag-1364:x1",
+        "ag-1365:x1",
+        "ag-1366:x1",
+        "ag-1367:x1",
+        "ag-1368:x1",
+        "ag-1369:x1",
+        "ag-1370:x1",
+        "ag-1371:x1",
+        "ag-1390:x1",
+        "ag-1391:x1",
+        "ag-1393:x1",
+        "ag-1394:x1",
+        "ag-1395:x1",
+        "ag-1397:x1",
+        "ag-1398:x1",
+        "ag-1400:x1",
+        "ag-1403:x1",
+        "ag-1406:x1",
+        "ag-1407:x1",
+        "ag-1408:x1",
+        "ag-1413:x1",
+        "ag-1414:x1",
+        "ag-1416:x1",
+        "ag-1417:x1",
+        "ag-1421:x1",
+        "ag-1422:x1",
+        "ag-1424:x1",
+        "ag-1425:x1",
+        "ag-1426:x1",
+        "ag-1427:x1",
+        "ag-1429:x1",
+        "ag-1430:x1",
+        "ag-1432:x1",
+        "ag-1434:x1",
+        "ag-1436:x1",
+        "ag-1437:x1",
+        "ag-1438:x1",
+        "ag-1441:x1",
+        "ag-1442:x1",
+        "ag-1444:x1",
+        "ag-1445:x1",
+        "ag-1446:x1",
+        "ag-1448:x1",
+        "ag-1449:x1",
+        "ag-1452:x1",
+        "ag-1453:x1",
+        "ag-1454:x1",
+        "ag-1455:x1",
+        "ag-1456:x1",
+        "ag-1460:x1",
+        "ag-806:x1",
+        "ag-809:x2"
+      ],
+      "excluded_contracts": [
+        "ag-1354:x1",
+        "ag-1355:x1",
+        "ag-1357:x1",
+        "ag-1358:x1",
+        "ag-1360:x1",
+        "ag-1361:x1",
+        "ag-1362:x1",
+        "ag-1372:x1",
+        "ag-1376:x1",
+        "ag-1377:x1",
+        "ag-1384:x1",
+        "ag-1386:x1",
+        "ag-1389:x1",
+        "ag-1396:x1",
+        "ag-1418:x1",
+        "ag-1420:x1",
+        "ag-1433:x1",
+        "ag-3492:x2",
+        "ag-3493:x2",
+        "ag-3495:x2",
+        "ag-808:x2"
+      ]
+    }
+  }
+}

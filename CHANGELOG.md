@@ -6,6 +6,7 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 AnalogGenie pattern study (#8):
 
+- Engine and Schemify: recognize complete AMP/AMP1/CMP/EA contracts as triangles, matching 24 source glyphs and preserving all 130 ordered pins; generic comparators use plain triangles while the explicit ICM family retains its step (#8).
 - Engine: shelf cuts preserve admitted vertical ordering, allow forward upper-to-lower chains across shelves, and ignore rejected or dropped relation spans (#8).
 - Engine: keep unique converter reservoirs outside their main switches and at or below the power path through placement, shelves and compaction; all 359 selected branches satisfy these bounded relations, while two source-level cases remain lower than their source (#8).
 - Engine: place unique grounded converter shunts inside their main-to-coil intervals and preserve actual terminal order during compaction; all 353 selected intervals and all 92 driver clearances hold (#8).

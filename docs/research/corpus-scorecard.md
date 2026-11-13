@@ -717,3 +717,46 @@ hint decks pass the release Schemify host; two also pass the current host.
 Their native geometry and reports are byte-identical between serial and
 four-job runs. The repeated plugin build is identical at 558,433 bytes,
 SHA-256 `a792fcf766aeaf3c4bfc6bd2054b8ccaa96777465ed65e992df4fc2614460b05`.
+
+## Eleventh measured pass: exact amplifier aliases and comparator strokes
+
+The frozen executable is
+`ffb91e897d114cccc22d426535f6d5cf255461808b1b1cc49325bfc7bbd92763`.
+Complete contracts for the exact family names AMP, AMP1, CMP and EA now
+use the existing signed triangle. All **24/24** selected source instances
+match the triangle and input-sign checks, up from zero. Their **130/130**
+ordered ports and net bindings remain intact, and every pin has its own
+visible lead. Recognition retains the existing complete-contract boundary;
+unknown controls, duplicate roles, prefixes, A1 and ZCD remain separate.
+See the [alias study](block-aliases.md) for source coordinate disagreements
+and the limits of the native ink check.
+
+Generic comp/comparator/CMP triangles have no interior step; the explicit
+ICM_IDEAL_COMPARATOR_VDD glyph retains its three-segment step. The actual
+native audit checks all 53 complete comparator contracts, preserving 267
+ordered pins: 51 plain generic triangles and two stepped ICM triangles.
+AG1390's source box and AG1398's missing plus sign remain named differences.
+The [digital audit](digital-symbols.md) separately confirms zero boxes among
+56 conventional digital instances, while recording supply-lead, curve and
+proportion differences. Neither result establishes full symbol equivalence.
+
+Exactly the 24 alias drawings change geometry and reports. Every other AG
+drawing and all 734 AMSNet drawings remain byte-identical. All structural
+scores remain unchanged, including **289/2,202** all-relation matches; no
+physical axis, gate direction or block flow changes. Crossings increase
+from 4,900 to 4,901, entirely in AG1349 (five to six), while total bends
+decrease from 24,210 to 24,209. The earlier named converter terminal-order
+checks remain correct. Source/native views of AG2550, 1367, 1393 and 1237
+show the improved glyphs and unfinished layout groups; AG1393 still points
+upward where the actual source points right.
+
+Validation passes 320 tests without LaTeX, 321 with it, 4,000 fuzz cases,
+formatting and unchanged legacy style findings. All 31 gallery SVGs remain
+identical and the non-inverting amplifier was inspected. The 94-deck symbol
+cohort round-trips through Schemify with exactly 198 subcircuits, alongside
+the fixture suite's unchanged 98 comparisons and two capacity refusals.
+Four symbol decks also pass the current host with nine exact subcircuits.
+All 24 changed drawings produce identical geometry and report bytes in
+serial and four-job runs. The plugin is 558,473 bytes, SHA-256
+`446d9d89fb4f131c58e897fafe6e12ee2c5b86d5e39bf24baf4e6a1ed2ac5a21`,
+and its repeated build is byte-identical.

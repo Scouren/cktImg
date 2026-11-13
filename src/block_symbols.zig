@@ -26,6 +26,18 @@
 //!   A complete single-input contract creates no missing second pin.
 //!   Unknown controls, duplicate roles and mixed input contracts stay boxes.
 //!   `identify`, `draw`
+//! - block_symbols.6 (choice) Exact AMP/AMP1/CMP/EA family names with the
+//!   same complete port contract use triangles: all 24 selected source
+//!   glyphs agree (AG2553/2550/1367/1237). AMP1 is a whole name, not a
+//!   prefix. Generic A1 remains unrecognized; ZCD is a source box.
+//!   Shape/sign evidence does not certify cached source pin coordinates.
+//!   docs/research/block-aliases.md; `identify`
+//! - block_symbols.7 (choice) Generic comp/comparator/CMP triangles are
+//!   plain: 15/48/6 source instances have no interior step. The explicit
+//!   ICM_IDEAL_COMPARATOR_VDD retains its step (AG806/809). AG1390's source
+//!   box and AG1398's missing plus mark remain named disagreements; neither
+//!   creates an instance-specific rendering exception. Appearance does not
+//!   infer electrical function. figures/comparator_strokes.py; `identify`
 //!
 //! Cold, bounded work: at most eight ports, once per registered symbol.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
@@ -59,9 +71,9 @@ const ports_max = 8;
 pub fn identify(name: []const u8, ports: []const []const u8) Shape {
     if (ports.len < 2 or ports.len > ports_max) return .box;
     const aliases = [_]struct { names: []const u8, shape: Shape }{
-        .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier", .shape = .amplifier },
+        .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier amp amp1 ea cmp comp comparator", .shape = .amplifier },
         .{ .names = "opamp_differential", .shape = .differential_amplifier },
-        .{ .names = "comparator comp icm_ideal_comparator_vdd", .shape = .comparator },
+        .{ .names = "icm_ideal_comparator_vdd", .shape = .comparator },
         .{ .names = "buffer buf", .shape = .buffer },
         .{ .names = "inverter inv", .shape = .inverter },
         .{ .names = "and_gate and", .shape = .and_gate },
