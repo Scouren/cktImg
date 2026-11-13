@@ -101,6 +101,11 @@
 //!   return diode stays flat through `crooked`. All 145 selected source
 //!   drawings agree. `power_loops` owns the topology, ambiguities and
 //!   evidence; caller form/end instructions still run afterward.
+//! - forms.23 (habit, bounded) A resistor from a private grounded voltage
+//!   source to a distinct MOS gate stays flat through `crooked`. The whole
+//!   source branch belongs at one driven gate's row; `input_resistors`
+//!   owns the all-pin certificate and 22-case actual-source evidence.
+//!   Placement chooses the anchor; caller forms and ends still win.
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -122,6 +127,7 @@ const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
 const power_paths = @import("power_paths.zig");
 const power_loops = @import("power_loops.zig");
+const input_resistors = @import("input_resistors.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -172,6 +178,7 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         // A box has no path, and a shorted path passes no current.
         const a, const b = pathNets(nl, roles, @intCast(d)) orelse continue;
         if (a == b) continue;
+        if (kinds[d] == .resistor and input_resistors.find(nl, roles, drawn, @intCast(d)) != null) continue;
         const k = device.of(kinds[d]);
         const on_rail = isRail(roles[a]) or isRail(roles[b]);
         const capacitive = coupled: {
@@ -308,6 +315,7 @@ pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoEnded(nl, @intCast(d))) continue;
         if (power_paths.inductor(nl, roles, sk.drawn, @intCast(d))) continue;
+        if (input_resistors.find(nl, roles, sk.drawn, @intCast(d)) != null) continue;
         if (c.edges.items(.kind)[d] == .diode) {
             const loop_return = for (c.edges.items(.kind), 0..) |kind, coil| {
                 if (kind != .inductor) continue;

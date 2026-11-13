@@ -891,3 +891,90 @@ AG1199 joins the block that its source draws separately.
 The plugin is **560,234 bytes**, SHA-256
 `f27345af840d847ac37f6c9341c4b8112b2c9e76478dfb8051bcd4fa95eb6e16`.
 Repeated native and plugin builds are byte-identical.
+
+## Fourteenth measured pass: private input branches and rung search
+
+The frozen executable is
+`ad704dbbbd5b03b66167a64fb1842a8ad3d83bbfb2f8fb78ccaae0c2d5b336d2`.
+The [input-resistor study](input-resistors.md) identifies a grounded voltage
+source feeding a MOS gate through a resistor, with a private source/resistor
+junction. The engine places the resistor on one driven gate's row, with
+the upright source outside and below it. One gate must witness the row,
+interval and continuous straight wire together. Complete branch agreement
+improves from **0/22 to 22/22**, verified against 160 actual source leads.
+All 22 source-to-resistor legs were already physically continuous; all
+22 resistors were previously upright. The new placement uses canonical
+device order after a card-permutation regression exposed order dependence.
+Caller geometry continues to take precedence.
+
+AMS401 exposed a separate trunk-search defect: the first track can require
+no separate gate rung without ruling out rungs on the remaining tracks.
+Continuing that bounded search restores its straight gate approach. A
+literal canvas and the complete source DUT, including declared output
+roles, both reproduced the defect. The [rung study](trunk-rungs.md) measures
+the wider effect on stable named pin pairs that share a horizontal interval
+in both native snapshots. Pairs whose net has an actual output glyph in
+both versions gain 90 straight intervals and lose none. Other pairs gain
+1,255 and lose six; this bucket is geometric and does not mean their nets
+are never semantic outputs. Actual source ink shows four losses are real
+source-pattern regressions: **AG981, AG984, AG986 and AG2376**. The first
+three need a nearby alternative to a blocked midpoint junction. AG2376
+falls back to labels under the existing crossing budget. AG2274 is already
+label-separated in its source; AG2544's source pair is on different rows.
+These named cases remain unresolved at this checkpoint.
+
+All **2,956** corpus drawings render with the same two source issues and no
+native findings. Geometry changes in 1,183 AG drawings and 132 AMS drawings;
+reports change in 878 and 96 respectively. AG crossings rise from **4,864
+to 4,884**, while bends fall from **23,435 to 20,611**. AMS crossings rise
+from **188 to 199**, while bends fall from **1,677 to 1,547**. Crossings
+worsen in 98 AG and 11 AMS drawings, improve in 129 and two, and otherwise
+stay equal. Bends worsen in 33 AG and eight AMS drawings and improve in
+775 and 65. These tradeoffs are retained by exact drawing name.
+
+The 22 resistor axes improve. Two gate directions in AG161 become opposite
+to their sources, while AG477:M3 improves; no other physical gate direction,
+axis or block-flow relation changes. AG161's local input branch is correct
+but its wider transistor arrangement remains unlike the source. The partial
+all-relation scores remain **289/2,202 AG and 243/734 AMS**, with no gained
+or lost names. This is not schematic equivalence.
+
+All exact earlier cohorts remain correct: 252 main paths, 365 shunts below,
+353 unique shunt intervals, all four relations on 359 grounded capacitors,
+92 driver orders, 75 controller alignments, and both 107-case reservoir
+gate policies. All 145 converter groups retain all 22 universal relations
+and seven continuous local trees with zero proper crossings in their 21
+tree pairs. Branch-order and input-bus geometry are unchanged. The auxiliary
+bus keeps the exact 107 joined and 38 disconnected branches, with source
+agreement in 106. AG1274:M5 moves from below the lower row to between rows;
+its source is above the main path, so neither native position agrees.
+Converter-subset crossings fall from 526 to 523 and bends from 2,759 to 2,282,
+with seven named crossing regressions still present.
+
+The restored search also made the existing Sallen-Key grouping test's first
+labelled net entirely wired, then compacted a different net's formerly far
+capacitor inside the near-group bound. The test now fixes literal near/far
+geometry and selects its net by name. It retains the two-label assertion
+and additionally checks physical near-pair continuity and far separation.
+It passes production and fails an isolated mutation replacing grouped
+wiring with individual labels; the production grouping rule is unchanged.
+A custom-symbol fixture was also corrected to put explicit body strokes
+inside its leads. Its corrected actual-terminal oracle still failed on
+iteration13 and passed after the input placement change.
+
+Validation passes **362 tests without LaTeX and 363 with it**, 4,000 fuzz
+cases, global formatting and style checks with the same five legacy API
+findings. The gallery retains exactly 31 names, with 12 changed SVGs;
+representative changed layouts were inspected. All 1,315 changed drawings
+produce identical geometry and reports in serial and four-job runs. The
+22 input decks round-trip through Schemify with 22 exact DUTs. The full
+fixture suite retains 98 exact comparisons and its two capacity refusals;
+all 252 converter decks retain 428 exact subcircuits. The current-host check
+passes eight decks with nine exact subcircuits. Source/native views of
+AG161, 182 and 477 and AMS401 confirm both the local gains and the remaining
+placement and crossing differences.
+
+The plugin is **562,476 bytes**, SHA-256
+`57c454b7b074610a81e90e248b5576479f0bb5a485f4693a2dba4869460245b7`,
+724 bytes below its strict 550 KiB cap. Repeated native and plugin builds
+are byte-identical.

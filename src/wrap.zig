@@ -54,6 +54,11 @@
 //!   Keeping the whole shelf's gaps is a conservative placement choice;
 //!   later compaction measures actual ink and symbol clearance.
 //!   `loop_place.place`, `cut`, `cutCost`
+//! - wrap.10 (habit, bounded) A placed private grounded-source/resistor
+//!   branch stays with its chosen MOS gate on one shelf. All 22 selected
+//!   source branches have continuous source legs and a straight approach
+//!   to that gate. Its two-row source drop is reserved with the protected
+//!   interval, using the same caller-owned span mechanism. `input_place`
 //!
 //! Contents:
 //! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict, protected: []const [2]i32) Allocator.Error!void`

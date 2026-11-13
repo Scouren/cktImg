@@ -41,7 +41,11 @@
 //!   order chooses nothing. `draw`
 //! - trunk.7 (book) Two pins facing each other along a row (a mirror's
 //!   gates) are joined straight first, a gate line, and its middle
-//!   brought to the trunk, as the book draws it. `trunkLines`
+//!   brought to the trunk, as the book draws it. A track on the pins' own
+//!   row needs no separate rung; that does not rule out a rung on the
+//!   remaining bounded tracks. AMS401's source resistor/gate approach
+//!   stays straight while a lower trunk reaches its feedback capacitor.
+//!   `trunkLines`, `draw`
 //! - trunk.8 (unmeasured) A pin comes to its trunk straight when it faces
 //!   it; out half a unit and along when it faces sideways; round its own
 //!   device, through the channel on its right, when it faces away.
@@ -206,7 +210,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
             var t_lo: i32 = std.math.maxInt(i32);
             var t_hi: i32 = std.math.minInt(i32);
             const drawn = try trunkLines(c.gpa, s, pins, track, c.len.unit, lay, &tried, &t_lo, &t_hi);
-            if (lay == .rungs and !drawn) break;
+            if (lay == .rungs and !drawn) continue;
             // A tap row is costed in full: whether it has room is asked
             // even when another track is cheaper.
             const count = cost(c, net, pins, tried.items, if (tap_row) std.math.maxInt(i64) else fewest);
@@ -600,4 +604,36 @@ fn wayTo(at: Pt, side: Side, y_t: i32, gap: i32) Line {
     }
     assert(line.len >= 1);
     return line;
+}
+
+test "trunk: opposed pins keep their straight rung when the trunk needs a later row" {
+    // Literal geometric oracle: two opposed pins on y=100 have a clear
+    // horizontal approach, while the third pin faces down at (180,120).
+    // The resistor body prevents extending the whole trunk through y=100;
+    // a lower trunk can still meet the middle of the straight local rung.
+    const gpa = std.testing.allocator;
+    var lib: library.Library = .init(gpa);
+    defer lib.deinit();
+    var s: Schematic = .{ .arena = .init(gpa), .lib = &lib, .device_kind = &.{}, .device_name = &.{}, .net_name = &.{"signal"}, .device_pin_count = &.{}, .roles = &.{.output} };
+    defer s.deinit();
+    var xy: std.ArrayList([2]f32) = .empty;
+    const terminals = [_]Pt{ .{ .x = 20, .y = 100 }, .{ .x = 80, .y = 100 }, .{ .x = 180, .y = 120 } };
+    for (terminals, [_]Side{ .right, .left, .down }) |at, side| {
+        const node = try s.addNode(.{ .kind = .terminal, .ref = 0, .group = sch.none });
+        try xy.append(s.arena.allocator(), at.toF());
+        _ = try s.addPin(.{ .home = node, .side = side, .net = 0, .device = sch.none, .index = 0 });
+    }
+    s.xy = xy.items;
+    const boxes = [_]library.Rect{
+        .{ .min = .{ .x = -20, .y = 80 }, .max = .{ .x = 20, .y = 120 } },
+        .{ .min = .{ .x = 80, .y = 90 }, .max = .{ .x = 120, .y = 110 } },
+        .{ .min = .{ .x = 170, .y = 80 }, .max = .{ .x = 190, .y = 120 } },
+    };
+    var c = try Canvas.init(gpa, &s, &xy, .of(.{}, 40), &boxes, &.{});
+    defer c.deinit();
+    try std.testing.expect(try draw(&c, 0, &.{ 0, 1, 2 }, .port));
+    // Every integer point of this literal horizontal interval must be ink.
+    // A continuous U detour through a lower trunk cannot satisfy it.
+    for (20..81) |x| try std.testing.expect(c.onNet(0, .{ .x = @intCast(x), .y = 100 }));
+    for (terminals) |at| try std.testing.expect(c.onNet(0, at));
 }

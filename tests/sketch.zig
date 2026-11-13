@@ -11,6 +11,7 @@ const golden = @import("golden.zig");
 const support = @import("support.zig");
 const textbook = @import("textbook.zig");
 const fixtures = @import("fixtures.zig");
+const ink = @import("wire_ink.zig");
 
 const Place = struct { name: []const u8, at: np.Pt };
 
@@ -457,14 +458,12 @@ test "sketch: a lower crossing budget names more nets and draws no more crossing
 }
 
 test "sketch: a net over the crossing budget keeps its near pins wired, one name a part" {
-    // Oracle: how people draw it. Of the nets people join by name in 5,274
-    // hand-drawn schematics, 75% keep the pins standing near each other
-    // wired and cut only the far connection. With no crossing budget one
-    // node of the Sallen-Key filter (three pins) is cut: fewer names than
-    // pins, a wire left, and the names still join the whole net. R2's left
-    // end is the deck's word here: turned toward the amplifier beside it
-    // (sketch.4) its pin stands near the node's other two, the node is one
-    // part, and no connection of it is far.
+    // Oracle: near R2/E1 pins on net b keep their physical wire; the far
+    // C2 pin joins that part by name. Of named nets in 5,274 human drawings,
+    // 75% keep nearby pins wired. Literal positions make the near/far case
+    // independent of scaffolding: restored rung tracks made the former
+    // automatic layout compact enough to put all three in one near group.
+    // Selecting the first label had also silently changed the tested net.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -473,11 +472,29 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     const deck = for (textbook.beyond) |c| {
         if (std.mem.eql(u8, c.name, "sallen_key")) break c.spice;
     } else unreachable;
-    const told = try std.mem.concat(arena_state.allocator(), u8, &.{ deck, "\n*@ face r2 a left\n" });
+    const positions =
+        \\*@ at r1 2 0.7 r0
+        \\*@ at r2 8.75 0.7 r0
+        \\*@ at c1 4.5 0.7 r0
+        \\*@ at c2 2.25 2.2 r90
+        \\*@ at e1 6.5 0.7 mr0
+        \\*@ at vin -0.575 1.2 r90
+        \\
+    ;
+    const told = try std.mem.concat(arena_state.allocator(), u8, &.{ deck, "\n", positions });
     const p = try draw(arena_state.allocator(), lib, &.{told}, .{ .cross_max = 0 });
-    // The cut net: the one that carries names.
-    try std.testing.expect(p.labels.len > 0);
-    const net = p.labels[0].net;
+    const net = for (p.net_name, 0..) |name, n| {
+        if (std.mem.eql(u8, name, "b")) break n;
+    } else unreachable;
+    var terminals: [3]usize = undefined;
+    for ([_][]const u8{ "r2", "e1", "c2" }, [_]usize{ 1, 2, 0 }, &terminals) |name, pin, *terminal| {
+        terminal.* = for (p.dev_name, 0..) |device, d| {
+            if (std.mem.eql(u8, device, name)) break p.pinRange(d)[0] + pin;
+        } else unreachable;
+    }
+    for (terminals, [_]np.Pt{ .{ .x = 370, .y = 28 }, .{ .x = 280, .y = 8 }, .{ .x = 90, .y = 68 } }) |pin, expected| {
+        try std.testing.expectEqual(expected, p.pin_xy[pin]);
+    }
     var names: usize = 0;
     for (p.labels) |l| names += @intFromBool(l.net == net);
     var pins: usize = 0;
@@ -489,6 +506,8 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     try std.testing.expectEqual(2, names);
     try std.testing.expect(pins > names);
     try std.testing.expect(wires.next() != null);
+    try std.testing.expect(try ink.connected(gpa, &p, terminals[0..2]));
+    try std.testing.expect(!try ink.connected(gpa, &p, &terminals));
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

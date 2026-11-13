@@ -1,0 +1,5213 @@
+{
+  "amsnet": {
+    "corpus": "amsnet",
+    "paired_circuits": 734,
+    "selected": [
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              250.0,
+              180.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  150.0,
+                  180.0
+                ],
+                [
+                  190,
+                  180
+                ]
+              ],
+              [
+                [
+                  190,
+                  180
+                ],
+                [
+                  220,
+                  180
+                ]
+              ],
+              [
+                [
+                  220,
+                  180
+                ],
+                [
+                  250.0,
+                  180.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  150.0,
+                  180.0
+                ],
+                [
+                  190,
+                  180
+                ]
+              ],
+              [
+                [
+                  190,
+                  180
+                ],
+                [
+                  220,
+                  180
+                ]
+              ],
+              [
+                [
+                  220,
+                  180
+                ],
+                [
+                  250.0,
+                  180.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                150,
+                180
+              ],
+              [
+                190,
+                180
+              ]
+            ],
+            [
+              [
+                190,
+                180
+              ],
+              [
+                220,
+                180
+              ]
+            ],
+            [
+              [
+                220,
+                180
+              ],
+              [
+                250,
+                180
+              ]
+            ],
+            [
+              [
+                190,
+                210
+              ],
+              [
+                190,
+                180
+              ]
+            ],
+            [
+              [
+                220,
+                120
+              ],
+              [
+                220,
+                180
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-361",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                280.0,
+                160.0
+              ],
+              "G": [
+                250.0,
+                180.0
+              ],
+              "S": [
+                280.0,
+                200.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                150.0,
+                180.0
+              ],
+              "2": [
+                110.0,
+                180.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                90.0,
+                200.0
+              ],
+              "-": [
+                90.0,
+                240.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                90,
+                180
+              ],
+              [
+                90.0,
+                200.0
+              ]
+            ],
+            [
+              [
+                90,
+                180
+              ],
+              [
+                110.0,
+                180.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              90.0,
+              200.0
+            ],
+            [
+              110.0,
+              180.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                90,
+                200
+              ],
+              [
+                90,
+                180
+              ]
+            ],
+            [
+              [
+                90,
+                180
+              ],
+              [
+                110,
+                180
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              210.0,
+              180.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  150.0,
+                  180.0
+                ],
+                [
+                  180,
+                  180
+                ]
+              ],
+              [
+                [
+                  180,
+                  180
+                ],
+                [
+                  210.0,
+                  180.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  150.0,
+                  180.0
+                ],
+                [
+                  180,
+                  180
+                ]
+              ],
+              [
+                [
+                  180,
+                  180
+                ],
+                [
+                  210.0,
+                  180.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                150,
+                180
+              ],
+              [
+                180,
+                180
+              ]
+            ],
+            [
+              [
+                180,
+                180
+              ],
+              [
+                210,
+                180
+              ]
+            ],
+            [
+              [
+                180,
+                200
+              ],
+              [
+                180,
+                180
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-362",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                240.0,
+                160.0
+              ],
+              "G": [
+                210.0,
+                180.0
+              ],
+              "S": [
+                240.0,
+                200.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                150.0,
+                180.0
+              ],
+              "2": [
+                110.0,
+                180.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                90.0,
+                200.0
+              ],
+              "-": [
+                90.0,
+                240.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                90,
+                180
+              ],
+              [
+                90.0,
+                200.0
+              ]
+            ],
+            [
+              [
+                90,
+                180
+              ],
+              [
+                110.0,
+                180.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              90.0,
+              200.0
+            ],
+            [
+              110.0,
+              180.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                90,
+                200
+              ],
+              [
+                90,
+                180
+              ]
+            ],
+            [
+              [
+                90,
+                180
+              ],
+              [
+                110,
+                180
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              280.0,
+              260.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  210.0,
+                  260.0
+                ],
+                [
+                  240,
+                  260
+                ]
+              ],
+              [
+                [
+                  240,
+                  260
+                ],
+                [
+                  280.0,
+                  260.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  210.0,
+                  260.0
+                ],
+                [
+                  240,
+                  260
+                ]
+              ],
+              [
+                [
+                  240,
+                  260
+                ],
+                [
+                  280.0,
+                  260.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                210,
+                260
+              ],
+              [
+                240,
+                260
+              ]
+            ],
+            [
+              [
+                240,
+                260
+              ],
+              [
+                280,
+                260
+              ]
+            ],
+            [
+              [
+                240,
+                290
+              ],
+              [
+                240,
+                260
+              ]
+            ],
+            [
+              [
+                250,
+                200
+              ],
+              [
+                240,
+                200
+              ]
+            ],
+            [
+              [
+                240,
+                200
+              ],
+              [
+                240,
+                260
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-364",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                310.0,
+                240.0
+              ],
+              "G": [
+                280.0,
+                260.0
+              ],
+              "S": [
+                310.0,
+                280.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                210.0,
+                260.0
+              ],
+              "2": [
+                170.0,
+                260.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                130.0,
+                280.0
+              ],
+              "-": [
+                130.0,
+                320.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                130,
+                260
+              ],
+              [
+                130.0,
+                280.0
+              ]
+            ],
+            [
+              [
+                130,
+                260
+              ],
+              [
+                170.0,
+                260.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              130.0,
+              280.0
+            ],
+            [
+              170.0,
+              260.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                130,
+                280
+              ],
+              [
+                130,
+                260
+              ]
+            ],
+            [
+              [
+                130,
+                260
+              ],
+              [
+                170,
+                260
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              240.0,
+              160.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  220.0,
+                  160.0
+                ],
+                [
+                  240.0,
+                  160.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  220.0,
+                  160.0
+                ],
+                [
+                  240.0,
+                  160.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                220,
+                160
+              ],
+              [
+                240,
+                160
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-368",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                270.0,
+                140.0
+              ],
+              "G": [
+                240.0,
+                160.0
+              ],
+              "S": [
+                270.0,
+                180.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                220.0,
+                160.0
+              ],
+              "2": [
+                180.0,
+                160.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                140.0,
+                180.0
+              ],
+              "-": [
+                140.0,
+                220.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                140,
+                160
+              ],
+              [
+                140.0,
+                180.0
+              ]
+            ],
+            [
+              [
+                140,
+                160
+              ],
+              [
+                180.0,
+                160.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              140.0,
+              180.0
+            ],
+            [
+              180.0,
+              160.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                140,
+                180
+              ],
+              [
+                140,
+                160
+              ]
+            ],
+            [
+              [
+                140,
+                160
+              ],
+              [
+                180,
+                160
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              260.0,
+              160.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  200.0,
+                  160.0
+                ],
+                [
+                  230,
+                  160
+                ]
+              ],
+              [
+                [
+                  230,
+                  160
+                ],
+                [
+                  260.0,
+                  160.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  200.0,
+                  160.0
+                ],
+                [
+                  230,
+                  160
+                ]
+              ],
+              [
+                [
+                  230,
+                  160
+                ],
+                [
+                  260.0,
+                  160.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                200,
+                160
+              ],
+              [
+                230,
+                160
+              ]
+            ],
+            [
+              [
+                230,
+                160
+              ],
+              [
+                260,
+                160
+              ]
+            ],
+            [
+              [
+                230,
+                220
+              ],
+              [
+                230,
+                160
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-374",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                290.0,
+                140.0
+              ],
+              "G": [
+                260.0,
+                160.0
+              ],
+              "S": [
+                290.0,
+                180.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                200.0,
+                160.0
+              ],
+              "2": [
+                160.0,
+                160.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                110.0,
+                180.0
+              ],
+              "-": [
+                110.0,
+                220.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                110,
+                160
+              ],
+              [
+                110.0,
+                180.0
+              ]
+            ],
+            [
+              [
+                110,
+                160
+              ],
+              [
+                160.0,
+                160.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              110.0,
+              180.0
+            ],
+            [
+              160.0,
+              160.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                110,
+                180
+              ],
+              [
+                110,
+                160
+              ]
+            ],
+            [
+              [
+                110,
+                160
+              ],
+              [
+                160,
+                160
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              230.0,
+              270.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  160.0,
+                  270.0
+                ],
+                [
+                  180,
+                  270
+                ]
+              ],
+              [
+                [
+                  180,
+                  270
+                ],
+                [
+                  230.0,
+                  270.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  160.0,
+                  270.0
+                ],
+                [
+                  180,
+                  270
+                ]
+              ],
+              [
+                [
+                  180,
+                  270
+                ],
+                [
+                  230.0,
+                  270.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "a",
+          "verified_ink_segments": [
+            [
+              [
+                160,
+                270
+              ],
+              [
+                180,
+                270
+              ]
+            ],
+            [
+              [
+                180,
+                270
+              ],
+              [
+                230,
+                270
+              ]
+            ],
+            [
+              [
+                200,
+                200
+              ],
+              [
+                180,
+                200
+              ]
+            ],
+            [
+              [
+                180,
+                200
+              ],
+              [
+                180,
+                270
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-398",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                260.0,
+                250.0
+              ],
+              "G": [
+                230.0,
+                270.0
+              ],
+              "S": [
+                260.0,
+                290.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                160.0,
+                270.0
+              ],
+              "2": [
+                120.0,
+                270.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                100.0,
+                290.0
+              ],
+              "-": [
+                100.0,
+                330.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                100,
+                270
+              ],
+              [
+                100.0,
+                290.0
+              ]
+            ],
+            [
+              [
+                100,
+                270
+              ],
+              [
+                120.0,
+                270.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              100.0,
+              290.0
+            ],
+            [
+              120.0,
+              270.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                100,
+                290
+              ],
+              [
+                100,
+                270
+              ]
+            ],
+            [
+              [
+                100,
+                270
+              ],
+              [
+                120,
+                270
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              190.0,
+              280.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  120.0,
+                  280.0
+                ],
+                [
+                  140,
+                  280
+                ]
+              ],
+              [
+                [
+                  140,
+                  280
+                ],
+                [
+                  160,
+                  280
+                ]
+              ],
+              [
+                [
+                  160,
+                  280
+                ],
+                [
+                  190.0,
+                  280.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  120.0,
+                  280.0
+                ],
+                [
+                  140,
+                  280
+                ]
+              ],
+              [
+                [
+                  140,
+                  280
+                ],
+                [
+                  160,
+                  280
+                ]
+              ],
+              [
+                [
+                  160,
+                  280
+                ],
+                [
+                  190.0,
+                  280.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "a",
+          "verified_ink_segments": [
+            [
+              [
+                120,
+                280
+              ],
+              [
+                140,
+                280
+              ]
+            ],
+            [
+              [
+                140,
+                280
+              ],
+              [
+                160,
+                280
+              ]
+            ],
+            [
+              [
+                160,
+                280
+              ],
+              [
+                190,
+                280
+              ]
+            ],
+            [
+              [
+                160,
+                220
+              ],
+              [
+                160,
+                280
+              ]
+            ],
+            [
+              [
+                140,
+                310
+              ],
+              [
+                140,
+                280
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-401",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                220.0,
+                260.0
+              ],
+              "G": [
+                190.0,
+                280.0
+              ],
+              "S": [
+                220.0,
+                300.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                120.0,
+                280.0
+              ],
+              "2": [
+                80.0,
+                280.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                60.0,
+                300.0
+              ],
+              "-": [
+                60.0,
+                340.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                60,
+                280
+              ],
+              [
+                60.0,
+                300.0
+              ]
+            ],
+            [
+              [
+                60,
+                280
+              ],
+              [
+                80.0,
+                280.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              60.0,
+              300.0
+            ],
+            [
+              80.0,
+              280.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                60,
+                300
+              ],
+              [
+                60,
+                280
+              ]
+            ],
+            [
+              [
+                60,
+                280
+              ],
+              [
+                80,
+                280
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              230.0,
+              200.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  160.0,
+                  200.0
+                ],
+                [
+                  180,
+                  200
+                ]
+              ],
+              [
+                [
+                  180,
+                  200
+                ],
+                [
+                  230.0,
+                  200.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  160.0,
+                  200.0
+                ],
+                [
+                  180,
+                  200
+                ]
+              ],
+              [
+                [
+                  180,
+                  200
+                ],
+                [
+                  230.0,
+                  200.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                160,
+                200
+              ],
+              [
+                180,
+                200
+              ]
+            ],
+            [
+              [
+                180,
+                200
+              ],
+              [
+                230,
+                200
+              ]
+            ],
+            [
+              [
+                180,
+                160
+              ],
+              [
+                180,
+                200
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-580",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                260.0,
+                180.0
+              ],
+              "G": [
+                230.0,
+                200.0
+              ],
+              "S": [
+                260.0,
+                220.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                160.0,
+                200.0
+              ],
+              "2": [
+                120.0,
+                200.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                100.0,
+                220.0
+              ],
+              "-": [
+                100.0,
+                260.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                100,
+                200
+              ],
+              [
+                100.0,
+                220.0
+              ]
+            ],
+            [
+              [
+                100,
+                200
+              ],
+              [
+                120.0,
+                200.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              100.0,
+              220.0
+            ],
+            [
+              120.0,
+              200.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                100,
+                220
+              ],
+              [
+                100,
+                200
+              ]
+            ],
+            [
+              [
+                100,
+                200
+              ],
+              [
+                120,
+                200
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              280.0,
+              300.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  190.0,
+                  300.0
+                ],
+                [
+                  220,
+                  300
+                ]
+              ],
+              [
+                [
+                  220,
+                  300
+                ],
+                [
+                  280.0,
+                  300.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  190.0,
+                  300.0
+                ],
+                [
+                  220,
+                  300
+                ]
+              ],
+              [
+                [
+                  220,
+                  300
+                ],
+                [
+                  280.0,
+                  300.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                190,
+                300
+              ],
+              [
+                220,
+                300
+              ]
+            ],
+            [
+              [
+                220,
+                300
+              ],
+              [
+                280,
+                300
+              ]
+            ],
+            [
+              [
+                230,
+                240
+              ],
+              [
+                220,
+                240
+              ]
+            ],
+            [
+              [
+                220,
+                240
+              ],
+              [
+                220,
+                300
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-585",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                310.0,
+                280.0
+              ],
+              "G": [
+                280.0,
+                300.0
+              ],
+              "S": [
+                310.0,
+                320.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                190.0,
+                300.0
+              ],
+              "2": [
+                150.0,
+                300.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                110.0,
+                310.0
+              ],
+              "-": [
+                110.0,
+                350.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                110,
+                300
+              ],
+              [
+                110.0,
+                310.0
+              ]
+            ],
+            [
+              [
+                110,
+                300
+              ],
+              [
+                150.0,
+                300.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              110.0,
+              310.0
+            ],
+            [
+              150.0,
+              300.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                110,
+                310
+              ],
+              [
+                110,
+                300
+              ]
+            ],
+            [
+              [
+                110,
+                300
+              ],
+              [
+                150,
+                300
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "r1",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              240.0,
+              190.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  200.0,
+                  190.0
+                ],
+                [
+                  220,
+                  190
+                ]
+              ],
+              [
+                [
+                  220,
+                  190
+                ],
+                [
+                  240.0,
+                  190.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  200.0,
+                  190.0
+                ],
+                [
+                  220,
+                  190
+                ]
+              ],
+              [
+                [
+                  220,
+                  190
+                ],
+                [
+                  240.0,
+                  190.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                200,
+                190
+              ],
+              [
+                220,
+                190
+              ]
+            ],
+            [
+              [
+                220,
+                190
+              ],
+              [
+                240,
+                190
+              ]
+            ],
+            [
+              [
+                290,
+                250
+              ],
+              [
+                220,
+                250
+              ]
+            ],
+            [
+              [
+                220,
+                250
+              ],
+              [
+                220,
+                190
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-604",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "m1",
+            "terminals": {
+              "D": [
+                270.0,
+                170.0
+              ],
+              "G": [
+                240.0,
+                190.0
+              ],
+              "S": [
+                270.0,
+                210.0
+              ]
+            }
+          },
+          "r1": {
+            "object": "r1",
+            "terminals": {
+              "1": [
+                200.0,
+                190.0
+              ],
+              "2": [
+                160.0,
+                190.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                140.0,
+                210.0
+              ],
+              "-": [
+                140.0,
+                250.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                140,
+                190
+              ],
+              [
+                140.0,
+                210.0
+              ]
+            ],
+            [
+              [
+                140,
+                190
+              ],
+              [
+                160.0,
+                190.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              140.0,
+              210.0
+            ],
+            [
+              160.0,
+              190.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                160,
+                190
+              ],
+              [
+                140,
+                190
+              ]
+            ],
+            [
+              [
+                140,
+                190
+              ],
+              [
+                140,
+                210
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m9",
+            "continuous": true,
+            "point": [
+              260.0,
+              140.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  150.0,
+                  140.0
+                ],
+                [
+                  190,
+                  140
+                ]
+              ],
+              [
+                [
+                  190,
+                  140
+                ],
+                [
+                  260.0,
+                  140.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  150.0,
+                  140.0
+                ],
+                [
+                  190,
+                  140
+                ]
+              ],
+              [
+                [
+                  190,
+                  140
+                ],
+                [
+                  260.0,
+                  140.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net0",
+          "verified_ink_segments": [
+            [
+              [
+                190,
+                130
+              ],
+              [
+                190,
+                140
+              ]
+            ],
+            [
+              [
+                190,
+                140
+              ],
+              [
+                190,
+                150
+              ]
+            ],
+            [
+              [
+                260,
+                140
+              ],
+              [
+                190,
+                140
+              ]
+            ],
+            [
+              [
+                150,
+                140
+              ],
+              [
+                190,
+                140
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-722",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m9": {
+            "object": "m9",
+            "terminals": {
+              "D": [
+                290.0,
+                160.0
+              ],
+              "G": [
+                260.0,
+                140.0
+              ],
+              "S": [
+                290.0,
+                120.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                150.0,
+                140.0
+              ],
+              "2": [
+                110.0,
+                140.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                70.0,
+                160.0
+              ],
+              "-": [
+                70.0,
+                200.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net1",
+          "spanning_ink_segments": [
+            [
+              [
+                70,
+                140
+              ],
+              [
+                70.0,
+                160.0
+              ]
+            ],
+            [
+              [
+                70,
+                140
+              ],
+              [
+                110.0,
+                140.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              70.0,
+              160.0
+            ],
+            [
+              110.0,
+              140.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                70,
+                160
+              ],
+              [
+                70,
+                140
+              ]
+            ],
+            [
+              [
+                70,
+                140
+              ],
+              [
+                110,
+                140
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m9",
+            "continuous": true,
+            "point": [
+              300.0,
+              140.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  150.0,
+                  140.0
+                ],
+                [
+                  190,
+                  140
+                ]
+              ],
+              [
+                [
+                  190,
+                  140
+                ],
+                [
+                  210,
+                  140
+                ]
+              ],
+              [
+                [
+                  210,
+                  140
+                ],
+                [
+                  300.0,
+                  140.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  150.0,
+                  140.0
+                ],
+                [
+                  190,
+                  140
+                ]
+              ],
+              [
+                [
+                  190,
+                  140
+                ],
+                [
+                  210,
+                  140
+                ]
+              ],
+              [
+                [
+                  210,
+                  140
+                ],
+                [
+                  300.0,
+                  140.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                190,
+                130
+              ],
+              [
+                190,
+                140
+              ]
+            ],
+            [
+              [
+                190,
+                140
+              ],
+              [
+                210,
+                140
+              ]
+            ],
+            [
+              [
+                210,
+                140
+              ],
+              [
+                300,
+                140
+              ]
+            ],
+            [
+              [
+                150,
+                140
+              ],
+              [
+                190,
+                140
+              ]
+            ],
+            [
+              [
+                220,
+                200
+              ],
+              [
+                210,
+                200
+              ]
+            ],
+            [
+              [
+                210,
+                200
+              ],
+              [
+                210,
+                140
+              ]
+            ]
+          ]
+        },
+        "id": "amsnet-724",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m9": {
+            "object": "m9",
+            "terminals": {
+              "D": [
+                330.0,
+                160.0
+              ],
+              "G": [
+                300.0,
+                140.0
+              ],
+              "S": [
+                330.0,
+                120.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "rs",
+            "terminals": {
+              "1": [
+                150.0,
+                140.0
+              ],
+              "2": [
+                110.0,
+                140.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "vin",
+            "terminals": {
+              "+": [
+                70.0,
+                160.0
+              ],
+              "-": [
+                70.0,
+                200.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                70,
+                140
+              ],
+              [
+                70.0,
+                160.0
+              ]
+            ],
+            [
+              [
+                70,
+                140
+              ],
+              [
+                110.0,
+                140.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              70.0,
+              160.0
+            ],
+            [
+              110.0,
+              140.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                70,
+                160
+              ],
+              [
+                70,
+                140
+              ]
+            ],
+            [
+              [
+                70,
+                140
+              ],
+              [
+                110,
+                140
+              ]
+            ]
+          ]
+        }
+      }
+    ],
+    "source_sha256": {
+      "amsnet-361.cir": "5de87284a24b9a245207766a2f0c7afefa461bda51556272e271f0ec6e075e72",
+      "amsnet-361.human.json": "68c83f00d53eea4738c5390f2aef6d14e7e27c010c56c8426146448b669b6695",
+      "amsnet-361.svg": "c5c210d1f39a1704a73823073fafa440f32c6385fa291a3138999c69bd83af10",
+      "amsnet-362.cir": "87171d957ffea99b0789b1a7141e5f8004a1897f406df8dcc066225667639c3d",
+      "amsnet-362.human.json": "cf2a2c917697c29007e1dbeac04cddebd4016abf7f87575912a028c1d55af333",
+      "amsnet-362.svg": "e12ce4387c91b0873a6d4931cad77d0026fa5d0c696caf400cd486963d07a099",
+      "amsnet-364.cir": "82881fd58ca4b5be0c9afdb0a55350255247cb16bd38ea33c6c98793edc60200",
+      "amsnet-364.human.json": "38e9b595a7c6ef5393dabc872e9eb3e7889a26771caada4e3bd4a490026f9b62",
+      "amsnet-364.svg": "3df0e924764ef868b427d026ef60293ceb181e588c4e03a76b54940fe78a150d",
+      "amsnet-368.cir": "f7b277302388581e7e7f32f0cd3b15ace12914e4e9d32fa32de53279f39c9f19",
+      "amsnet-368.human.json": "ddd823137e6b4f19aa5c8a2f7bb01ef08879a11be77962592a8758b3d2cb701b",
+      "amsnet-368.svg": "1a6070902b29cf23526f6489850000089cacb9a087fe66acb8ba97a315ac21e4",
+      "amsnet-374.cir": "26dd54333ef4e0619ee023dc5c0271b46e0210a213328c17748631fd4db2dee9",
+      "amsnet-374.human.json": "aaac81b2ce974c1c6eb4b72cbd4681921a6cea5e007beaf192d3f5eef659062c",
+      "amsnet-374.svg": "3a69a6f2b436d322519e78b12a0ecda022faf9d505d88b98e15c6959fa5868f7",
+      "amsnet-398.cir": "03fa6252cdacdf22555650639b86911dd6ed44a82b1ec4cb6862152c876f1621",
+      "amsnet-398.human.json": "2a328ff7d0d72cb28faf9a9e3e496e0de8b9187688caba4df8d1394f7f1f4dcb",
+      "amsnet-398.svg": "f113909f3f15b8b9a1bb02179a92b54cccdf62b98d92642d7f6ca582e54410cc",
+      "amsnet-401.cir": "065093113d5b0626c0851897bf19ef4f57d3df34b53ce5b671626b5395bb5954",
+      "amsnet-401.human.json": "6132cacbf7ede222a61af5ebadb2bab5cdc4cbb3b598a3455e4adb15dc2bc6ac",
+      "amsnet-401.svg": "0bcc4c40653091af6b71c9dde434e8de05a8ca547833e950b65890227e725376",
+      "amsnet-580.cir": "dd789e45bc49198d3274e365feca3612d8f6bd5a6c623360c4a79dd2955a31e2",
+      "amsnet-580.human.json": "a37eabc80748aca7fe40db69682c113d8493da6a56dcf380dc1cfb29ffbcbd1c",
+      "amsnet-580.svg": "f48f0e9daf043061b2725ab4b44d5db751786bf11eef7d75f5cca99c05ba7dc8",
+      "amsnet-585.cir": "434db2fe06e96a7ed952e5f1453c79cacf9a794689085bbec3d97398c1e6be9a",
+      "amsnet-585.human.json": "7368527992f6093f97a011e1a2d390ba6a1f299ec2abb57993b8af4a01615ad9",
+      "amsnet-585.svg": "c16cd857b1a6887c708ff575ea35676a8a54797515b5f44233d0c99063ca093f",
+      "amsnet-604.cir": "d5a9867091ca471615afb6ee20b111901773124cfbc4753d70778d73610c9841",
+      "amsnet-604.human.json": "d9bf560fcd51992d5be5fb7c16d2ae9b946e82edc6a1e9b7ea80c5bd35e66fe2",
+      "amsnet-604.svg": "1f36834d56defcb384d5a48b65e74ad2c2cc838a64b2b09e4a9e7cebd1b87e34",
+      "amsnet-722.cir": "6235755a04d38e2707879ad39bc226edd13552e13e07ecf0143203b574f6d052",
+      "amsnet-722.human.json": "63c7ba594a703f2b27cf7f4cc565871daf18ccf5403c1842f3051db2b5a82fab",
+      "amsnet-722.svg": "f5eed820f3610016a2a1b1f6c5e472ecd4983eceb5ef4dd571299a6e8cb43b2b",
+      "amsnet-724.cir": "f66c0d8f0c611f6492c4d66cca37ee94083a1a37914fe42681fb2eb923dc9397",
+      "amsnet-724.human.json": "443b2ce768ca87169c3ef98602edad30e2c717f13edb88222927bac186b66597",
+      "amsnet-724.svg": "9b5ecb253f6d40797a529c1fe69b20bc0bc2d7cf1112961d7eecc8f0938b85e2"
+    },
+    "summary": {
+      "admitted_anchors": [
+        "amsnet-361:rs:m1",
+        "amsnet-362:rs:m1",
+        "amsnet-364:rs:m1",
+        "amsnet-368:rs:m1",
+        "amsnet-374:rs:m1",
+        "amsnet-398:rs:m1",
+        "amsnet-401:rs:m1",
+        "amsnet-580:rs:m1",
+        "amsnet-585:rs:m1",
+        "amsnet-604:r1:m1",
+        "amsnet-722:rs:m9",
+        "amsnet-724:rs:m9"
+      ],
+      "cache_only_segments": 0,
+      "complete_branch": [
+        "amsnet-361:rs",
+        "amsnet-362:rs",
+        "amsnet-364:rs",
+        "amsnet-368:rs",
+        "amsnet-374:rs",
+        "amsnet-398:rs",
+        "amsnet-401:rs",
+        "amsnet-580:rs",
+        "amsnet-585:rs",
+        "amsnet-604:r1",
+        "amsnet-722:rs",
+        "amsnet-724:rs"
+      ],
+      "disconnected_anchors": [],
+      "names": [
+        "amsnet-361:rs",
+        "amsnet-362:rs",
+        "amsnet-364:rs",
+        "amsnet-368:rs",
+        "amsnet-374:rs",
+        "amsnet-398:rs",
+        "amsnet-401:rs",
+        "amsnet-580:rs",
+        "amsnet-585:rs",
+        "amsnet-604:r1",
+        "amsnet-722:rs",
+        "amsnet-724:rs"
+      ],
+      "off_row_anchors": [],
+      "same_anchor_straight_gate": [
+        "amsnet-361:rs",
+        "amsnet-362:rs",
+        "amsnet-364:rs",
+        "amsnet-368:rs",
+        "amsnet-374:rs",
+        "amsnet-398:rs",
+        "amsnet-401:rs",
+        "amsnet-580:rs",
+        "amsnet-585:rs",
+        "amsnet-604:r1",
+        "amsnet-722:rs",
+        "amsnet-724:rs"
+      ],
+      "source_leg_connected": [
+        "amsnet-361:rs",
+        "amsnet-362:rs",
+        "amsnet-364:rs",
+        "amsnet-368:rs",
+        "amsnet-374:rs",
+        "amsnet-398:rs",
+        "amsnet-401:rs",
+        "amsnet-580:rs",
+        "amsnet-585:rs",
+        "amsnet-604:r1",
+        "amsnet-722:rs",
+        "amsnet-724:rs"
+      ],
+      "verified_terminals": 84
+    }
+  },
+  "analoggenie": {
+    "corpus": "analoggenie",
+    "paired_circuits": 2202,
+    "selected": [
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m2",
+            "continuous": true,
+            "point": [
+              100.0,
+              50.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  100.0,
+                  50.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  100.0,
+                  50.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                10,
+                20
+              ],
+              [
+                10,
+                50
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                10,
+                60
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                100,
+                50
+              ]
+            ],
+            [
+              [
+                -20,
+                50
+              ],
+              [
+                10,
+                50
+              ]
+            ]
+          ]
+        },
+        "id": "ag-1082",
+        "source": "vs",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m2": {
+            "object": "instance-381fea0c-0ea7-48c5-9495-da4c3d0f550d",
+            "terminals": {
+              "D": [
+                130.0,
+                30.0
+              ],
+              "G": [
+                100.0,
+                50.0
+              ],
+              "S": [
+                130.0,
+                70.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-c28fa12c-c2c3-408f-9eee-750c59cb9ae5",
+            "terminals": {
+              "1": [
+                -60.0,
+                50.0
+              ],
+              "2": [
+                -20.0,
+                50.0
+              ]
+            }
+          },
+          "vs": {
+            "object": "instance-72dc0357-6f7d-4eba-9b1a-0c3bbbe3c0e8",
+            "terminals": {
+              "+": [
+                -80.0,
+                60.0
+              ],
+              "-": [
+                -80.0,
+                100.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -80.0,
+                60.0
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60.0,
+                50.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -80.0,
+              60.0
+            ],
+            [
+              -60.0,
+              50.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -80,
+                50
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60,
+                50
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m2",
+            "continuous": true,
+            "point": [
+              110.0,
+              50.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  110.0,
+                  50.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  110.0,
+                  50.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                10,
+                20
+              ],
+              [
+                10,
+                50
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                10,
+                60
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                110,
+                50
+              ]
+            ],
+            [
+              [
+                -20,
+                50
+              ],
+              [
+                10,
+                50
+              ]
+            ]
+          ]
+        },
+        "id": "ag-1083",
+        "source": "vs",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m2": {
+            "object": "instance-816df7d4-98c6-4d5a-a3ee-8d6ffde70065",
+            "terminals": {
+              "D": [
+                140.0,
+                30.0
+              ],
+              "G": [
+                110.0,
+                50.0
+              ],
+              "S": [
+                140.0,
+                70.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-66d9945d-fea8-460e-9743-f534f4940c8e",
+            "terminals": {
+              "1": [
+                -60.0,
+                50.0
+              ],
+              "2": [
+                -20.0,
+                50.0
+              ]
+            }
+          },
+          "vs": {
+            "object": "instance-431e8836-488c-45c9-9c7c-171e903103e1",
+            "terminals": {
+              "+": [
+                -80.0,
+                60.0
+              ],
+              "-": [
+                -80.0,
+                100.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -80.0,
+                60.0
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60.0,
+                50.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -80.0,
+              60.0
+            ],
+            [
+              -60.0,
+              50.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -80,
+                50
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60,
+                50
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m2",
+            "continuous": true,
+            "point": [
+              100.0,
+              50.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  100.0,
+                  50.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -20.0,
+                  50.0
+                ],
+                [
+                  10,
+                  50
+                ]
+              ],
+              [
+                [
+                  10,
+                  50
+                ],
+                [
+                  100.0,
+                  50.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                10,
+                20
+              ],
+              [
+                10,
+                50
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                10,
+                60
+              ]
+            ],
+            [
+              [
+                10,
+                50
+              ],
+              [
+                100,
+                50
+              ]
+            ],
+            [
+              [
+                -20,
+                50
+              ],
+              [
+                10,
+                50
+              ]
+            ]
+          ]
+        },
+        "id": "ag-1084",
+        "source": "vs",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m2": {
+            "object": "instance-199ee449-ad50-4199-9015-4443726a1ee7",
+            "terminals": {
+              "D": [
+                130.0,
+                30.0
+              ],
+              "G": [
+                100.0,
+                50.0
+              ],
+              "S": [
+                130.0,
+                70.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-62b47684-f3d9-4c12-b136-b1f8c4fdb1d3",
+            "terminals": {
+              "1": [
+                -60.0,
+                50.0
+              ],
+              "2": [
+                -20.0,
+                50.0
+              ]
+            }
+          },
+          "vs": {
+            "object": "instance-4080a314-75fe-4cd0-9355-38abb8a33f49",
+            "terminals": {
+              "+": [
+                -80.0,
+                60.0
+              ],
+              "-": [
+                -80.0,
+                100.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -80.0,
+                60.0
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60.0,
+                50.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -80.0,
+              60.0
+            ],
+            [
+              -60.0,
+              50.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -80,
+                50
+              ]
+            ],
+            [
+              [
+                -80,
+                50
+              ],
+              [
+                -60,
+                50
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              -20.0,
+              0.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -80.0,
+                  -0.0
+                ],
+                [
+                  -60,
+                  0
+                ]
+              ],
+              [
+                [
+                  -60,
+                  0
+                ],
+                [
+                  -20.0,
+                  0.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -80.0,
+                  -0.0
+                ],
+                [
+                  -60,
+                  0
+                ]
+              ],
+              [
+                [
+                  -60,
+                  0
+                ],
+                [
+                  -20.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                -80,
+                0
+              ],
+              [
+                -60,
+                0
+              ]
+            ],
+            [
+              [
+                -60,
+                0
+              ],
+              [
+                -20,
+                0
+              ]
+            ],
+            [
+              [
+                -60,
+                0
+              ],
+              [
+                -60,
+                40
+              ]
+            ]
+          ]
+        },
+        "id": "ag-161",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "instance-74b2d997-a2bc-4188-8432-ef31c3a9bca8",
+            "terminals": {
+              "D": [
+                10.0,
+                -20.0
+              ],
+              "G": [
+                -20.0,
+                0.0
+              ],
+              "S": [
+                10.0,
+                20.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-517f3e3e-f48f-4dd7-8e50-447f0f4f4548",
+            "terminals": {
+              "1": [
+                -120.0,
+                0.0
+              ],
+              "2": [
+                -80.0,
+                -0.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-a2c7e8c1-b53f-4093-b9e0-1b55fd4b7e59",
+            "terminals": {
+              "+": [
+                -150.0,
+                20.0
+              ],
+              "-": [
+                -150.0,
+                60.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -150,
+                0
+              ],
+              [
+                -150.0,
+                20.0
+              ]
+            ],
+            [
+              [
+                -150,
+                0
+              ],
+              [
+                -120.0,
+                0.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -150.0,
+              20.0
+            ],
+            [
+              -120.0,
+              0.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -150,
+                20
+              ],
+              [
+                -150,
+                0
+              ]
+            ],
+            [
+              [
+                -150,
+                0
+              ],
+              [
+                -120,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "r1",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              200.0,
+              160.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  160.0,
+                  160.0
+                ],
+                [
+                  180,
+                  160
+                ]
+              ],
+              [
+                [
+                  180,
+                  160
+                ],
+                [
+                  200.0,
+                  160.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  160.0,
+                  160.0
+                ],
+                [
+                  180,
+                  160
+                ]
+              ],
+              [
+                [
+                  180,
+                  160
+                ],
+                [
+                  200.0,
+                  160.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net0",
+          "verified_ink_segments": [
+            [
+              [
+                160,
+                160
+              ],
+              [
+                180,
+                160
+              ]
+            ],
+            [
+              [
+                180,
+                160
+              ],
+              [
+                200,
+                160
+              ]
+            ],
+            [
+              [
+                230,
+                230
+              ],
+              [
+                180,
+                230
+              ]
+            ],
+            [
+              [
+                180,
+                230
+              ],
+              [
+                180,
+                160
+              ]
+            ]
+          ]
+        },
+        "id": "ag-265",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "instance-99bc513d-b528-453e-9d09-142bee9042e3",
+            "terminals": {
+              "D": [
+                230.0,
+                140.0
+              ],
+              "G": [
+                200.0,
+                160.0
+              ],
+              "S": [
+                230.0,
+                180.0
+              ]
+            }
+          },
+          "r1": {
+            "object": "instance-e91e22c2-ec03-4c36-a9b7-b740def8c30c",
+            "terminals": {
+              "1": [
+                120.0,
+                160.0
+              ],
+              "2": [
+                160.0,
+                160.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-2775313c-06bc-4f21-af82-477b53ac5f2e",
+            "terminals": {
+              "+": [
+                100.0,
+                180.0
+              ],
+              "-": [
+                100.0,
+                220.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net1",
+          "spanning_ink_segments": [
+            [
+              [
+                100,
+                160
+              ],
+              [
+                100.0,
+                180.0
+              ]
+            ],
+            [
+              [
+                100,
+                160
+              ],
+              [
+                120.0,
+                160.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              100.0,
+              180.0
+            ],
+            [
+              120.0,
+              160.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                100,
+                180
+              ],
+              [
+                100,
+                160
+              ]
+            ],
+            [
+              [
+                100,
+                160
+              ],
+              [
+                120,
+                160
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m9",
+            "continuous": true,
+            "point": [
+              40.0,
+              0.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -30.0,
+                  -0.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  40.0,
+                  0.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -30.0,
+                  -0.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  40.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                -30,
+                0
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                40,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                -20
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                20
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        },
+        "id": "ag-341",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m9": {
+            "object": "instance-dcbc8dfa-2c4a-48ce-8603-9436078f7d6e",
+            "terminals": {
+              "D": [
+                70.0,
+                20.0
+              ],
+              "G": [
+                40.0,
+                0.0
+              ],
+              "S": [
+                70.0,
+                -20.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-fe4fba32-5bd4-4bc9-9f21-f6187949dc2e",
+            "terminals": {
+              "1": [
+                -70.0,
+                0.0
+              ],
+              "2": [
+                -30.0,
+                -0.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-0166dc1d-b5f6-4681-b73f-8fdd8ab492b8",
+            "terminals": {
+              "+": [
+                -90.0,
+                20.0
+              ],
+              "-": [
+                -90.0,
+                60.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -90.0,
+                20.0
+              ]
+            ],
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -70.0,
+                0.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -90.0,
+              20.0
+            ],
+            [
+              -70.0,
+              0.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -90,
+                20
+              ],
+              [
+                -90,
+                0
+              ]
+            ],
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -70,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m9",
+            "continuous": true,
+            "point": [
+              90.0,
+              0.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -30.0,
+                  -0.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  90.0,
+                  0.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -30.0,
+                  -0.0
+                ],
+                [
+                  0,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  0
+                ],
+                [
+                  90.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                -30,
+                0
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                0
+              ],
+              [
+                90,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                -20
+              ],
+              [
+                0,
+                0
+              ]
+            ],
+            [
+              [
+                10,
+                70
+              ],
+              [
+                0,
+                70
+              ]
+            ],
+            [
+              [
+                0,
+                70
+              ],
+              [
+                0,
+                0
+              ]
+            ]
+          ]
+        },
+        "id": "ag-342",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m9": {
+            "object": "instance-f541aa24-c40a-436a-a853-02f1fde7b2d0",
+            "terminals": {
+              "D": [
+                120.0,
+                20.0
+              ],
+              "G": [
+                90.0,
+                0.0
+              ],
+              "S": [
+                120.0,
+                -20.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-2204acca-a918-4ad0-9ba6-35e5c0b10947",
+            "terminals": {
+              "1": [
+                -70.0,
+                0.0
+              ],
+              "2": [
+                -30.0,
+                -0.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-14643d39-610b-48ad-9500-5d3ffce8db87",
+            "terminals": {
+              "+": [
+                -90.0,
+                20.0
+              ],
+              "-": [
+                -90.0,
+                60.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net2",
+          "spanning_ink_segments": [
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -90.0,
+                20.0
+              ]
+            ],
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -70.0,
+                0.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -90.0,
+              20.0
+            ],
+            [
+              -70.0,
+              0.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -90,
+                20
+              ],
+              [
+                -90,
+                0
+              ]
+            ],
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -70,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              -20.0,
+              0.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -90.0,
+                  -0.0
+                ],
+                [
+                  -60,
+                  0
+                ]
+              ],
+              [
+                [
+                  -60,
+                  0
+                ],
+                [
+                  -20.0,
+                  0.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -90.0,
+                  -0.0
+                ],
+                [
+                  -60,
+                  0
+                ]
+              ],
+              [
+                [
+                  -60,
+                  0
+                ],
+                [
+                  -20.0,
+                  0.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "net1",
+          "verified_ink_segments": [
+            [
+              [
+                -90,
+                0
+              ],
+              [
+                -60,
+                0
+              ]
+            ],
+            [
+              [
+                -60,
+                0
+              ],
+              [
+                -20,
+                0
+              ]
+            ],
+            [
+              [
+                -60,
+                20
+              ],
+              [
+                -60,
+                0
+              ]
+            ]
+          ]
+        },
+        "id": "ag-461",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "instance-bd4026c4-157f-472c-80f2-b7d74bd0e233",
+            "terminals": {
+              "D": [
+                10.0,
+                -20.0
+              ],
+              "G": [
+                -20.0,
+                0.0
+              ],
+              "S": [
+                10.0,
+                20.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-2df72b47-9407-4451-a983-8d9a736d7c79",
+            "terminals": {
+              "1": [
+                -130.0,
+                0.0
+              ],
+              "2": [
+                -90.0,
+                -0.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-619642ab-b2ed-4fce-956f-689616707a49",
+            "terminals": {
+              "+": [
+                -170.0,
+                20.0
+              ],
+              "-": [
+                -170.0,
+                60.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -170,
+                0
+              ],
+              [
+                -170.0,
+                20.0
+              ]
+            ],
+            [
+              [
+                -170,
+                0
+              ],
+              [
+                -130.0,
+                0.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -170.0,
+              20.0
+            ],
+            [
+              -130.0,
+              0.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -170,
+                20
+              ],
+              [
+                -170,
+                0
+              ]
+            ],
+            [
+              [
+                -170,
+                0
+              ],
+              [
+                -130,
+                0
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m1",
+            "continuous": true,
+            "point": [
+              180.0,
+              230.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  130.0,
+                  230.0
+                ],
+                [
+                  150,
+                  230
+                ]
+              ],
+              [
+                [
+                  150,
+                  230
+                ],
+                [
+                  180.0,
+                  230.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  130.0,
+                  230.0
+                ],
+                [
+                  150,
+                  230
+                ]
+              ],
+              [
+                [
+                  150,
+                  230
+                ],
+                [
+                  180.0,
+                  230.0
+                ]
+              ]
+            ]
+          },
+          {
+            "admitted": false,
+            "card": "m2",
+            "continuous": false,
+            "point": [
+              340.0,
+              230.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": null,
+            "straight_horizontal": false,
+            "straight_ink_segments": null
+          },
+          {
+            "admitted": false,
+            "card": "m4",
+            "continuous": true,
+            "point": [
+              180.0,
+              120.0
+            ],
+            "resistor_between": true,
+            "same_row": false,
+            "spanning_ink_segments": [
+              [
+                [
+                  130.0,
+                  230.0
+                ],
+                [
+                  150,
+                  230
+                ]
+              ],
+              [
+                [
+                  150,
+                  120
+                ],
+                [
+                  150,
+                  170
+                ]
+              ],
+              [
+                [
+                  150,
+                  120
+                ],
+                [
+                  180.0,
+                  120.0
+                ]
+              ],
+              [
+                [
+                  150,
+                  170
+                ],
+                [
+                  150,
+                  230
+                ]
+              ]
+            ],
+            "straight_horizontal": false,
+            "straight_ink_segments": null
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                130,
+                230
+              ],
+              [
+                150,
+                230
+              ]
+            ],
+            [
+              [
+                150,
+                230
+              ],
+              [
+                180,
+                230
+              ]
+            ],
+            [
+              [
+                180,
+                120
+              ],
+              [
+                150,
+                120
+              ]
+            ],
+            [
+              [
+                150,
+                120
+              ],
+              [
+                150,
+                170
+              ]
+            ],
+            [
+              [
+                150,
+                170
+              ],
+              [
+                150,
+                230
+              ]
+            ],
+            [
+              [
+                160,
+                170
+              ],
+              [
+                150,
+                170
+              ]
+            ],
+            [
+              [
+                340,
+                230
+              ],
+              [
+                310,
+                230
+              ]
+            ]
+          ]
+        },
+        "id": "ag-477",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m1": {
+            "object": "instance-39f18434-bda1-4632-8586-7e4bc3826c21",
+            "terminals": {
+              "D": [
+                210.0,
+                210.0
+              ],
+              "G": [
+                180.0,
+                230.0
+              ],
+              "S": [
+                210.0,
+                250.0
+              ]
+            }
+          },
+          "m2": {
+            "object": "instance-c9f8d6a2-0f47-4e44-9b8a-c7ebd363bfde",
+            "terminals": {
+              "D": [
+                370.0,
+                210.0
+              ],
+              "G": [
+                340.0,
+                230.0
+              ],
+              "S": [
+                370.0,
+                250.0
+              ]
+            }
+          },
+          "m4": {
+            "object": "instance-50d4e429-d961-445c-9ba2-0512d55240d3",
+            "terminals": {
+              "D": [
+                210.0,
+                140.0
+              ],
+              "G": [
+                180.0,
+                120.0
+              ],
+              "S": [
+                210.0,
+                100.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-6a6a3c89-cf22-4238-a43b-0f2861963d95",
+            "terminals": {
+              "1": [
+                90.0,
+                230.0
+              ],
+              "2": [
+                130.0,
+                230.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-897fad09-f3b0-49b4-8ef2-b8ab7d05f944",
+            "terminals": {
+              "+": [
+                70.0,
+                250.0
+              ],
+              "-": [
+                70.0,
+                290.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                70,
+                230
+              ],
+              [
+                70.0,
+                250.0
+              ]
+            ],
+            [
+              [
+                70,
+                230
+              ],
+              [
+                90.0,
+                230.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              70.0,
+              250.0
+            ],
+            [
+              90.0,
+              230.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                70,
+                250
+              ],
+              [
+                70,
+                230
+              ]
+            ],
+            [
+              [
+                70,
+                230
+              ],
+              [
+                90,
+                230
+              ]
+            ]
+          ]
+        }
+      },
+      {
+        "card": "rs",
+        "complete_branch": true,
+        "gate_anchors": [
+          {
+            "admitted": true,
+            "card": "m2",
+            "continuous": true,
+            "point": [
+              80.0,
+              60.0
+            ],
+            "resistor_between": true,
+            "same_row": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -20.0,
+                  60.0
+                ],
+                [
+                  10,
+                  60
+                ]
+              ],
+              [
+                [
+                  10,
+                  60
+                ],
+                [
+                  80.0,
+                  60.0
+                ]
+              ]
+            ],
+            "straight_horizontal": true,
+            "straight_ink_segments": [
+              [
+                [
+                  -20.0,
+                  60.0
+                ],
+                [
+                  10,
+                  60
+                ]
+              ],
+              [
+                [
+                  10,
+                  60
+                ],
+                [
+                  80.0,
+                  60.0
+                ]
+              ]
+            ]
+          }
+        ],
+        "gate_net": {
+          "cache_segments_without_ink": [],
+          "net": "x",
+          "verified_ink_segments": [
+            [
+              [
+                -20,
+                60
+              ],
+              [
+                10,
+                60
+              ]
+            ],
+            [
+              [
+                10,
+                60
+              ],
+              [
+                80,
+                60
+              ]
+            ],
+            [
+              [
+                10,
+                20
+              ],
+              [
+                10,
+                60
+              ]
+            ]
+          ]
+        },
+        "id": "ag-478",
+        "source": "vin",
+        "source_geometry": {
+          "resistor_horizontal": true,
+          "source_ground_below": true,
+          "source_signal_at_or_below_resistor": true,
+          "source_vertical": true
+        },
+        "source_glyphs": {
+          "m2": {
+            "object": "instance-ff9c1cc6-aae0-4e56-9696-eed7b1b2f89c",
+            "terminals": {
+              "D": [
+                110.0,
+                40.0
+              ],
+              "G": [
+                80.0,
+                60.0
+              ],
+              "S": [
+                110.0,
+                80.0
+              ]
+            }
+          },
+          "rs": {
+            "object": "instance-dc9cce8d-6a51-4dd9-bdbf-54435c2a0601",
+            "terminals": {
+              "1": [
+                -60.0,
+                60.0
+              ],
+              "2": [
+                -20.0,
+                60.0
+              ]
+            }
+          },
+          "vin": {
+            "object": "instance-22d3ebbe-2eb9-47d5-b0df-40c82dfc7df5",
+            "terminals": {
+              "+": [
+                -80.0,
+                80.0
+              ],
+              "-": [
+                -80.0,
+                120.0
+              ]
+            }
+          }
+        },
+        "source_leg": {
+          "cache_segments_without_ink": [],
+          "continuous": true,
+          "net": "net0",
+          "spanning_ink_segments": [
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -80.0,
+                80.0
+              ]
+            ],
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -60.0,
+                60.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -80.0,
+              80.0
+            ],
+            [
+              -60.0,
+              60.0
+            ]
+          ],
+          "verified_ink_segments": [
+            [
+              [
+                -80,
+                80
+              ],
+              [
+                -80,
+                60
+              ]
+            ],
+            [
+              [
+                -80,
+                60
+              ],
+              [
+                -60,
+                60
+              ]
+            ]
+          ]
+        }
+      }
+    ],
+    "source_sha256": {
+      "ag-1082.cir": "bbbd5f28babf479e9ded5446118c379d01f04ef3752acc6eef3c6ad70b65dbee",
+      "ag-1082.human.json": "65075a0233cb2f62af1155a46b1092bc56bbdf98ee64115e21b12bffaeebd8d5",
+      "ag-1082.svg": "f72d384778c61499a67ca7613884ec6e3e5452d598db51e658b1d4ea8d5a8353",
+      "ag-1083.cir": "48be8b0ac091c5ca2d59f59d9a2007d2a147b30759389758e1f7a4f427c043f8",
+      "ag-1083.human.json": "6fc559cbfbfe16bb74dc3abb34f81ed47e9c18845c8081ee3d5374512d592360",
+      "ag-1083.svg": "9f1cdb92a3906d5c1842221e8b788632b0184a1b182db647d77009e682b4466e",
+      "ag-1084.cir": "3f3808495c55b6adfb3cd95a7bb0dfcd0277295778657821afef56c1787fa33e",
+      "ag-1084.human.json": "ef7e48b4b7abd920ad079a4a0c434f7187450761beda05c3caf96f0a8796b882",
+      "ag-1084.svg": "8f7987098b98cb8ce9e5e035b073143a9749bb5df6833b1860dae59275c5a88a",
+      "ag-161.cir": "ac9b1517cff8d850d1bb3dddc970c032e5a84543c59b0547f50890d78d388b84",
+      "ag-161.human.json": "f57b8da1e56b6f8c576834acf8c54363a936dadf57cc25c765909ff510d49390",
+      "ag-161.svg": "2eb412b6f0976af39fa4e2300e53ec77c3d2c80bb400c88486aeb044e3e405a9",
+      "ag-265.cir": "906a372bab5583c97d726dbd6be6927ea23c46dfffd32112640f51afcb72bc55",
+      "ag-265.human.json": "1fe2e7d0abd2ca0fa8c585e64e85faf474adb91dbe778216c90e94cb4521b364",
+      "ag-265.svg": "ac7d809a40c4323125be7aaf59050bfe730c62956c739285b3b147be4490b127",
+      "ag-341.cir": "a8514b1d5a5d5805f64ed9ba99e2fd78d2585a023a81f75d00e3e209b3cc76c3",
+      "ag-341.human.json": "f848f9937562ccdb38dfad6270f56d00aa7bbda284a053839ada32fb7a5f2a7d",
+      "ag-341.svg": "dd9c23116dae456bb0c5fec0265a60f695f2023407452053208fdab2319533ec",
+      "ag-342.cir": "a0b21a1f1d4a753285d03b17bfc25a5b0246b89bd7482e935e4fae9ee0b367b8",
+      "ag-342.human.json": "a196c9599050720af6731b1d5f8b825f38b0b7df3a163830949aefa7f9faca35",
+      "ag-342.svg": "d47495626dde016c49b2351db34cd65702ba8a64c1363d4d91313551587f81a3",
+      "ag-461.cir": "88e22177efed1a526c2163041f6e2771151610a1a0416e8fcb44c79ef6d0f541",
+      "ag-461.human.json": "d9b45de25fb9d4305da4bc77c5d23ffef9e5508764e7ccf0bca46e227ead3649",
+      "ag-461.svg": "79b775fb4ebd022e52e43fea3c8d06fca39c19c561eb7f9deff67797f8f1b240",
+      "ag-477.cir": "ed3325de425c2cf146d8c2283d598c283893826de5b7b55aa222a2ac86b72bd3",
+      "ag-477.human.json": "9c46422e05bf29122af9444a7c46071700915e7e5df88ca15c33216e91889e41",
+      "ag-477.svg": "7e82c33e965effbb34aaa3866edd215c18a42532c585194fa45a63df61ec3c78",
+      "ag-478.cir": "cdeef12f5656f67ae8d1386c0996ea13b4e3f914b68f1c1675ffd5bc04babc67",
+      "ag-478.human.json": "bf4197f28929f7337f173d3edbc7e3b81ce30ea0e477eba53943a0ae97c153e4",
+      "ag-478.svg": "e9919717fbc3aa3b5f792ac7ccf3b4f9dcb56cabc9526fd742801f00566bb731"
+    },
+    "summary": {
+      "admitted_anchors": [
+        "ag-1082:rs:m2",
+        "ag-1083:rs:m2",
+        "ag-1084:rs:m2",
+        "ag-161:rs:m1",
+        "ag-265:r1:m1",
+        "ag-341:rs:m9",
+        "ag-342:rs:m9",
+        "ag-461:rs:m1",
+        "ag-477:rs:m1",
+        "ag-478:rs:m2"
+      ],
+      "cache_only_segments": 0,
+      "complete_branch": [
+        "ag-1082:rs",
+        "ag-1083:rs",
+        "ag-1084:rs",
+        "ag-161:rs",
+        "ag-265:r1",
+        "ag-341:rs",
+        "ag-342:rs",
+        "ag-461:rs",
+        "ag-477:rs",
+        "ag-478:rs"
+      ],
+      "disconnected_anchors": [
+        "ag-477:rs:m2"
+      ],
+      "names": [
+        "ag-1082:rs",
+        "ag-1083:rs",
+        "ag-1084:rs",
+        "ag-161:rs",
+        "ag-265:r1",
+        "ag-341:rs",
+        "ag-342:rs",
+        "ag-461:rs",
+        "ag-477:rs",
+        "ag-478:rs"
+      ],
+      "off_row_anchors": [
+        "ag-477:rs:m4"
+      ],
+      "same_anchor_straight_gate": [
+        "ag-1082:rs",
+        "ag-1083:rs",
+        "ag-1084:rs",
+        "ag-161:rs",
+        "ag-265:r1",
+        "ag-341:rs",
+        "ag-342:rs",
+        "ag-461:rs",
+        "ag-477:rs",
+        "ag-478:rs"
+      ],
+      "source_leg_connected": [
+        "ag-1082:rs",
+        "ag-1083:rs",
+        "ag-1084:rs",
+        "ag-161:rs",
+        "ag-265:r1",
+        "ag-341:rs",
+        "ag-342:rs",
+        "ag-461:rs",
+        "ag-477:rs",
+        "ag-478:rs"
+      ],
+      "verified_terminals": 76
+    }
+  }
+}
