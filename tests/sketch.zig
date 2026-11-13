@@ -844,8 +844,9 @@ test "sketch: three pins are joined with the least wire that leaves each the way
     // the transistor's source. A pin is an end of its wire, which leaves
     // it the way the pin faces (87,922 of 93,770 pins of wired nets that
     // are no rail in 5,263 hand-drawn schematics), so the branch stands
-    // off that tip by a quarter unit at the least: that much more wire,
-    // and no more.
+    // off that tip: a tap out (trunk.5, `Layout.tap`), the block's input
+    // being level with the tip (library.8), whose row is no track. That
+    // much more wire, and no more.
     // The block is held right of the stack (`order`), its pin toward the
     // junction: facing away, no wire reaches that length.
     // The junction's net is on the block's lower input: its two inputs
@@ -886,7 +887,8 @@ test "sketch: three pins are joined with the least wire that leaves each the way
     while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
         wire += @intCast(@abs(b.x - a.x) + @abs(b.y - a.y));
     };
-    try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y + @divExact(lib.unit, 4), wire);
+    const tap: i32 = @intFromFloat(@ceil((np.config.Layout{}).tap * @as(f32, @floatFromInt(lib.unit))));
+    try std.testing.expectEqual(hi.x - lo.x + hi.y - lo.y + tap, wire);
     try std.testing.expectEqual(0, pinsOffEnd(&p, lib, net));
     try support.expectConnected(&p, lib);
 }
@@ -1071,7 +1073,10 @@ test "sketch: a tall block stands beside the stack it joins, not between its row
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
     const tap: i32 = @intFromFloat(@ceil((np.config.Layout{}).tap * @as(f32, @floatFromInt(lib.unit))));
-    try std.testing.expectEqual(tap, pinOf(&p, "ch", 0).y - pinOf(&p, "x1", 3).y);
+    // The junction's wire leaves the follower's source a tap down (trunk.13:
+    // the block's input is level with the source's tip, library.8, and a
+    // pin's tip is no track), and the capacitor stands a tap under it.
+    try std.testing.expectEqual(2 * tap, pinOf(&p, "ch", 0).y - pinOf(&p, "x1", 3).y);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
@@ -1399,7 +1404,9 @@ test "sketch: a bias whose one wire would cross another net's ends in ports" {
     // Oracle: the hand drawings. A bias's wire crosses no other net's in
     // 3,926 of 4,080 wired bias nets (5,263 schematics); the person drew
     // this Colpitts core (ar-6385) with no crossing. The engine's one wire
-    // for the base (`vb`, a bias by its name) crossed another net's.
+    // for the base (`vb`, a bias by its name) crossed another net's. Its
+    // coils are drawn as resistors: an inductor off the rails lies flat
+    // (forms.19), out of the columns the core stood in.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1409,8 +1416,8 @@ test "sketch: a bias whose one wire would cross another net's ends in ports" {
         \\Colpitts
         \\.model qnpn npn
         \\C vc vb 1p
-        \\L1 vc net0 1n
-        \\L2 net0 vb 1n
+        \\R1 vc net0 1k
+        \\R2 net0 vb 1k
         \\Q1 vc vb net0 vss qnpn
         \\
     ;
