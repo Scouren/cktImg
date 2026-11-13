@@ -56,18 +56,18 @@
 //!   its middle, never a written name (a name at its first pin only when no
 //!   stub fits at the middle). People: a port symbol on 197 of 264 such
 //!   gate lines in 5,263 hand-drawn schematics. `ported`
-//! - wires.12 (habit) An input's or a bias's pins standing near each other
-//!   (the box round them no more than 6 units around half) are one wire
-//!   with one port at a free end. People wire 87% of their inputs of two
-//!   pins or more to one symbol and cut a connection past 5.5 to 7.5
-//!   units (5,274 drawings). `near`
-//!   Narrowing: one cut for every pin kind; per-edge cuts (gate to gate 3,
-//!   gate to other 5.5, other 7.5) once the pitch is the human one.
-//! - wires.13 (habit) An input or a bias whose pins stand farther apart, or
-//!   whose wire has no free end for its port, has a port on a stub at each
-//!   pin; a bias is never a written name. People: of 4,378 nets named
-//!   `vb*` or `bias*` in 5,263 hand-drawn schematics, 3,228 carry port
-//!   symbols and none a written name. `ported`
+//! - wires.12 (habit) An input's or a bias's pins fall into parts as a net
+//!   joined by name does (wires.17), and each part of two pins or more is
+//!   one wire with one port at a free end. People: 1,818 of 2,208 bias
+//!   nets and 914 of 1,319 input nets of two pins or more are drawn in
+//!   exactly those parts, and 8,089 of the 8,819 pins the rule wires are
+//!   wired (5,263 hand-drawn schematics). `ported`
+//! - wires.13 (habit) A pin of an input or a bias alone in its part, and
+//!   each pin of a part no trunk fits or whose wire has no free end for
+//!   its port, has a port on a stub; a bias is never a written name.
+//!   People: 2,468 of the 3,097 pins the rule leaves alone stand alone;
+//!   of 4,378 nets named `vb*` or `bias*` in 5,263 hand-drawn schematics,
+//!   3,228 carry port symbols and none a written name. `parts`
 //! - wires.14 (choice) Any other net takes the first pattern that fits: a
 //!   ladder, then a column or a trunk (`trunk.zig`); one no pattern fits
 //!   is routed (`routes.zig`) after every pattern: a pattern is the shape
@@ -81,9 +81,10 @@
 //!   line pins, carries its name once, at its top-left pin: the name
 //!   joins it to its sources drawn apart, and card order chooses nothing.
 //!   `wire`
-//! - wires.17 (habit) A net joined by name falls into parts, each pin no
-//!   farther from another of its part (along x plus along y) than 15, 11
-//!   or 6 half units as neither, one or both of the two face sideways.
+//! - wires.17 (habit) A net drawn in parts (one joined by name, an input,
+//!   a bias) falls into them so: each pin no farther from another of its
+//!   part (along x plus along y) than 15, 11 or 6 half units as neither,
+//!   one or both of the two face sideways.
 //!   People: fitted on the connections people wire and name in 5,274
 //!   hand-drawn schematics (93.6% of nets right on those held out).
 //!   `within`
@@ -122,23 +123,16 @@ const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const topLeft = canvas.topLeft;
 
-/// The half perimeter, in units, of the box around an input's pins up to
-/// which they are wired to one port; farther apart, each pin gets a port.
-/// People wire 87% of their inputs of two pins or more to one symbol and
-/// cut a connection past 5.5 to 7.5 units (5,274 drawings).
-// ponytail: one cut for every pin kind; per-edge cuts (gate to gate 3,
-// gate to other 5.5, other 7.5) once the pitch is the human one.
-const input_reach = 6;
-
 /// The longest stub from a rail pin to its bar, in units: a pin farther
 /// from the bar carries a symbol of its own. Of 9,149 upright supply runs
 /// in 5,263 hand-drawn schematics, 97% are no longer.
 const rail_reach = 2;
 
-/// The longest connection kept as wire in a net joined by name, in half
-/// units, by how many of its two pins face sideways (a gate, a base):
-/// neither, one, both. Fitted on the connections people wire and name in
-/// 5,274 hand-drawn schematics (93.6% of nets right on those held out).
+/// The longest connection kept as wire in a net drawn in parts (one joined
+/// by name, an input, a bias), in half units, by how many of its two pins
+/// face sideways (a gate, a base): neither, one, both. Fitted on the
+/// connections people wire and name in 5,274 hand-drawn schematics (93.6%
+/// of nets right on those held out).
 const cut = [3]u32{ 15, 11, 6 };
 
 /// What a net is drawn as by its role, in the order the kinds are drawn.
@@ -228,7 +222,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             continue;
         }
         if (style == .cut) {
-            try parts(&c, net, pins);
+            _ = try parts(&c, net, pins);
             s.labeled[net] = true;
             continue;
         }
@@ -337,12 +331,16 @@ fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u
     }
 }
 
-/// A net joined by name between its parts: the pins standing near each
-/// other (each within `cut` of another of its part) on one trunk with one
-/// name; a pin on its own, or a part no trunk fits, a name at each pin.
-fn parts(c: *Canvas, net: u32, pins: []const u32) !void {
+/// A net drawn in parts: the pins standing near each other (each within
+/// `cut` of another of its part) on one trunk with the net's mark at a free
+/// end; a pin on its own, or a part no trunk fits, the mark at each pin.
+/// The mark is a port for a net driven from outside (an input, a bias) and
+/// the net's name for any other. Whether the net is one wire.
+fn parts(c: *Canvas, net: u32, pins: []const u32) !bool {
     assert(pins.len >= 1);
     const gpa = c.gpa;
+    const role = c.s.roles[net];
+    const port = Drawn.of(role) == .port;
     // Each pin's part: the least index of a pin in it.
     const part = try gpa.alloc(u32, pins.len);
     defer gpa.free(part);
@@ -362,10 +360,12 @@ fn parts(c: *Canvas, net: u32, pins: []const u32) !void {
             merged = true;
         };
     }
-    // One part is the whole net, the wire that crossed too much: names.
-    if (std.mem.allEqual(u32, part, 0)) {
+    // A net joined by name that is all one part is the wire that crossed
+    // too much: names.
+    var whole = std.mem.allEqual(u32, part, 0);
+    if (whole and !port) {
         for (pins) |p| try c.labelAt(p);
-        return;
+        return false;
     }
     var members: std.ArrayList(u32) = .empty;
     defer members.deinit(gpa);
@@ -375,9 +375,12 @@ fn parts(c: *Canvas, net: u32, pins: []const u32) !void {
             if (of == g) try members.append(gpa, p);
         }
         if (members.items.len == 0) continue;
-        if (members.items.len >= 2 and try trunk.draw(c, net, members.items, .name)) continue;
-        for (members.items) |p| try c.labelAt(p);
+        // A bias's port stands where a name would, on a name's stub.
+        if (members.items.len >= 2 and try trunk.draw(c, net, members.items, if (role == .input) .port else .name)) continue;
+        for (members.items) |p| if (port) try terminal(c, p) else try c.labelAt(p);
+        whole = false;
     }
+    return whole;
 }
 
 /// Whether two pins of a net stand near enough to stay wired when the net
@@ -388,15 +391,6 @@ fn within(c: *const Canvas, p: u32, q: u32) bool {
     const sides = c.s.pins.items(.side);
     const sideways = @as(usize, @intFromBool(sides[p].isHorizontal())) + @intFromBool(sides[q].isHorizontal());
     return 2 * (@abs(a.x - b.x) + @abs(a.y - b.y)) <= cut[sideways] * @as(u32, @intCast(c.len.unit));
-}
-
-/// Whether an input's pins stand near enough to share one wire and one
-/// port: the box around them no more than `input_reach` units around half.
-fn near(c: *const Canvas, pins: []const u32) bool {
-    assert(pins.len >= 1);
-    var box: Rect = .point(pinAt(c.s, pins[0]));
-    for (pins[1..]) |p| box = box.merge(.point(pinAt(c.s, p)));
-    return box.max.x - box.min.x + box.max.y - box.min.y <= input_reach * c.len.unit;
 }
 
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
@@ -532,12 +526,15 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     s.labeled[net] = true;
 }
 
-/// A net driven from outside (an input, a bias). Pins standing near each
-/// other: one trunk, one port out from a free end. Else a port on a stub at
-/// each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in
-/// 5,263 hand-drawn schematics, 3,228 carry port symbols and none a written
-/// name. Before either, a bias of two gates of one row facing each other:
-/// a gate line between them, named at its middle.
+/// A net driven from outside (an input, a bias), in parts as a net joined
+/// by name is (`parts`): the pins standing near each other on one trunk
+/// with one port out from a free end, a pin on its own a port on a stub.
+/// People draw 1,818 of 2,208 bias nets and 914 of 1,319 input nets of two
+/// pins or more in exactly those parts, and wire 8,089 of the 8,819 pins
+/// the rule wires (5,263 hand-drawn schematics); of 4,378 nets named `vb*`
+/// or `bias*`, 3,228 carry port symbols and none a written name. Before
+/// that, a bias of two gates of one row facing each other: a gate line
+/// between them, named at its middle.
 fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
     const s = c.s;
     assert(pins.len >= 1);
@@ -558,11 +555,9 @@ fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
             return;
         }
     }
-    // A bias's port stands where a name would, on a name's stub.
-    if (pins.len >= 2 and near(c, pins) and try trunk.draw(c, net, pins, if (bias) .name else .port)) return;
-    for (pins) |p| try terminal(c, p);
-    // A bias's ports are its name written out: it is drawn with labels.
-    if (bias) s.labeled[net] = true;
+    // A bias's ports are its name written out: in more pieces than one it
+    // is drawn with labels.
+    if (!try parts(c, net, pins) and bias) s.labeled[net] = true;
 }
 
 /// An internal net whose pins all face each other in pairs along rows, one

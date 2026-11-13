@@ -614,10 +614,10 @@ test "sketch: a bias gate carries a port symbol, not a written name" {
 }
 
 test "sketch: a bias net's pins standing near each other share one wire and one port" {
-    // Oracle: how people draw it. Of 215 bias nets whose pins stand within
-    // six units around half in 5,263 hand-drawn schematics, 187 are one
-    // wire with one port. A drain node a DC source holds (a bias by R2)
-    // stays the wire between the transistor and its load.
+    // Oracle: how people draw it. Of the 5,749 pins of bias nets that stand
+    // near another pin of their net (wires.17's reach) in 5,263 hand-drawn
+    // schematics, 5,400 are wired to it. A drain node a DC source holds (a
+    // bias by R2) stays the wire between the transistor and its load.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -954,9 +954,10 @@ test "sketch: a lone drain comes straight down to the row of the gate it drives"
 }
 
 test "sketch: an input's pins standing near each other share one wire and one port" {
-    // Oracle: how people draw it. Of 3,400 input nets of two pins or more
-    // in 5,274 hand-drawn schematics, 87% carry one port symbol with the
-    // pins wired; the inverter's two gates on `in` are the plainest case.
+    // Oracle: how people draw it. Of the 3,070 pins of input nets that
+    // stand near another pin of their net (wires.17's reach) in 5,263
+    // hand-drawn schematics, 2,689 are wired to it; the inverter's two
+    // gates on `in` are the plainest case.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -977,6 +978,63 @@ test "sketch: an input's pins standing near each other share one wire and one po
     var ports: usize = 0;
     for (p.dev_name, 0..) |n, d| ports += @intFromBool(n.len == 0 and p.pin_net[p.pinRange(d)[0]] == net);
     try std.testing.expectEqual(1, ports);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: an input's pins fall into parts: those standing near share a wire and a port, one far off has its own" {
+    // Oracle: how people draw it. An input's pins fall into parts as a net
+    // joined by name does (a pin within wires.17's reach of another joins
+    // its part): 914 of 1,319 input nets and 1,818 of 2,208 bias nets of
+    // two pins or more are drawn in exactly those parts in 5,263
+    // hand-drawn schematics, and 8,089 of the 8,819 pins the rule wires
+    // are wired. One cut on the box round all the pins gave every pin of
+    // this net a port: people draw that in 254 of the 1,319.
+    // The first stage's two gates stand in one column; the last stage's
+    // gate on the same input stands four stages away.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Chain
+        \\.model nch nmos
+        \\.model pch pmos
+        \\M1 a in vdd vdd pch
+        \\M2 a in 0 0 nch
+        \\M3 b a vdd vdd pch
+        \\M4 b a 0 0 nch
+        \\M5 c b vdd vdd pch
+        \\M6 c b 0 0 nch
+        \\M7 d c vdd vdd pch
+        \\M8 d c 0 0 nch
+        \\M9 out d x 0 nch
+        \\M10 x in 0 0 nch
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "in")) break i;
+    } else unreachable;
+    // The places the count is made from: the two gates near, the third far.
+    const g1 = pinOf(&p, "m1", 1);
+    const g2 = pinOf(&p, "m2", 1);
+    const g10 = pinOf(&p, "m10", 1);
+    try std.testing.expect(@abs(g1.x - g2.x) + @abs(g1.y - g2.y) <= 3 * lib.unit);
+    try std.testing.expect(@abs(g10.x - g1.x) > 3 * lib.unit and @abs(g10.x - g2.x) > 3 * lib.unit);
+    var ports: usize = 0;
+    for (p.dev_name, 0..) |n, d| ports += @intFromBool(n.len == 0 and p.pin_net[p.pinRange(d)[0]] == net);
+    try std.testing.expectEqual(2, ports);
+    // The near gates are on one wire: it leaves each, and no port stands
+    // on either gate's own stub.
+    try std.testing.expectEqual(0, pinsOffEnd(&p, lib, net));
+    var wire: i32 = 0;
+    var it = p.segments(net);
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        wire += @intCast(@abs(b.x - a.x) + @abs(b.y - a.y));
+    };
+    try std.testing.expect(wire >= @abs(g1.y - g2.y));
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
