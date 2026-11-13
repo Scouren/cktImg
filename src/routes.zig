@@ -11,11 +11,13 @@
 //!   Narrowing: only when the axis falls on the grid, every pin off it has
 //!   its mirror image, and every pin on it faces along the spine from its
 //!   end; else the net is routed as any other.
-//! - routes.2 (unmeasured) A net's mirror mate is drawn as the mirror
-//!   image of the net's wires (the cross-coupled pair's X: each output
-//!   runs to the opposite gates). `mirrored`
+//! - routes.2 (habit) A net's mirror mate is drawn as the mirror image
+//!   of the net's wires (the cross-coupled pair's X: each output runs to
+//!   the opposite gates), whatever drew the net: a pattern of `wires.zig`
+//!   or the router. People: 1,070 of 1,112 pairs of nets whose pins are
+//!   each other's mirror image (5,263 hand-drawn schematics). `mirrored`
 //!   Narrowing: only when every pin of the net was joined and the mate's
-//!   pins are its pins' images; else the mate is routed on its own.
+//!   pins are its pins' images; else the mate is drawn on its own.
 //! - routes.3 (choice) A routed net grows from its topmost (then leftmost)
 //!   pin, the unjoined pin nearest a joined one next (the upper on a tie),
 //!   each by the cheapest path to the net's wires so far: one fixed order,
@@ -31,6 +33,7 @@
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
+//! - `pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -120,6 +123,25 @@ pub fn port(c: *Canvas, net: u32) !void {
             try c.port(net, from.?, if (right) .right else .left);
         }
     }
+}
+
+/// The mate drawn as the mirror image of the net's wires from segment
+/// `from` on. False, with nothing drawn, unless the mate's pins are the
+/// net's pins' images and every piece fits.
+pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool {
+    if (pins.len != mate_pins.len) return false;
+    for (mate_pins) |q| if (image(c.s, pins, q, axis2) == null) return false;
+    const segs = try c.gpa.dupe(maze.Wire, c.segs.items[from..]);
+    defer c.gpa.free(segs);
+    const cp = c.save();
+    for (segs) |g| {
+        assert(g.net == net);
+        if (!try c.commit(mate, &.{ flip(g.a, axis2), flip(g.b, axis2) })) {
+            c.restore(cp);
+            return false;
+        }
+    }
+    return true;
 }
 
 // ---- private ----
@@ -249,25 +271,6 @@ fn spineAndImage(c: *Canvas, net: u32, pins: []const u32, from: usize, axis: i32
     for (half) |g| {
         if (g.a.x == axis and g.b.x == axis) continue;
         if (!try c.commit(net, &.{ flip(g.a, 2 * axis), flip(g.b, 2 * axis) })) return false;
-    }
-    return true;
-}
-
-/// The mate drawn as the mirror image of the net's wires from segment
-/// `from` on. False, with nothing drawn, unless the mate's pins are the
-/// net's pins' images and every piece fits.
-fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool {
-    if (pins.len != mate_pins.len) return false;
-    for (mate_pins) |q| if (image(c.s, pins, q, axis2) == null) return false;
-    const segs = try c.gpa.dupe(maze.Wire, c.segs.items[from..]);
-    defer c.gpa.free(segs);
-    const cp = c.save();
-    for (segs) |g| {
-        assert(g.net == net);
-        if (!try c.commit(mate, &.{ flip(g.a, axis2), flip(g.b, axis2) })) {
-            c.restore(cp);
-            return false;
-        }
     }
     return true;
 }

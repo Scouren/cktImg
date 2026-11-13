@@ -212,9 +212,15 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     // wire joins the source drawn apart under that name.
     var named: std.ArrayList(u32) = .empty;
     defer named.deinit(gpa);
+    // The nets drawn so far: a mate drawn as its net's mirror image is not
+    // drawn again.
+    const drawn = try gpa.alloc(bool, n_nets);
+    defer gpa.free(drawn);
+    @memset(drawn, false);
     for (order) |net| {
         const pins = pins_of[net].items;
-        if (pins.len == 0) continue;
+        if (pins.len == 0 or drawn[net]) continue;
+        drawn[net] = true;
         const axis2: ?i32 = if (mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
         const style = lines.style[net];
         if (routed[net]) {
@@ -247,7 +253,20 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
             },
-            .wire => if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net),
+            .wire => {
+                const from = c.segs.items.len;
+                const pin_from = s.pins.len;
+                if (!try patterned(&c, net, pins, axis2, style)) {
+                    try waiting.append(gpa, net);
+                    continue;
+                }
+                // Its mirror mate as the mirror image of its wire (routes.2;
+                // people 1,070 of 1,112 pairs).
+                const m = mirror orelse continue;
+                const mate = m.net_mate[net];
+                if (mate == sch.none or mate == net or drawn[mate] or routed[mate] or lines.style[mate] != style or Drawn.of(s.roles[mate]) != .wire) continue;
+                drawn[mate] = try mirrorMate(&c, net, mate, pins, pins_of[mate].items, from, pin_from, m.axis2);
+            },
         }
     }
     try routes.draw(&c, waiting.items, pins_of, mirror);
@@ -271,6 +290,23 @@ fn drawStep(role: Role, n_pins: usize) u8 {
         .port => if (n_pins == 1) 1 else 3,
         .wire => 2,
     };
+}
+
+/// `net`'s mate drawn as the mirror image of what `net` drew from segment
+/// `seg_from` and pin `pin_from` on: its wire, then its symbols and names
+/// (routes.2). False, with nothing drawn, when the mate's pins are not the
+/// images of `pins` or its wire does not fit.
+fn mirrorMate(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, seg_from: usize, pin_from: usize, axis2: i32) !bool {
+    if (!try routes.mirrored(c, net, mate, pins, mate_pins, seg_from, axis2)) return false;
+    const s = c.s;
+    // The leaves `net` drew: a pin of no device on the net.
+    for (pin_from..s.pins.len) |p| {
+        const pin = s.pins.get(p);
+        if (pin.device != sch.none or pin.net != net) continue;
+        const at = pinAt(s, @intCast(p));
+        try c.leaf(s.nodes.items(.kind)[pin.home], mate, .{ .x = axis2 - at.x, .y = at.y }, pin.side.flipX());
+    }
+    return true;
 }
 
 /// Draws route or via `r` of a net with pins `pins`, whole or not at all: a

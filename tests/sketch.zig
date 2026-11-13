@@ -1156,6 +1156,61 @@ test "sketch: two gates facing on a row are joined straight, whatever row the tr
 }
 
 
+test "sketch: a net's mirror mate is drawn as the mirror image of its wire, whatever pattern drew it" {
+    // Oracle: the hand drawings. Of 1,112 pairs of nets whose pins are each
+    // other's mirror image, people draw 1,070 with one wire the mirror image
+    // of the other (5,263 schematics); this amplifier is ag-331. The mate of
+    // a net a trunk drew was drawn on its own, not as the image.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck =
+        \\Amplifier
+        \\.model nch nmos
+        \\.model pch pmos
+        \\ISS net0 vss 0.5m
+        \\M1 net1 vin1 net0 vss nch
+        \\M2 net2 vin2 net0 vss nch
+        \\M3 net1 net1 vdd vdd pch
+        \\M4 net2 net2 vdd vdd pch
+        \\M5 vout1 net1 vdd vdd pch
+        \\M6 vout2 net2 vdd vdd pch
+        \\M7 vout1 vb vss vss nch
+        \\M8 vout2 vb vss vss nch
+        \\
+    ;
+    const p = try draw(arena, lib, &.{deck}, .{});
+    const axis2 = pinOf(&p, "m1", 0).x + pinOf(&p, "m2", 0).x;
+    const Seg = [4]i32;
+    for ([_][2][]const u8{ .{ "net1", "net2" }, .{ "vout1", "vout2" } }) |pair| {
+        var sets: [2]std.ArrayList(Seg) = .{ .empty, .empty };
+        for (pair, &sets, 0..) |name, *set, k| {
+            const net = for (p.net_name, 0..) |n, i| {
+                if (std.mem.eql(u8, n, name)) break i;
+            } else unreachable;
+            var it = p.segments(net);
+            while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+                // The first net's segments flipped about the axis.
+                const ax = if (k == 0) axis2 - a.x else a.x;
+                const bx = if (k == 0) axis2 - b.x else b.x;
+                try set.append(arena, .{ @min(ax, bx), @min(a.y, b.y), @max(ax, bx), @max(a.y, b.y) });
+            };
+            std.mem.sort(Seg, set.items, {}, struct {
+                fn lt(_: void, x: Seg, y: Seg) bool {
+                    return std.mem.lessThan(i32, &x, &y);
+                }
+            }.lt);
+        }
+        try std.testing.expectEqualSlices(Seg, sets[1].items, sets[0].items);
+    }
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+
 test "sketch: a bias gate line carries a port hanging from its middle, not a written name" {
     // Oracle: the hand drawings. Of 264 bias nets of two facing gates in
     // the 5,263 reference drawings, 197 carry a port symbol; the engine
