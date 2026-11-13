@@ -166,10 +166,9 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         if (h.verb != .upright and h.verb != .bridge) continue;
         verdicts[i] = .of(for (h.args) |name| {
             const d = (nl.device(name) orelse break .unknown_name).index();
-            const pins = c.members(EdgeId.from(d));
-            const path = device.of(kinds[d]).path orelse break .not_placeable;
+            const a, const b = nl.path(EdgeId.from(d)) orelse break .not_placeable;
             const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
-            if (!drawn[d] or !takes or pins.len <= path[1] or pins[path[0]] == pins[path[1]]) break .not_placeable;
+            if (!drawn[d] or !takes or a == b) break .not_placeable;
         } else if (h.args.len == 0) .bad_args else .ok);
         if (verdicts[i].?.state != .honoured) continue;
         for (h.args) |name| form[nl.device(name).?.index()] = if (h.verb == .upright) .vertical else .horizontal;
@@ -403,9 +402,11 @@ pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32 {
     return null;
 }
 
-/// A device of `kind` that `upright` and `bridge` take: a part
+/// A device of `kind` that `upright` and `bridge` take, and that the
+/// op-amp placement stands as a part (`opamp.zig`): a part
 /// (`device.isPart`), two pins the current passes through. Narrowing: no
-/// controlled source (E, G, F, H), which the general form admits.
+/// controlled source (E, G, F, H), which the general form admits; a
+/// circuit with one stays on the lattice.
 pub fn twoPin(kind: DeviceKind) bool {
     return device.isPart(kind) and device.of(kind).source != .controlled;
 }

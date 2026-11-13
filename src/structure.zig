@@ -125,12 +125,12 @@ const Fet = struct {
     polarity: Polarity,
     kind: DeviceKind,
 
-    /// The terminal current enters by: an n-type's drain, a p-type's source.
+    /// The terminal current enters by (`device.sourceUp`).
     fn upper(f: Fet) u32 {
-        return if (f.polarity == .p) f.source else f.drain;
+        return if (device.sourceUp(f.polarity)) f.source else f.drain;
     }
     fn lower(f: Fet) u32 {
-        return if (f.polarity == .p) f.drain else f.source;
+        return if (device.sourceUp(f.polarity)) f.drain else f.source;
     }
     fn sameType(f: Fet, o: Fet) bool {
         return f.kind == o.kind and f.polarity == o.polarity;

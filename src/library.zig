@@ -33,6 +33,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 
 pub const DeviceKind = netlist.DeviceKind;
 
@@ -393,9 +394,9 @@ pub const Library = struct {
         var buf: [16]u8 = undefined;
         const name = std.fmt.bufPrint(&buf, "generic{d}", .{pins}) catch unreachable;
         if (self.find(name)) |id| return id;
-        var terms: [netlist_max_pins]Terminal = undefined;
-        var names: [netlist_max_pins][2]u8 = undefined;
-        const n = @min(pins, netlist_max_pins);
+        var terms: [device.max_nodes]Terminal = undefined;
+        var names: [device.max_nodes][2]u8 = undefined;
+        const n = @min(pins, device.max_nodes);
         for (0..n) |k| {
             names[k] = .{ 'p', '0' + @as(u8, @intCast(k)) };
             // Alternate left and right, down the box.
@@ -529,8 +530,6 @@ pub const ZonDiagnostic = struct { class: []const u8, err: anyerror };
 /// or a single input, an output, a rail, anything else.
 pub const PortRole = enum(u8) { rail, inp, inn, in, out, other };
 
-const netlist_max_pins = 7;
-
 /// What a name says a net is: a rail, a bias line, a reference, an
 /// amplifier's non-inverting, inverting or single input, an output.
 const Named = enum(u8) { supply, ground, bias, ref, inp, inn, in, out };
@@ -644,8 +643,7 @@ fn centeredSlot(m: usize, count: usize, k: usize) usize {
 
 /// The class name a device is looked up by: cktImg's vocabulary.
 pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
-    const m = model_type orelse "";
-    const p = m.len > 0 and m[0] == 'p';
+    const p = device.polarity(model_type) == .p;
     return switch (kind) {
         .resistor => "res",
         .capacitor => "cap",
@@ -658,10 +656,10 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
         .cccs => "cccs",
         .behavioral => "bsource",
         .diode => "diode",
-        .bjt => if (std.mem.eql(u8, m, "pnp")) "pnp" else "npn",
+        .bjt => if (p) "pnp" else "npn",
         .jfet => if (p) "pjfet" else "njfet",
         .mesfet => "mesfet",
-        .mosfet => if (p or std.mem.indexOf(u8, m, "pfet") != null or std.mem.indexOf(u8, m, "pmos") != null) "pmos" else "nmos",
+        .mosfet => if (p) "pmos" else "nmos",
         .vswitch, .cswitch => "switch",
         .tline, .ltra => "tline",
         .urc => "urc",

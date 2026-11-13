@@ -172,8 +172,9 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
         try line.appendSlice(arena, hints.Verb.head(if (f == .vertical) .upright else .bridge, .strong));
         const empty = line.items.len;
         for (0..n) |d| {
-            const pins = c.members(EdgeId.from(d));
-            if (!sk.drawn[d] or sk.form[d] != f or !relations.twoPin(kinds[d]) or pins.len < 2 or pins[0] == pins[1]) continue;
+            // What `upright` and `bridge` take (`relations.forms`).
+            const a, const b = nl.path(EdgeId.from(d)) orelse continue;
+            if (!sk.drawn[d] or sk.form[d] != f or !relations.twoPin(kinds[d]) or a == b) continue;
             try line.print(arena, " {s}", .{names[d]});
         }
         if (line.items.len > empty) try out.append(arena, line.items);

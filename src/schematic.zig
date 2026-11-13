@@ -460,15 +460,14 @@ fn reference(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role) Al
         // A card of just two pins, whatever its kind: wider than the device
         // table's parts (`device.isPart`) by a B source and a two-port
         // block, narrower by a part with a third pin (a body, a control
-        // pair). Which end of a source is its low one the table does not say.
+        // pair). Narrowing: only an independent source's low end counts
+        // double; the table names a controlled source's too.
         if (pins.len != 2) continue;
-        switch (k) {
-            .vsource => score[pins[1].index()] += 2,
-            .isource => score[pins[0].index()] += 2,
-            else => {
-                score[pins[1].index()] += 1;
-                score[pins[0].index()] -= 1;
-            },
+        if (device.of(k).source == .independent) {
+            score[pins[device.lowEnd(k)].index()] += 2;
+        } else {
+            score[pins[1].index()] += 1;
+            score[pins[0].index()] -= 1;
         }
     }
     const names = circuit.vertices.items(.name);

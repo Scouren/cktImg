@@ -18,10 +18,10 @@
 //!
 //! Contents:
 //! - `pub const none: u32`
-//! - `pub const Polarity = enum(u8) { n, p, other }`
+//! - `pub const Polarity = device.Polarity`
 //! - `pub const Pin = struct`
 //! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool`
-//! - `pub fn polarity(model: ?[]const u8) Polarity`
+//! - `pub const polarity = device.polarity`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -38,7 +38,10 @@ const Role = sch.Role;
 /// No mate: the circuit has no symmetry.
 pub const none: u32 = std.math.maxInt(u32);
 
-pub const Polarity = enum(u8) { n, p, other };
+/// A transistor's type, and the reader of it from a model: the device
+/// model's, under the names the stages before `device.zig` call them by.
+pub const Polarity = device.Polarity;
+pub const polarity = device.polarity;
 
 /// Two devices (or nets) the symmetry must swap; one on the axis when
 /// `a == b` (`*@ symmetric`, `*@ axis`).
@@ -139,17 +142,6 @@ pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank
     return true;
 }
 
-/// A transistor's type from its model: n- or p-channel (npn, pnp), else
-/// `.other`.
-pub fn polarity(model: ?[]const u8) Polarity {
-    const m = model orelse return .other;
-    for ([_][]const u8{ "pmos", "pfet", "pnp", "pjf", "pch" }) |p| if (std.mem.indexOf(u8, m, p) != null) return .p;
-    for ([_][]const u8{ "nmos", "nfet", "npn", "njf", "nch" }) |p| if (std.mem.indexOf(u8, m, p) != null) return .n;
-    if (m.len > 0 and m[0] == 'p') return .p;
-    if (m.len > 0 and m[0] == 'n') return .n;
-    return .other;
-}
-
 // ---- private ----
 
 fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role) !Graph {
@@ -202,8 +194,9 @@ fn pinLabel(kind: DeviceKind, pin: usize) u8 {
     const k = device.of(kind);
     const path = k.path orelse return 32 + p;
     if (kind == .cccs or kind == .ccvs) return 32 + p;
-    const first: u8 = if (k.gate != null) (if (kind == .bjt) 4 else 0) else if (!k.polar) 8 else if (k.control == null) 11 else 13;
-    const last = if (k.control) |c| c + 1 else path[1] + @intFromBool(k.gate != null);
+    const pair = k.control == .pair;
+    const first: u8 = if (k.gate != null) (if (kind == .bjt) 4 else 0) else if (!k.polar) 8 else if (!pair) 11 else 13;
+    const last = if (pair) path[1] + 2 else k.body orelse path[1];
     return first + (@min(p, last) -| @intFromBool(!k.polar));
 }
 

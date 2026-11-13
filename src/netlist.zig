@@ -23,6 +23,10 @@
 //! `.control` blocks are skipped; other dot-commands (`.options`, `.ic`,
 //! `.param`, ...) are ignored.
 //!
+//! Which letter is which kind, and how many nodes its card names, is the
+//! device table's (`device.zig`, which owns `DeviceKind`); `Netlist.path`
+//! reads a card's current path from it.
+//!
 //! ## Subcircuits
 //!
 //! A `.subckt` is a **block**: an `X` instance of it is one device of kind
@@ -51,6 +55,7 @@
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const csr = @import("csr.zig");
+const device_mod = @import("device.zig");
 const analysis = @import("analysis.zig");
 const hints = @import("hints.zig");
 
@@ -62,30 +67,7 @@ pub const Analysis = analysis.Analysis;
 /// the matrix without a lookup.
 pub const ground: VertexId = @fromBackingInt(@intCast(0));
 
-pub const DeviceKind = enum(u8) {
-    resistor, // R
-    capacitor, // C
-    inductor, // L
-    coupling, // K  (mutual inductance; references two L's, no pins)
-    vsource, // V
-    isource, // I
-    vcvs, // E
-    vccs, // G
-    cccs, // F  (references a controlling V source)
-    ccvs, // H  (references a controlling V source)
-    behavioral, // B
-    diode, // D
-    bjt, // Q
-    jfet, // J
-    mesfet, // Z
-    mosfet, // M
-    vswitch, // S
-    cswitch, // W  (references a controlling V source)
-    tline, // T
-    ltra, // O
-    urc, // U
-    subckt, // X  (a block: `Netlist.defs[Device.def]`)
-};
+pub const DeviceKind = device_mod.DeviceKind;
 
 /// A `.subckt` definition.
 pub const Subckt = struct {
@@ -219,16 +201,22 @@ pub const Netlist = struct {
     /// (`M1 d g s b nmos`). Null for a device with no model.
     pub fn modelType(self: *const Netlist, e: EdgeId) ?[]const u8 {
         if (self.kind_type.len > 0) if (self.kind_type[e.index()]) |t| return t;
-        const k = self.graph.edges.items(.kind)[e.index()];
-        switch (k) {
-            .bjt, .mosfet, .jfet, .mesfet, .diode => {},
-            else => return null,
-        }
+        if (!device_mod.of(self.graph.edges.items(.kind)[e.index()]).model) return null;
         for (self.params(e)) |tok| {
             if (self.models.get(tok)) |ty| return if (ty.len > 0) ty else tok;
         }
         const first = self.params(e);
         return if (first.len > 0) first[0] else null;
+    }
+
+    /// The nets on the two ends of device `e`'s current path, in card order
+    /// (`device.of`); null for a box, which has none, and for a card too
+    /// short to name both.
+    pub fn path(self: *const Netlist, e: EdgeId) ?[2]u32 {
+        const p = device_mod.of(self.graph.edges.items(.kind)[e.index()]).path orelse return null;
+        const pins = self.graph.members(e);
+        if (pins.len <= p[1]) return null;
+        return .{ pins[p[0]].index(), pins[p[1]].index() };
     }
 
     /// Names are stored lowercase (SPICE is case-insensitive).
@@ -366,23 +354,28 @@ fn kindLine(graph: *Circuit.Graph, device_ids: *const std.StringHashMapUnmanaged
     const e = device_ids.get(h.args[0]) orelse return .of(.unknown_name);
     const pins = graph.members(e).len;
     const word = h.args[1];
-    const Want = struct { name: []const u8, kind: DeviceKind, lo: usize, hi: usize };
+    const Want = struct { name: []const u8, kind: DeviceKind };
     const table = [_]Want{
-        .{ .name = "nmos", .kind = .mosfet, .lo = 3, .hi = 4 },
-        .{ .name = "pmos", .kind = .mosfet, .lo = 3, .hi = 4 },
-        .{ .name = "npn", .kind = .bjt, .lo = 3, .hi = 4 },
-        .{ .name = "pnp", .kind = .bjt, .lo = 3, .hi = 4 },
-        .{ .name = "res", .kind = .resistor, .lo = 2, .hi = 2 },
-        .{ .name = "cap", .kind = .capacitor, .lo = 2, .hi = 2 },
-        .{ .name = "block", .kind = .subckt, .lo = 1, .hi = std.math.maxInt(usize) },
+        .{ .name = "nmos", .kind = .mosfet },
+        .{ .name = "pmos", .kind = .mosfet },
+        .{ .name = "npn", .kind = .bjt },
+        .{ .name = "pnp", .kind = .bjt },
+        .{ .name = "res", .kind = .resistor },
+        .{ .name = "cap", .kind = .capacitor },
+        .{ .name = "block", .kind = .subckt },
     };
     const w = for (table) |t| {
         if (eql(t.name, word)) break t;
     } else return .of(.bad_args);
-    if (pins < w.lo or pins > w.hi) return .of(.bad_args);
+    // That kind's pins (`device.of`): its path and gate at least, the
+    // terminals it names at most; a box takes any.
+    const k = device_mod.of(w.kind);
+    const lo: usize = if (k.path) |p| @max(p[1], k.gate orelse 0) + 1 else 1;
+    const hi: usize = if (k.path != null) k.names.len else std.math.maxInt(usize);
+    if (pins < lo or pins > hi) return .of(.bad_args);
     graph.edges.items(.kind)[e.index()] = w.kind;
     if (w.kind != .subckt) graph.edges.items(.def)[e.index()] = no_def;
-    kind_type[e.index()] = if (w.kind == .mosfet or w.kind == .bjt) w.name else null;
+    kind_type[e.index()] = if (k.model) w.name else null;
     return .of(.ok);
 }
 
@@ -539,15 +532,12 @@ const Pass = struct {
         const letter = f[0][0];
         if (letter == 'x') return self.addInstance(b, pins, f, frame);
         const name = if (frame) |fr| try fr.device(self.arena, f[0]) else f[0];
-        const rule = switch (letter) {
-            'a'...'z' => card_rules[letter - 'a'],
-            else => null,
-        } orelse return switch (letter) {
+        const kind = device_mod.ofLetter(letter) orelse return switch (letter) {
             'a', 'n', 'p', 'y' => error.UnsupportedDevice,
             else => error.UnknownCard,
         };
 
-        const pin_count = try self.pinCount(rule, f);
+        const pin_count = try self.pinCount(kind, f);
         if (f.len < 1 + pin_count) return error.MissingField;
 
         pins.clearRetainingCapacity();
@@ -566,7 +556,7 @@ const Pass = struct {
         errdefer _ = self.device_ids.remove(name);
 
         gop.value_ptr.* = try b.addEdge(self.gpa, .{
-            .kind = rule.kind,
+            .kind = kind,
             .name = name,
             .params = span,
             .value = if (rest.len > 0) parseValue(rest[0]) catch std.math.nan(f64) else std.math.nan(f64),
@@ -663,30 +653,31 @@ const Pass = struct {
         return .{ .name = name, .ports = ports, .sides = sides, .order = order, .expand = false, .body = "" };
     }
 
-    fn pinCount(self: *Pass, rule: CardRule, f: []const []const u8) Error!u8 {
-        switch (rule.pins) {
-            .fixed => |n| return n,
-            // Q/M/D: extra optional terminals (substrate, thermal, SOI body)
-            // sit before the model name. Only count past the minimum when a
-            // known `.model` name proves where the terminals end; otherwise
-            // `m1 d g s b nch w=1u` with `nch` in a library would grow a pin.
-            .until_model => |r| {
-                var p: usize = r.min;
-                while (p <= r.max and 1 + p < f.len) : (p += 1) {
-                    if (self.models.contains(f[1 + p])) return @intCast(p);
-                }
-                return r.min;
-            },
-            // E/G: `e1 out 0 in 0 gain` has 4 pins; `e1 out 0 value={...}`
-            // (and vol/cur/table/laplace) has 2.
-            .controlled => {
-                if (f.len < 4) return 2;
-                const k = f[3];
-                if (eql(k, "poly")) return error.UnsupportedPoly;
-                for (behavioral_keywords) |kw| if (eql(k, kw)) return 2;
-                return 4;
-            },
+    /// How many nodes follow the name on a card of `kind`, within the
+    /// device table's count for it (`device.of(kind).nodes`).
+    fn pinCount(self: *Pass, kind: DeviceKind, f: []const []const u8) Error!u8 {
+        const card = device_mod.of(kind);
+        const lo, const hi = card.nodes;
+        if (lo == hi) return lo;
+        // Q/M/D: extra optional terminals (substrate, thermal, SOI body)
+        // sit before the model name. Only count past the minimum when a
+        // known `.model` name proves where the terminals end; otherwise
+        // `m1 d g s b nch w=1u` with `nch` in a library would grow a pin.
+        if (card.model) {
+            var p: usize = lo;
+            while (p <= hi and 1 + p < f.len) : (p += 1) {
+                if (self.models.contains(f[1 + p])) return @intCast(p);
+            }
+            return lo;
         }
+        // E/G: `e1 out 0 in 0 gain` names its control pair; `e1 out 0
+        // value={...}` (and vol/cur/table/laplace) leaves it out.
+        std.debug.assert(card.control == .pair);
+        if (f.len < 2 + lo) return lo;
+        const k = f[1 + lo];
+        if (eql(k, "poly")) return error.UnsupportedPoly;
+        for (behavioral_keywords) |kw| if (eql(k, kw)) return lo;
+        return hi;
     }
 
     fn internNet(self: *Pass, b: *Circuit.Builder, name: []const u8) Error!VertexId {
@@ -720,53 +711,8 @@ const Pass = struct {
     }
 };
 
-// ===========================================================================
-// Device card rules: first letter → kind and how many pins follow the name.
-// A comptime table instead of a switch keeps all the device facts in one
-// place you can read top to bottom.
-// ===========================================================================
-
-const CardRule = struct {
-    kind: DeviceKind,
-    pins: union(enum) {
-        fixed: u8,
-        until_model: struct { min: u8, max: u8 },
-        controlled,
-    },
-};
-
+/// What an `E` or a `G` card names in place of its control pair.
 const behavioral_keywords = [_][]const u8{ "value", "vol", "cur", "table", "laplace" };
-
-const card_rules: [26]?CardRule = blk: {
-    var t: [26]?CardRule = @splat(null);
-    const R = struct {
-        fn set(tab: *[26]?CardRule, c: u8, k: DeviceKind, pins: @FieldType(CardRule, "pins")) void {
-            tab[c - 'a'] = .{ .kind = k, .pins = pins };
-        }
-    };
-    R.set(&t, 'r', .resistor, .{ .fixed = 2 });
-    R.set(&t, 'c', .capacitor, .{ .fixed = 2 });
-    R.set(&t, 'l', .inductor, .{ .fixed = 2 });
-    R.set(&t, 'k', .coupling, .{ .fixed = 0 });
-    R.set(&t, 'v', .vsource, .{ .fixed = 2 });
-    R.set(&t, 'i', .isource, .{ .fixed = 2 });
-    R.set(&t, 'e', .vcvs, .controlled);
-    R.set(&t, 'g', .vccs, .controlled);
-    R.set(&t, 'f', .cccs, .{ .fixed = 2 });
-    R.set(&t, 'h', .ccvs, .{ .fixed = 2 });
-    R.set(&t, 'b', .behavioral, .{ .fixed = 2 });
-    R.set(&t, 'd', .diode, .{ .until_model = .{ .min = 2, .max = 3 } });
-    R.set(&t, 'q', .bjt, .{ .until_model = .{ .min = 3, .max = 5 } });
-    R.set(&t, 'j', .jfet, .{ .fixed = 3 });
-    R.set(&t, 'z', .mesfet, .{ .fixed = 3 });
-    R.set(&t, 'm', .mosfet, .{ .until_model = .{ .min = 4, .max = 7 } });
-    R.set(&t, 's', .vswitch, .{ .fixed = 4 });
-    R.set(&t, 'w', .cswitch, .{ .fixed = 2 });
-    R.set(&t, 't', .tline, .{ .fixed = 4 });
-    R.set(&t, 'o', .ltra, .{ .fixed = 4 });
-    R.set(&t, 'u', .urc, .{ .fixed = 3 });
-    break :blk t;
-};
 
 // ===========================================================================
 // Analyses
@@ -788,7 +734,15 @@ const Resolver = struct {
     }
 };
 
-const independent_sources = [_]DeviceKind{ .vsource, .isource };
+/// The device table's independent sources: what an analysis takes as its
+/// input.
+const independent_sources: []const DeviceKind = blk: {
+    var list: []const DeviceKind = &.{};
+    for (std.enums.values(DeviceKind)) |k| {
+        if (device_mod.of(k).source == .independent) list = list ++ .{k};
+    }
+    break :blk list;
+};
 
 /// Cursor over one card's fields (field 0 is the command).
 const Cursor = struct {
@@ -846,7 +800,7 @@ fn parseAnalysis(cmd: analysis.Kind, f: []const []const u8, r: Resolver, arena: 
 
         .noise => .{ .noise = .{
             .output = try voltageProbe(&c, r),
-            .input = try r.deviceOf(try c.word(), &independent_sources),
+            .input = try r.deviceOf(try c.word(), independent_sources),
             .sweep = try freqSweep(&c),
             .points_per_summary = if (c.peek() != null) try c.count() else 0,
         } },
@@ -878,7 +832,7 @@ fn parseAnalysis(cmd: analysis.Kind, f: []const []const u8, r: Resolver, arena: 
 
         .tf => .{ .tf = .{
             .output = try outputVar(&c, r),
-            .input = try r.deviceOf(try c.word(), &independent_sources),
+            .input = try r.deviceOf(try c.word(), independent_sources),
         } },
 
         .tran => blk: {
@@ -927,7 +881,7 @@ fn dcSweep(c: *Cursor, r: Resolver) Error!analysis.DcSweep {
     const target: analysis.DcTarget = if (eql(name, "temp"))
         .temperature
     else
-        .{ .device = try r.deviceOf(name, &.{ .vsource, .isource, .resistor }) };
+        .{ .device = try r.deviceOf(name, independent_sources ++ .{.resistor}) };
     const start = try c.number();
     const stop = try c.number();
     const step = try c.number();
@@ -1267,6 +1221,9 @@ test "devices: pins in terminal order, nets interned, ground is vertex 0" {
     // Continuation line joined; bulk tied to source kept as a repeated pin.
     try testing.expectEqualDeep(&[_][]const u8{ "out", "in", "vdd", "vdd" }, names(&nl, nl.graph.members(m2), &buf));
     try testing.expectEqualDeep(&[_][]const u8{ "pch", "w", "=", "2u", "l", "=", "180n" }, nl.params(m2));
+    // Its current path: drain to source (`device.of`); a B source is a box.
+    try testing.expectEqual([2]u32{ nl.net("out").?.index(), nl.net("vdd").?.index() }, nl.path(m2).?);
+    try testing.expectEqual(null, nl.path(nl.device("b1").?));
 
     // Q pin count decided by where the known model name sits.
     try testing.expectEqual(@as(u32, 3), nl.graph.edgeSize(nl.device("q1").?));

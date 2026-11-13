@@ -32,6 +32,7 @@ const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const library = @import("library.zig");
 const pinned = @import("pinned.zig");
+const relations = @import("relations.zig");
 const grow_mod = @import("opamp_grow.zig");
 
 const Netlist = netlist.Netlist;
@@ -164,7 +165,7 @@ pub fn applies(nl: *const Netlist, drawn: []const bool) bool {
     assert(drawn.len == c.edgeCount());
     var blocks: usize = 0;
     for (c.edges.items(.kind), 0..) |kind, d| {
-        if (!drawn[d] or isTwo(kind)) continue;
+        if (!drawn[d] or relations.twoPin(kind)) continue;
         const def = nl.defOf(EdgeId.from(d)) orelse return false;
         if (kind != .subckt or def.ports.len != c.members(EdgeId.from(d)).len or amplifier(def.ports) == null) return false;
         blocks += 1;
@@ -230,12 +231,11 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
     for (c.edges.items(.kind), 0..) |kind, d| {
         if (!drawn[d]) continue;
         const pins = c.members(EdgeId.from(d));
-        if (isTwo(kind)) {
+        if (relations.twoPin(kind)) {
             // Its path's ends: the reader gives every part both. The
             // switch's symbol is the taller one.
-            const path = device.of(kind).path.?;
-            assert(pins.len > path[1]);
-            const t: Two = .{ .a = pins[path[0]].index(), .b = pins[path[1]].index(), .tall = kind == .vswitch or kind == .cswitch };
+            const a, const b = nl.path(EdgeId.from(d)).?;
+            const t: Two = .{ .a = a, .b = b, .tall = kind == .vswitch or kind == .cswitch };
             p.two[d] = t;
             if (t.a != t.b) {
                 try p.on[t.a].append(arena, .{ .part = @intCast(d), .other = t.b });
@@ -312,12 +312,6 @@ pub fn roundEven(num: i64, den: i64) i32 {
 }
 
 // ---- private ----
-
-/// A part this placement takes. Narrower than `device.isPart`: a controlled
-/// source (F, H, E, G) is none, and a circuit with one stays on the lattice.
-fn isTwo(kind: netlist.DeviceKind) bool {
-    return device.isPart(kind) and device.of(kind).source != .controlled;
-}
 
 /// A block's inputs and its output among `ports`, by their names, its
 /// `pins` still to fill; null when it is no amplifier: one or two inputs,
