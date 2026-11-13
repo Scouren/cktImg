@@ -4,6 +4,14 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 ## Unreleased
 
+AnalogGenie pattern study (#8):
+
+- Engine: capacitor-coupled floating MOS channels and leaf compensation channels lie along their signal; MOS and passive series paths share a row using drain/source endpoints, including a body tied to the source. The predicate selects 239 horizontal devices among 243 selected in AnalogGenie and 20 among 23 in AMS-Net; named exceptions and source provenance are recorded in `docs/research/analoggenie.md`.
+- Engine and Schemify: recognized amplifier, comparator, buffer, inverter and two-input logic blocks use conventional symbols while preserving every ordered SPICE port and their subcircuit implementations; custom symbols and explicit pin-side directives take precedence (#8).
+- Engine: pinless coupling cards retain their electrical meaning without registering an empty symbol; all 2,202 AnalogGenie decks now render, including the eight that previously failed with `NoTerminals` (#8).
+- Schemify: register `netlist.import` and its `cktimg.import` compatibility alias; both commands produce identical cells and circuit-equivalent exports on the current and v1.0.1 hosts (#8).
+- Testing: round trips of subcircuit-only decks keep the models exported through a model-only bench and compare the actual component, with a missing-model negative check (#8).
+
 Merged (rounds 4 and 5; each kept change's totals are its agent's, measured on its own branch over the 5,263 reference circuits: crossings, corners, wire units, written names; each trade's are measured on the merged tree, with -> without, and decided by merit = A - D, A the sum of nine agreement means, D the sum of |engine - people| / people over crossings, corners, wire and names):
 
 - A block's ports stand one unit apart about each side's middle (`library.8`, ab5aaea): people 1,137 of 1,261 two-port sides; crossings 6,953 to 6,958, corners 28,269 to 28,233, wire 197,332 to 195,212, names 10,168 to 10,174.

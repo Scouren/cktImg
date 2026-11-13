@@ -193,6 +193,92 @@ test {
 
 const testing = std.testing;
 
+test "named block glyphs preserve X semantics and semantic ports through Schemify" {
+    // Oracle: source AG807/1044/438 show a signed triangle, an inversion bubble
+    // and XOR. SPICE's X card keeps its definition and positional port order.
+    const cases = [_]struct { []const u8, []const u8, []const u8 }{
+        .{ "icm_opamp_vdd_vss", "VDD VSS VIP VIN VOUT", "poly " },
+        .{ "inverter", "VDD VSS A Y", "circle " },
+        .{ "xor_gate", "VDD VSS A B Y", "poly " },
+    };
+    for (cases) |row| {
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const amp = mem.eql(u8, row[0], "icm_opamp_vdd_vss");
+        const output = if (amp) "VOUT" else "Y";
+        const input = if (amp) "VIN" else "A";
+        const text = try a.print("* glyph\n.subckt {s} {s}\nR1 VDD VSS 1meg\n.ends\nX1 {s} {s}\nRL {s} 0 1k\nCF {s} {s} 1p\n", .{ row[0], row[1], row[1], row[0], output, output, input });
+        var c = try Converter.init(testing.allocator, a, "glyph.sp", text);
+        defer c.deinit();
+        const sym = recognize.subSymbol(1);
+        try testing.expectEqual(recognize.Family.box, c.rec.syms.family.items[sym]);
+        const names = try layout.netNames(a, &c.deck, 0);
+        const translated = try layout.cellDeck(a, &c.deck, &c.rec, 0, names);
+        try testing.expect(mem.indexOf(u8, translated, row[1]) != null);
+        while (c.cellsLeft() > 0) try c.step();
+        const out = try c.finish();
+        for (out.warnings.items) |warning| {
+            try testing.expect(mem.indexOf(u8, warning, "labels only") == null);
+            try testing.expect(mem.indexOf(u8, warning, "unconnected") == null);
+        }
+        const file = out.files.items[0].bytes;
+        try testing.expect(mem.indexOf(u8, file, "prefix X\n") != null);
+        try testing.expect(mem.indexOf(u8, file, "impl schematic schematic\n") != null);
+        try testing.expect(mem.indexOf(u8, file, row[2]) != null);
+        try testing.expect(mem.indexOf(u8, file, "rect ") == null);
+        var previous: usize = 0;
+        var ports = mem.tokenizeScalar(u8, row[1], ' ');
+        while (ports.next()) |name| {
+            const needle = try a.print("pin {s} ", .{name});
+            const at = mem.indexOf(u8, file, needle) orelse return error.MissingPort;
+            try testing.expect(at >= previous);
+            previous = at;
+        }
+    }
+}
+
+test "block glyphs keep explicit sides, ambiguous definitions and project symbols" {
+    // Oracle: the caller's explicit geometry outranks a conventional glyph;
+    // undefined library calls keep their original external cell and pin order.
+    const sources = [_][]const u8{
+        "* hints\n.subckt inverter VDD VSS A Y\n*@ right A\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out inverter\n",
+        "* unknown\n.subckt inverter VDD VSS A Y ENABLE\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out ctl inverter\n",
+        "* directions\n.subckt inverter VDD VSS A Y\n*.PININFO A:O Y:I\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out inverter\n",
+    };
+    for (sources, 0..) |src, k| {
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+        defer arena.deinit();
+        var c = try Converter.init(testing.allocator, arena.allocator(), "fallback.sp", src);
+        defer c.deinit();
+        const pins = c.rec.syms.pins(recognize.subSymbol(1));
+        if (k == 0) try testing.expect(pins[2].x > 0);
+        while (c.cellsLeft() > 0) try c.step();
+        const out = try c.finish();
+        try testing.expect(mem.indexOf(u8, out.files.items[0].bytes, "rect ") != null);
+        try testing.expect(mem.indexOf(u8, out.files.items[0].bytes, "circle ") == null);
+    }
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const pins = [_]recognize.Pin{
+        .{ .name = "A", .x = 60, .y = 0, .dir = .in },
+        .{ .name = "Y", .x = -60, .y = 0, .dir = .out },
+    };
+    const cells = [_]recognize.LibCell{.{ .lib = "custom", .name = "inverter", .pins = &pins, .body = .{ -60, -40, 60, 40 }, .params = &.{} }};
+    var c = try Converter.initLibs(testing.allocator, a, "custom.sp", "* custom\nX1 in out inverter\n", &cells);
+    defer c.deinit();
+    const s = c.rec.parts.sym.items[0];
+    try testing.expectEqual(recognize.Origin.lib, c.rec.syms.origin.items[s]);
+    try testing.expectEqual(@as(i32, 60), c.rec.syms.pins(s)[0].x);
+    const names = try layout.netNames(a, &c.deck, 0);
+    const translated = try layout.cellDeck(a, &c.deck, &c.rec, 0, names);
+    try testing.expect(mem.indexOf(u8, translated, " p1 p2\n") != null);
+    while (c.cellsLeft() > 0) try c.step();
+    const out = try c.finish();
+    try testing.expect(mem.indexOf(u8, out.files.items[0].bytes, "custom:inverter") != null);
+}
+
 test "an rc deck becomes one bench" {
     var arena: std.heap.ArenaAllocator = .init(testing.allocator);
     defer arena.deinit();

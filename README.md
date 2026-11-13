@@ -50,8 +50,11 @@ netlist…** (`Ctrl+Shift+I`) and type a project-relative path such as
 `n2s/opamp.sp`. Headless, the same import is one command:
 
 ```sh
-schemify cmd --trust <project-dir> cktimg.import n2s/opamp.sp
+schemify cmd --trust <project-dir> netlist.import n2s/opamp.sp
 ```
+
+`cktimg.import` remains an alias for configurations using the older command name.
+Both names are registered for compatibility with older Schemify hosts.
 
 The files are written next to the netlist and existing cells are never
 overwritten. `fuel` raises the per-event budget from the default 10^8 so large

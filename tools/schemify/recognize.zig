@@ -22,6 +22,7 @@ const Tok = spice.Tok;
 const Range = spice.Range;
 const keyOf = spice.keyOf;
 const Place = @import("place.zig").Place;
+const block_symbols = @import("NetlistParser").block_symbols;
 
 /// Symbols per conversion (core rows + generated cells).
 pub const symbols_max = 8192;
@@ -80,6 +81,8 @@ pub const Symbols = struct {
     stem: ArrayList([]const u8) = .empty,
     origin: ArrayList(Origin) = .empty,
     family: ArrayList(Family) = .empty,
+    /// Conventional glyph of a generated subcircuit; electrical family stays box.
+    shape: ArrayList(block_symbols.Shape) = .empty,
     /// Default of the leaf `args` parameter (stub leaves: the subckt name).
     args_default: ArrayList([]const u8) = .empty,
     /// A leaf's SPICE template when not the default `{name} {pins} {args}` (`""`).
@@ -139,6 +142,7 @@ pub const Symbols = struct {
         try s.stem.append(a, stem);
         try s.origin.append(a, origin);
         try s.family.append(a, family);
+        try s.shape.append(a, .box);
         try s.args_default.append(a, "");
         try s.format.append(a, "");
         try s.lib.append(a, "");
@@ -246,7 +250,8 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
     for (1..deck.cells()) |c| {
         const stem = try uniqueStem(a, deck.cell_name[c], &r.taken);
         const bp = try boxPins(a, deck, @intCast(c));
-        _ = try r.syms.push(a, stem, .sub, .box, bp.pins, bp.body);
+        const s = try r.syms.push(a, stem, .sub, .box, bp.pins, bp.body);
+        r.syms.shape.items[s] = bp.shape;
     }
     r.number = try numeric(a, deck);
     const shim = try a.alloc(bool, deck.cells());
@@ -323,7 +328,7 @@ fn needsShim(a: Allocator, deck: *const Deck, libs: []const LibCell, c: u32) All
 }
 
 /// A symbol's pins and, for a box, its body.
-const BoxPins = struct { pins: []const Pin, body: Body };
+const BoxPins = struct { pins: []const Pin, body: Body, shape: block_symbols.Shape = .box };
 
 /// Generated box of subckt cell `c`: each port on the side its `*@` directive names, in
 /// directive order, else inputs left and the rest right, in port order.
@@ -336,6 +341,25 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
         nm.* = try pinName(a, deck.netName(c, n));
     }
     const r = deck.portRange(c);
+    const shape = block_symbols.identify(deck.cell_name[c], names);
+    const directed = for (deck.port_side[r.lo..r.hi]) |side| {
+        if (side != .auto) break true;
+    } else false;
+    if (shape != .box and !directed) {
+        const glyph = try block_symbols.draw(a, shape, names, 20);
+        const pins = try a.alloc(Pin, names.len);
+        var agrees = true;
+        for (ports, glyph.terminals, pins) |n, t, *p| {
+            const dir: Dir = switch (t.side.?) {
+                .left => .in,
+                .right => .out,
+                .up, .down => .inout,
+            };
+            if (deck.pinInfo(deck.netKey(c, n))) |given| agrees = agrees and given == dir;
+            p.* = .{ .name = t.name, .x = t.at.x, .y = t.at.y, .dir = dir };
+        }
+        if (agrees) return .{ .pins = pins, .body = .{ -60, -60, 60, 60 }, .shape = shape };
+    }
     return boxLayout(a, names, dirs, deck.port_side[r.lo..r.hi], deck.port_rank[r.lo..r.hi]);
 }
 

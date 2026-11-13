@@ -149,11 +149,17 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
             const q = xform(t, c[0], c[1]);
             o.* = .{ .x = q[0], .y = q[1] };
         }
-        const ops = [_]engine.library.DrawOp{.{ .polyline = &outline }};
+        const box_ops = [_]engine.library.DrawOp{.{ .polyline = &outline }};
+        const ops = if (syms.shape.items[s] == .box) &box_ops else glyph: {
+            const port_names = try a.alloc([]const u8, pins.len);
+            for (pins, port_names) |p, *name| name.* = p.name;
+            const glyph = try engine.block_symbols.draw(a, syms.shape.items[s], port_names, 20);
+            break :glyph glyph.ops;
+        };
         const block = try a.print("b{d}", .{s});
         const names: []const []const u8 = if (fam == .box) &.{block} else classNames(fam);
         for (names) |name| {
-            _ = lib.register(.{ .name = name, .terminals = terms, .draw = &ops }) catch |e| switch (e) {
+            _ = lib.register(.{ .name = name, .terminals = terms, .draw = ops }) catch |e| switch (e) {
                 error.OutOfMemory => return error.OutOfMemory,
                 else => try refused.append(a, try a.print("the engine refused class {s} ({s}: {t}); its cells are drawn with labels", .{ name, syms.stem.items[s], e })),
             };
@@ -275,7 +281,9 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
     mem.sort(u32, boxes.items, {}, std.sort.asc(u32));
     for (boxes.items) |s| {
         try text.print(a, ".subckt b{d}", .{s});
-        for (1..syms.pins(s).len + 1) |k| try text.print(a, " p{d}", .{k});
+        for (syms.pins(s), 1..) |pin, k| {
+            if (syms.shape.items[s] != .box) try text.print(a, " {s}", .{pin.name}) else try text.print(a, " p{d}", .{k});
+        }
         try text.appendSlice(a, "\n.ends\n");
     }
     const dev_names = try names_.deviceNames(a, deck, rec, c);

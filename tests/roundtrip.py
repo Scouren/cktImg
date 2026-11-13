@@ -3,10 +3,11 @@
 each fixture deck is imported by the cktimg plugin into a fresh project,
 netlisted back by Schemify, and compared with Schemify's `spicecmp`.
 
-A deck with a top level is compared whole, through its bench. A deck of
-`.subckt`s only is compared cell by cell: each generated component's netlist
-(Schemify writes its body flat) against a probe, that subckt's body at the
-top level with the subckts it instantiates.
+A deck with top-level devices is compared whole, through its bench. Otherwise
+each generated component's netlist (Schemify writes its body flat) is compared
+against a probe, that subckt's body at the top level with its dependencies.
+Any generated bench supplies global declarations, such as models, to each
+component comparison; a model-only bench is not itself the circuit under test.
 
 usage: python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]
        (decks default to every fixture in tests/fixtures.zig)
@@ -60,6 +61,23 @@ def split(text):
     return top, subs
 
 
+def has_devices(lines):
+    """Whether these top-level lines contain a device, outside simulator control."""
+    control = False
+    for line in lines:
+        words = line.split()
+        if not words:
+            continue
+        head = words[0].lower()
+        if head == ".control":
+            control = True
+        elif head == ".endc":
+            control = False
+        elif not control and "a" <= head[0] <= "z":
+            return True
+    return False
+
+
 def probe(text, name):
     """Subckt `name` of `text` as a top-level deck: its parameters as
     `.param`s, the subckts it instantiates (transitively) as definitions."""
@@ -77,7 +95,7 @@ def probe(text, name):
                     todo.append(t)
     keep = (".model", ".param", ".global", ".include", ".lib", ".option")
     lines = ["* probe " + name]
-    lines += [l for l in top[1:] if l.strip().lower().startswith(keep)]
+    lines += [l for l in top if l.strip().lower().startswith(keep)]
     for other, (h, b) in subs.items():
         if other in used and other != name:
             lines += [h] + b + [".ends"]
@@ -132,19 +150,35 @@ def main():
             print("FAIL", base + ": imported; remove it from REFUSED")
             bad += 1
             continue
-        made = os.listdir(os.path.join(proj, "n2s"))
-        benches = [f for f in made if f.endswith(".shbench")]
-        if benches:
-            code, log = run(["netlist", "n2s/" + benches[0], "--dialect", "ngspice", "-o", "back.sp"], proj)
-            ok = code == 0 and compare(base, "n2s/" + base, "back.sp", proj)
-            if code != 0:
-                print("FAIL", base + ": netlist:", log[-300:])
-            bad += not ok
-            continue
         with open(deck) as f:
             text = f.read()
+        top, subs = split(text)
+        made = sorted(os.listdir(os.path.join(proj, "n2s")))
+        benches = [f for f in made if f.endswith(".shbench")]
+        context = ""
+        if len(benches) > 1 or (has_devices(top) and not benches):
+            print("FAIL", base + ": expected one bench for top-level devices")
+            bad += 1
+            continue
+        if benches:
+            code, log = run(["netlist", "n2s/" + benches[0], "--dialect", "ngspice", "-o", "back.sp"], proj)
+            if code != 0:
+                print("FAIL", base + ": netlist:", log[-300:])
+                bad += 1
+                continue
+            if has_devices(top) or not subs:
+                bad += not compare(base, "n2s/" + base, "back.sp", proj)
+                continue
+            with open(os.path.join(proj, "back.sp")) as f:
+                exported = f.read()
+            if has_devices(split(exported)[0]):
+                print("FAIL", base + ": declaration-only bench exported devices")
+                bad += 1
+                continue
+            context = "\n".join(l for l in exported.splitlines()
+                                if l.strip().lower() != ".end") + "\n"
         comps = {f[: -len(".shcomp")].lower(): f for f in made if f.endswith(".shcomp")}
-        for name in split(text)[1]:
+        for name in subs:
             label = "%s %s" % (base, name)
             if name not in comps:
                 print("FAIL", label + ": no component")
@@ -157,6 +191,12 @@ def main():
                 continue
             with open(os.path.join(proj, name + ".probe.sp"), "w") as f:
                 f.write(probe(text, name))
+            if context:
+                back = os.path.join(proj, name + ".back.sp")
+                with open(back) as f:
+                    body = f.read()
+                with open(back, "w") as f:
+                    f.write(context + body)
             bad += not compare(label, name + ".probe.sp", name + ".back.sp", proj)
     if bad:
         print("%d failed; the projects are in %s" % (bad, work))

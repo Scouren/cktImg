@@ -20,6 +20,7 @@ const Deck = spice.Deck;
 const Recognized = recognize.Recognized;
 const Drawn = layout.Drawn;
 const Place = @import("place.zig").Place;
+const engine = @import("NetlistParser");
 
 /// One output file.
 pub const OutFile = struct {
@@ -360,7 +361,15 @@ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
             try w.record(.rank2, "rect", &.{});
             try w.coords(&.{ -10, -20, 10, 20 });
         },
-        .box => {
+        .box => box: {
+            if (rec.syms.shape.items[s] != .box) {
+                const pins = rec.syms.pins(s);
+                const names = try w.a.alloc([]const u8, pins.len);
+                for (pins, names) |p, *name| name.* = p.name;
+                const glyph = try engine.block_symbols.draw(w.a, rec.syms.shape.items[s], names, 20);
+                try drawOps(w, glyph.ops);
+                break :box;
+            }
             // The box 20 inside the body, a lead from each pin to its side.
             const r = [4]i32{ b[0] + 20, b[1] + 20, b[2] - 20, b[3] - 20 };
             assert(r[0] < r[2] and r[1] < r[3]); // a box body is at least 120 x 80
@@ -401,6 +410,27 @@ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
         try w.coords(&.{ b[0], t[0] });
         try w.fields(&.{ "R0", t[1] });
     }
+}
+
+/// Existing engine strokes mapped to Schemify's rank-2 records.
+fn drawOps(w: *Writer, ops: []const engine.library.DrawOp) Allocator.Error!void {
+    for (ops) |op| switch (op) {
+        .line => |l| try lineRec(w, .{ l.a.x, l.a.y, l.b.x, l.b.y }),
+        .polyline => |ps| {
+            try w.record(.rank2, "poly", &.{});
+            for (ps) |p| try w.coords(&.{ p.x, p.y });
+        },
+        .circle => |c| {
+            try w.record(.rank2, "circle", &.{});
+            try w.coords(&.{ c.c.x, c.c.y, c.r });
+        },
+        .text => |t| {
+            try w.record(.rank2, "stext", &.{});
+            try w.coords(&.{ t.at.x, t.at.y });
+            try w.fields(&.{ "R0", t.s });
+            try w.attr("size", &.{"0.3"});
+        },
+    };
 }
 
 const testing = std.testing;

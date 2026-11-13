@@ -16,7 +16,9 @@
 //!   ideal amplifier) is drawn with two terminals, its control pair no part
 //!   of where it stands. People: 414 of 414 in 5,263 hand-drawn
 //!   schematics. `isDependent`
-//! - forms.4 (unmeasured) A transistor stands upright. `classify`
+//! - forms.4 (unmeasured) A transistor stands upright, except a shorted
+//!   channel (forms.12) or a capacitor-coupled MOS channel (forms.19).
+//!   `classify`
 //! - forms.5 (unmeasured) A part with an end on a rail stands upright, a
 //!   capacitor too. `classify`
 //! - forms.6 (unmeasured) A part in series, each of its nets holding just
@@ -65,6 +67,19 @@
 //!   wire. `crooked`
 //!   Narrowing: a line (`T`, `O`, `U`), a `B` source and a coupling are no
 //!   block here (`isPartsOnly`).
+//! - forms.19 (habit) A MOS channel with distinct drain, source and gate,
+//!   neither channel end on a rail, lies flat when an end meets a capacitor
+//!   and either the channel cannot reach a rail through DC paths, or no
+//!   other DC path ends at that capacitor node and the opposite channel
+//!   end drives another gate/base. A capacitor across the channel, from
+//!   gate to channel, or shorted gives no evidence. A gate and body give
+//!   no path to a rail.
+//!   This includes samplers (ag-385, ag-386) and series compensation
+//!   (ag-738, ag-995), but not an ordinary loaded cascode. People: 239 of
+//!   243 selected MOS in 2,202 AnalogGenie drawings lie flat; 20 of 23 in
+//!   the 734 AMSNet drawings. Upright reset and clamp devices are exceptions
+//!   (ag-1039, ag-1054); an `upright` line wins. Evidence and named exceptions:
+//!   docs/research/analoggenie.md. `classify`
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -101,10 +116,13 @@ const none = structure.none;
 /// never a two-pin device
 /// between two nets the symmetry swaps, which straddles the axis, nor a
 /// device whose current path is shorted (a MOS dummy: no current flows).
+/// A capacitor-coupled MOS channel lies flat under forms.19's conditions.
 pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
     assert(drawn.len == c.edgeCount());
+    assert(form.len == drawn.len);
+    assert(roles.len == c.vertexCount());
     for (drawn, 0..) |*dr, d| {
         dr.* = c.members(EdgeId.from(d)).len > 0 and !sch.isDriver(c, roles, @intCast(d));
     }
@@ -129,6 +147,36 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         if (a == b) continue;
         const k = device.of(kinds[d]);
         const on_rail = isRail(roles[a]) or isRail(roles[b]);
+        const capacitive = coupled: {
+            if (kinds[d] != .mosfet or on_rail) break :coupled false;
+            const gate = c.members(EdgeId.from(d))[k.gate.?].index();
+            if (gate == a or gate == b) break :coupled false;
+            assert(count[a] > 0);
+            assert(count[b] > 0);
+            // Both ends share DC reachability through this channel. Gate
+            // and body connections, and the capacitor, do not conduct it.
+            const isolated = from_supply[a] == none and from_ground[a] == none;
+            for ([_]u32{ a, b }) |net| {
+                const opposite = if (net == a) b else a;
+                if (!isolated) {
+                    if (count[net] != 1) continue;
+                    const drives = for (c.incident(VertexId.from(opposite))) |e| {
+                        if (!drawn[e.index()]) continue;
+                        const side = device.of(kinds[e.index()]).gate orelse continue;
+                        if (c.members(e)[side].index() == opposite) break true;
+                    } else false;
+                    if (!drives) continue;
+                }
+                for (c.incident(VertexId.from(net))) |e| {
+                    if (!drawn[e.index()] or kinds[e.index()] != .capacitor) continue;
+                    const pins = c.members(e);
+                    const other = pins[@intFromBool(pins[0].index() == net)].index();
+                    if (other != net and other != gate and other != opposite) break :coupled true;
+                }
+            }
+            break :coupled false;
+        };
+        if (capacitive) continue;
         const series = k.dc and count[a] == 2 and count[b] == 2;
         // On the way down: people stand 262 of 305 such resistors and 18
         // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of

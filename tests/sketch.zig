@@ -1548,6 +1548,48 @@ test "sketch: a flat switch faces the nearest device on its path's nets, as a tw
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: capacitive MOS paths draw drain and source on one row, with gate and body off the channel" {
+    // Oracle: AnalogGenie's ag-385.svg, ag-386.svg and ag-995.svg, with pin
+    // coordinates preserved in their .human.json files. Every sampling
+    // MOS has D and S on one row; its gate lies above or below that row.
+    // Connectivity and shorts are read independently from the finished
+    // drawing, including the body pin, instead of the placement's paths.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const prefix = "Sampling\n.model nch nmos\n.model pch pmos\n";
+    for ([_]struct { deck: []const u8, names: []const []const u8 }{
+        .{ .deck = prefix ++ "CH vout vss 1p\nM1 vin ck vout vss nch\n", .names = &.{"m1"} },
+        .{ .deck = prefix ++ "CH vout vss 1p\nM1 vout ck vin vss nch\nM2 vin ck_bar vout vdd pch\n", .names = &.{ "m1", "m2" } },
+        .{ .deck = prefix ++ "CH n23 0 1p\nM1 n17 vdd n23 0 nch\n", .names = &.{"m1"} },
+        .{ .deck = prefix ++ "CH sampled 0 1p\nCB bulk 0 2p\nM1 vin ck sampled bulk nch\n", .names = &.{"m1"} },
+        .{ .deck = prefix ++ "R1 vdd mid 1k\nM1 mid in 0 0 nch\nM2 out mid 0 0 nch\nR2 vdd out 1k\nCC cap out 1p\nMR cap vdd mid 0 nch\n", .names = &.{"mr"} },
+    }) |case| {
+        const p = try draw(arena, lib, &.{case.deck}, .{});
+        for (case.names) |name| {
+            const drain = pinOf(&p, name, 0);
+            const gate = pinOf(&p, name, 1);
+            const source = pinOf(&p, name, 2);
+            const body = pinOf(&p, name, 3);
+            try std.testing.expectEqual(drain.y, source.y);
+            try std.testing.expect(drain.x != source.x);
+            try std.testing.expect(gate.y != drain.y);
+            try std.testing.expect(body.x > @min(drain.x, source.x));
+            try std.testing.expect(body.x < @max(drain.x, source.x));
+            if (std.mem.eql(u8, name, "mr")) {
+                // ag-995: both parts lie along one compensation path.
+                try std.testing.expectEqual(drain.y, pinOf(&p, "cc", 0).y);
+                try std.testing.expectEqual(drain.y, pinOf(&p, "cc", 1).y);
+            }
+        }
+        try support.expectConnected(&p, lib);
+        try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+    }
+}
+
 test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck's line says otherwise" {
     // Oracle: the key's own definition (`config.Layout.shelf`). Twelve
     // stages in a chain stand in rows of at most `shelf` columns: three

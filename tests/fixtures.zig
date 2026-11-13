@@ -4,7 +4,7 @@
 //!
 //! Contents:
 //! - `pub const Deck = struct { name: []const u8, spice: []const u8 }`
-//! - `pub const plugin: [81]Deck`
+//! - `pub const plugin: [82]Deck`
 //! - `pub const analogioc: [9]Deck`
 
 /// A deck and the path it is known by.
@@ -43,6 +43,7 @@ pub const plugin = [_]Deck{
     .{ .name = "opamp/inverting_amplifier.sp", .spice = @embedFile("fixtures/opamp/inverting_amplifier.sp") },
     .{ .name = "power/ldo_regulator.sp", .spice = @embedFile("fixtures/power/ldo_regulator.sp") },
     .{ .name = "hand/library_only.sp", .spice = @embedFile("fixtures/hand/library_only.sp") },
+    .{ .name = "hand/model_only_top.sp", .spice = @embedFile("fixtures/hand/model_only_top.sp") },
     .{ .name = "mosfet/mosfet_current_mirror.sp", .spice = @embedFile("fixtures/mosfet/mosfet_current_mirror.sp") },
     .{ .name = "mosfet/mosfet_diff_pair.sp", .spice = @embedFile("fixtures/mosfet/mosfet_diff_pair.sp") },
     .{ .name = "digital/nand_gate.sp", .spice = @embedFile("fixtures/digital/nand_gate.sp") },

@@ -4,10 +4,13 @@
 //! cell.
 //!
 //! Human Rules:
-//! - bridges.1 (unmeasured) Flat two-pin parts in series, joined by nets
-//!   that hold just the two of them (gates aside), lie in one row as a
-//!   chain, in their order along the nets. `chainOf`
-//! - bridges.2 (unmeasured) Any other flat device (an op-amp, a part with
+//! - bridges.1 (book) Flat two-pin parts and MOS channels in series,
+//!   joined by nets that hold just the two current paths (gates and bodies
+//!   aside), lie in one row as a chain, in their order along the nets.
+//!   AnalogGenie ag-738 and ag-995 put the MOS and its compensation
+//!   capacitor together between stages. `chainOf`
+//! - bridges.2 (unmeasured) Any other flat device except a transistor
+//!   (an op-amp, a part with
 //!   a side pin) is a chain of one whose ends are its first and its last
 //!   net that is no rail: its input and its output, as a subcircuit lists
 //!   its ports, not the supply its first port is often on. `chainOf`
@@ -57,6 +60,9 @@
 //!   every such gate, and 522 of the 590 that drive none stand right of
 //!   every upright device on their inputs' nets, in 5,263 hand-drawn
 //!   schematics. `passage`
+//! - bridges.16 (order: signal) A flat transistor bridges its channel's
+//!   two nets. Its gate and body do not select its columns: the signal
+//!   crosses the channel, as in AnalogGenie ag-385 and ag-386. `chainOf`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -145,16 +151,21 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
 
 // ---- private ----
 
-/// The bridges in series with `d` (two-pin bridges joined by nets that hold
-/// just the two of them), in order, into `out`; returns the chain's two end
-/// nets (for anything but a two-pin bridge, a block: the first and the last
-/// of its nets that are no rail).
+/// The bridges in series with `d` (two-pin parts and MOS channels joined
+/// by nets that hold just those paths), in order, into `out`; returns its end
+/// nets (a transistor's channel ends; for other devices with side pins,
+/// the first and the last nets that are no rail).
 fn chainOf(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, placed: []const bool, d: u32, out: *std.ArrayList(u32)) ![2]u32 {
     const c = &nl.graph;
     out.clearRetainingCapacity();
     try out.append(gpa, d);
+    const kind = c.edges.items(.kind)[d];
+    if (device.isTransistor(kind)) {
+        const path = nl.path(EdgeId.from(d)).?;
+        if (kind != .mosfet or path[0] == path[1]) return path;
+    }
     const pins = c.members(EdgeId.from(d));
-    if (!forms.isTwoEnded(nl, d)) {
+    if (kind != .mosfet and !forms.isTwoEnded(nl, d)) {
         // A block stands between the first and the last of its nets that
         // are no rail: its input and its output, as a subcircuit lists its
         // ports, not the supply its first port is often on.
@@ -167,7 +178,7 @@ fn chainOf(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []con
         };
         return ends;
     }
-    var tips: [2]u32 = .{ pins[0].index(), pins[1].index() };
+    var tips = nl.path(EdgeId.from(d)).?;
     // Grow from each end in turn: the far end leftward, then rightward.
     for (0..2) |side| {
         var steps: usize = 0;
@@ -175,29 +186,39 @@ fn chainOf(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []con
             const net = tips[side];
             const next = linked(nl, roles, drawn, form, upper, lower, placed, out.items, net) orelse break;
             if (side == 0) try out.insert(gpa, 0, next) else try out.append(gpa, next);
-            const np = c.members(EdgeId.from(next));
-            tips[side] = if (np[0].index() == net) np[1].index() else np[0].index();
+            const path = nl.path(EdgeId.from(next)).?;
+            tips[side] = if (path[0] == net) path[1] else path[0];
         }
     }
     assert(out.items.len >= 1);
     return tips;
 }
 
-/// The one other two-pin bridge on `net` when the net joins just two
-/// drawn devices, both such bridges, one of them in `chain` (a gate on the
-/// net, as a CMFB midpoint drives, does not count); else null.
+/// The one other two-pin part or MOS bridge on `net` when just two drawn
+/// current paths meet there, one in `chain`; gates and bodies do not count.
 fn linked(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, placed: []const bool, chain: []const u32, net: u32) ?u32 {
     const c = &nl.graph;
     if (isRail(roles[net])) return null;
     var other: ?u32 = null;
     var count: usize = 0;
+    var previous: u32 = none;
     for (c.incident(VertexId.from(net))) |e| {
         const v = e.index();
+        // CSR lists one incidence per pin, sorted by device: a body
+        // tied to its source is still one channel, not another path.
+        if (v == previous) continue;
+        previous = v;
         if (!drawn[v]) continue;
+        const kind = c.edges.items(.kind)[v];
+        if (device.isTransistor(kind)) {
+            const path = nl.path(e).?;
+            if (path[0] != net and path[1] != net) continue;
+            if (path[0] == path[1]) return null;
+        }
         if (form[v] == .vertical and upper[v] != net and lower[v] != net) continue;
         count += 1;
         if (std.mem.indexOfScalar(u32, chain, v) != null) continue;
-        if (form[v] != .horizontal or placed[v] or !forms.isTwoEnded(nl, v)) return null;
+        if (form[v] != .horizontal or placed[v] or (kind != .mosfet and !forms.isTwoEnded(nl, v))) return null;
         other = v;
     }
     return if (count == 2) other else null;

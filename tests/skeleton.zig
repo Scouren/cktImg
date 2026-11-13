@@ -223,6 +223,121 @@ test "skeleton: a gate with nothing in the drawing to face turns left; one with 
     }
 }
 
+test "skeleton: a sampling MOS channel lies flat, including a complementary transmission gate" {
+    // Oracle: AnalogGenie's ag-385 and ag-386 human drawings put each
+    // sampling transistor's drain and source on one row, with CH hanging
+    // from the sampled node. The capacitor does not turn the channel into
+    // a path to ground; neither a body nor a gate on a rail does so.
+    // Renamed signal nets keep the form; reordered cards keep every cell.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const prefix = "Sampling\n.model nch nmos\n.model pch pmos\n";
+    for ([_]struct { deck: []const u8, names: []const []const u8 }{
+        .{ .deck = prefix ++ "CH vout vss 1p\nM1 vin ck vout vss nch\n", .names = &.{"m1"} },
+        .{ .deck = prefix ++ "CH vout vss 1p\nM1 vout ck vin vss nch\nM2 vin ck_bar vout vdd pch\n", .names = &.{ "m1", "m2" } },
+        .{ .deck = prefix ++ "CH n23 0 1p\nM1 n17 phi n23 0 nch\n", .names = &.{"m1"} },
+        .{ .deck = prefix ++ "CH n23 0 1p\nM1 n23 phi n17 0 nch\nM2 n17 phib n23 vdd pch\n", .names = &.{ "m1", "m2" } },
+        .{ .deck = prefix ++ "CH n23 vss 1p\nM1 n17 vdd n23 vss nch\n", .names = &.{"m1"} },
+    }) |case| {
+        const l = try lay(arena, case.deck);
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        for (case.names) |name| try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[l.nl.device(name).?.index()]);
+        try skeleton.validate(&l.sk, &l.nl);
+        const reversed = try lay(arena, try golden.shuffled(arena, case.deck, .reversed));
+        try std.testing.expectEqualStrings(try cells(arena, &l), try cells(arena, &reversed));
+    }
+}
+
+test "skeleton: a sampling MOS stands beside its channel load, not its body connection" {
+    // Oracle: ag-385 places the switch beside its hold capacitor. Giving
+    // the body its own capacitor must not make that body net a channel
+    // end. CH and CB supply distinct upright anchors: D/S select CH;
+    // the first and last nonrail card pins would instead select CB.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const deck = "Body is not channel\n.model nch nmos\nCH sampled 0 1p\nCB bulk 0 2p\nM1 vin ck sampled bulk nch\n";
+    const l = try lay(arena, deck);
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const mos = l.nl.device("m1").?.index();
+    const hold = l.nl.device("ch").?.index();
+    const body = l.nl.device("cb").?.index();
+    try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[mos]);
+    try std.testing.expect(l.sk.x[hold] != l.sk.x[body]);
+    try std.testing.expect(@abs(l.sk.x[mos] - l.sk.x[hold]) < @abs(l.sk.x[mos] - l.sk.x[body]));
+    const reversed = try lay(arena, try golden.shuffled(arena, deck, .reversed));
+    try std.testing.expectEqualStrings(try cells(arena, &l), try cells(arena, &reversed));
+}
+
+test "skeleton: a channel's DC load, an absent capacitor, or an upright line keeps its MOS upright" {
+    // Oracle: the boundary of ag-385's sampling topology. A resistor or
+    // current source on CH's node gives the channel a DC path to a rail;
+    // an incomplete amplifier with no capacitor has no sampling evidence.
+    // A diode-connected transistor is not a switch, and an explicit
+    // upright line decides the form even for the sampling circuit.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const prefix = "Sampling boundary\n.model nch nmos\n";
+    const sampler = "M1 n17 phi n23 0 nch\nCH n23 0 1p\n";
+    for ([_][]const u8{
+        prefix ++ sampler ++ "R1 n23 vdd 1k\n",
+        prefix ++ sampler ++ "I1 n23 0 1u\n",
+        prefix ++ sampler ++ "R1 n23 load 1k\nI1 load 0 1u\n",
+        prefix ++ "M1 out inp tail 0 nch\n",
+        prefix ++ "M1 n17 n17 n23 0 nch\nCH n23 0 1p\n",
+        // Own-terminal capacitances alone do not establish a sampling
+        // path: ag-425's upright oscillator has Cgs and Cds.
+        prefix ++ "M1 d g s 0 nch\nC1 g s 1p\nC2 d s 1p\n",
+        prefix ++ "M1 d g s 0 nch\nC1 d g 1p\n",
+        prefix ++ "M1 d g s 0 nch\nC1 s s 1p\n",
+        // AMS-Net 181/182: a capacitor at a cascode's free end is a load,
+        // not a series compensation path. Its other end drives no gate.
+        prefix ++ "M1 y vb1 x 0 nch\nM2 x vb2 0 0 nch\nC1 y x 1p\n",
+        prefix ++ "M1 x vb2 y 0 nch\nM2 vdd vb1 x 0 nch\nC1 vdd y 1p\n",
+        // AMS-Net 44: a current-source-degenerated transistor discharges
+        // its load capacitor; the source end is not a stage's gate node.
+        prefix ++ "M1 vx vb tail 0 nch\nI1 tail 0 1m\nC1 vx 0 1p\n",
+        prefix ++ "*@ upright m1\n" ++ sampler,
+    }) |deck| {
+        const l = try lay(arena, deck);
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device("m1").?.index()]);
+        for (l.nl.hints, l.sk.verdicts) |h, verdict| if (h.verb == .upright) {
+            try std.testing.expect(verdict != null);
+            try std.testing.expectEqual(np.hints.State.honoured, verdict.?.state);
+        };
+        const reversed = try lay(arena, try golden.shuffled(arena, deck, .reversed));
+        try std.testing.expectEqualStrings(try cells(arena, &l), try cells(arena, &reversed));
+    }
+}
+
+test "skeleton: a capacitor's series MOS lies flat where its opposite end drives a stage" {
+    // Oracle: ag-738's M6 and ag-995's MR1 lie along their compensation
+    // capacitors, in the same row and in signal order between the stages.
+    // The stage input has a DC path to a rail; the capacitor end has no
+    // other DC path. A rail-tied gate is not disqualifying.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const prefix = "Compensation\n.model nch nmos\nR1 vdd mid 1k\nM1 mid in 0 0 nch\nM2 out mid 0 0 nch\nR2 vdd out 1k\nCC cap out 1p\n";
+    for ([_][]const u8{ "MR mid bias cap 0 nch\n", "MR cap vdd mid 0 nch\n", "MR mid bias cap cap nch\n" }) |card| {
+        const deck = try std.mem.concat(arena, u8, &.{ prefix, card });
+        const l = try lay(arena, deck);
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        const series = [_]u32{ l.nl.device("m1").?.index(), l.nl.device("mr").?.index(), l.nl.device("cc").?.index(), l.nl.device("m2").?.index() };
+        try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[series[1]]);
+        try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[series[2]]);
+        try std.testing.expectEqual(l.sk.y[series[1]], l.sk.y[series[2]]);
+        for (series[0 .. series.len - 1], series[1..]) |a, b| try std.testing.expect(l.sk.x[a] < l.sk.x[b]);
+        for ([_][]const u8{ "m1", "m2" }) |name| try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device(name).?.index()]);
+        try skeleton.validate(&l.sk, &l.nl);
+        const reversed = try lay(arena, try golden.shuffled(arena, deck, .reversed));
+        try std.testing.expectEqualStrings(try cells(arena, &l), try cells(arena, &reversed));
+    }
+}
+
 test "skeleton: a resistor on the way down stands upright under the emitter it leaves, a current source upright anywhere" {
     // Oracle: how people draw it. In 5,263 hand-drawn schematics 262 of the
     // 305 resistors with one net nearer the supply and the other nearer the

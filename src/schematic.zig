@@ -86,6 +86,9 @@
 //!   drain is up, its gate left, its source down. People: the gate left
 //!   of 17,977 of 28,715 upright transistors, right of the rest: a side
 //!   the layout chooses, not this form. `form`
+//! - schematic.15 (invariant) A pinless card has no drawable class. A
+//!   coupling (`K`) stays in the netlist without creating a symbol, as in
+//!   ag-1101 and ag-1157; class hints cannot give it pins. `initDevices`
 //!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
@@ -168,7 +171,7 @@ pub const DeviceInfo = struct {
     orientation: Orientation,
     flip_x: bool,
     flip_y: bool,
-    /// What the device is drawn as (library.zig).
+    /// What the device is drawn as (library.zig); `none` for a pinless card.
     class: ClassId,
     /// The class's placement: orientation and flips as mirror-and-rotate.
     orient: Orient,
@@ -283,6 +286,7 @@ pub const Schematic = struct {
     /// Device `d`'s symbol as it is turned (`orient`, `grid`: settled), with
     /// its grid point at `at`.
     pub fn boxAt(self: *const Schematic, d: usize, at: Pt) library.Rect {
+        assert(self.device_pin_count[d] > 0);
         const info = self.devices.slice();
         return self.lib.at(info.items(.class)[d]).box(info.items(.orient)[d], at.sub(info.items(.grid)[d]));
     }
@@ -385,6 +389,10 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
     defer gpa.free(classes);
     for (classes, circuit.edges.items(.kind), 0..) |*c, k, d| {
         const e = EdgeId.from(d);
+        if (circuit.members(e).len == 0) {
+            c.* = @fromBackingInt(none);
+            continue;
+        }
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
         // An `E` that is a dependent source, not the book's amplifier: the
         // library's two-pin `vcvs`, where it has one. People: a two-pin
@@ -400,6 +408,7 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
         const h = nl.hints[i];
         if (h.verb != .class or h.args.len != 2) continue;
         const e = nl.device(h.args[0]) orelse continue;
+        if (circuit.members(e).len == 0) continue;
         const id = lib.find(h.args[1]) orelse continue;
         if (lib.at(id).terminals.len < lib.at(classes[e.index()]).terminals.len) continue;
         classes[e.index()] = id;
@@ -436,6 +445,9 @@ pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void {
     for (0..circuit.edgeCount()) |d| {
         const o = Orient.flipped(form(info.items(.orientation)[d]), info.items(.flip_x)[d], info.items(.flip_y)[d]);
         info.items(.orient)[d] = o;
+        info.items(.grid)[d] = .zero;
+        info.items(.reach)[d] = @splat(0);
+        if (s.device_pin_count[d] == 0) continue;
         const c = s.lib.at(info.items(.class)[d]);
         // The middle of the up/down pins' x and of the left/right pins' y:
         // with several pins on a side, the middle one's line, pin or not.
@@ -479,6 +491,7 @@ pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool
 /// A controlled source's out- on the sink is the op-amp's reference: like a
 /// MOS bulk it is a pin of the card but not drawn.
 pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool {
+    if (pin >= s.device_pin_count[d]) return false;
     const c = s.lib.at(s.devices.items(.class)[d]);
     return pin < c.terminals.len and c.terminals[pin].ground_ref and s.roles[net] == .sink;
 }
@@ -496,7 +509,7 @@ pub fn form(o: Orientation) Orient {
 /// A pin's side in form `o`, or null: not drawn (a MOS bulk, a terminal the
 /// class lacks).
 fn baseSide(s: *const Schematic, d: u32, o: Orientation, pin: usize) ?Side {
-    if (pin >= max_pins) return null;
+    if (pin >= max_pins or pin >= s.device_pin_count[d]) return null;
     return s.lib.at(s.devices.items(.class)[d]).side(pin, form(o));
 }
 

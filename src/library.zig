@@ -1,10 +1,11 @@
 //! Device classes: what each device looks like, supplied by the application.
 //!
-//! The library ships no symbols. A target (an SVG renderer, a TikZ figure, an
-//! Schemify plugin) registers one class per device kind it draws — terminal
+//! A target (an SVG renderer, a TikZ figure, a Schemify plugin) registers one
+//! class per primitive device kind it draws — terminal
 //! anchor points and body strokes — and the layout reads pin sides and pin
 //! reach from those anchors. Nothing about a symbol's size or shape is assumed
-//! anywhere else.
+//! anywhere else. Recognized subcircuits have conventional fallback glyphs;
+//! every other unsupported kind or block has a generated box.
 //!
 //! ## The canonical frame
 //!
@@ -30,9 +31,9 @@
 //! - library.2 (invariant) A transistor is drawn as the symbol of its type:
 //!   `pmos` or `nmos`, `pnp` or `npn`, `pjfet` or `njfet` (device.8).
 //!   `className`
-//! - library.3 (choice) A block is drawn as the caller's symbol of its
-//!   subcircuit's name, else as a generated box with its ports on its
-//!   sides: a real symbol (an op-amp's) is the caller's to give.
+//! - library.3 (choice) A block uses the caller's registered symbol first,
+//!   else a recognized amplifier/gate glyph with a complete port contract,
+//!   else a generated box. Explicit side directives keep the box geometry.
 //!   `blockFor`
 //! - library.4 (order: potential) A generated block's supply port
 //!   (`vdd…`, `vcc…`, `avdd…`, `dvdd…`, `vpp…`) stands on top, its ground
@@ -85,6 +86,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const netlist = @import("netlist.zig");
 const device = @import("device.zig");
+const block_symbols = @import("block_symbols.zig");
 
 pub const DeviceKind = netlist.DeviceKind;
 
@@ -458,8 +460,8 @@ pub const Library = struct {
     }
 
     /// The class a subcircuit block is drawn as: one registered under the
-    /// subcircuit's name if the caller has one (a real op-amp symbol), else a
-    /// generated block, registered on first use as `block:<name>`.
+    /// subcircuit's name if the caller has one, else a verified conventional
+    /// glyph or a generated box, registered on first use as `block:<name>`.
     ///
     /// The generated block puts each port on its side — the definition's
     /// `*@ left/right/top/bottom` directives, else by name: supplies on top,
@@ -479,6 +481,14 @@ pub const Library = struct {
         const a = arena.allocator();
         const n = def.ports.len;
         if (n == 0) return error.NoTerminals;
+        const shape = block_symbols.identify(def.name, def.ports);
+        const directed = for (def.sides) |side| {
+            if (side != null) break true;
+        } else false;
+        if (shape != .box and !directed) {
+            const glyph = try block_symbols.draw(a, shape, def.ports, @min(1_000_000, @max(4, @divTrunc(self.unit, 2))));
+            return self.register(.{ .name = name, .terminals = glyph.terminals, .draw = glyph.ops });
+        }
         // Ports per side, in directive order.
         var per: [4]std.ArrayList(usize) = @splat(.empty);
         const order = try a.alloc(usize, n);

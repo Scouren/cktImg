@@ -131,5 +131,6 @@ on a device overrides the relations on it.
   `.shelf` (8) is how many device columns a row holds before the drawing
   wraps into rows of columns: raise it for a wider page, `0` for one row;
   `*@ shelf <columns>|off` says so in one deck.
-- **Schemify:** `schemify cmd --trust <project> cktimg.import n2s/deck.sp`
-  imports a deck as editable cells, laid out the same way.
+- **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
+  imports a deck as editable cells, laid out the same way. `cktimg.import`
+  remains an alias; both names work with older Schemify hosts too.

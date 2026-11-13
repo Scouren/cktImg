@@ -549,14 +549,16 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
 
 test "lines: a row line and an above line on a loop of two devices are both held" {
     // Oracle: the lines themselves, read off the drawing. A transmission
-    // gate's two transistors stand above each other both ways; `row` puts
+    // gate explicitly drawn upright has its transistors above each other
+    // both ways (the automatic sampling form is flat); `row` puts
     // one level with the capacitor, `above` orders the two. The engine
     // compared a device against its row's class and kept both ways of the
     // loop: no levels, an abort.
     var f = try Fixture.init();
     defer f.deinit();
     const gate = "Transmission gate\n.model nch nmos\n.model pch pmos\nC1 vout 0 1p\nM1 vout ck vin 0 nch\nM2 vout ckb vin vdd pch\n";
-    const r = try run(f.arena(), f.lib, gate, "*@ row m2 c1\n*@ above m1 m2\n");
+    const r = try run(f.arena(), f.lib, gate, "*@ upright m1 m2\n*@ row m2 c1\n*@ above m1 m2\n");
+    try expectState(r.verdict("*@ upright m1 m2"), .honoured, .ok);
     try expectState(r.verdict("*@ row m2 c1"), .honoured, .ok);
     try expectState(r.verdict("*@ above m1 m2"), .honoured, .ok);
     try std.testing.expectEqual(r.at("m2").y, r.at("c1").y);

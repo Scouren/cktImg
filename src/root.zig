@@ -12,8 +12,13 @@
 //! | `Pipeline.run` | a borrowed `Placed`, pages reused across documents |
 //! | `netlist.parse` → `guessRoles` → `layout` → `Placed.init` | every stage, each usable alone |
 //!
-//! The library draws nothing and knows no device: the caller's `Library`
-//! says what each class looks like.
+//! The caller's `Library` supplies primitive symbols and may override every
+//! subcircuit glyph; recognized blocks have conventional generated symbols.
+//!
+//! Contents (the new shared glyph entry; the existing exports follow below):
+//! - `pub const device = @import("device.zig")`
+//! - `pub const library = @import("library.zig")`
+//! - `pub const block_symbols = @import("block_symbols.zig")`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -26,6 +31,8 @@ pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
+/// Conventional glyphs for subcircuits with verified named port contracts.
+pub const block_symbols = @import("block_symbols.zig");
 pub const config = @import("config.zig");
 pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");

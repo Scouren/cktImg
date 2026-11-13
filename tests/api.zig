@@ -457,3 +457,45 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
     try testing.expectEqual(bit(.left) | bit(.right), ways & (bit(.left) | bit(.right) | bit(.up)));
     try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, on));
 }
+
+test "place: a coupling card remains electrical data and needs no drawable class" {
+    // Oracle: SPICE K names inductors, not nodes; AnalogGenie ag-1101 and
+    // ag-1157 draw the coils without a separate K symbol. Adding K must not
+    // lose either coil or its connectivity, even with an empty symbol library.
+    const gpa = testing.allocator;
+    const cards = [_][]const u8{
+        "Coupled coils\nL1 in mid 1n\nL2 mid 0 2n\nK1 L1 L2 0.9\n",
+        "Coupled coils\nK1 L1 L2 0.9\nL2 mid 0 2n\nL1 in mid 1n\n*@ class k1 generic2\n",
+    };
+    for (cards) |src| {
+        var lib = np.Library.init(gpa);
+        defer lib.deinit();
+        var nl = try np.netlist.parse(gpa, &.{src}, null);
+        defer nl.deinit(gpa);
+        const k = nl.device("k1").?;
+        try testing.expectEqual(np.netlist.DeviceKind.coupling, nl.graph.edges.items(.kind)[k.index()]);
+        try testing.expectEqual(0, nl.graph.members(k).len);
+        var p = try placeText(&lib, src);
+        defer p.deinit();
+        try testing.expect(np.checks.deviceIn(&p, "k1") == null);
+        for ([_][]const u8{ "l1", "l2" }) |name| {
+            const d = np.checks.deviceIn(&p, name).?;
+            const lo, const hi = p.pinRange(d);
+            try testing.expectEqual(2, hi - lo);
+        }
+        try testing.expectEqual(2, p.deviceCount());
+        try testing.expectEqual(1, lib.count()); // only the coils' generic2
+        try expectWellFormed(&p, &lib);
+        try expectConnected(&p, &lib);
+        const roles = try np.guessRoles(gpa, &nl);
+        defer gpa.free(roles);
+        var s = try np.layout(gpa, &nl, roles, &lib, .{});
+        defer s.deinit();
+        try testing.expect(s.pinSide(@intCast(k.index()), 0) == null);
+        try testing.expect(!np.schematic.referencePin(&s, @intCast(k.index()), 0, 0));
+    }
+}
+
+test {
+    _ = @import("block_symbols.zig");
+}

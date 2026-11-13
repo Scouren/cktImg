@@ -1,6 +1,7 @@
 //! The Schemify plugin (wasm32 only): contributions and the import job, over `convert.zig`.
 //!
-//! `cktimg.import <path>` (File ▸ Import SPICE netlist…, `Ctrl+Shift+I`) runs one job
+//! `netlist.import <path>` (File ▸ Import SPICE netlist…, `Ctrl+Shift+I`; also
+//! `cktimg.import` on older Schemify hosts) runs one job
 //! through inverted I/O (plugin ABI §5) and timers, one phase per event:
 //!
 //! ```text
@@ -43,7 +44,7 @@ const ui =
     \\node file.cktimg_import item
     \\  parent menu.file
     \\  label "Import SPICE netlist…"
-    \\  command cktimg.import
+    \\  command netlist.import
     \\  accel Ctrl+Shift+I
     \\
 ;
@@ -55,7 +56,7 @@ const panel =
     \\  label "SPICE netlist to import (project-relative .sp/.cir/.spice path), Enter to convert:"
     \\node cktimg.path text_input
     \\  parent cktimg.panel
-    \\  command cktimg.import
+    \\  command netlist.import
     \\node cktimg.close button
     \\  parent cktimg.panel
     \\  label Close
@@ -63,11 +64,12 @@ const panel =
     \\
 ;
 const commands =
+    \\command netlist.import "Import SPICE netlist…"
     \\command cktimg.import "Import SPICE netlist…"
     \\command cktimg.close "Close the SPICE import panel"
     \\
 ;
-const keymap = "key Ctrl+Shift+I cktimg.import\n";
+const keymap = "key Ctrl+Shift+I netlist.import\n";
 /// I/O requests kept in flight (the host's queue holds 256 per frame).
 const window = 32;
 /// Warnings echoed to the log per import.
@@ -155,7 +157,7 @@ pub fn onEvent(ev: schemify.Event, out: *Out) void {
         .load => contribute(out, false),
         .command => |c| if (mem.eql(u8, c.name, "cktimg.close")) {
             contribute(out, false);
-        } else if (mem.eql(u8, c.name, "cktimg.import")) {
+        } else if (mem.eql(u8, c.name, "netlist.import") or mem.eql(u8, c.name, "cktimg.import")) {
             var path_buf: [1024]u8 = undefined;
             var path: Out = .init(&path_buf);
             var word_buf: [1024]u8 = undefined;

@@ -62,7 +62,14 @@ is ground.
 
 **Subcircuits.** An `X` card whose `.subckt` is defined in the netlist is one
 device, a **block**: the library's class named after the subcircuit, or else a
-generated box with the ports on its sides. Comments inside the definition
+generated symbol with the ports on its sides. Known amplifier, comparator,
+buffer, inverter and two-input logic-gate names use conventional glyphs
+when every port has an unambiguous role (`block_symbols.zig`). The symbol
+retains every port in SPICE order, including supplies. Unknown families,
+extra control or bias ports, duplicate roles and differential outputs keep
+a box. A caller-supplied class or explicit side directive takes precedence.
+The native drawing and Schemify share the glyph geometry; a triangle or gate
+is still electrically an `X` subcircuit. Comments inside the definition
 steer it: `*@ left inp inn` (likewise `right`, `top`, `bottom`) puts those
 ports on that side of the generated box, the rest going left and right in
 port order, an amplifier's inverting input (`inn`, `in-`, `vn`, or `vin`
@@ -70,6 +77,10 @@ beside a `vip`) above the other when no line places either. With no line, suppli
 names (`r.x1.r1`, net `x1.a`; ground stays global).
 
 **Rails** are the supply and sink nets (§1).
+
+**Pinless cards.** A coupling (`K`) remains in the electrical netlist but
+has no drawable class. No placeholder symbol is registered, and a `class`
+hint cannot give the card terminals (`schematic.initDevices`).
 
 **Canonical order.** Devices and nets by name, in natural order (`m2` before
 `m10`, `structure.nameLess`). Every stage breaks its ties by it, never by the
@@ -249,6 +260,18 @@ drawings. Its class is the library's (`cisource`; for such an `E` the
 two-terminal `vcvs` where the library has one, else `cvsource`): a class of
 two terminals leaves the control pair undrawn (O0), one of four wires it.
 
+A MOS channel is horizontal when its distinct drain and source, neither
+on a rail or tied to its gate, meet a qualifying capacitor and either:
+the channel has no DC path to any rail; or the capacitor end has no other
+DC path and the opposite channel end drives another transistor's gate or
+base. A capacitor shorted or returned to that MOS's gate or opposite
+channel end does not qualify. This separates sampling and series
+compensation paths from ordinary upright current stacks (`forms.19`).
+The measured habit holds for 239 of 243 selected devices in AnalogGenie
+and 20 of 23 in AMSNet; the [study](research/analoggenie.md) records the
+source drawings, predicate, counterexamples and reproducer. An explicit
+`upright` line takes precedence.
+
 A flat part is there to join two pins on one row. So once the skeleton is
 laid, a bridge between two nets that both hold an upright device's pin, of
 which not both have such a pin level with it within a device column,
@@ -338,8 +361,9 @@ sources stand left of the row's middle (of two parts at different distances
 from the one source, people draw the farther to the right in 90.1% of 1,676
 pairs of the reference drawings).
 
-**Bridges** (`bridges.place`). Two-pin bridges in series (through nets that
-join just the two of them, gates aside) share the slots between the nearest
+**Bridges** (`bridges.place`). Two-pin parts and flat MOS channels in series
+(through nets joining just those two current paths, gates and bodies aside)
+share the slots between the nearest
 columns of the chain's two end nets, in order, at the first end's tap row, or
 under the drawing when a column between runs through that row. Where no
 channel ends on either end net, the chain takes the row of the one gate an
@@ -348,7 +372,11 @@ level with the gate it joins in 597 of 1,198 such nets of the 5,263
 reference drawings). A chain whose
 tips stand on one column (or one end on none) stands beside it: toward the
 axis when an end net lies on it, else toward an input's side or away from the
-axis; the member whose tip is on that column stands next to it. Any other bridge (an op-amp) stands midway between the nearest
+axis; the member whose tip is on that column stands next to it. A flat
+transistor uses its drain and source (collector and emitter) as its ends,
+so neither its gate nor its body chooses its columns. A compensation MOS
+and its series capacitor therefore share one row in path order. Any
+other bridge (an op-amp) stands midway between the nearest
 columns of its first and its last net that is no rail: its input and its
 output, as a subcircuit lists its ports (not the supply an op-amp's first
 port is on). A chain whose mate stands already mirrors it; taken slots
