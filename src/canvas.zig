@@ -3,10 +3,33 @@
 //! `Schematic` whose devices are placed and pinned, and the devices'
 //! boxes. Out: its routes, and terminal and label nodes.
 //!
-//! A wire is drawn only where it fits: through no device's body, along no
-//! other net's wire, onto no other net's point, and with no end on another
-//! net's wire; crossing one is allowed. Every pin is a point of its net
-//! from the start, so no wire passes through another net's pin.
+//! Human Rules:
+//! - canvas.1 (invariant) Every length is a whole number of target units,
+//!   at least 1, rounded up from `config.Layout`: the drawing stays on
+//!   integers and mirrors exactly. `Lengths.of`
+//! - canvas.2 (invariant) A wire runs through no device's body, along no
+//!   other net's wire, onto no other net's point (a pin from the start, a
+//!   wire's end or bend, a symbol or a name), and ends on no other net's
+//!   wire; it may cross one. `Canvas.fits`
+//! - canvas.3 (habit) No other net's wire crosses the stub between a rail
+//!   pin and its symbol: a person's symbol sits on its pin. People: 3 of
+//!   16,030 such stubs in 5,263 hand-drawn schematics are crossed.
+//!   `Canvas.wall`
+//! - canvas.4 (unmeasured) A port, a rail symbol or a name stands at the
+//!   end of a stub out from its pin, toward the first side asked whose stub
+//!   fits (a name: the way its pin faces); where none fits, a name on the
+//!   pin itself. `Canvas.markAt`
+//! - canvas.5 (unmeasured) An input's or output's port goes out toward the
+//!   side a `port` line asks, else the side given, else up, else down: the
+//!   first whose stub neither runs along the net's own wire nor ends on it
+//!   (the node between two parts in series has its port off the line).
+//!   `Canvas.port`
+//! - canvas.6 (invariant) A port whose stub does not fit is a name at its
+//!   point, or at the net's top-left pin where another net's wire crosses
+//!   that point: a name never joins two nets. `Canvas.port`
+//! - canvas.7 (choice) A net's name, where it has no better place, goes on
+//!   its topmost, then leftmost, pin: a place, so the order of the cards
+//!   chooses nothing. `topLeft`
 //!
 //! Contents:
 //! - `pub const Lengths = struct`, `Lengths.of(layout: config.Layout, unit: i32) Lengths`

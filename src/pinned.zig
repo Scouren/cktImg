@@ -4,11 +4,20 @@
 //!     *@ at M5 6 4.5 R90        the class origin at (6, 4.5) symbol units
 //!     *@ refdes M5 left         its name left of it
 //!
-//! Coordinates are in units of the symbol set's `unit` (decimals rounded to
-//! the nearest whole drawing unit), the frame `Placed` uses. Of two lines on
-//! one device, the preferred stands (`hints.applyOrder`). An `at` whose
-//! symbol would overlap another's is dropped; the drawing keeps every
-//! guarantee.
+//! Human Rules:
+//! - pinned.1 (invariant) A device with an `at` line has its class origin
+//!   at the line's coordinates, in units of the symbol set's `unit`
+//!   (rounded to the nearest whole drawing unit, the frame `Placed` uses),
+//!   turned as its word says when it names one: the user's word. `read`
+//! - pinned.2 (invariant) Of two lines on one device, the preferred stands
+//!   (`hints.applyOrder`). `read`, `sides`
+//! - pinned.3 (invariant) A `refdes` line puts the device's name on the
+//!   side it names. `sides`
+//! - pinned.4 (invariant) A line that cannot hold is refused with its
+//!   verdict, and the device is laid as without it: a name the deck lacks,
+//!   a device not drawn, a coordinate not finite or past 1e6 units, a word
+//!   that is no turn or side. An `at` whose symbol would overlap another's
+//!   is dropped (sketch.13). `read`, `sides`
 //!
 //! Contents:
 //! - `pub const At = struct`

@@ -4,19 +4,28 @@
 //! net it thins set to `cut`, or `label` if it was `cut` already; the
 //! caller wires the drawing again.
 //!
-//! A person's drawing seldom lets one net's wire cross more than two others
-//! (of 43,282 wired nets in 5,263 hand-drawn reference schematics, Analog
-//! Canvas gallery, 423 do): past that the net is joined by name. And a
-//! person cuts only the far connection: 75% of their named nets keep the
-//! pins that stand near each other wired. So a net over the budget is first
-//! `cut` (`wires.zig`: each group of near pins on one wire, one name a
-//! group), and named at every pin only if its parts still cross too much.
-//! The net crossing the most wires goes first, and the crossings are
-//! counted again without it, until none is over. Only internal nets the
-//! deck's lines leave to the engine: a rail, a port and a net a line wires
-//! keep theirs. A rail's wires are not counted: a gate line crosses the
-//! stubs up to the supply bar as the book draws it (Razavi Fig. 12.20). A
-//! thinned net's mirror image goes with it.
+//! Human Rules:
+//! - thin.1 (habit) No internal net's wire crosses more than `max` wires
+//!   of other nets: past that the net is joined by name. People: of 43,282
+//!   wired nets in 5,263 hand-drawn reference schematics (Analog Canvas
+//!   gallery), 423 cross more than two others. `name`
+//! - thin.2 (habit) A net over the budget is first `cut`: each group of
+//!   near pins on one wire, one name a group (`wires.zig`). People: 75% of
+//!   their named nets keep the pins that stand near each other wired.
+//!   `name`
+//! - thin.3 (unmeasured) A `cut` net whose parts still cross more than two
+//!   other wires is named at every pin. `name`
+//! - thin.4 (book) A rail's wires are not counted: a gate line crosses the
+//!   stubs up to the supply bar. Razavi Fig. 12.20. `name`
+//! - thin.5 (choice) The net crossing the most wires goes first (on a tie,
+//!   the first in the nets' canonical order), and the crossings are
+//!   counted again without it, until none is over: the fewest nets named,
+//!   and the order of the cards chooses nothing. `name`
+//! - thin.6 (invariant) A rail, a port and a net a deck line styles keep
+//!   their wires: only internal nets the deck's lines leave to the engine
+//!   are thinned. `steps`
+//! - thin.7 (invariant) A thinned net's mirror image goes with it, so a
+//!   mirrored drawing stays mirrored. `name`
 //!
 //! Contents:
 //! - `pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, rank: []const u32, net_mate: ?[]const u32, max: u32, style: []Style) Allocator.Error!bool`

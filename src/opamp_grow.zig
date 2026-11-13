@@ -1,27 +1,46 @@
 //! The op-amp placement's procedure (`opamp.zig` holds its tables and its
 //! door): blocks in signal order, each with its feedback rows, its inputs'
 //! trees grown leftward and its load rightward. In: a `Placer` with the
-//! netlist's shape. Out: every device placed on a canvas.
+//! netlist's shape. Out: every device placed on a canvas. The shares below
+//! are people's, in the hand drawings (5,263 schematics, 199 of this
+//! kind).
 //!
-//! The steps, each a habit of the hand drawings (5,263 schematics, 199 of
-//! this kind; the shares are people's):
-//! 1. The block farthest from the inputs is placed first, its output pin at
-//!    the origin; a block that drives it is placed when its output net is
-//!    reached, left of it (85% of driven blocks stand right of their driver).
-//! 2. The inverting input is on top (76%): the block's symbol is drawn so
-//!    (`library.blockFor`), and its feedback then stands over the block.
-//! 3. A part from the output to an input lies flat over the block for the
-//!    upper pin, under it for the lower (82% straight over or under, 96% on
-//!    their pin's side); two or three parts in series back to the output lie
-//!    in one such row.
-//! 4. From a pin's node leftward: parts to a rail stand upright beside it,
-//!    the first series part lies level with the node (45%), the rest stack
-//!    away from the block; from the output rightward the same.
-//! 5. A part between two nodes that both stand lies in the first row past
-//!    every body between them, or upright beside them when one is over the
-//!    other.
-//! A body keeps 0.28 unit from every other; a taken place moves by half a
-//! unit.
+//! Human Rules:
+//! - opamp_grow.1 (habit) The block farthest from the inputs is placed
+//!   first, its output pin at the origin; a block that drives it is placed
+//!   when its output net is reached, left of it. People: 85% of driven
+//!   blocks stand right of their driver. `rootOrder`, `grow`
+//! - opamp_grow.2 (habit) The inverting input is on top: the block's
+//!   symbol is drawn so (`library.blockFor`), and its feedback then stands
+//!   over the block. People: 76%. `block`
+//! - opamp_grow.3 (habit) A part from the output to an input lies flat
+//!   over the block for the upper pin, under it for the lower; two or three
+//!   parts in series back to the output lie in one such row. People: 82%
+//!   straight over or under, 96% on their pin's side. `block`, `fbPath`
+//! - opamp_grow.4 (unmeasured) A part to a rail from a node of a feedback
+//!   row hangs upright under that node, over the block as under it.
+//!   `block`
+//! - opamp_grow.5 (habit) From a pin's node leftward: parts to a rail
+//!   stand upright beside it, the first series part lies level with the
+//!   node, the rest stack away from the block; from the output rightward
+//!   the same. People: 45% (the first series part level with the node).
+//!   `grow`
+//! - opamp_grow.6 (unmeasured) On the upper input's net, when the lower
+//!   input carries a signal, a part to ground lies flat in the input's row
+//!   instead of hanging upright. `grow`
+//! - opamp_grow.7 (choice) Of a node's series parts, the one nearest a
+//!   block still to be placed goes first, then the larger tree, then the
+//!   earlier card: one order, whatever the circuit. `grow`
+//! - opamp_grow.8 (unmeasured) A part between two nodes that both stand
+//!   lies in the first row past every body between them, or upright beside
+//!   them when one is over the other. `close`
+//! - opamp_grow.9 (unmeasured) What no block's tree reaches is drawn in a
+//!   group of its own, grown from its first net that is no rail; a part
+//!   with both ends on rails, or both on one net, hangs upright. `run`
+//! - opamp_grow.10 (choice) A body keeps 0.28 unit from every other (the
+//!   first level part at a pin only clears a real overlap); a taken place
+//!   moves by half a unit: the procedure's clearance and its step.
+//!   `Placer.put`
 //!
 //! Contents:
 //! - `pub fn run(p: *Placer) Allocator.Error!void`

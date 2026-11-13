@@ -4,16 +4,38 @@
 //! same drawing closer together: nothing reordered, nothing on one line
 //! taken off it, every symbol rigid, every stub its length.
 //!
-//! One-dimensional constraint-graph compaction (Lengauer, "Combinatorial
-//! Algorithms for Integrated Circuit Layout", 1990, ch. 10). Every
-//! coordinate along the axis is a **track**, and everything on a track stays
-//! on it. The tracks one symbol holds move as one. Two things that would
-//! touch if they slid past each other keep their order, and the smaller of
-//! the gap they have and the gap the style asks. Each track then goes as
-//! near the anchor as that allows: a longest path, by relaxation. The
-//! drawing as it stands satisfies every constraint, so there is always an
-//! answer and nothing moves outward; a mirrored drawing is folded about its
-//! axis, so its two halves get the same constraints and stay mirrored.
+//! Human Rules:
+//! - compact.1 (book) The drawing is as close together as its lengths
+//!   allow, along x toward the mirror axis (the left edge when there is
+//!   none), then along y toward the top: one-dimensional constraint-graph
+//!   compaction, each coordinate a **track** brought as near the anchor as
+//!   its constraints allow (a longest path, by relaxation). Lengauer,
+//!   "Combinatorial Algorithms for Integrated Circuit Layout", 1990,
+//!   ch. 10. `squeeze`
+//! - compact.2 (invariant) Nothing changes row, column or order: what is
+//!   on one track stays on it, and two things that would touch sliding
+//!   past each other keep their order. `pass`
+//! - compact.3 (invariant) Every symbol is rigid, and every stub keeps its
+//!   length: a wire ending on a port, a symbol or a name, and a rail's wire
+//!   to its bar or symbol no longer than `rail` (a longer one, up from a
+//!   lower row, is a wire like any other). `read`
+//! - compact.4 (choice) Two things that would touch keep the smaller of
+//!   the gap they have and `clearance`, and a wire between two symbols,
+//!   bends or junctions keeps `tap`: the lengths are `config.Layout`'s.
+//!   `pass`
+//! - compact.5 (habit) Two devices keep their order, and `series` (along
+//!   x) or `stack` (along y) between their symbols only where they stand
+//!   less than `stack` (`series`) apart across the axis: a pair's halves
+//!   close over its tail, a tall block stands beside the stack it joins.
+//!   People: neighbouring columns 1.98 units apart at the mean in 5,263
+//!   hand-drawn schematics; with `series` between every two, 2.95. `pass`
+//! - compact.6 (invariant) A mirrored drawing stays mirrored: the two
+//!   coordinates equally far from the axis are one track, and a pair
+//!   across the axis halves the room between them. `Graph.keep`
+//! - compact.7 (choice) Everything moves by whole quarter units: what was
+//!   on the quarter-unit grid stays on it. `Graph.raise`
+//! - compact.8 (invariant) Nothing moves away from the anchor: the drawing
+//!   as it stands satisfies every constraint. `Graph.solve`
 //!
 //! Contents:
 //! - `pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocator.Error!void`

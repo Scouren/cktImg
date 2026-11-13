@@ -1,20 +1,29 @@
 //! Op-amp circuits (issue #8, stage 3): where the devices of a circuit of
 //! amplifier blocks and two-pin parts stand, as people draw one. In: the
 //! netlist, its roles, each device's class. Out: a place and a turn for
-//! every drawn device, or nothing when the circuit is of another kind.
+//! every drawn device, or nothing when the circuit is of another kind. The
+//! steps of the procedure are `opamp_grow.zig`'s. Lengths are hundredths
+//! of a unit on a quarter-unit grid, y down.
 //!
-//! The lattice has no column for such a circuit: its blocks and parts all
-//! bridge. People draw it along the signal instead (5,263 hand-drawn
-//! schematics, 199 of this kind): the last amplifier first (its symbol has
-//! the inverting input on top, `library.blockFor`), each input's parts
-//! growing leftward from the pin, level
-//! with it; a part from the output back to an input over the block (the
-//! upper pin) or under it (the lower); a part to a rail hanging upright
-//! beside its node; the load rightward from the output. Laid so, 170 such
-//! circuits cross 14 wires where the lattice crossed 306 and their hand
-//! drawings 6.
-//!
-//! Lengths are hundredths of a unit on a quarter-unit grid, y down.
+//! Human Rules:
+//! - opamp.1 (invariant) A deck with a line that places or turns a device
+//!   (`upright`, `bridge`, `row`, `above`, `order`, `face`, `cell`, a
+//!   strong `at`) is laid by its lines, not along the signal; a stay
+//!   (`weak at`) is no such line. `steered`
+//! - opamp.2 (habit) A circuit whose every drawn device is a two-pin part
+//!   or an amplifier block (one or two inputs and one output by their port
+//!   names, the rest rails), with at least one block, is drawn along its
+//!   signal, not on the lattice: its blocks and parts all bridge. People:
+//!   199 of 5,263 hand-drawn schematics are of this kind; laid so, 170
+//!   such circuits cross 14 wires where the lattice crossed 306 and their
+//!   hand drawings 6. `applies`, `place`
+//!   Narrowing: a block whose symbol has an input right of its output, or
+//!   a pin count other than its class's, leaves the circuit on the
+//!   lattice (`place`).
+//! - opamp.3 (unmeasured) The groups the procedure begins stand one under
+//!   the other in the order begun, 1.5 units apart; a group a part joins to
+//!   a node of an earlier one stands with that part's end at the node's x.
+//!   `place`
 //!
 //! Contents:
 //! - `pub fn applies(nl: *const Netlist, drawn: []const bool) bool`

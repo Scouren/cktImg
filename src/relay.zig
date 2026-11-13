@@ -4,17 +4,26 @@
 //! coordinates, the stays. Out: every drawn device's point, and no second
 //! wiring: the drawing is not closed up again.
 //!
-//! The radius of change. The skeleton says which devices share a column or
-//! a row, and in what order those lines stand; the stays say where the
-//! lines were. A line keeps its place when its stays agree on one, and the
-//! lines that keep theirs stand in the skeleton's order: the heaviest such
-//! set, by devices (a longest increasing subsequence). Every other device
-//! is inside the radius and is laid again: one new to the deck, one the
-//! structure now puts on another line (a pair it mirrors, a row it joins).
-//! One it only turns is turned where it stands. A line with no place of its
-//! own stands the lattice's
-//! pitch from the line before it, and where that leaves no room the lines
-//! after it move along as one, so what stood mirrored stays mirrored.
+//! Human Rules:
+//! - relay.1 (invariant) A column or row of the lattice keeps the place
+//!   its devices' stays agree on: what the deck did not change stands
+//!   where it stood. `axis`
+//! - relay.2 (choice) Where the stays' places disagree with the
+//!   skeleton's order of the lines, the heaviest set of lines by devices
+//!   keeps them (a longest increasing subsequence), each line at the place
+//!   most of its stays agree on, the lesser on a tie: the fewest devices
+//!   move. `axis`
+//! - relay.3 (invariant) Every other device is inside the radius of change
+//!   and is laid again: one new to the deck, one the structure now puts on
+//!   another line (a pair it mirrors, a row it joins); one it only turns
+//!   is turned where it stands. `place`
+//! - relay.4 (choice) A line with no place of its own stands the lattice's
+//!   pitch after the line before it (before the first kept line, the pitch
+//!   before it), and where that leaves no room the lines after it move
+//!   along as one, so what stood mirrored stays mirrored. `axis`
+//! - relay.5 (invariant) A relaid drawing has no symbol on another: where
+//!   two would overlap, the stays are let go and the deck is laid afresh.
+//!   `place`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool`

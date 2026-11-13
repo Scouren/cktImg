@@ -1,16 +1,74 @@
 //! Stage 4 of issue #8: a drawing from the skeleton. In: the netlist, its
 //! roles and a symbol library. Out: a laid-out `Schematic`, as
 //! `Placed.init` reads one: every drawn device oriented and placed, its
-//! pins, terminal symbols, wires, labels, dots and no-connect crosses.
+//! pins, terminal symbols, wires, labels, dots and no-connect crosses. How
+//! each net is wired is `wires.zig`'s.
 //!
-//! - Orientation: the flips that put a vertical device's upper end up and
-//!   its gate on the skeleton's side, and a bridge's first pin toward its
-//!   first net's devices.
-//! - Coordinates: each lattice row and column as wide as the widest device
-//!   in it, with room for a port or label on a side a gate faces, and the
-//!   `config.Layout` lengths between neighbours; mirrored columns as wide as
-//!   each other, so the drawing keeps the skeleton's symmetry.
-//! - Wires, terminals and labels: `wires.zig`.
+//! Human Rules:
+//! - sketch.1 (order: potential) An upright device's end on its upper net
+//!   faces up, and no end of it on that net faces down. `fits`
+//! - sketch.2 (unmeasured) An upright device's gate faces the side the
+//!   skeleton gives it; of its four flips, the first that keeps sketch.1
+//!   and this. `fits`
+//! - sketch.3 (invariant) A `face` line says which end of a flat part is
+//!   its left: the user's word. `firstLeft`
+//! - sketch.4 (habit) A flat two-pin part's pin on a net it shares with
+//!   just one other flat part of its row faces that part: two parts in
+//!   series are one line. People: 52.7% of 1,397 such pairs in 5,263
+//!   hand-drawn schematics; the mean of a far outer net turned one of them
+//!   end for end in 201. `firstLeft`
+//!   Narrowing: sketch.4 to sketch.6 turn a card of just two pins (a box
+//!   of two ports with it); a flat transistor and a part with its control
+//!   pair on the card lie as their class is drawn (`fits`).
+//! - sketch.5 (unmeasured) A flat part with one pin alone on its net (a
+//!   port's) turns its other pin toward where that pin's net's devices
+//!   stand. `firstLeft`
+//! - sketch.6 (unmeasured) Else a flat part's first pin is its left end
+//!   when the devices on its net stand, at their mean column, no further
+//!   right than those on its second net. `firstLeft`
+//! - sketch.7 (invariant) No two devices of the lattice touch: each column
+//!   is as wide as its widest device's reach on each side, each row as
+//!   tall as its tallest device's (its body, where that reaches more than
+//!   `stack` past its pins). `coordinates`
+//! - sketch.8 (unmeasured) A pin on a port or rail net has room beyond it
+//!   for its symbol: the symbol's stub, and a unit more on a left or right
+//!   side; a supply pin facing up takes none (its bar runs over the top).
+//!   `coordinates`
+//! - sketch.9 (choice) Neighbouring columns stand `series` apart and rows
+//!   `stack` apart, and a lattice column with no device takes no room: the
+//!   lengths are `config.Layout`'s. `coordinates`
+//! - sketch.10 (invariant) Mirrored columns are as wide as each other, so
+//!   the drawing keeps the skeleton's symmetry exactly. `coordinates`
+//! - sketch.11 (invariant) A deck carrying a previous drawing's stays
+//!   (`*@ weak at`) is relaid from them (`relay.zig`), unless it is an
+//!   op-amp circuit (`opamp.zig`). `drawValid`
+//!   Narrowing: a deck with a `weak at` line, even one rejected or
+//!   overridden, is relaid; the general form asks for an `At.weak`.
+//! - sketch.12 (invariant) A drawing closed up (`compact.zig`) has no
+//!   symbol on another: where the squeeze leaves two overlapping, the
+//!   lattice's places stand; a deck whose every device has its `at` line
+//!   is not closed up. `drawValid`
+//! - sketch.13 (invariant) A device stands where its `at` line puts it,
+//!   turned as the line says, unless its symbol would overlap another
+//!   drawn device's; the least preferred `at` gives way first and stands
+//!   where the lattice has it. `keepAts`
+//! - sketch.14 (unmeasured) An internal net with drawn pins on two shelves
+//!   is joined by name, each shelf's pins wired, unless a deck line styles
+//!   it. `drawValid`
+//! - sketch.15 (choice) After the nets that cross too many wires are named
+//!   (`thin.zig`), the drawing is wired again, at most three times: a wire
+//!   gone may free a path that crosses anew, and the bound ends the work.
+//!   `drawValid`
+//! - sketch.16 (unmeasured) A MOS body, an op-amp's reference pin and a
+//!   card pin its class lacks are drawn on the symbol, with no wire.
+//!   `wiredSide`
+//! - sketch.17 (invariant) No other net's wire touches a pin drawn only on
+//!   its symbol. `hiddenPins`
+//! - sketch.18 (invariant) No two pins of one side of a device meet at one
+//!   point: a pin off its device's line for that side (an op-amp's second
+//!   input) is wired from its own line. `placeDevices`
+//! - sketch.19 (unmeasured) A device pin with no other pin on its net
+//!   carries a no-connect cross. `noConnects`
 //!
 //! Contents:
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
