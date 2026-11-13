@@ -269,15 +269,14 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             if (lo + pin >= hi) return false;
             const at = p.pin_xy[lo + pin];
             const o = p.dev_pos[d];
-            const dir = h.args[2];
-            if (std.mem.eql(u8, dir, "left")) return at.x < o.x;
-            if (std.mem.eql(u8, dir, "right")) return at.x > o.x;
+            const dir = h.verb.side(Side, h.args[2]) orelse return false;
+            if (dir.isHorizontal()) return if (dir == .left) at.x < o.x else at.x > o.x;
             // An end: above or below the other end of its path; a box has none.
             const path = device.of(nl.graph.edges.items(.kind)[e]).path orelse return false;
             const other: u32 = path[@intFromBool(pin == path[0])];
             if (lo + other >= hi) return false;
             const there = p.pin_xy[lo + other];
-            return if (std.mem.eql(u8, dir, "up")) at.y < there.y else at.y > there.y;
+            return if (dir == .up) at.y < there.y else at.y > there.y;
         },
         .label => {
             // Named, or nothing in the circuit to name (an apart driver's).
@@ -302,12 +301,17 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
                     hi = .{ .x = @max(hi.x, p.pin_xy[pin].x), .y = @max(hi.y, p.pin_xy[pin].y) };
                 };
             }
-            const side = h.args[1];
+            const side = h.verb.side(Side, h.args[1]) orelse return false;
             for (0..p.deviceCount()) |d| {
                 const a, const b = p.pinRange(d);
                 if (p.dev_name[d].len != 0 or b - a != 1 or p.pin_net[a] != net) continue;
                 const at = p.dev_pos[d];
-                const past = if (std.mem.eql(u8, side, "left")) at.x < lo.x else if (std.mem.eql(u8, side, "right")) at.x > hi.x else if (std.mem.eql(u8, side, "top")) at.y < lo.y else at.y > hi.y;
+                const past = switch (side) {
+                    .left => at.x < lo.x,
+                    .right => at.x > hi.x,
+                    .up => at.y < lo.y,
+                    .down => at.y > hi.y,
+                };
                 if (past) return true;
             }
             return false;

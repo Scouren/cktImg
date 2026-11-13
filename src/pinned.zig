@@ -30,8 +30,9 @@ const Pt = library.Pt;
 const Side = library.Side;
 
 /// Where an `at` line puts a device: its class origin, and its orientation
-/// when the line names one; `line` the hint that said so.
-pub const At = struct { origin: Pt, orient: ?Orient, line: u32 };
+/// when the line names one; `line` the hint that said so, `weak` when that
+/// line is a stay (`*@ weak at`): a relaid drawing's old place.
+pub const At = struct { origin: Pt, orient: ?Orient, line: u32, weak: bool = false };
 
 /// Each drawn device's `at` line, the preferred one; invalid lines rejected.
 pub fn read(arena: Allocator, nl: *const Netlist, unit: i32, drawn: []const bool, verdicts: []?Verdict) Allocator.Error![]?At {
@@ -41,28 +42,18 @@ pub fn read(arena: Allocator, nl: *const Netlist, unit: i32, drawn: []const bool
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .at) continue;
-        if (h.args.len != 3 and h.args.len != 4) {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        }
-        const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
-            continue;
-        }).index();
-        if (!drawn[d]) {
-            verdicts[i] = reject(.not_placeable);
-            continue;
-        }
-        const x = std.fmt.parseFloat(f64, h.args[1]) catch null;
-        const y = std.fmt.parseFloat(f64, h.args[2]) catch null;
-        const o: ?Orient = if (h.args.len == 4) orientWord(h.args[3]) else null;
-        if (x == null or y == null or (h.args.len == 4 and o == null) or !std.math.isFinite(x.?) or !std.math.isFinite(y.?) or @abs(x.?) > 1e6 or @abs(y.?) > 1e6) {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        }
-        const u: f64 = @floatFromInt(unit);
-        out[d] = .{ .origin = .{ .x = @intFromFloat(@round(x.? * u)), .y = @intFromFloat(@round(y.? * u)) }, .orient = o, .line = @intCast(i) };
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(code: {
+            if (h.args.len != 3 and h.args.len != 4) break :code .bad_args;
+            const d = (nl.device(h.args[0]) orelse break :code .unknown_name).index();
+            if (!drawn[d]) break :code .not_placeable;
+            const x = std.fmt.parseFloat(f64, h.args[1]) catch null;
+            const y = std.fmt.parseFloat(f64, h.args[2]) catch null;
+            const o: ?Orient = if (h.args.len == 4) orientWord(h.args[3]) else null;
+            if (x == null or y == null or (h.args.len == 4 and o == null) or !std.math.isFinite(x.?) or !std.math.isFinite(y.?) or @abs(x.?) > 1e6 or @abs(y.?) > 1e6) break :code .bad_args;
+            const u: f64 = @floatFromInt(unit);
+            out[d] = .{ .origin = .{ .x = @intFromFloat(@round(x.? * u)), .y = @intFromFloat(@round(y.? * u)) }, .orient = o, .line = @intCast(i), .weak = h.weak };
+            break :code .ok;
+        });
     }
     return out;
 }
@@ -74,20 +65,12 @@ pub fn sides(arena: Allocator, nl: *const Netlist, verdicts: []?Verdict) Allocat
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .refdes) continue;
-        if (h.args.len != 2) {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        }
-        const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
-            continue;
-        }).index();
-        const side: Side = if (std.mem.eql(u8, h.args[1], "left")) .left else if (std.mem.eql(u8, h.args[1], "right")) .right else if (std.mem.eql(u8, h.args[1], "above")) .up else if (std.mem.eql(u8, h.args[1], "below")) .down else {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        };
-        out[d] = side;
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(code: {
+            if (h.args.len != 2) break :code .bad_args;
+            const d = (nl.device(h.args[0]) orelse break :code .unknown_name).index();
+            out[d] = h.verb.side(Side, h.args[1]) orelse break :code .bad_args;
+            break :code .ok;
+        });
     }
     return out;
 }
@@ -101,12 +84,6 @@ pub fn orientWord(word: []const u8) ?Orient {
     const deg = std.fmt.parseInt(u16, rest[1..], 10) catch return null;
     if (deg % 90 != 0 or deg >= 360) return null;
     return .{ .rot = @intCast(deg / 90), .mirror = mirror };
-}
-
-// ---- private ----
-
-fn reject(code: hints.Code) Verdict {
-    return .{ .state = .rejected, .code = code };
 }
 
 test "orientWord: the eight words, and what is none" {

@@ -222,9 +222,9 @@ pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
     @memset(p.flat_shunt, false);
     @memset(p.at, null);
     for (roles, 0..) |role, v| {
-        p.rail[v] = role == .supply or role == .sink;
+        p.rail[v] = role.isRail();
         p.rail_up[v] = role == .supply;
-        p.port[v] = role == .input or role == .output or role == .bias;
+        p.port[v] = role.isPort();
     }
     for (c.edges.items(.kind), p.source) |kind, *s| s.* = device.of(kind).source == .independent;
     for (c.edges.items(.kind), 0..) |kind, d| {

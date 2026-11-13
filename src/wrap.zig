@@ -27,7 +27,6 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
-const forms = @import("forms.zig");
 const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
@@ -85,7 +84,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         const h = nl.hints[i];
         if (h.verb != .shelf) continue;
         const cols_asked: ?usize = if (h.args.len != 1) null else if (std.mem.eql(u8, h.args[0], "off")) 0 else std.fmt.parseInt(usize, h.args[0], 10) catch null;
-        verdicts[i] = if (cols_asked == null) .{ .state = .rejected, .code = .bad_args } else .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(if (cols_asked == null) .bad_args else .ok);
         shelf_cols = cols_asked orelse continue;
     }
     if (shelf_cols == 0) return;
@@ -237,7 +236,7 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, mate: [
     }
     var cost: u32 = 0;
     for (roles, 0..) |r, net| {
-        if (forms.isRail(r)) continue;
+        if (r.isRail()) continue;
         var left = false;
         var right = false;
         for (c.incident(VertexId.from(@intCast(net)))) |e| {

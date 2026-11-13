@@ -11,13 +11,15 @@
 //! owns and says what became of each; `report` gathers the verdicts.
 //!
 //! Contents:
-//! - `Verb`, `Verb.grouping(v: Verb) bool`, `Verb.rung(v: Verb) u8`
-//! - `Hint`, `Read`, `State`, `Code`, `Verdict`
+//! - `Verb`, `Verb.grouping(v: Verb) bool`, `Verb.rung(v: Verb) u8`, `Verb.head(v: Verb, strength: enum { strong, weak }) []const u8`, `Verb.side(v: Verb, comptime T: type, word: []const u8) ?T`
+//! - `Hint`, `Read`, `State`, `Code`, `Verdict`, `Verdict.of(code: Code) Verdict`, `Verdict.blocked(arena: Allocator, state: State, code: Code, by: []const u32) Allocator.Error!Verdict`
 //! - `pub fn read(line: []const u8) ?Read`
 //! - `pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint`
+//! - `pub fn nesting(depth: u32, head: []const u8, open: []const u8, close: []const u8) u32`
 //! - `pub fn admitOrder(arena: Allocator, list: []const Hint) Allocator.Error![]const u32`
 //! - `pub fn applyOrder(gpa: Allocator, list: []const Hint) Allocator.Error![]const u32`
 //! - `pub fn conflict(gpa: Allocator, arena: Allocator, check: anytype, admitted: []const u32, new: u32, code: Code) Allocator.Error!Verdict`
+//! - `pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool`
 //! - `pub fn int(word: []const u8) ?i32`
 
 const std = @import("std");
@@ -76,6 +78,32 @@ pub const Verb = enum(u8) {
             if (@backingInt(v) <= @backingInt(last)) return @intCast(r);
         }
         return 0;
+    }
+
+    /// The head of a line of this verb, the text `read` reads the verb back
+    /// from: `*@ group pair`, `*@ row`, and a stay's, `*@ weak cell`.
+    pub fn head(v: Verb, strength: enum { strong, weak }) []const u8 {
+        return switch (v) {
+            inline else => |k| if (strength == .weak) "*@ weak " ++ comptime spelling(k) else "*@ " ++ comptime spelling(k),
+        };
+    }
+
+    /// The side `word` names in this verb's idiom, as the tag of `T`, any
+    /// enum of the four sides in the order left, right, up, down: `face`
+    /// says left right up down, `port` (and a definition's own port lines)
+    /// left right top bottom, `refdes` left right above below. Null for any
+    /// other word; the case is exact, as a deck is read lowercased. Asserts
+    /// the verb is one of the three.
+    pub fn side(v: Verb, comptime T: type, word: []const u8) ?T {
+        comptime assert(std.enums.values(T).len == 4);
+        const words: [4][]const u8 = switch (v) {
+            .face => .{ "left", "right", "up", "down" },
+            .port => .{ "left", "right", "top", "bottom" },
+            .refdes => .{ "left", "right", "above", "below" },
+            else => unreachable,
+        };
+        for (words, 0..) |w, i| if (std.mem.eql(u8, w, word)) return @as(T, @fromBackingInt(@intCast(i)));
+        return null;
     }
 };
 
@@ -153,6 +181,20 @@ pub const Verdict = struct {
     blocked_by: []const u32 = &.{},
     /// Per `blocked_by` member: deleting it alone would admit this line.
     alone: []const bool = &.{},
+
+    /// The verdict of a line read with `code`: honoured when it is `ok`,
+    /// else rejected.
+    pub fn of(code: Code) Verdict {
+        return .{ .state = if (code == .ok) .honoured else .rejected, .code = code };
+    }
+
+    /// The verdict of a line that gives way (`state`: dropped or relaxed) to
+    /// the lines `by`, each alone blocking it. Copies `by` into `arena`.
+    pub fn blocked(arena: Allocator, state: State, code: Code, by: []const u32) Allocator.Error!Verdict {
+        const solo = try arena.alloc(bool, by.len);
+        @memset(solo, true);
+        return .{ .state = state, .code = code, .blocked_by = try arena.dupe(u32, by), .alone = solo };
+    }
 };
 
 /// The hint `line` states (any case, blanks around it allowed), its verb
@@ -181,9 +223,7 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
         line += 1;
         if (line == 1) continue;
         var words = std.mem.tokenizeAny(u8, raw, " \t\r");
-        const first = words.next() orelse continue;
-        if (eql(first, ".subckt")) depth += 1;
-        if (eql(first, ".ends")) depth -|= 1;
+        depth = nesting(depth, words.next() orelse continue, ".subckt", ".ends");
         if (depth > 0) continue;
         var h = read(raw) orelse continue;
         var args: std.ArrayList([]const u8) = .empty;
@@ -197,6 +237,16 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
         last = h.line;
     }
     return out.items;
+}
+
+/// The depth in nested blocks after a line whose first word is `head` (any
+/// case): one deeper after `open`, one back after `close` and never above
+/// the top level, else `depth`. The one count of `.subckt ... .ends`, for
+/// the hints and the parser.
+pub fn nesting(depth: u32, head: []const u8, open: []const u8, close: []const u8) u32 {
+    if (eql(head, open)) return depth + 1;
+    if (eql(head, close)) return depth -| 1;
+    return depth;
 }
 
 /// The order lines are admitted in, as indices into `list`: strong before
@@ -259,6 +309,36 @@ pub fn conflict(gpa: Allocator, arena: Allocator, check: anytype, admitted: []co
     return .{ .state = .dropped, .code = code, .blocked_by = try arena.dupe(u32, keep.items), .alone = solo };
 }
 
+/// Whether `edges` (`[a, b]`: a before b) hold together as an order: they
+/// close no cycle (Kahn). The one test of both orders: `sequence`'s column
+/// lines and, among the rows' classes, `relations`'. Asserts that the edges
+/// name at most `n` nodes. Quadratic in the edges, a deck's handful.
+pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool {
+    var list: std.ArrayList(u32) = .empty;
+    defer list.deinit(gpa);
+    for (edges) |e| for (e) |d| if (std.mem.indexOfScalar(u32, list.items, d) == null) try list.append(gpa, d);
+    const nodes = list.items;
+    assert(nodes.len <= n);
+    const indeg = try gpa.alloc(u32, nodes.len);
+    defer gpa.free(indeg);
+    @memset(indeg, 0);
+    for (edges) |e| indeg[std.mem.indexOfScalar(u32, nodes, e[1]).?] += 1;
+    var queue: std.ArrayList(u32) = .empty;
+    defer queue.deinit(gpa);
+    for (indeg, 0..) |d, k| if (d == 0) try queue.append(gpa, @intCast(k));
+    var done: usize = 0;
+    while (queue.pop()) |k| {
+        done += 1;
+        for (edges) |e| if (e[0] == nodes[k]) {
+            const t = std.mem.indexOfScalar(u32, nodes, e[1]).?;
+            indeg[t] -= 1;
+            if (indeg[t] == 0) try queue.append(gpa, @intCast(t));
+        };
+    }
+    assert(done <= nodes.len);
+    return done == nodes.len;
+}
+
 /// A whole number, or null.
 pub fn int(word: []const u8) ?i32 {
     return std.fmt.parseInt(i32, word, 10) catch null;
@@ -266,20 +346,30 @@ pub fn int(word: []const u8) ?i32 {
 
 // ---- private ----
 
-/// The verb `word` names, reading a second word where the verb has two
-/// (`group pair`, `grouping off`, `symmetry off`).
+/// The verb as written after `*@`: its tag, a group's kind after `group`,
+/// the two `off` lines. The one table `Verb.head` writes and `verbOf` reads.
+fn spelling(v: Verb) []const u8 {
+    return switch (v) {
+        inline .pair, .mirror, .bank, .stack, .cross => |k| "group " ++ @tagName(k),
+        .off => "grouping off",
+        .symmetry_off => "symmetry off",
+        else => @tagName(v),
+    };
+}
+
+/// The verb whose spelling starts with `word`, reading a second word where
+/// the spelling has two (`group pair`, `grouping off`, `symmetry off`).
 fn verbOf(word: []const u8, it: *std.mem.TokenIterator(u8, .any)) Verb {
-    if (eql(word, "grouping")) return if (eql(it.next() orelse "", "off")) .off else .unknown;
-    if (eql(word, "symmetry")) return if (eql(it.next() orelse "", "off")) .symmetry_off else .unknown;
-    const group = eql(word, "group");
-    const tag = if (group) (it.next() orelse return .unknown) else word;
-    var buf: [16]u8 = undefined;
-    if (tag.len > buf.len) return .unknown;
-    const v = std.meta.stringToEnum(Verb, std.ascii.lowerString(&buf, tag)) orelse return .unknown;
-    // The group kinds lead the enum and are read after `group`, nothing else
-    // is; the other two-word verbs are read above, never by their tag.
-    const kind = @backingInt(v) < @backingInt(Verb.nogroup);
-    return if (kind != group or v == .off or v == .symmetry_off) .unknown else v;
+    var second: ?[]const u8 = null;
+    for (std.enums.values(Verb)) |v| {
+        const s = spelling(v);
+        const cut = std.mem.indexOfScalar(u8, s, ' ') orelse s.len;
+        if (!eql(s[0..cut], word)) continue;
+        if (cut == s.len) return v;
+        second = second orelse it.next() orelse return .unknown;
+        if (eql(s[cut + 1 ..], second.?)) return v;
+    }
+    return .unknown;
 }
 
 test "read: the forms, weak, and what is no verb" {
@@ -303,6 +393,19 @@ test "read: the forms, weak, and what is no verb" {
     try std.testing.expectEqual(@as(u8, 1), Verb.symmetric.rung());
     try std.testing.expectEqual(@as(u8, 2), Verb.face.rung());
     try std.testing.expectEqual(@as(u8, 5), Verb.route.rung());
+}
+
+test "head: every verb's line reads back as written; side: the three idioms" {
+    for (std.enums.values(Verb)) |v| {
+        const r = read(v.head(.weak)).?;
+        try std.testing.expect(r.verb == v and r.weak and read(v.head(.strong)).?.verb == v);
+        try std.testing.expectEqualStrings(v.head(.weak), r.head);
+    }
+    const Side = enum { left, right, up, down };
+    try std.testing.expectEqual(Side.up, Verb.face.side(Side, "up").?);
+    try std.testing.expectEqual(Side.down, Verb.port.side(Side, "bottom").?);
+    try std.testing.expectEqual(Side.down, Verb.refdes.side(Side, "below").?);
+    try std.testing.expectEqual(null, Verb.face.side(Side, "above"));
 }
 
 test "admitOrder: strong before weak, later first" {

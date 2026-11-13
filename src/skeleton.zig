@@ -63,7 +63,7 @@ const Role = sch.Role;
 const Structure = structure.Structure;
 const none = structure.none;
 const isTransistor = device.isTransistor;
-const isRail = forms.isRail;
+const isRail = Role.isRail;
 
 pub const Form = enum(u8) { vertical, horizontal };
 
@@ -288,7 +288,7 @@ fn byRank(gpa: Allocator, rank: []const u32) ![]u32 {
 /// The other member of `d`'s differential or cross-coupled pair, or `none`.
 fn blockPartner(st: *const Structure, d: u32) u32 {
     for (st.block_kind, 0..) |k, b| {
-        if (k != .pair and k != .cross) continue;
+        if (!k.ofTwo()) continue;
         const ms = st.members(b);
         if (ms[0] == d) return ms[1];
         if (ms[1] == d) return ms[0];

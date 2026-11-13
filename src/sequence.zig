@@ -21,7 +21,6 @@
 //! - `pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Sequence`
 //! - `pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x: []i32) Allocator.Error!void`
 //! - `pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`
-//! - `pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -36,6 +35,7 @@ const Structure = structure.Structure;
 const Form = skeleton.Form;
 const Verdict = hints.Verdict;
 const none = structure.none;
+const acyclic = hints.acyclic;
 
 pub const Sequence = struct {
     /// `[a, b]`: column device a's column left of b's.
@@ -100,7 +100,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             try devs.append(arena, d);
         } else if (h.args.len < 2) .bad_args else null;
         if (bad) |code| {
-            verdicts[i] = .{ .state = .rejected, .code = code };
+            verdicts[i] = .of(code);
             continue;
         }
         own[i] = devs.items;
@@ -120,7 +120,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, .cycle);
             continue;
         }
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(.ok);
         const line = own[i];
         try stated.append(arena, .{ .line = i, .devices = line });
         // The mirror image, reversed, where every device has a mate.
@@ -267,36 +267,6 @@ pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_r
         }
         try taken.put(gpa, .{ x[b], y[b] }, {});
     }
-}
-
-/// Whether `edges` (`[a, b]`: a before b) hold together as an order: they
-/// close no cycle (Kahn). The one test of the columns' lines and, among the
-/// rows' classes, of `relations`'. Asserts that the edges name at most `n`
-/// nodes. Quadratic in the edges, a deck's handful.
-pub fn acyclic(gpa: Allocator, n: usize, edges: []const [2]u32) Allocator.Error!bool {
-    var list: std.ArrayList(u32) = .empty;
-    defer list.deinit(gpa);
-    for (edges) |e| for (e) |d| if (std.mem.indexOfScalar(u32, list.items, d) == null) try list.append(gpa, d);
-    const nodes = list.items;
-    assert(nodes.len <= n);
-    const indeg = try gpa.alloc(u32, nodes.len);
-    defer gpa.free(indeg);
-    @memset(indeg, 0);
-    for (edges) |e| indeg[std.mem.indexOfScalar(u32, nodes, e[1]).?] += 1;
-    var queue: std.ArrayList(u32) = .empty;
-    defer queue.deinit(gpa);
-    for (indeg, 0..) |d, k| if (d == 0) try queue.append(gpa, @intCast(k));
-    var done: usize = 0;
-    while (queue.pop()) |k| {
-        done += 1;
-        for (edges) |e| if (e[0] == nodes[k]) {
-            const t = std.mem.indexOfScalar(u32, nodes, e[1]).?;
-            indeg[t] -= 1;
-            if (indeg[t] == 0) try queue.append(gpa, @intCast(t));
-        };
-    }
-    assert(done <= nodes.len);
-    return done == nodes.len;
 }
 
 // ---- private ----

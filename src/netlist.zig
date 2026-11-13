@@ -290,7 +290,7 @@ pub fn parse(gpa: Allocator, sources: []const []const u8, diag: ?*Diagnostic) Er
     };
     for (top_hints, verdicts) |h, *v| switch (h.verb) {
         .expand => if (v.* == null) {
-            v.* = .{ .state = .rejected, .code = if (h.args.len != 1) .bad_args else .unknown_name };
+            v.* = .of(if (h.args.len != 1) .bad_args else .unknown_name);
         },
         else => {},
     };
@@ -362,8 +362,8 @@ fn pdkPrimitive(master: []const u8, nodes: usize) ?DeviceKind {
 /// device becomes that kind (a transistor of three or four pins, a two-pin
 /// resistor or capacitor, or a block), its model type the one named.
 fn kindLine(graph: *Circuit.Graph, device_ids: *const std.StringHashMapUnmanaged(EdgeId), h: hints.Hint, kind_type: []?[]const u8) hints.Verdict {
-    if (h.args.len != 2) return .{ .state = .rejected, .code = .bad_args };
-    const e = device_ids.get(h.args[0]) orelse return .{ .state = .rejected, .code = .unknown_name };
+    if (h.args.len != 2) return .of(.bad_args);
+    const e = device_ids.get(h.args[0]) orelse return .of(.unknown_name);
     const pins = graph.members(e).len;
     const word = h.args[1];
     const Want = struct { name: []const u8, kind: DeviceKind, lo: usize, hi: usize };
@@ -378,12 +378,12 @@ fn kindLine(graph: *Circuit.Graph, device_ids: *const std.StringHashMapUnmanaged
     };
     const w = for (table) |t| {
         if (eql(t.name, word)) break t;
-    } else return .{ .state = .rejected, .code = .bad_args };
-    if (pins < w.lo or pins > w.hi) return .{ .state = .rejected, .code = .bad_args };
+    } else return .of(.bad_args);
+    if (pins < w.lo or pins > w.hi) return .of(.bad_args);
     graph.edges.items(.kind)[e.index()] = w.kind;
     if (w.kind != .subckt) graph.edges.items(.def)[e.index()] = no_def;
     kind_type[e.index()] = if (w.kind == .mosfet or w.kind == .bjt) w.name else null;
-    return .{ .state = .honoured, .code = .ok };
+    return .of(.ok);
 }
 
 const Pass = struct {
@@ -467,7 +467,7 @@ const Pass = struct {
             var placed: u16 = 0;
             const body_start = c.pos;
             var body_end = text.len;
-            var depth: usize = 1;
+            var depth: u32 = 1;
             while (c.pos < text.len) {
                 const at = c.pos;
                 const r = c.nextLine() orelse break;
@@ -478,13 +478,10 @@ const Pass = struct {
                 }
                 const l = Cards.content(r) orelse continue;
                 const e = std.mem.indexOfAny(u8, l, " \t") orelse l.len;
-                if (eql(l[0..e], ".subckt")) depth += 1;
-                if (eql(l[0..e], ".ends")) {
-                    depth -= 1;
-                    if (depth == 0) {
-                        body_end = at;
-                        break;
-                    }
+                depth = hints.nesting(depth, l[0..e], ".subckt", ".ends");
+                if (depth == 0) {
+                    body_end = at;
+                    break;
                 }
             }
             def.body = text[body_start..body_end];
@@ -609,10 +606,7 @@ const Pass = struct {
         const asked: ?usize = if (frame == null and kind == .subckt) for (self.top_hints, 0..) |h, k| {
             if (h.verb == .expand and h.args.len == 1 and eql(h.args[0], f[0])) break k;
         } else null else null;
-        if (asked) |k| self.verdicts[k] = if (self.defs.items[def_id].body.len > 0)
-            .{ .state = .honoured, .code = .ok }
-        else
-            .{ .state = .rejected, .code = .not_placeable };
+        if (asked) |k| self.verdicts[k] = .of(if (self.defs.items[def_id].body.len > 0) .ok else .not_placeable);
         const flatten = kind == .subckt and (self.defs.items[def_id].expand or (asked != null and self.defs.items[def_id].body.len > 0));
         if (flatten) {
             const def = self.defs.items[def_id];
@@ -984,7 +978,7 @@ fn directive(def: *Subckt, text: []const u8, placed: *u16) Error!void {
         def.expand = true;
         return;
     }
-    const side: PortSide = if (eql(verb, "left")) .left else if (eql(verb, "right")) .right else if (eql(verb, "top")) .top else if (eql(verb, "bottom")) .bottom else return;
+    const side = hints.Verb.port.side(PortSide, verb) orelse return;
     while (it.next()) |port| {
         for (def.ports, 0..) |p, k| if (eql(p, port)) {
             @constCast(def.sides)[k] = side;
@@ -1069,16 +1063,12 @@ const Cards = struct {
     }
 
     fn skipBlock(c: *Cards, open: []const u8, close: []const u8) void {
-        var depth: usize = 1;
+        var depth: u32 = 1;
         while (c.nextLine()) |raw| {
             const line = content(raw) orelse continue;
             const end = std.mem.indexOfAny(u8, line, " \t") orelse line.len;
-            const head = line[0..end];
-            if (eql(head, open)) depth += 1;
-            if (eql(head, close)) {
-                depth -= 1;
-                if (depth == 0) return;
-            }
+            depth = hints.nesting(depth, line[0..end], open, close);
+            if (depth == 0) return;
         }
     }
 };

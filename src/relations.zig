@@ -32,13 +32,13 @@ const device = @import("device.zig");
 const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
-const sequence = @import("sequence.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
 const EdgeId = netlist.EdgeId;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
+const Side = @import("library.zig").Side;
 const Verdict = hints.Verdict;
 const none = structure.none;
 
@@ -105,8 +105,6 @@ pub const Relations = struct {
     }
 };
 
-const honoured: Verdict = .{ .state = .honoured, .code = .ok };
-
 /// The admission test for a set of row lines: their constraints hold
 /// together.
 const Check = struct {
@@ -132,27 +130,27 @@ pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?V
         const h = nl.hints[i];
         if (h.verb != .driver) continue;
         if (h.args.len != 2) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         const apart = std.mem.eql(u8, h.args[1], "apart");
         if (!apart and !std.mem.eql(u8, h.args[1], "inline")) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
+            verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
         // Apart, a source stands upright between its net's symbol and
         // ground: only a two-pin source is drawn so.
         const source = device.of(c.edges.items(.kind)[d]).source == .independent and c.members(EdgeId.from(d)).len == 2;
         if (c.members(EdgeId.from(d)).len == 0 or (apart and !source)) {
-            verdicts[i] = reject(.not_placeable);
+            verdicts[i] = .of(.not_placeable);
             continue;
         }
         drawn[d] = !apart;
-        verdicts[i] = honoured;
+        verdicts[i] = .of(.ok);
     }
 }
 
@@ -166,13 +164,13 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .upright and h.verb != .bridge) continue;
-        verdicts[i] = for (h.args) |name| {
-            const d = (nl.device(name) orelse break reject(.unknown_name)).index();
+        verdicts[i] = .of(for (h.args) |name| {
+            const d = (nl.device(name) orelse break .unknown_name).index();
             const pins = c.members(EdgeId.from(d));
-            const path = device.of(kinds[d]).path orelse break reject(.not_placeable);
+            const path = device.of(kinds[d]).path orelse break .not_placeable;
             const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
-            if (!drawn[d] or !takes or pins.len <= path[1] or pins[path[0]] == pins[path[1]]) break reject(.not_placeable);
-        } else if (h.args.len == 0) reject(.bad_args) else honoured;
+            if (!drawn[d] or !takes or pins.len <= path[1] or pins[path[0]] == pins[path[1]]) break .not_placeable;
+        } else if (h.args.len == 0) .bad_args else .ok);
         if (verdicts[i].?.state != .honoured) continue;
         for (h.args) |name| form[nl.device(name).?.index()] = if (h.verb == .upright) .vertical else .horizontal;
     }
@@ -186,31 +184,31 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .face or h.args.len != 3) continue;
-        const dir = h.args[2];
-        const up = std.mem.eql(u8, dir, "up");
-        if (!up and !std.mem.eql(u8, dir, "down")) continue;
+        const side = h.verb.side(Side, h.args[2]) orelse continue;
+        if (side.isHorizontal()) continue; // a gate's side: `faces` reads it
+        const up = side == .up;
         const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
+            verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
         if (!drawn[d] or form[d] != .vertical) {
-            verdicts[i] = reject(.not_placeable);
+            verdicts[i] = .of(.not_placeable);
             continue;
         }
         const pin = pinIndex(nl, d, h.args[1]) orelse {
-            verdicts[i] = reject(.unknown_name);
+            verdicts[i] = .of(.unknown_name);
             continue;
         };
         const net = c.members(EdgeId.from(d))[pin].index();
         if (net != upper[d] and net != lower[d]) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         const other = if (net == upper[d]) lower[d] else upper[d];
         upper[d] = if (up) net else other;
         lower[d] = if (up) other else net;
         assert(upper[d] != lower[d]);
-        verdicts[i] = honoured;
+        verdicts[i] = .of(.ok);
     }
 }
 
@@ -228,7 +226,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         const h = nl.hints[i];
         if (h.verb != .row and h.verb != .above) continue;
         if (h.args.len < 2) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         var devs: std.ArrayList(u32) = .empty;
@@ -245,11 +243,11 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             try devs.append(arena, d);
         } else null;
         if (bad orelse if (devs.items.len == 0) @as(?hints.Code, .not_placeable) else null) |code| {
-            verdicts[i] = reject(code);
+            verdicts[i] = .of(code);
             continue;
         }
         if (devs.items.len == 1 and spans == 0) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         var cs: std.ArrayList([3]u32) = .empty;
@@ -275,7 +273,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, .cycle);
             continue;
         }
-        verdicts[i] = honoured;
+        verdicts[i] = .of(.ok);
         try held.appendSlice(arena, own[i]);
         // Its mirror image, where the symmetry has one and it fits.
         var image: std.ArrayList([3]u32) = .empty;
@@ -344,20 +342,21 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         if (h.verb != .face) continue;
         if (verdicts[i] != null) continue; // an end's, or rejected
         if (h.args.len != 3) {
-            verdicts[i] = reject(.bad_args);
+            verdicts[i] = .of(.bad_args);
             continue;
         }
-        const right = std.mem.eql(u8, h.args[2], "right");
-        if (!right and !std.mem.eql(u8, h.args[2], "left")) {
-            verdicts[i] = reject(.bad_args);
+        const side = h.verb.side(Side, h.args[2]);
+        const right = side == .right;
+        if (!right and side != .left) {
+            verdicts[i] = .of(.bad_args);
             continue;
         }
         const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
+            verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
         const pin = pinIndex(nl, d, h.args[1]) orelse {
-            verdicts[i] = reject(.unknown_name);
+            verdicts[i] = .of(.unknown_name);
             continue;
         };
         // A flat part: one of its two ends on that side. Narrowing: by its
@@ -366,15 +365,15 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         // and leaves out a two-port box.
         if (drawn[d] and form[d] == .horizontal and c.members(EdgeId.from(d)).len == 2) {
             left_end[d] = if ((pin == 0) != right) .first else .second;
-            verdicts[i] = honoured;
+            verdicts[i] = .of(.ok);
             continue;
         }
         if (!drawn[d] or form[d] != .vertical or pin != (device.of(kinds[d]).gate orelse none)) {
-            verdicts[i] = reject(.not_placeable);
+            verdicts[i] = .of(.not_placeable);
             continue;
         }
         gate_right[d] = right;
-        verdicts[i] = honoured;
+        verdicts[i] = .of(.ok);
     }
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .face or verdicts[i] == null or verdicts[i].?.state != .honoured or h.args.len != 3) continue;
@@ -421,10 +420,6 @@ pub fn pinName(arena: Allocator, kind: DeviceKind, k: u32) Allocator.Error![]con
 
 // ---- private ----
 
-fn reject(code: hints.Code) Verdict {
-    return .{ .state = .rejected, .code = code };
-}
-
 fn namedFace(nl: *const Netlist, verdicts: []const ?Verdict, d: u32) bool {
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .face or h.args.len != 3 or verdicts[i] == null or verdicts[i].?.state != .honoured) continue;
@@ -452,5 +447,5 @@ fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool
         if (r.find(k[0]) == r.find(k[1])) return false;
         try edges.append(gpa, .{ r.find(k[0]), r.find(k[1]) });
     };
-    return sequence.acyclic(gpa, n, edges.items);
+    return hints.acyclic(gpa, n, edges.items);
 }

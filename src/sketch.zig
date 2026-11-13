@@ -124,12 +124,12 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         };
         // A drawing relaid: its stays anchor the lattice's lines, and only
         // what the deck's structure no longer puts there is laid again.
-        const weak = try gpa.alloc(bool, nl.hints.len);
-        defer gpa.free(weak);
-        for (weak, nl.hints) |*w, h| w.* = h.weak and h.verb == .at;
-        if (along == null and std.mem.indexOfScalar(bool, weak, true) != null) {
-            placed_all = try relay.place(gpa, s, sk, weak, geo.xs, geo.ys, ats, at);
-        }
+        // Narrowing: a deck with a `weak at` line, even one rejected or
+        // overridden, is relaid; the general form asks for an `At.weak`.
+        const stays = for (nl.hints) |h| {
+            if (h.weak and h.verb == .at) break true;
+        } else false;
+        if (along == null and stays) placed_all = try relay.place(gpa, s, sk, geo.xs, geo.ys, ats, at);
     }
     var xy: std.ArrayList([2]f32) = .empty;
     // Closed up: the drawing as the engine alone makes it (the deck's `at`,
@@ -426,11 +426,7 @@ fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
             const role = s.roles[net.index()];
             // A symbol's stub out from the pin, and a unit for a symbol
             // beside the device; the supply's bar over the top aside.
-            const stub = switch (role) {
-                .input, .bias, .output => len.terminal,
-                .sink, .supply => len.rail,
-                .internal => continue,
-            };
+            const stub = if (role.isPort()) len.terminal else if (role.isRail()) len.rail else continue;
             if (role == .supply and side == .up) continue;
             need[@backingInt(side)] = r[@backingInt(side)] + stub + if (side.isHorizontal()) len.unit else 0;
         }

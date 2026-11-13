@@ -80,7 +80,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         // A net no device drawn in the circuit touches (an apart driver's
         // alone) has nothing for a net line to draw.
         const on_net = h.verb == .label or h.verb == .wire or h.verb == .port;
-        if (v.state == .honoured and on_net and !inCircuit(nl, sk, p, lib, nl.net(h.args[0]).?.index())) v.* = .{ .state = .rejected, .code = .not_placeable };
+        if (v.state == .honoured and on_net and !inCircuit(nl, sk, p, lib, nl.net(h.args[0]).?.index())) v.* = .of(.not_placeable);
     }
     // Lines setting one value: the preferred one stands, the rest give way.
     const order = try hints.admitOrder(arena, nl.hints);
@@ -92,7 +92,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
             const theirs = slot(nl.hints[j]) orelse continue;
             if (theirs.family == mine.family and std.mem.eql(u8, theirs.target, mine.target)) break j;
         } else continue;
-        out[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{by}), .alone = try arena.dupe(bool, &.{true}) };
+        out[i] = try .blocked(arena, .dropped, .conflict, &.{by});
     }
     // A cell as the skeleton holds it, in the frame the line uses.
     for (out, nl.hints) |*v, h| {
@@ -110,8 +110,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         // A cell or place on one of its devices is the more exact line: it
         // stands, and this one gives way to it.
         if (try placedBy(arena, nl, out, h)) |by| {
-            v.* = .{ .state = .dropped, .code = .conflict, .blocked_by = by, .alone = try arena.alloc(bool, by.len) };
-            @memset(@constCast(v.alone), true);
+            v.* = try .blocked(arena, .dropped, .conflict, by);
             continue;
         }
         v.* = switch (h.verb) {
@@ -155,7 +154,7 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     var out: std.ArrayList([]const u8) = .empty;
     for (st.block_kind, 0..) |k, b| {
         var line: std.ArrayList(u8) = .empty;
-        try line.print(arena, "*@ group {t}", .{k});
+        try line.appendSlice(arena, k.verb().head(.strong));
         for (st.members(b)) |d| try line.print(arena, " {s}", .{names[d]});
         try out.append(arena, line.items);
     }
@@ -164,13 +163,13 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     // An op-amp circuit is placed along its signal, not on the lattice
     // (`opamp.zig`): its places are the decision, every device's.
     if (p != null and !opamp.steered(nl) and opamp.applies(nl, sk.drawn)) {
-        try places(arena, &out, "*@ at", nl, sk, p.?, unit);
+        try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, p.?, unit);
         return out.items;
     }
     // Forms of the two-pin devices.
     for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
         var line: std.ArrayList(u8) = .empty;
-        try line.appendSlice(arena, if (f == .vertical) "*@ upright" else "*@ bridge");
+        try line.appendSlice(arena, hints.Verb.head(if (f == .vertical) .upright else .bridge, .strong));
         const empty = line.items.len;
         for (0..n) |d| {
             const pins = c.members(EdgeId.from(d));
@@ -189,10 +188,10 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
         const up = for (pins, 0..) |net, k| {
             if (net.index() == sk.upper[d]) break k;
         } else unreachable;
-        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} up", .{ names[d], try relations.pinName(arena, kinds[d], @intCast(up)) }));
+        try out.append(arena, try std.fmt.allocPrint(arena, "{s} {s} {s} up", .{ hints.Verb.face.head(.strong), names[d], try relations.pinName(arena, kinds[d], @intCast(up)) }));
         const gate = device.of(kinds[d]).gate orelse continue;
         assert(gate < pins.len); // upright with a gate: a transistor with its three pins
-        try out.append(arena, try std.fmt.allocPrint(arena, "*@ face {s} {s} {s}", .{ names[d], try relations.pinName(arena, kinds[d], gate), if (sk.gate_right[d]) "right" else "left" }));
+        try out.append(arena, try std.fmt.allocPrint(arena, "{s} {s} {s} {s}", .{ hints.Verb.face.head(.strong), names[d], try relations.pinName(arena, kinds[d], gate), if (sk.gate_right[d]) "right" else "left" }));
     }
     // The two orders. Rows, top down: each one's devices left to right as a
     // `row` line, then the first of each as the `above` line.
@@ -204,22 +203,22 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
         while (end < order.len and sk.y[order[end]] == sk.y[order[at]]) end += 1;
         if (end - at >= 2) {
             var line: std.ArrayList(u8) = .empty;
-            try line.appendSlice(arena, "*@ row");
+            try line.appendSlice(arena, hints.Verb.row.head(.strong));
             for (order[at..end]) |d| try line.print(arena, " {s}", .{names[d]});
             try out.append(arena, line.items);
         }
         at = end;
     }
-    try heads(arena, &out, "*@ above", names, order, sk.y);
+    try heads(arena, &out, hints.Verb.above.head(.strong), names, order, sk.y);
     // Columns, left to right: the top device of each as the `order` line.
     std.mem.sort(u32, order, Lattice{ .major = sk.x, .minor = sk.y }, Lattice.before);
-    try heads(arena, &out, "*@ order", names, order, sk.x);
+    try heads(arena, &out, hints.Verb.order.head(.strong), names, order, sk.x);
     if (rung < 3) return out.items;
     for (0..n) |d| if (sk.drawn[d]) {
-        try out.append(arena, try std.fmt.allocPrint(arena, "*@ weak cell {s} {d} {d}", .{ names[d], sk.x[d] + sk.origin[0], sk.y[d] + sk.origin[1] }));
+        try out.append(arena, try std.fmt.allocPrint(arena, "{s} {s} {d} {d}", .{ hints.Verb.cell.head(.weak), names[d], sk.x[d] + sk.origin[0], sk.y[d] + sk.origin[1] }));
     };
     if (rung < 4) return out.items;
-    try places(arena, &out, "*@ weak at", nl, sk, p orelse return out.items, unit);
+    try places(arena, &out, hints.Verb.at.head(.weak), nl, sk, p orelse return out.items, unit);
     return out.items;
 }
 
@@ -296,30 +295,25 @@ fn units(arena: Allocator, v: i32, unit: i32) ![]const u8 {
 /// with, `class` against the library and the drawing; any other verb is
 /// one the engine does not take yet.
 fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed, lib: ?*const Library) Verdict {
-    const reject = struct {
-        fn f(code: hints.Code) Verdict {
-            return .{ .state = .rejected, .code = code };
-        }
-    }.f;
     switch (h.verb) {
         .role => {
-            if (h.args.len != 2) return reject(.bad_args);
-            const net = nl.net(h.args[0]) orelse return reject(.unknown_name);
-            const role = sch.roleWord(h.args[1]) orelse return reject(.bad_args);
-            return if (roles[net.index()] == role) .{ .state = .honoured, .code = .ok } else .{ .state = .relaxed, .code = .conflict };
+            if (h.args.len != 2) return .of(.bad_args);
+            const net = nl.net(h.args[0]) orelse return .of(.unknown_name);
+            const role = sch.roleWord(h.args[1]) orelse return .of(.bad_args);
+            return if (roles[net.index()] == role) .of(.ok) else .{ .state = .relaxed, .code = .conflict };
         },
         .class => {
-            if (h.args.len != 2) return reject(.bad_args);
-            _ = nl.device(h.args[0]) orelse return reject(.unknown_name);
-            const l = lib orelse return .{ .state = .honoured, .code = .ok };
-            const id = l.find(h.args[1]) orelse return reject(.unknown_name);
-            const drawing = p orelse return .{ .state = .honoured, .code = .ok };
+            if (h.args.len != 2) return .of(.bad_args);
+            _ = nl.device(h.args[0]) orelse return .of(.unknown_name);
+            const l = lib orelse return .of(.ok);
+            const id = l.find(h.args[1]) orelse return .of(.unknown_name);
+            const drawing = p orelse return .of(.ok);
             // Taken only when it has the terminals of the class it replaces.
-            const d = checks.deviceIn(drawing, h.args[0]) orelse return .{ .state = .honoured, .code = .ok };
-            return if (drawing.dev_class[d] == id) .{ .state = .honoured, .code = .ok } else reject(.bad_args);
+            const d = checks.deviceIn(drawing, h.args[0]) orelse return .of(.ok);
+            return .of(if (drawing.dev_class[d] == id) .ok else .bad_args);
         },
-        .unknown => return reject(.unknown_verb),
-        else => return reject(.not_built),
+        .unknown => return .of(.unknown_verb),
+        else => return .of(.not_built),
     }
 }
 
@@ -328,7 +322,7 @@ fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed
 fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
     if (h.args.len == 0) return null;
     const family: u8 = switch (h.verb) {
-        .face => if (h.args.len == 3 and (std.mem.eql(u8, h.args[2], "up") or std.mem.eql(u8, h.args[2], "down"))) 1 else 2,
+        .face => if (h.args.len == 3 and !(h.verb.side(library.Side, h.args[2]) orelse library.Side.left).isHorizontal()) 1 else 2,
         .upright, .bridge => 3,
         .driver => 4,
         .label, .wire => 5,

@@ -444,7 +444,7 @@ fn movesSignal(s: *const Search, sigma: []const u32) bool {
     assert(s.roles.len + s.g.devices == sigma.len);
     for (s.roles, 0..) |r, n| {
         const v = s.g.devices + n;
-        if (sigma[v] != v and r != .supply and r != .sink) return true;
+        if (sigma[v] != v and !r.isRail()) return true;
     }
     return false;
 }

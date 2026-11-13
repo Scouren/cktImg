@@ -16,7 +16,7 @@
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
 //! - `pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32) !void`
 //! - `pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, column: i32, stood: []bool) bool`
-//! - `pub fn isTransistor(kind: DeviceKind) bool`, `pub fn isTwoPin(kind: DeviceKind) bool`, `pub fn isRail(r: Role) bool`
+//! - `pub fn isTransistor(kind: DeviceKind) bool`, `pub fn isTwoPin(kind: DeviceKind) bool`
 //! - `pub fn isTwoEnded(nl: *const Netlist, d: u32) bool`, `pub fn isPartsOnly(nl: *const Netlist) bool`
 //! - `pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool`
 
@@ -37,6 +37,7 @@ const DeviceKind = netlist.DeviceKind;
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
 const Role = sch.Role;
+const isRail = Role.isRail;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
 const Skeleton = skeleton.Skeleton;
@@ -226,11 +227,6 @@ pub fn isPartsOnly(nl: *const Netlist) bool {
 pub fn isDependent(nl: *const Netlist, roles: []const Role, d: u32) bool {
     return isVoltageControlled(nl.graph.edges.items(.kind)[d]) and
         nl.graph.members(EdgeId.from(d)).len >= 2 and !isAmplifier(nl, roles, d);
-}
-
-/// A supply or a ground: the two ends of the rows' order of potential.
-pub fn isRail(r: Role) bool {
-    return r == .supply or r == .sink;
 }
 
 // ---- private ----

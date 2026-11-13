@@ -8,7 +8,7 @@
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
 //! - `pub const Circuit`, `pub const DeviceKind`, `pub const Side`, `pub const Library`, `pub const ClassId`, `pub const Orient`, `pub const Pt`
 //! - `pub const none: u32`, `pub const max_pins`
-//! - `pub const Role = enum(u8)`, `pub const Orientation = enum(u1)`
+//! - `pub const Role = enum(u8)`, `Role.isRail(r: Role) bool`, `Role.isPort(r: Role) bool`, `pub const Orientation = enum(u1)`
 //! - `pub const DeviceInfo = struct`, `pub const NodeKind = enum(u8)`, `pub const Node = struct`, `pub const Pin = struct`, `pub const Route = struct`
 //! - `pub const Schematic = struct`, `Schematic.deinit`, `Schematic.pinSide`, `Schematic.reach`, `Schematic.pinPoint`, `Schematic.deviceNode`, `Schematic.addNode`, `Schematic.addPin`
 //! - `pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]Role`
@@ -59,6 +59,17 @@ pub const Role = enum(u8) {
     input,
     output,
     bias,
+
+    /// A supply or a ground: the two ends of the rows' order of potential.
+    pub fn isRail(r: Role) bool {
+        return r == .supply or r == .sink;
+    }
+
+    /// An input, an output or a bias: a net the drawing shows a port for,
+    /// its name beside it.
+    pub fn isPort(r: Role) bool {
+        return r == .input or r == .output or r == .bias;
+    }
 };
 
 pub const Orientation = enum(u1) { vertical, horizontal };

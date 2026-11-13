@@ -127,7 +127,7 @@ pub const Canvas = struct {
         assert(xy.items.len == s.nodes.len);
         assert(len.unit > 0);
         const rails = try gpa.alloc(bool, s.roles.len);
-        for (rails, s.roles) |*r, role| r.* = role == .supply or role == .sink;
+        for (rails, s.roles) |*r, role| r.* = role.isRail();
         var c: Canvas = .{ .gpa = gpa, .s = s, .xy = xy, .len = len, .boxes = boxes, .rails = rails };
         errdefer c.deinit();
         for (s.pins.items(.net), 0..) |net, p| try c.points.append(gpa, .{ .at = pinAt(s, @intCast(p)), .net = net });

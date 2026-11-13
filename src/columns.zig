@@ -33,7 +33,6 @@ const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const order_cost = @import("span.zig");
-const forms = @import("forms.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -288,7 +287,7 @@ fn distances(ctx: Ctx, mate: []const u32, from: u32) ![]u32 {
         if (v < devices) {
             for (c.members(EdgeId.from(v)), 0..) |net, i| {
                 const w = devices + net.index();
-                if (!order_cost.isChannelPin(ctx, v, i) or dist[w] != none or forms.isRail(ctx.roles[net.index()])) continue;
+                if (!order_cost.isChannelPin(ctx, v, i) or dist[w] != none or ctx.roles[net.index()].isRail()) continue;
                 dist[w] = dist[v] + 1;
                 try queue.append(ctx.gpa, w);
             }

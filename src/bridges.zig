@@ -38,7 +38,7 @@ const Role = sch.Role;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
 const none = structure.none;
-const isRail = forms.isRail;
+const isRail = Role.isRail;
 
 /// Places every drawn horizontal device, `order` (devices by rank) chain by
 /// chain, into a free cell of `x`, `y`; the vertical devices' cells are set,

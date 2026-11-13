@@ -291,7 +291,7 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
                     box = class.bbox().translate(at.sub(class.terminals[0].at));
                 };
                 // A port's or a label's name is drawn beside it.
-                if (kind == .label or s.roles[ref] == .input or s.roles[ref] == .output or s.roles[ref] == .bias) {
+                if (kind == .label or s.roles[ref].isPort()) {
                     box = box.merge(nameBox(at, runs[node], s.net_name[ref]));
                 }
             },
@@ -311,7 +311,7 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
         // it would hold its row where the lattice put it.
         const a = pt(r.pts[0]);
         const b = pt(r.pts[1]);
-        const rail = s.roles[r.net] == .supply or s.roles[r.net] == .sink;
+        const rail = s.roles[r.net].isRail();
         const stub = for (leaves.items) |l| {
             if ((l.at.eql(a) and toward(a, b) == l.faces) or (l.at.eql(b) and toward(b, a) == l.faces)) break true;
         } else false;

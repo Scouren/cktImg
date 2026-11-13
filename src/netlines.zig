@@ -121,7 +121,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
                     }
                     style[net] = s;
                 },
-                .port => port[net] = sideOf(h.args[1]) orelse break :blk .bad_args,
+                .port => port[net] = h.verb.side(Side, h.args[1]) orelse break :blk .bad_args,
                 .rail => {
                     const r = std.meta.stringToEnum(Rail, h.args[1]) orelse break :blk .bad_args;
                     if (r == .auto) break :blk .bad_args;
@@ -131,7 +131,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             }
             break :blk .ok;
         };
-        verdicts[i] = verdict(code);
+        verdicts[i] = .of(code);
     }
     // `first` lines in file order: theirs is the order to wire in.
     for (nl.hints, 0..) |h, i| {
@@ -145,7 +145,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             }
             break :blk .ok;
         };
-        verdicts[i] = verdict(code);
+        verdicts[i] = .of(code);
     }
     // Routes and vias: `<net> x,y ...` (`x y` pairs once split), Manhattan.
     // Their points are counted once the net is known and before its role
@@ -173,7 +173,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             try routes.append(arena, .{ .net = net, .pts = pts, .via = via, .line = @intCast(i) });
             break :blk .ok;
         };
-        verdicts[i] = verdict(code);
+        verdicts[i] = .of(code);
     }
     // Unless a line says: a supply is one bar over its pins; a ground a
     // symbol at each pin, one per branch, as the book draws it; a reference
@@ -196,7 +196,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
 /// never named or wired; an input is a port at its pins, never one wire. A
 /// verb that is no net line's says nothing of any.
 fn admits(verb: hints.Verb, role: Role) bool {
-    const rail = role == .supply or role == .sink;
+    const rail = role.isRail();
     return switch (verb) {
         .label => !rail,
         .wire, .route, .via => !rail and role != .input,
@@ -204,17 +204,4 @@ fn admits(verb: hints.Verb, role: Role) bool {
         .rail => rail,
         else => false,
     };
-}
-
-/// A line's verdict by its code: honoured, or rejected and why.
-fn verdict(code: hints.Code) Verdict {
-    return .{ .state = if (code == .ok) .honoured else .rejected, .code = code };
-}
-
-fn sideOf(word: []const u8) ?Side {
-    if (std.mem.eql(u8, word, "top")) return .up;
-    if (std.mem.eql(u8, word, "bottom")) return .down;
-    if (std.mem.eql(u8, word, "left")) return .left;
-    if (std.mem.eql(u8, word, "right")) return .right;
-    return null;
 }

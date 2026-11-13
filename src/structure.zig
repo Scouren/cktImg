@@ -21,7 +21,7 @@
 //!
 //! Contents:
 //! - `pub const none: u32`
-//! - `pub const BlockKind = enum(u8) { pair, cross, mirror, bank, stack }`
+//! - `pub const BlockKind = enum(u8) { pair, cross, mirror, bank, stack }`, `BlockKind.ofTwo(k: BlockKind) bool`, `BlockKind.verb(k: BlockKind) hints.Verb`
 //! - `pub const Structure = struct`, `Structure.members(s: *const Structure, b: usize) []const u32`
 //! - `Pins.holds(p: Pins, lines: []const u32) Allocator.Error!bool`: the admission test `hints.conflict` calls
 //! - `pub fn analyze(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role) Allocator.Error!Structure`
@@ -42,6 +42,7 @@ const DeviceKind = netlist.DeviceKind;
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
 const Role = sch.Role;
+const isRail = Role.isRail;
 const Polarity = symmetry.Polarity;
 const Verdict = hints.Verdict;
 
@@ -63,6 +64,19 @@ pub const BlockKind = enum(u8) {
     /// Transistors in series, top to bottom: each one's lower end is alone
     /// with the next one's upper end on a net that is not a rail.
     stack,
+
+    /// A differential or a cross-coupled pair: exactly two members, each
+    /// the other's half.
+    pub fn ofTwo(k: BlockKind) bool {
+        return k == .pair or k == .cross;
+    }
+
+    /// The grouping verb that states a block of this kind: its namesake.
+    pub fn verb(k: BlockKind) hints.Verb {
+        return switch (k) {
+            inline else => |t| @field(hints.Verb, @tagName(t)),
+        };
+    }
 };
 
 /// The result of `analyze`, in the arena it was given.
@@ -415,7 +429,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
     for (nl.hints, 0..) |h, i| switch (h.verb) {
         .off => {
             off = true;
-            verdicts[i] = .{ .state = .honoured, .code = .ok };
+            verdicts[i] = .of(.ok);
         },
         .nogroup => {
             var known: usize = 0;
@@ -424,7 +438,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
                 by[e.index()] = .{ @intCast(i), @intCast(i) };
                 known += 1;
             };
-            verdicts[i] = if (known == h.args.len and known > 0) .{ .state = .honoured, .code = .ok } else if (known > 0) .{ .state = .relaxed, .code = .unknown_name } else .{ .state = .rejected, .code = if (h.args.len == 0) .bad_args else .unknown_name };
+            verdicts[i] = if (known == h.args.len and known > 0) .of(.ok) else if (known > 0) .{ .state = .relaxed, .code = .unknown_name } else .of(if (h.args.len == 0) .bad_args else .unknown_name);
         },
         else => {},
     };
@@ -454,12 +468,9 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
             }
             if (std.mem.indexOfScalar(u32, members.items, d) == null) try members.append(gpa, d);
         }
-        const two = kind == .pair or kind == .cross;
+        const two = kind.ofTwo();
         if (members.items.len < 2 or (two and members.items.len != 2)) {
-            verdicts[i] = if (blockers.items.len > 0 and !(two and members.items.len > 2))
-                .{ .state = .dropped, .code = .taken, .blocked_by = try arena.dupe(u32, blockers.items), .alone = try alone(arena, blockers.items.len) }
-            else
-                .{ .state = .rejected, .code = if (unknown) .unknown_name else .bad_args };
+            verdicts[i] = if (blockers.items.len > 0 and !(two and members.items.len > 2)) try .blocked(arena, .dropped, .taken, blockers.items) else .of(if (unknown) .unknown_name else .bad_args);
             continue;
         }
         // In rank order, as recognition lists them; a stack top to bottom as
@@ -475,9 +486,7 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
             by[d][side] = @intCast(i);
         }
         got[i] = try arena.dupe(u32, members.items);
-        verdicts[i] = if (blockers.items.len > 0)
-            .{ .state = .relaxed, .code = .taken, .blocked_by = try arena.dupe(u32, blockers.items), .alone = try alone(arena, blockers.items.len) }
-        else if (unknown) .{ .state = .relaxed, .code = .unknown_name } else .{ .state = .honoured, .code = .ok };
+        verdicts[i] = if (blockers.items.len > 0) try .blocked(arena, .relaxed, .taken, blockers.items) else if (unknown) .{ .state = .relaxed, .code = .unknown_name } else .of(.ok);
     }
     for (nl.hints, got) |h, ms| if (ms) |m| try list.add(arena, blockKind(h.verb).?, m);
     for (by, taken, held) |b, t, h| {
@@ -488,22 +497,8 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
 }
 
 fn blockKind(v: hints.Verb) ?BlockKind {
-    return switch (v) {
-        .pair => .pair,
-        .bank => .bank,
-        .mirror => .mirror,
-        .stack => .stack,
-        .cross => .cross,
-        else => null,
-    };
-}
-
-/// Each member of a conflict that, deleted alone, admits the line: every
-/// one, where each blocker took devices of its own.
-fn alone(arena: Allocator, len: usize) ![]const bool {
-    const out = try arena.alloc(bool, len);
-    @memset(out, true);
-    return out;
+    for (std.enums.values(BlockKind)) |k| if (k.verb() == v) return k;
+    return null;
 }
 
 /// The symmetry under the deck's `symmetric`, `axis` and `symmetry off`
@@ -516,7 +511,7 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
     var off: ?u32 = null;
     for (order) |i| if (nl.hints[i].verb == .symmetry_off) {
         off = off orelse i;
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(.ok);
     };
     const check: Pins = .{ .gpa = gpa, .nl = nl, .roles = roles, .device_rank = device_rank, .net_rank = net_rank, .pin = try arena.alloc(symmetry.Pin, nl.hints.len), .device_mate = device_mate, .net_mate = net_mate };
     var admitted: std.ArrayList(u32) = .empty;
@@ -525,16 +520,16 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
         const h = nl.hints[i];
         if (h.verb != .symmetric and h.verb != .axis) continue;
         check.pin[i] = pinOf(nl, h) catch |err| {
-            verdicts[i] = .{ .state = .rejected, .code = if (err == error.Unknown) .unknown_name else .bad_args };
+            verdicts[i] = .of(if (err == error.Unknown) .unknown_name else .bad_args);
             continue;
         };
         if (off) |o| {
-            verdicts[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{o}), .alone = try alone(arena, 1) };
+            verdicts[i] = try .blocked(arena, .dropped, .conflict, &.{o});
             continue;
         }
         try admitted.append(gpa, i);
         if (try check.holds(admitted.items)) {
-            verdicts[i] = .{ .state = .honoured, .code = .ok };
+            verdicts[i] = .of(.ok);
             continue;
         }
         _ = admitted.pop();
@@ -586,8 +581,4 @@ fn transistor(nl: *const Netlist, d: u32) ?Fet {
         .polarity = symmetry.polarity(nl.modelType(e)),
         .kind = kind,
     };
-}
-
-fn isRail(r: Role) bool {
-    return r == .supply or r == .sink;
 }

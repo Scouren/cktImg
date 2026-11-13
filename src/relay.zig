@@ -17,7 +17,7 @@
 //! after it move along as one, so what stood mirrored stays mirrored.
 //!
 //! Contents:
-//! - `pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, hints_weak: []const bool, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool`
+//! - `pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -35,13 +35,13 @@ const Skeleton = skeleton.Skeleton;
 
 /// Sets `at[d]`, each drawn device's point, from the lattice (`xs` per
 /// column, `ys` per row, as `sk` cells index them) anchored on the stays in
-/// `ats` (`hints_weak[a.line]`), and takes those stays out of `ats`: the
+/// `ats` (those `weak`), and takes those stays out of `ats`: the
 /// lines they anchor carry them. A device's turn is the skeleton's
 /// (`s.devices` orient and grid, settled), whatever its stay says: one the
 /// structure turns is turned where it stands. False, and `at` untouched,
 /// when two symbols would overlap: the caller lays the deck afresh. `gpa`
 /// backs the work.
-pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, hints_weak: []const bool, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool {
+pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool {
     const n = sk.drawn.len;
     assert(at.len == n and ats.len == n);
     assert(s.devices.len == n);
@@ -52,7 +52,7 @@ pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, hints_wea
         old[d] = null;
         old[n + d] = null;
         const a = ats[d] orelse continue;
-        if (!hints_weak[a.line]) continue;
+        if (!a.weak) continue;
         ats[d] = null;
         if (!sk.drawn[d]) continue;
         const p = a.origin.add(info.items(.grid)[d]);

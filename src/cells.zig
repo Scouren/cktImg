@@ -36,26 +36,18 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
     @memset(named, false);
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .cell) continue;
-        if (h.args.len != 3) {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        }
-        const d = (nl.device(h.args[0]) orelse {
-            verdicts[i] = reject(.unknown_name);
-            continue;
-        }).index();
-        if (!drawn[d]) {
-            verdicts[i] = reject(.not_placeable);
-            continue;
-        }
-        const col = hints.int(h.args[1]);
-        const row = hints.int(h.args[2]);
-        if (col == null or row == null) {
-            verdicts[i] = reject(.bad_args);
-            continue;
-        }
-        want[i] = .{ .d = @intCast(d), .at = .{ col.?, row.? } };
-        named[d] = true;
+        // A valid line's verdict waits for its cell, below.
+        const code: hints.Code = code: {
+            if (h.args.len != 3) break :code .bad_args;
+            const d = (nl.device(h.args[0]) orelse break :code .unknown_name).index();
+            if (!drawn[d]) break :code .not_placeable;
+            const col = hints.int(h.args[1]) orelse break :code .bad_args;
+            const row = hints.int(h.args[2]) orelse break :code .bad_args;
+            want[i] = .{ .d = @intCast(d), .at = .{ col, row } };
+            named[d] = true;
+            break :code .ok;
+        };
+        if (code != .ok) verdicts[i] = .of(code);
     }
     // The line that fixed each device, and the cells taken.
     const fixed = try gpa.alloc(u32, n);
@@ -68,12 +60,12 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
         const w = want[i] orelse continue;
         const holder = if (fixed[w.d] != none) fixed[w.d] else if (at.get(w.at)) |e| (if (e != w.d) fixed[e] else none) else none;
         if (holder != none) {
-            verdicts[i] = .{ .state = .dropped, .code = .conflict, .blocked_by = try arena.dupe(u32, &.{holder}), .alone = try arena.dupe(bool, &.{true}) };
+            verdicts[i] = try .blocked(arena, .dropped, .conflict, &.{holder});
             continue;
         }
         try put(gpa, &at, drawn, x, y, w.d, w.at);
         fixed[w.d] = i;
-        verdicts[i] = .{ .state = .honoured, .code = .ok };
+        verdicts[i] = .of(.ok);
         // The unnamed mate, on the mirror cell when nothing stronger is there.
         const m = mate[w.d];
         if (m == none or m == w.d or named[m] or fixed[m] != none or !drawn[m]) continue;
@@ -93,10 +85,6 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
 }
 
 // ---- private ----
-
-fn reject(code: hints.Code) Verdict {
-    return .{ .state = .rejected, .code = code };
-}
 
 /// Moves device `d` to cell `to`; a device there moves to the nearest free
 /// cell of its row.

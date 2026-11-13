@@ -61,7 +61,7 @@ fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, colum
         const ms = st.members(b);
         // A bank's two need not mirror each other: a tail and a second
         // stage's source share a bias line.
-        if (k == .stack or k == .bank or ms.len != 2 or (k == .pair or k == .cross) != pairs) continue;
+        if (k == .stack or k == .bank or ms.len != 2 or k.ofTwo() != pairs) continue;
         var a = ms[0];
         var z = ms[1];
         if (form[a] != .vertical or form[z] != .vertical or column_of[a] == column_of[z]) continue;
@@ -119,7 +119,7 @@ fn oneAxis(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const S
     @memset(joined, none);
     @memset(twice, false);
     for (roles, 0..) |r, net| {
-        if (r == .supply or r == .sink or r == .bias) continue;
+        if (r.isRail() or r == .bias) continue;
         const on = g.incident(VertexId.from(@intCast(net)));
         for (on) |e| for (on) |f| {
             const u = column_of[e.index()];
@@ -154,7 +154,7 @@ fn oneAxis(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const S
     };
     for (st.block_kind, 0..) |k, b| {
         const ms = st.members(b);
-        if ((k == .pair or k == .cross) and mate[ms[0]] == ms[1]) clusters[top(root, column_of[ms[0]])].paired = true;
+        if (k.ofTwo() and mate[ms[0]] == ms[1]) clusters[top(root, column_of[ms[0]])].paired = true;
     }
     var count: usize = 0;
     var keep: u32 = none;

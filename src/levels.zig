@@ -41,7 +41,7 @@ const Role = sch.Role;
 const Relations = relations.Relations;
 const none = structure.none;
 const isTransistor = device.isTransistor;
-const isRail = forms.isRail;
+const isRail = Role.isRail;
 
 /// Each vertical device's level: longest path down from the top, after
 /// merging mates and blocks (where that closes no cycle); then each type's

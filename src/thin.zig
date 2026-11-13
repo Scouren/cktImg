@@ -47,7 +47,7 @@ pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, rank: []
     var pairs: std.ArrayList([2]u32) = .empty;
     defer pairs.deinit(gpa);
     for (routes, 0..) |r, i| for (routes[i + 1 ..]) |q| {
-        if (r.net == q.net or rail(roles[r.net]) or rail(roles[q.net])) continue;
+        if (r.net == q.net or roles[r.net].isRail() or roles[q.net].isRail()) continue;
         for (r.pts[0 .. r.len - 1], r.pts[1..r.len]) |a, b| for (q.pts[0 .. q.len - 1], q.pts[1..q.len]) |c, d| {
             if (crosses(a, b, c, d) or crosses(c, d, a, b)) try pairs.append(gpa, .{ r.net, q.net });
         };
@@ -87,10 +87,6 @@ pub fn name(gpa: Allocator, routes: []const Route, roles: []const Role, rank: []
 /// the deck's lines leave to the engine, once a call.
 fn steps(role: Role, style: Style, gone: bool) bool {
     return role == .internal and !gone and (style == .auto or style == .cut);
-}
-
-fn rail(role: Role) bool {
-    return role == .supply or role == .sink;
 }
 
 /// Whether level wire `a`-`b` and upright wire `c`-`d` cross inside both.
