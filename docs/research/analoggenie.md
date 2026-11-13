@@ -617,23 +617,53 @@ switch's outer channel terminal on the side away from the coil. Their
 signal pin is never above that terminal: 357 are below, while
 [ag-1309:COP](../../external/examples/analoggenie/ag-1309.svg) and
 [ag-1329:COP](../../external/examples/analoggenie/ag-1329.svg) start on the
-power row. The direct SVG audit also verifies all **718** capacitor lead
-endpoints. This condition is invariant under horizontal reflection; it
-does not prescribe an absolute left-to-right signal direction.
+power row. [converter_terminals.py](figures/converter_terminals.py)
+independently verifies all **718** capacitor lead endpoints against the
+transformed SVG strokes, retaining exact names and source hashes. This
+condition is invariant under horizontal reflection; it does not prescribe
+an absolute left-to-right signal direction.
 
 The grounded-capacitor requirement excludes both CFLY and the floating CO
 branch in [ag-1191](../../external/examples/analoggenie/ag-1191.svg), while
 retaining COP. A shared capacitor/shunt row is unsupported: among 353
 paired endpoints the source capacitor signal pin is above the shunt's
 upper pin in 202 cases, level in 111 and below in 40. Multiple grounded
-capacitors at one endpoint have no example in this cohort and would need
-a separate ordering rule. Frozen iterations five and six satisfy the
-outside relation for **335/359** capacitors and the at-or-below relation
-for **238/359**; capacitor placement remains proposed work.
+capacitors at one endpoint have no example in this cohort. The engine
+therefore declines an ambiguous endpoint, including two grounded caps
+when one is explicitly flat. It also excludes gate/coil-side branches,
+non-ground rails and undrawn devices; a unique explicitly flat cap keeps
+its caller-selected form.
+
+Iteration nine keeps the capacitor's existing lattice cell and raises
+the whole certified main path above its row. Shelf cuts keep that path,
+its controls and its reservoirs together. Compaction preserves initially
+true orders between their actual transformed electrical terminals,
+including shifted or tall caller symbols. Row, above, mate, cell, exact
+origin and face instructions retain precedence; a contradictory caller
+placement does not acquire an inferred order afterward.
+
+The same named **359/359** native branches now satisfy vertical placement,
+ground below signal, signal at or below the main channel, and an outer
+position away from the coil. Frozen iteration eight satisfied all four
+for **214/359**: outside was **330/359** and at-or-below **243/359**. The
+earlier relations remain intact: 252 ordered collinear main paths, 353
+unique shunts inside their terminal interval, all 365 shunts and 92 gate
+drivers wholly below, and all 75 controller outputs below and aligned.
+This is agreement with the bounded pattern, not exact source geometry:
+AG1309:COP and AG1329:COP remain 40 native units below their main channels
+despite being level in the source. Equality is permitted and preserved
+when the caller specifies it; those two default placements remain open.
+
+The public regressions in [power_reservoirs.zig](../../tests/power_reservoirs.zig)
+first reproduced AG1374's shelf split and AG1191's signal-above-path
+failure. [power_reservoir_bounds.zig](../../tests/power_reservoir_bounds.zig)
+adds ambiguous parallel caps, excluded gate/coil caps, reversed terminal
+cards, explicit reversed faces and a shifted 80-unit capacitor frame.
+The tests check electrical connectivity and shorts alongside geometry.
 
 ```sh
 python3 docs/research/figures/converter_terminals.py external/examples/analoggenie \
-  /tmp/converter-terminals.json --native /tmp/cktimg-human-rules/all-ag-iteration6
+  /tmp/converter-terminals.json --native /tmp/cktimg-human-rules/all-ag-iteration9
 ```
 
 ## Controller direction is not determined by the outer circuit alone

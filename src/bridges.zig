@@ -94,6 +94,13 @@
 //!   No free column, an existing mate or an admitted order edge
 //!   leaves the ordinary placement. Vertical row/above/order hints have
 //!   already run here; cell instructions still run afterward. `place`
+//! - bridges.21 (habit, bounded) The main path stands above its unique
+//!   outer reservoirs' existing rows. All 359 source signal pins are at
+//!   or below the main channel. Keep capacitor coordinates and raise the
+//!   three-part path together; symbol spacing later reserves actual lead
+//!   reaches. Mixed rows and final cells/at retain their later precedence.
+//!   Multiple grounded caps or an explicitly flat cap give no row bound.
+//!   `power_paths.reservoir`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, mate: []const u32, order_pairs: []const [2]u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -185,9 +192,15 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
         } else {
             try chainSlots(gpa, nl, roles, st, drawn, form, upper, lower, rank, x, y, axis2, chain.items, tips, &slots);
         }
-        if (power) |members| if (power_paths.controlBounds(nl, roles, drawn, form, members, y)) |bounds| {
-            for (slots.items) |*slot| slot[1] = bounds[0] - 1;
-        };
+        if (power) |members| {
+            if (power_paths.controlBounds(nl, roles, drawn, form, members, y)) |bounds| {
+                for (slots.items) |*slot| slot[1] = bounds[0] - 1;
+            }
+            for ([_]u32{ members[0], members[2] }, nl.path(EdgeId.from(members[1])).?) |main, inner| {
+                const cap = power_paths.reservoir(nl, roles, drawn, form, main, inner) orelse continue;
+                for (slots.items) |*slot| slot[1] = @min(slot[1], y[cap] - 1);
+            }
+        }
         // Outward until every slot is free.
         const step: i32 = if (axis2 != null and 2 * slots.items[0][0] < axis2.?) -1 else 1;
         var shift: i32 = 0;

@@ -17,11 +17,17 @@
 //!   enter the graph. A turned/offset main path without one horizontal
 //!   channel row, an explicit `at` participant, or an already external
 //!   shunt does not acquire these orders. Caller geometry has precedence.
+//! - power_compact.4 (habit, bounded) A unique upright outer reservoir's
+//!   signal stays beyond the main switch away from the coil, and at or
+//!   below its channel. Preserve each initially true actual-terminal
+//!   relation; equality already shares a track. All 359 source reservoirs
+//!   agree, including two level signals. Shifted caller symbol frames
+//!   require the transformed signal pin, not the device center.
 //!
 //! Data: existing netlist/CSR, skeleton and schematic rows in; temporary
 //! x/y pairs of i32 coordinates out. Both pair fields are read together.
-//! A group table has one slot per drawn coil; x has four slots per group,
-//! y one per incident candidate on the coil ends and main gates. Each is
+//! A group table has one slot per drawn coil; x has six slots per group,
+//! y two per group plus each coil-end/main-gate incident candidate. Each is
 //! sized once, freed on return, and collected serially in graph order.
 //! The compactor owns coordinate writes; this pass only submits orders.
 //!
@@ -72,10 +78,11 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
         if (ats[members[0]] != null or ats[members[1]] != null or ats[members[2]] != null) continue;
         groups[count] = members;
         count += 1;
+        y_capacity += 2;
         for (controlNets(nl, members)) |net| y_capacity += c.incident(VertexId.from(net)).len;
     }
     assert(count <= coil_capacity);
-    const x_capacity = 4 * count;
+    const x_capacity = 6 * count;
     const xs = try gpa.alloc([2]i32, x_capacity);
     defer gpa.free(xs);
     const ys = try gpa.alloc([2]i32, y_capacity);
@@ -99,11 +106,31 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
             ny += 1;
         };
         for (nl.path(EdgeId.from(members[1])).?, [_][2]Pt{ first, last }, 0..) |net, main, side| {
+            const main_ends = nl.path(EdgeId.from(members[2 * side])).?;
+            if (power_paths.reservoir(nl, s.roles, sk.drawn, sk.form, members[2 * side], net)) |cap| reservoir: {
+                if (ats[cap] != null) break :reservoir;
+                const ends = channel(s, nl, cap) orelse break :reservoir;
+                const signal_end = @intFromBool(s.roles[nl.path(EdgeId.from(cap)).?[0]] == .sink);
+                const signal = ends[signal_end];
+                const ground = ends[1 - signal_end];
+                if (signal.x != ground.x or signal.y >= ground.y) break :reservoir;
+                if (row < signal.y) {
+                    ys[ny] = .{ row, signal.y };
+                    ny += 1;
+                }
+                const outer = main[@intFromBool(main_ends[0] == net)].x;
+                if (signal.x < outer and outer < coil[side].x) {
+                    xs[nx] = .{ signal.x, outer };
+                    nx += 1;
+                } else if (coil[side].x < outer and outer < signal.x) {
+                    xs[nx] = .{ outer, signal.x };
+                    nx += 1;
+                }
+            }
             const d = power_paths.groundShunt(nl, s.roles, sk.drawn, sk.form, net) orelse continue;
             if (ats[d] != null) continue;
             const shunt = channel(s, nl, d) orelse continue;
             if (shunt[0].x != shunt[1].x) continue;
-            const main_ends = nl.path(EdgeId.from(members[2 * side])).?;
             const a = main[@intFromBool(main_ends[0] != net)].x;
             const b = coil[side].x;
             const x = shunt[0].x;

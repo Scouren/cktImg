@@ -506,6 +506,8 @@ test {
     _ = @import("power_blocks.zig");
     _ = @import("power_shunts.zig");
     _ = @import("power_compact.zig");
+    _ = @import("power_reservoirs.zig");
+    _ = @import("power_reservoir_bounds.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
 }

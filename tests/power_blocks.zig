@@ -129,12 +129,13 @@ test "power blocks: device card reversal preserves pins and an unrelated at pres
 test "power blocks: honoured cell and row relations can defeat inferred controller alignment" {
     // Oracle: caller geometry. These independent positions put OUT level
     // with or above the channel, so the source's below-path case is absent.
+    // The two rows and their ordering explicitly imply the second relation.
     const gpa = testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
     for ([_][]const u8{
         base ++ "*@ cell mp2 8 8\n*@ cell x1 2 8\n",
-        base ++ "*@ above cl mn1\n*@ row x1 cl\n",
+        base ++ "*@ above cl mn1\n*@ row x1 cl\n*@ row mp2 mn1\n",
     }, 0..) |src, k| {
         var p = try np.place(gpa, &.{ .layout = .{ .compact = false } }, lib, &.{src}, null);
         defer p.deinit();

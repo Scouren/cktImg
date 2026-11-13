@@ -56,6 +56,12 @@
 //!   lie within that terminal interval. Two eligible channels are
 //!   ambiguous: AG1383:M7 is an amplifier tail beside power shunt MN1.
 //!   Gate/body incidences and duplicates do not add channels. `groundShunt`
+//! - power_paths.9 (habit, bounded) One grounded capacitor on a main
+//!   switch's outer channel net stands upright, beyond that switch away
+//!   from the coil. All 359 source reservoirs have ground below signal;
+//!   357 signals are below the main channel and two are level (AG1309,
+//!   AG1329). Gate/coil branches, non-ground rails and multiple reservoirs
+//!   do not establish this group. Caller forms retain precedence. `reservoir`
 //!
 //! Data: reads existing netlist paths/CSR, model types, drawn and rail rows;
 //! writes only the caller's forms. The placement queries read existing
@@ -76,6 +82,7 @@
 //! - `pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool`
 //! - `pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[2]u32`
 //! - `pub fn groundShunt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, net: u32) ?u32`
+//! - `pub fn reservoir(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, main: u32, inner: u32) ?u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -310,6 +317,36 @@ pub fn groundShunt(nl: *const Netlist, roles: []const Role, drawn: []const bool,
     return found;
 }
 
+/// Returns the unique upright capacitor from a certified main switch's
+/// outer channel net to ground. `inner` is its connected coil endpoint.
+/// Multiple drawn grounded capacitors are ambiguous even when one is flat;
+/// absent, hidden or explicitly flat unique capacitors return null.
+/// Asserts that the main and inner net exist, the main channel touches
+/// inner, and input rows span their graph tables. Allocates no memory.
+pub fn reservoir(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, main: u32, inner: u32) ?u32 {
+    const c = &nl.graph;
+    assert(main < c.edgeCount());
+    assert(inner < c.vertexCount());
+    assert(roles.len == c.vertexCount());
+    assert(drawn.len == c.edgeCount());
+    assert(form.len == drawn.len);
+    const ends = nl.path(EdgeId.from(main)).?;
+    assert(ends[0] == inner or ends[1] == inner);
+    const outer = ends[@intFromBool(ends[0] == inner)];
+    var found: ?u32 = null;
+    for (c.incident(VertexId.from(outer))) |e| {
+        const d = e.index();
+        if (!drawn[d] or c.edges.items(.kind)[d] != .capacitor) continue;
+        const pins = nl.path(e).?;
+        const other = pins[@intFromBool(pins[0] == outer)];
+        if (other == outer or roles[other] != .sink) continue;
+        if (found) |old| if (old != d) return null;
+        found = d;
+    }
+    const d = found orelse return null;
+    return if (form[d] == .vertical) d else null;
+}
+
 // ---- private ----
 
 fn pairAt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32 {
@@ -461,5 +498,52 @@ test "power paths: a series certificate rejects parallel choices, shared coils, 
         }
         form[want[0]] = .vertical;
         for (want) |d| try std.testing.expect(series(&nl, roles, drawn, form, d) == null);
+    }
+}
+
+test "power paths: outer reservoir selection requires one drawn grounded capacitor" {
+    // Topology truth table: MA's outer channel is stored, its gate is
+    // control and its coil endpoint is a. Only stored-to-ground is an
+    // outer reservoir; reversing its card leaves that electrical fact.
+    // Ambiguity is counted before the explicit upright-form requirement.
+    const prefix = "Reservoir query\n.model nch nmos\n.model pch pmos\n" ++
+        "L1 a b 1n\nMA a control stored a pch\nMB b phase out b pch\n" ++
+        "MN a enable 0 0 nch\nCB out 0 1p\n";
+    const cases = [_]struct {
+        caps: []const u8,
+        expected: ?[]const u8,
+        flat: ?[]const u8 = null,
+        hidden: ?[]const u8 = null,
+    }{
+        .{ .caps = "CA stored 0 1p\n", .expected = "ca" },
+        .{ .caps = "CA 0 stored 1p\n", .expected = "ca" },
+        .{ .caps = "CA stored 0 1p\nCD stored 0 2p\n", .expected = null },
+        .{ .caps = "CA stored 0 1p\nCD stored 0 2p\n", .expected = null, .flat = "cd" },
+        .{ .caps = "CA stored vdd 1p\n", .expected = null },
+        .{ .caps = "CA stored other 1p\n", .expected = null },
+        .{ .caps = "CA control 0 1p\n", .expected = null },
+        .{ .caps = "CA a 0 1p\n", .expected = null },
+        .{ .caps = "CA stored stored 1p\n", .expected = null },
+        .{ .caps = "CA stored 0 1p\n", .expected = null, .hidden = "ca" },
+        .{ .caps = "CA stored 0 1p\n", .expected = null, .flat = "ca" },
+        .{ .caps = "CA stored 0 1p\nCD stored 0 2p\n", .expected = "ca", .hidden = "cd" },
+    };
+    for (cases) |case| {
+        var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const text = try std.mem.concat(a, u8, &.{ prefix, case.caps });
+        var nl = try netlist.parse(a, &.{text}, null);
+        const roles = try @import("schematic.zig").guessRoles(a, &nl);
+        const drawn = try a.alloc(bool, nl.graph.edgeCount());
+        const form = try a.alloc(Form, drawn.len);
+        @memset(drawn, true);
+        for (nl.graph.edges.items(.kind), form) |kind, *f| f.* = if (kind == .capacitor) .vertical else .horizontal;
+        if (case.hidden) |name| drawn[nl.device(name).?.index()] = false;
+        if (case.flat) |name| form[nl.device(name).?.index()] = .horizontal;
+        const main = nl.device("ma").?.index();
+        const inner = nl.path(nl.device("l1").?).?[0];
+        const want: ?u32 = if (case.expected) |name| nl.device(name).?.index() else null;
+        try std.testing.expectEqual(want, reservoir(&nl, roles, drawn, form, main, inner));
     }
 }

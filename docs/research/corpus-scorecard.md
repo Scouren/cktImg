@@ -622,3 +622,66 @@ All 91 fixture names retain 89 equivalent decks, 98 comparisons and the
 same two named capacity refusals. Four changed converter decks also pass
 the current host with seven exact subcircuits. The repeated plugin build
 matches byte for byte.
+
+## Ninth measured pass: keep outer reservoirs with the power path
+
+The frozen executable is
+`bb6cd0cb906daaf1145d949f88f1fc8c6ca5557c541ccc1bc585e80f01746c99`.
+The unique grounded capacitor on each certified main switch's outer net
+now bounds the main path's height and extends its protected shelf span.
+Compaction preserves initially true relations between the actual capacitor
+signal terminal and main channel. Ambiguous parallel capacitors, other
+branches, hidden devices and caller geometry retain their separate cases.
+
+All **359/359** selected capacitors now lie outside the main switch away
+from the coil, up from 330, and at or below the main channel, up from 243.
+Their upright axes and ground-below directions remain correct. All four
+relations hold together in 359 cases, up from 214. The actual source
+equality cases AG1309:COP and AG1329:COP still sit 40 native units below
+the channel; allowing equality does not infer their exact level placement.
+All earlier named checks remain correct: 252 ordered main paths, 353 shunt
+intervals, 365 shunts below, 92 drivers below, both 107 reservoir gate
+directions, and 75 controller output alignments. The eight actual controller
+direction exceptions remain.
+
+Exactly 124 AnalogGenie drawings change, all within the existing converter
+inventory. Every other AG drawing and all 734 AMSNet drawings retain
+identical geometry and report bytes. All 2,202 AG drawings render with the
+same two named source issues. No full relation match is gained or lost:
+the partial score remains **289/2,202**, not schematic equivalence.
+
+| Measure | Eighth pass | Ninth pass |
+|---|---:|---:|
+| Crossings | 4,850 | 4,900 |
+| Bends | 24,136 | 24,210 |
+| Channel/part orientation, of 32,000 | 30,356 | 30,356 |
+| Gate direction, of 23,252 | 13,862 | 13,883 |
+| Left/right agreement, of 338,266 | 206,483 | 206,789 |
+| Above/below agreement, of 320,423 | 205,236 | 205,378 |
+
+No physical device axis, gate direction or block flow changes. The gate
+score increase comes entirely from nine changed whole-drawing reflection
+choices. Crossing counts worsen in 51 drawings, including AG1214 by eight,
+AG1193 and AG1208 by five each. These regressions remain recorded in the
+frozen per-drawing comparison. Visual inspection of AG1191, 1374, 1214 and
+1309 confirms the reservoir placement while exposing unfinished flying
+capacitor loops, bias groups and routing. A correct local relationship is
+not sufficient to reproduce the whole source layout.
+
+The regressions exercise complete source DUTs, reversed cards and capacitor
+terminals, explicit geometry, ambiguity, wrong branches and a shifted,
+tall custom capacitor. One older controller test now explicitly requests
+both rows that imply its strict-above oracle, instead of relying on the
+previous default placement. Both renderer suites pass, 312 tests without
+LaTeX and 313 with it, together with 4,000 fuzz cases, formatting and
+unchanged legacy style findings. All 252 converter decks retain the exact
+428 round-trip subcircuits; the 91 fixtures retain 98 comparisons, 89
+equivalent decks and the same two named capacity refusals.
+
+The plugin is 558,272 bytes, SHA-256
+`ca06d58d945271499e8d326e629940d823ddf681b3ea1756cbf670f7ed58e41a`.
+Its repeated build is byte-identical. The 31-drawing gallery passes and
+six representative views were inspected. The four source/native examples
+above also pass the current Schemify host with six exact subcircuits.
+All 124 changed drawings produce identical geometry and report bytes when
+rerendered serially against the four-job corpus run.

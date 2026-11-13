@@ -32,6 +32,11 @@
 //!   shunt/driver relations in the power-path study. Unrelated bias
 //!   columns may still wrap. Cell/at instructions and shelf-off retain
 //!   their existing precedence. `cutCost`, `power_paths.controlBounds`
+//! - wrap.8 (habit, bounded) Each unique upright outer reservoir stays on
+//!   its main path's shelf. All 359 source capacitors stand beyond their
+//!   main switch away from the coil; separate shelves can reverse that x
+//!   order and put the capacitor above the path. Preserve existing cap
+//!   columns and admitted rows/mates. `cutCost`, `power_paths.reservoir`
 //!
 //! Contents:
 //! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
@@ -251,6 +256,11 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         if (power_paths.controlBounds(nl, roles, drawn, form, group, x)) |bounds| {
             lo = @min(lo, bounds[0]);
             hi = @max(hi, bounds[1]);
+        }
+        for ([_]u32{ group[0], group[2] }, nl.path(netlist.EdgeId.from(group[1])).?) |main, inner| {
+            const cap = power_paths.reservoir(nl, roles, drawn, form, main, inner) orelse continue;
+            lo = @min(lo, x[cap]);
+            hi = @max(hi, x[cap]);
         }
         if (lo < at and hi >= at) return null;
     }
