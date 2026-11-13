@@ -68,7 +68,7 @@
 //! - `pub const Form = enum(u8) { vertical, horizontal }`
 //! - `pub const End = enum(u8) { auto, first, second }`
 //! - `pub const Skeleton = struct`
-//! - `pub const Options = struct { shelf: u32 = 8 }`
+//! - `pub const Options = struct { shelf: u32 = (config.Layout{}).shelf }`
 //! - `pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton`
 //! - `pub const Invalid = error{...}`, `pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void`
 
@@ -90,6 +90,7 @@ const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
+const config = @import("config.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -109,7 +110,7 @@ pub const End = enum(u8) { auto, first, second };
 /// What of the drawing's style (`config.Layout`) decides a cell.
 pub const Options = struct {
     /// Device columns a row holds before it wraps (`wrap.zig`); 0: one row.
-    shelf: u32 = 8,
+    shelf: u32 = (config.Layout{}).shelf,
 };
 
 /// One entry per device, in card order. A device that is not drawn (a
