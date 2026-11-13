@@ -20,13 +20,12 @@
 //! - forms.5 (unmeasured) A part with an end on a rail stands upright, a
 //!   capacitor too. `classify`
 //! - forms.6 (unmeasured) A part in series, each of its nets holding just
-//!   one other channel element, stands upright; not a capacitor nor an
-//!   inductor (forms.19).
+//!   one other channel element, stands upright; not a capacitor.
 //!   `classify`
 //! - forms.7 (habit) A part on the way down (one end nearer the supply,
 //!   the other nearer the ground, counted through channel elements, never
-//!   through a gate or another rail) stands upright; not a capacitor nor
-//!   an inductor (forms.19). People: 262 of 305 such resistors and 18 of 24 diodes in 5,263
+//!   through a gate or another rail) stands upright; not a capacitor.
+//!   People: 262 of 305 such resistors and 18 of 24 diodes in 5,263
 //!   hand-drawn schematics. `classify`
 //! - forms.8 (habit) A current source stands upright wherever it is.
 //!   People: 76 of 83 current sources wherever they are, in those
@@ -66,10 +65,6 @@
 //!   wire. `crooked`
 //!   Narrowing: a line (`T`, `O`, `U`), a `B` source and a coupling are no
 //!   block here (`isPartsOnly`).
-//! - forms.19 (habit) An inductor off the rails lies flat: a short to
-//!   direct current, it is in series or on the way down by no voltage it
-//!   holds, and `crooked` stands none. People: 397 of 539 inductors off
-//!   the rails in 5,263 hand-drawn schematics. `classify`, `crooked`
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -102,8 +97,7 @@ const none = structure.none;
 /// Drawn: not a driver (unless a `driver` line says) and with pins. Vertical: a transistor, a two-pin
 /// device on a rail, one in series (each of its nets holds one other
 /// channel element), one on the way down (one net nearer the supply, the
-/// other nearer the ground), a current source; capacitors and inductors
-/// only on a rail;
+/// other nearer the ground), a current source; capacitors only on a rail;
 /// never a two-pin device
 /// between two nets the symmetry swaps, which straddles the axis, nor a
 /// device whose current path is shorted (a MOS dummy: no current flows).
@@ -120,7 +114,7 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
     defer gpa.free(count);
     @memset(count, 0);
     for (0..c.edgeCount()) |d| {
-        if (!drawn[d] or device.of(kinds[d]).dc == .blocks) continue;
+        if (!drawn[d] or !device.of(kinds[d]).dc) continue;
         for (pathNets(nl, roles, @intCast(d)) orelse continue) |net| count[net] += 1;
     }
     const from_supply = try railDistance(gpa, nl, roles, drawn, .supply);
@@ -135,15 +129,11 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         if (a == b) continue;
         const k = device.of(kinds[d]);
         const on_rail = isRail(roles[a]) or isRail(roles[b]);
-        // An inductor, a short to direct current, lies flat off the rails:
-        // people 397 of 539 in 5,263 hand-drawn schematics (in series or
-        // on the way down 69 of 153, a coin flip).
-        const resists = k.dc == .drops;
-        const series = resists and count[a] == 2 and count[b] == 2;
+        const series = k.dc and count[a] == 2 and count[b] == 2;
         // On the way down: people stand 262 of 305 such resistors and 18
         // of 24 diodes upright in 5,263 hand-drawn schematics, and 76 of
         // 83 current sources wherever they are.
-        const down = resists and
+        const down = k.dc and
             (from_supply[a] < from_supply[b] and from_ground[a] > from_ground[b] or
                 from_supply[a] > from_supply[b] and from_ground[a] < from_ground[b]);
         const straddles = st.net_mate[a] == b;
@@ -195,8 +185,7 @@ pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []co
 /// stays flat, as people draw it. Not a part a line of the deck names
 /// (`upright`, `bridge`), one on a rail, one between two nets the symmetry
 /// swaps, one that meets its mate (a pair across the axis), or any part of
-/// a circuit with no transistor and no block, nor an inductor (people lay
-/// 218 of 242 such flat). `column` is a device column's width in lattice columns.
+/// a circuit with no transistor and no block. `column` is a device column's width in lattice columns.
 pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, column: i32, stood: []bool) bool {
     const c = &nl.graph;
     assert(stood.len == c.edgeCount());
@@ -207,8 +196,6 @@ pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk
     var any = false;
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoEnded(nl, @intCast(d))) continue;
-        // An inductor stays flat: people 218 of the 242 this would stand.
-        if (device.of(c.edges.items(.kind)[d]).dc == .shorts) continue;
         const a = c.members(EdgeId.from(d))[0].index();
         const b = c.members(EdgeId.from(d))[1].index();
         if (a == b or isRail(roles[a]) or isRail(roles[b]) or st.net_mate[a] == b) continue;
@@ -325,7 +312,7 @@ fn railDistance(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: 
         if (isRail(roles[v]) and roles[v] != from) continue;
         for (c.incident(VertexId.from(v))) |e| {
             const d = e.index();
-            if (!drawn[d] or device.of(kinds[d]).dc == .blocks) continue;
+            if (!drawn[d] or !device.of(kinds[d]).dc) continue;
             const chan = pathNets(nl, roles, d) orelse continue;
             // Through the channel only: a gate or a body on `v` is no way.
             if (chan[0] != v and chan[1] != v) continue;

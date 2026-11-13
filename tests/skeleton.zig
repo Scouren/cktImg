@@ -254,22 +254,6 @@ test "skeleton: a resistor on the way down stands upright under the emitter it l
     }
 }
 
-test "skeleton: an inductor off the rails lies flat where a resistor in its place stands" {
-    // Oracle: how people draw it. In 5,263 hand-drawn schematics 397 of the
-    // 539 inductors with no end on a rail lie flat; on the way down or in
-    // series, the tests that stand a resistor, people stand 84 of 153, a
-    // coin flip. The emitter ladder of the test above with an inductor for
-    // `re`: the inductor lies across, the resistor stood under the emitter.
-    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
-    defer arena_state.deinit();
-    const arena = arena_state.allocator();
-    const l = try lay(arena, "emitter ladder\n.model qnpn npn\nVCC vcc 0 9\nQ1 c b e 0 qnpn\nR1 vcc b 10k\nR2 b 0 2.2k\n" ++
-        "RC vcc c 3.6k\nLE e n7 1u\nRE1 n7 0 820\nC4 n7 0 1u\nRF e n6 1k\nC6 c n6 1u\n");
-    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
-    try std.testing.expectEqual(skeleton.Form.horizontal, l.sk.form[l.nl.device("le").?.index()]);
-    try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device("re1").?.index()]);
-}
-
 test "skeleton: a pair's member is the last choice for a column's next link" {
     // Oracle: how people draw it. On the nets of 5,263 hand-drawn
     // schematics where one device meets several that differ on it, people

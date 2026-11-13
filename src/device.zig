@@ -42,7 +42,6 @@
 //! - `pub const DeviceKind = enum(u8)`, `pub const Pins = struct`, `pub const max_nodes`
 //! - `pub const Source = enum(u8) { none, independent, controlled }`
 //! - `pub const Control = enum(u8) { none, pair, named }`, `pub const Polarity = enum(u8) { n, p, other }`
-//! - `pub const Dc = enum(u8) { blocks, shorts, drops }`
 //! - `pub fn of(kind: DeviceKind) Pins`, `pub fn ofLetter(letter: u8) ?DeviceKind`
 //! - `pub fn isTransistor(kind: DeviceKind) bool`, `pub fn isPart(kind: DeviceKind) bool`
 //! - `pub fn carries(kind: DeviceKind, pin: usize) bool`, `pub fn reads(kind: DeviceKind) bool`
@@ -88,11 +87,6 @@ pub const Source = enum(u8) { none, independent, controlled };
 /// voltage source its card names, no pin of its own (`W n+ n- vname`).
 pub const Control = enum(u8) { none, pair, named };
 
-/// What a path does to direct current: passes none (a capacitor); passes
-/// it with no voltage across (an inductor); passes it with a voltage
-/// across, the rest.
-pub const Dc = enum(u8) { blocks, shorts, drops };
-
 /// A transistor's type: n- or p-channel (npn, pnp), else `.other`.
 pub const Polarity = enum(u8) { n, p, other };
 
@@ -123,8 +117,8 @@ pub const Pins = struct {
     /// A source of current (I, G, F); any other source sets the voltage
     /// across its path.
     current: bool = false,
-    /// What its path does to direct current.
-    dc: Dc = .drops,
+    /// Direct current passes its path: not a capacitor's.
+    dc: bool = true,
     /// Its terminals' names in a `*@` line, in card order; a pin past them
     /// goes by its number from 1.
     names: []const []const u8 = &.{},
@@ -149,8 +143,8 @@ pub fn of(kind: DeviceKind) Pins {
     // replaced did (the residue probe; an array costs a load per test).
     return switch (kind) {
         .resistor => .{ .letter = 'r', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .names = &.{ "a", "b" } },
-        .capacitor => .{ .letter = 'c', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .dc = .blocks, .names = &.{ "a", "b" } },
-        .inductor => .{ .letter = 'l', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .dc = .shorts, .names = &.{ "a", "b" } },
+        .capacitor => .{ .letter = 'c', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .dc = false, .names = &.{ "a", "b" } },
+        .inductor => .{ .letter = 'l', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .names = &.{ "a", "b" } },
         .coupling => .{ .letter = 'k' },
         .vsource => .{ .letter = 'v', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .polar = true, .source = .independent, .names = &.{ "p", "n" } },
         .isource => .{ .letter = 'i', .nodes = .{ 2, 2 }, .path = .{ 0, 1 }, .polar = true, .source = .independent, .current = true, .names = &.{ "p", "n" } },
@@ -271,7 +265,7 @@ test "device: each kind's pins are its SPICE card's" {
     try expect(of(.diode).polar and !of(.cswitch).polar and !of(.inductor).polar);
     // `V n+ n-` raises n+ over n-; `I n+ n-` draws from n+.
     try expect(lowEnd(.vsource) == 1 and lowEnd(.isource) == 0);
-    try expect(of(.capacitor).dc == .blocks and of(.inductor).dc == .shorts and of(.resistor).dc == .drops);
+    try expect(!of(.capacitor).dc and of(.inductor).dc);
     // A round trip, every kind through its letter and back.
     for (std.enums.values(DeviceKind)) |kind| try expectEqual(kind, ofLetter(of(kind).letter).?);
     for ("anpy0R") |letter| try expectEqual(null, ofLetter(letter));
