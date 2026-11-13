@@ -1224,12 +1224,15 @@ test "sketch: no wire ends on nothing: two pins' ways to a trunk do not run on t
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
-test "sketch: a block stands between the columns of its input and its output, whatever its first port" {
-    // Oracle: the block's own ports. An amplifier whose first two ports are
-    // its rails reads `b`, the third stage's drain, and drives `o`, the
-    // second stage's gate: it stands between those two columns, where its
-    // wires are shortest. Placed by its first port, the supply, it stood
-    // left of both.
+test "sketch: a block stands in the signal's order by its ports' names: beside the gate it drives, on its left; with none, right of what it reads" {
+    // Oracle: the hand drawings. Of the 320 blocks whose output drives a
+    // gate in the 5,263 reference drawings (ports named as an input and an
+    // output), 266 stand left of every such gate; of the 590 that drive
+    // none, 522 stand right of every upright device on their inputs' nets.
+    // `x1` reads `b`, the third stage's drain, and drives `o`, the second
+    // stage's gate; `x2` reads the last stage and drives a load. Each
+    // stood between the nearest columns of its first and last net that is
+    // no rail: `x1` right of the gate it drives, under another stage.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1251,16 +1254,22 @@ test "sketch: a block stands between the columns of its input and its output, wh
         \\R2 vdd z 1k
         \\M4 y z 0 0 nch
         \\R4 vdd y 1k
+        \\X2 vdd 0 y fb2 q amp
+        \\C9 q 0 1p
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
-    var x: [3]i32 = undefined;
-    for ([_][]const u8{ "x1", "m3", "m2" }, &x) |name, *at| {
+    var x: [6]i32 = undefined;
+    for ([_][]const u8{ "x1", "m2", "x2", "m4", "m1", "m3" }, &x) |name, *at| {
         at.* = for (p.dev_name, p.dev_pos) |n, pos| {
             if (std.mem.eql(u8, n, name)) break pos.x;
         } else unreachable;
     }
-    try std.testing.expect(x[0] > @min(x[1], x[2]) and x[0] < @max(x[1], x[2]));
+    // Left of the gate it drives, no stage between the two.
+    try std.testing.expect(x[0] < x[1]);
+    for ([_]i32{ x[3], x[4], x[5] }) |stage| try std.testing.expect(stage < x[0] or stage > x[1]);
+    // Right of the stage it reads.
+    try std.testing.expect(x[2] > x[3]);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

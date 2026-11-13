@@ -19,11 +19,8 @@
 //!   distinct columns, one on each end net (ties: the leftmost), when the
 //!   gap holds the chain and no column stands between them, or no column
 //!   is on both end nets. `chainSlots`
-//! - bridges.5 (habit) Else a block with no column on its first net, its
-//!   output (by its port's name) on the gates of one column and nothing
-//!   else, stands left of that column, level with the gate. People: 346 of
-//!   487 blocks driving a gate in 5,263 hand-drawn schematics stand left
-//!   of it, 100 right. `chainSlots`
+//! - bridges.5: retired; the case of bridges.15 where the driven gates
+//!   stood in one column and no column was on the block's first net.
 //! - bridges.6 (unmeasured) Else the chain stands beside the column on both
 //!   end nets (or on either), one slot past its own, toward the axis when
 //!   an end net lies on the axis. `chainSlots`
@@ -50,6 +47,16 @@
 //! - bridges.14 (choice) Where a slot is taken, the whole chain moves out,
 //!   away from the axis (right with none), one lattice column at a time:
 //!   a cell holds one device. Chains are placed in rank order. `place`
+//! - bridges.15 (order: signal) A block with a port named as an input or
+//!   an output stands in the signal's order, as a column does: left of
+//!   the leftmost column with a gate its output drives, level with that
+//!   gate, and right of the rightmost column on an input's net left of it
+//!   when none stands between the two; with no gate to drive, right of
+//!   the rightmost column on an input's net. Before bridges.4 to .8.
+//!   People: 266 of 320 blocks whose output drives a gate stand left of
+//!   every such gate, and 522 of the 590 that drive none stand right of
+//!   every upright device on their inputs' nets, in 5,263 hand-drawn
+//!   schematics. `passage`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -73,6 +80,10 @@ const Structure = structure.Structure;
 const Form = skeleton.Form;
 const none = structure.none;
 const isRail = Role.isRail;
+
+/// Where a chain stands: the two x it lies evenly between (two columns,
+/// or one column and the slot past the chain's beside it), and its row.
+const Spot = struct { pair: [2]i32, row: i32 };
 
 /// Places every drawn horizontal device, `order` (devices by rank) chain by
 /// chain, into a free cell of `x`, `y`; the vertical devices' cells are set,
@@ -193,13 +204,13 @@ fn linked(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []
 }
 
 /// The slots of a chain whose tips are `tips`, in chain order: evenly
-/// between the two columns its tips stand at. Those are the nearest pair
-/// of distinct columns on its two tips when no other column stands between
+/// between the two columns its tips stand at. For a block with named
+/// ports those are the signal's (`passage`). Else the nearest pair of
+/// distinct columns on its two tips when no other column stands between
 /// them; else a column on both tips (or on either) and, for the tip with
-/// none of its own, the slot one past the chain's beside it: on the left
-/// of the one column whose gates a block drives, toward the axis when an
-/// end net is on it, an input's side, or away from the axis; the member
-/// whose tip is on the column stands next to it. Its row: the first end's
+/// none of its own, the slot one past the chain's beside it: toward the
+/// axis when an end net is on it, an input's side, or away from the axis;
+/// the member whose tip is on the column stands next to it. Its row: the first end's
 /// tap row; else the row of the one gate on an end no channel ends on;
 /// else any pin's tap row; under the drawing when a column between runs
 /// through that row.
@@ -257,7 +268,12 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
     };
     // The columns its two tips stand at, and its row: the chain lies evenly
     // between the two.
-    const spot: struct { pair: [2]i32, row: i32 } = stand: {
+    const spot: Spot = stand: {
+        // A block stands where the signal's order puts it, as a column does
+        // (people: 266 of 320 blocks left of every gate they drive, 522 of
+        // 590 that drive none right of every device on their inputs' nets,
+        // in 5,263 hand-drawn schematics).
+        if (chain.len == 1) if (passage(nl, drawn, form, upper, lower, rank, x, chain[0], row)) |by_signal| break :stand by_signal;
         if (best) |pair| {
             const lo = @min(pair[0], pair[1]);
             const hi = @max(pair[0], pair[1]);
@@ -268,32 +284,13 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
                 break :stand .{ .pair = pair, .row = if (crosses(drawn, form, x, y, lo, hi, row)) outside(drawn, form, y) else row };
             }
         }
-        // A block with no column on its first net, its output (by its port's
-        // name) on the gates of one column and nothing else, stands left of
-        // that column, level with the gate: 346 of 487 blocks driving a gate
-        // in 5,263 hand-drawn schematics stand left of it, 100 right.
-        const driven: ?i32 = gates: {
-            if (chain.len != 1 or best != null) break :gates null;
-            const net = outputNet(nl, chain[0]) orelse break :gates null;
-            // The gates of one column and nothing else: the wire is straight.
-            var column: ?i32 = null;
-            for (c.incident(VertexId.from(net))) |e| {
-                const v = e.index();
-                if (v == chain[0] or !drawn[v]) continue;
-                const gate = form[v] == .vertical and upper[v] != net and lower[v] != net;
-                if (!gate or (column != null and column.? != x[v])) break :gates null;
-                column = x[v];
-            }
-            break :gates column;
-        };
         // Beside one column, the tip with no column of its own one past the
-        // chain's slots: on the left of the column it drives or when an end
-        // is an input (what drives stands left of what reads); else the
-        // axis decides.
-        const at = driven orelse shared orelse any orelse 0;
+        // chain's slots: on the left when an end is an input (what drives
+        // stands left of what reads); else the axis decides.
+        const at = shared orelse any orelse 0;
         const on_axis = st.net_mate[tips[0]] == tips[0] or st.net_mate[tips[1]] == tips[1];
         const inward_left = axis2 != null and 2 * at > axis2.?;
-        const left = driven != null or if (axis2 != null and on_axis)
+        const left = if (axis2 != null and on_axis)
             inward_left
         else
             roles[tips[0]] == .input or roles[tips[1]] == .input or (axis2 != null and !inward_left and 2 * at != axis2.?);
@@ -320,16 +317,47 @@ fn chainSlots(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *cons
     }
 }
 
-/// The net on block `d`'s output, as its definition names its ports
-/// (`library.portRole`); null for anything else.
-fn outputNet(nl: *const Netlist, d: u32) ?u32 {
+/// Where the signal's order stands block `d`, its ports' roles their names'
+/// (`library.portRole`): left of the leftmost column with a gate its
+/// output drives, level with that gate, and right of the rightmost column
+/// on an input's net left of it when no column stands between the two;
+/// with no such gate, right of the rightmost column on an input's net, on
+/// `row`. Null for a device with no port so named, or with no upright
+/// device on those nets.
+fn passage(nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, x: []const i32, d: u32, row: i32) ?Spot {
+    const c = &nl.graph;
     const def = nl.defOf(EdgeId.from(d)) orelse return null;
-    const pins = nl.graph.members(EdgeId.from(d));
+    const pins = c.members(EdgeId.from(d));
     if (def.ports.len != pins.len) return null;
+    // The leftmost gate its output drives (the upper of two in a column).
+    var gate: ?u32 = null;
     for (pins, def.ports) |p, name| {
-        if (library.portRole(def.ports, name) == .out) return p.index();
+        if (library.portRole(def.ports, name) != .out) continue;
+        for (c.incident(p)) |e| {
+            const v = e.index();
+            if (!drawn[v] or form[v] != .vertical or upper[v] == p.index() or lower[v] == p.index()) continue;
+            if (gate == null or x[v] < x[gate.?] or (x[v] == x[gate.?] and rank[v] < rank[gate.?])) gate = v;
+        }
     }
-    return null;
+    // The rightmost column on an input's net, left of that gate.
+    var from: ?i32 = null;
+    for (pins, def.ports) |p, name| {
+        switch (library.portRole(def.ports, name)) {
+            .in, .inp, .inn => {},
+            .out, .rail, .other => continue,
+        }
+        for (c.incident(p)) |e| {
+            const v = e.index();
+            if (!drawn[v] or form[v] != .vertical or (gate != null and x[v] >= x[gate.?])) continue;
+            from = @max(from orelse x[v], x[v]);
+        }
+    }
+    const g = gate orelse return if (from) |at| .{ .pair = .{ at, at + 2 }, .row = row } else null;
+    // Between the two when the way is clear; else beside the gate.
+    const clear = from != null and for (0..drawn.len) |v| {
+        if (drawn[v] and form[v] == .vertical and x[v] > from.? and x[v] < x[g]) break false;
+    } else true;
+    return .{ .pair = .{ if (clear) from.? else x[g] - 2, x[g] }, .row = 2 * @as(i32, @intCast(rank[g])) };
 }
 
 /// A column strictly between `lo` and `hi` runs through `row`: one of its
