@@ -5,10 +5,16 @@
 //! nodes, and the nets drawn as labels.
 //!
 //! Human Rules:
-//! - wires.1 (choice) Rails are wired first, then the nets driven from
-//!   outside (inputs, biases), then the rest, each group in the canonical
-//!   net order: a net wired earlier claims its room first, and the order
-//!   of the cards chooses nothing. `wire`
+//! - wires.1 (choice) Rails are wired first, then the symbol of an input
+//!   or a bias of one pin, then the internal nets and the outputs, then
+//!   the wires of the inputs and biases, each group in the canonical net
+//!   order: a net wired earlier claims its room first, and the order of
+//!   the cards chooses nothing. A symbol takes little room and has one
+//!   place; an input's or a bias's part can always end in ports
+//!   (wires.13), a wire cannot: drawn last, it takes its track among the
+//!   wires it would cross (trunk.2). Over the 5,263 reference circuits,
+//!   with trunk.2's crossings, against inputs and biases second:
+//!   crossings 7,395 -> 7,279, corners 39,521 -> 39,185. `drawStep`
 //! - wires.2 (choice) A `via` line's wire runs from the net's top-left pin
 //!   to each point in turn by one L, along the row first, and skips a
 //!   point neither L reaches: the line names points, not the path.
@@ -135,7 +141,7 @@ const rail_reach = 2;
 /// of nets right on those held out).
 const cut = [3]u32{ 15, 11, 6 };
 
-/// What a net is drawn as by its role, in the order the kinds are drawn.
+/// What a net is drawn as by its role.
 const Drawn = enum(u8) {
     /// A supply or a ground: its symbols, or a bar.
     rail,
@@ -176,11 +182,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const order = try gpa.alloc(u32, n_nets);
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
-    const Order = struct { roles: []const Role, rank: []const u32 };
-    std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank }, struct {
+    const Order = struct { roles: []const Role, rank: []const u32, pins_of: []const std.ArrayList(u32) };
+    std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank, .pins_of = pins_of }, struct {
         fn lt(o: Order, x: u32, y: u32) bool {
-            const fx = @backingInt(Drawn.of(o.roles[x]));
-            const fy = @backingInt(Drawn.of(o.roles[y]));
+            const fx = drawStep(o.roles[x], o.pins_of[x].items.len);
+            const fy = drawStep(o.roles[y], o.pins_of[y].items.len);
             if (fx != fy) return fx < fy;
             return o.rank[x] < o.rank[y];
         }
@@ -255,6 +261,17 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
 }
 
 // ---- private ----
+
+/// When a net of `role` with `n_pins` pins is drawn (wires.1): a rail's
+/// symbols or bar, then a symbol alone (an input's or a bias's lone pin),
+/// then the wires, then the wires of the nets driven from outside.
+fn drawStep(role: Role, n_pins: usize) u8 {
+    return switch (Drawn.of(role)) {
+        .rail => 0,
+        .port => if (n_pins == 1) 1 else 3,
+        .wire => 2,
+    };
+}
 
 /// Draws route or via `r` of a net with pins `pins`, whole or not at all: a
 /// route must end on one of the pins; a via runs from the net's top-left pin

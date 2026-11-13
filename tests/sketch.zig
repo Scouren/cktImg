@@ -1265,6 +1265,32 @@ test "sketch: a trunk is the cheapest track that fits, not the first" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: a net's wire takes the track that crosses no other net's" {
+    // Oracle: the hand drawings. A net's wire crosses no other net's in
+    // 33,360 of 37,990 wired nets that are no rail (5,263 schematics); the
+    // person drew this follower (ag-46) with no crossing. The input's wire
+    // was drawn before the output's, under it, and the output's trunk
+    // crossed it; drawn after, with crossings in its cost, the input's
+    // wire goes round.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Follower
+        \\.model nch nmos
+        \\M1 vdd vin vout vss nch
+        \\RF vin vout 1k
+        \\RS vout vss 1k
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    try std.testing.expectEqual(0, crossings(&p));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: a part to ground with nothing over it hangs under the gate it joins" {
     // Oracle: the hand-drawn figure. A gate's resistor to ground is drawn
     // under the gate's net, its upper pin below the gate (72% of 1,642 such

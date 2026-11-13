@@ -8,11 +8,14 @@
 //! - trunk.1 (unmeasured) Pins all in one column, each facing up or down,
 //!   are joined in order down that column. `draw`
 //! - trunk.2 (habit) Of the tracks that fit, a net takes the one whose
-//!   wire costs least: its length plus `bend_cost` a corner, a corner
-//!   being a point the wire leaves exactly two ways at a right angle (a T,
-//!   a crossing of its own and a straight joint are none). People draw a
-//!   net at the fewest corners its pins allow in 93.8% of the nets of
-//!   5,263 hand-drawn schematics. `cost`
+//!   wire costs least, as the router counts a path (maze.2): its length,
+//!   plus `bend_cost` a corner (a point the wire leaves exactly two ways
+//!   at a right angle; a T, a crossing of its own and a straight joint
+//!   are none), plus `cross_cost` each crossing of another net's wire
+//!   drawn so far, a quarter of it for a rail's. People draw a net at the
+//!   fewest corners its pins allow in 93.8% of the nets, and a net's wire
+//!   crosses no other net's in 33,360 of 37,990 nets that are no rail
+//!   (5,263 hand-drawn schematics). `cost`
 //! - trunk.3 (invariant) No wire of a trunk has a spur: a track on which
 //!   two pins' ways run on together past where they meet is never taken.
 //!   `corners`
@@ -202,7 +205,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
             if (lay == .rungs and !drawn) break;
             // A tap row is costed in full: whether it has room is asked
             // even when another track is cheaper.
-            const count = cost(c, pins, tried.items, if (tap_row) std.math.maxInt(i64) else fewest);
+            const count = cost(c, net, pins, tried.items, if (tap_row) std.math.maxInt(i64) else fewest);
             if (!tap_row and count >= fewest) continue;
             if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
             tapped = tapped or tap_row;
@@ -264,19 +267,41 @@ fn freeEnd(c: *const Canvas, net: u32, pins: []const u32, lo: i32, hi: i32, y_t:
     return null;
 }
 
-/// What a net's lines cost, as the router counts a path: their length and
-/// `bend_cost` a corner; more than any track costs when a line ends on
-/// nothing (`corners`). `under` is the cost to beat: at that length or
-/// more the length alone is returned.
-fn cost(c: *const Canvas, pins: []const u32, lines: []const Line, under: i64) i64 {
-    var length: i64 = 0;
+/// What `net`'s lines cost, as the router counts a path (`maze.route`):
+/// their length, `bend_cost` a corner, and `cross_cost` each crossing of
+/// another net's wire drawn so far, a quarter of it for a rail's; more
+/// than any track costs when a line ends on nothing or a pin is no end of
+/// the wire (`corners`). `under` is the cost to beat: at that length or
+/// more the length alone is returned. People: a net's wire crosses no
+/// other net's in 33,360 of 37,990 nets that are no rail (5,263
+/// hand-drawn schematics).
+fn cost(c: *const Canvas, net: u32, pins: []const u32, lines: []const Line, under: i64) i64 {
+    var total: i64 = 0;
     for (lines) |*l| {
         const pts = l.slice();
-        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| length += @abs(a.x - b.x) + @abs(a.y - b.y);
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| total += @abs(a.x - b.x) + @abs(a.y - b.y);
     }
-    // No cheaper than the track in hand: its corners are not counted.
-    if (length >= under) return length;
-    return length + @as(i64, c.len.bend_cost) * (corners(c.s, pins, lines) orelse return std.math.maxInt(i64));
+    // No cheaper than the track in hand: corners and crossings only add.
+    if (total >= under) return total;
+    total += @as(i64, c.len.bend_cost) * (corners(c.s, pins, lines) orelse return std.math.maxInt(i64));
+    for (lines) |*l| {
+        const pts = l.slice();
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| for (c.segs.items) |g| {
+            if (g.net == net or !crosses(a, b, g.a, g.b)) continue;
+            total += if (c.rails[g.net]) @divFloor(c.len.cross_cost, 4) else c.len.cross_cost;
+        };
+    }
+    return total;
+}
+
+/// Whether wire `a`..`b` and wire `p`..`q`, each along a row or a column,
+/// cross at a point inside both.
+fn crosses(a: Pt, b: Pt, p: Pt, q: Pt) bool {
+    if ((a.y == b.y) == (p.y == q.y)) return false;
+    const lv, const up = if (a.y == b.y) .{ [2]Pt{ a, b }, [2]Pt{ p, q } } else .{ [2]Pt{ p, q }, [2]Pt{ a, b } };
+    const x = up[0].x;
+    const y = lv[0].y;
+    return x > @min(lv[0].x, lv[1].x) and x < @max(lv[0].x, lv[1].x) and y > @min(up[0].y, up[1].y) and y < @max(up[0].y, up[1].y);
 }
 
 /// The corners of a net's lines as a reader counts them: the points its
