@@ -36,6 +36,11 @@
 //!   `route`, every point between them) lies on the net's wires: the
 //!   meaning the report holds each honoured line to. `drawnAs`
 //!
+//! Not a guarantee, and not looked for: a wire through a symbol. In 129 of
+//! the engine's drawings of the 5,263 reference schematics, 242 pieces of
+//! another net's wire run through a symbol's box, 236 of them through a
+//! ground symbol.
+//!
 //! Contents:
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`

@@ -3,13 +3,18 @@
 //! target's units.
 //!
 //! Human Rules:
-//! - dots.1 (unmeasured) A dot stands wherever one net's wires leave a
-//!   point in three or more directions, a device's lead counting as one: a
-//!   four-way meeting as much as a T; never where two nets' wires only
-//!   cross. `find`
+//! - dots.1 (habit) A dot stands wherever one net's wires leave a point in
+//!   three or more directions, a device's lead counting as one: a four-way
+//!   meeting as much as a T; never where two nets' wires only cross.
+//!   People: a dot at 41,668 of 43,009 points where three wires of a net
+//!   meet and at all 1,330 where four meet (3% of their dots), in 5,263
+//!   hand-drawn schematics. A pin two wires leave is not in that count:
+//!   the drawings hold dots only between wires, and people run two wires
+//!   from 3,194 of 127,232 pins. `find`
 //! - dots.2 (choice) Where a net's level wire crosses one of its own upright
 //!   wires, the two join there with a dot: an undotted crossing reads as two
-//!   nets crossing. `find`
+//!   nets crossing. People draw six such crossings in 5,263 schematics.
+//!   `find`
 //!
 //! Contents:
 //! - `pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error![]Pt`
@@ -67,6 +72,8 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
     for (s.routes.items) |r| for (r.pts[0..r.len]) |c| {
         const at: Pt = .round(c);
         const arms = canvas.ways(s, p_by_net[p_off[r.net]..p_off[r.net + 1]], lines[r_off[r.net]..r_off[r.net + 1]], at);
+        // People: a dot at 41,668 of 43,009 three-wire meetings and at all
+        // 1,330 four-wire ones (5,263 hand-drawn schematics).
         if (@popCount(arms) >= 3) try mark(out, &found, at);
     };
     // A net's level piece crossing one of its own upright pieces, strictly

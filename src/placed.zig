@@ -12,20 +12,33 @@
 //! - placed.1 (invariant) Every wire ends exactly on its pin: a pin off the
 //!   row or column line the layout routed to (an op-amp's second input)
 //!   gets a short lead, along the pin's side first, then onto it. `run`
-//! - placed.2 (unmeasured) A terminal net is drawn as the symbol of its
-//!   role: a supply as a power rail, the sink as a ground rail, an input or
-//!   a bias net as an input port, an output as an output port. `roleClass`
+//! - placed.2 (habit) A terminal net is drawn as the symbol of its role: a
+//!   supply as a power rail, the sink as a ground rail, an input or a bias
+//!   net as an input port, an output as an output port. People: 24,748 of
+//!   24,843 nets that are ports of their cell, in 5,263 hand-drawn
+//!   schematics, carry the symbol of the role the engine gives them (supply
+//!   3,954 of 3,973, ground 5,439 of 5,450, input 5,906 of 5,916, bias
+//!   2,770 of 2,790, output 6,679 of 6,714). `roleClass`
 //! - placed.3 (choice) Where the library has no symbol for a net's role,
 //!   the net's name is written there instead: something must stand for the
 //!   net. `terminal`
-//! - placed.4 (unmeasured) A terminal symbol's or a label's name runs away
-//!   from the wire that meets it; left when no wire does. `leafSide`
-//! - placed.5 (unmeasured) A driver (R3: a source from a supply, input or
-//!   bias net to ground) is not wired into the circuit but drawn apart,
-//!   left of it, between its own net's symbol above and a ground symbol
-//!   below. `islands`
+//! - placed.4 (habit) A terminal symbol's or a label's name runs away from
+//!   the wire that meets it; left when no wire does. People: 13,814 of
+//!   15,521 port symbols one wire leaves carry their name on the side away
+//!   from it. Which way a written name's text runs is not in the hand
+//!   drawings, and the side with no wire is the engine's own (people: left
+//!   784, right 348 of 1,398 ports). `leafSide`
+//! - placed.5 (choice) A driver (R3: a source from a supply, input or bias
+//!   net to ground) is not wired into the circuit but drawn apart, left of
+//!   it, between its own net's symbol above and a ground symbol below.
+//!   People: none of the 982 such sources in the cells of 5,263 hand-drawn
+//!   schematics stands apart; all 982 are wired where they stand, 683 of
+//!   them left of every other device. The corpus holds cells only, and 963
+//!   of the 982 drive a net with no terminal name: what people do with a
+//!   bench's supply source it cannot say (19 instances). `islands`
 //! - placed.6 (order: potential) A driver apart stands upright with the end
-//!   of its path off the ground up. `islands`
+//!   of its path off the ground up. People: 951 of those 982 sources stand
+//!   with the driven end up. `islands`
 //! - placed.7 (choice) Drivers apart stand in name order, two units apart,
 //!   the nearest a unit and a half clear of the circuit: the order of the
 //!   cards changes nothing. `islands`
@@ -307,6 +320,9 @@ const Builder = struct {
     /// R3: each driver stands apart, left of the circuit: its terminal symbol
     /// on top, the source, a ground symbol below, in name order (so the
     /// order of the cards changes nothing).
+    // People draw none of 982 such sources of a cell apart: all are wired
+    // where they stand, 951 with the driven end up (5,263 hand-drawn
+    // schematics). Which devices are drivers is `schematic.isDriver`'s.
     fn islands(b: *Builder) !void {
         const s = b.s;
         const unit = s.lib.unit;
@@ -456,6 +472,8 @@ const Builder = struct {
 
 /// The rail or port class a terminal net's symbol is drawn as, if the
 /// library has one.
+// People: 24,748 of 24,843 nets that are ports of their cell carry the
+// symbol of the role the engine gives them (5,263 hand-drawn schematics).
 pub fn roleClass(s: *const Schematic, net: u32) ?ClassId {
     const role: library.Role = switch (s.roles[net]) {
         .supply => .power_rail,
@@ -484,6 +502,8 @@ fn strictlyInside(p: Pt, u: Pt, v: Pt) bool {
 }
 
 /// Which way a terminal's or label's name runs: away from its wire.
+// People: 13,814 of 15,521 port symbols carry their name on the side away
+// from their wire (5,263 hand-drawn schematics).
 fn leafSide(s: *const Schematic, node: u32) Side {
     for (s.pins.items(.home), s.pins.items(.side), s.pins.items(.device)) |h, side, d| {
         if (h == node and d == sch.none) return side.opposite();

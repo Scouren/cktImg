@@ -19,9 +19,12 @@
 //! - geom.3 (choice) Names are placed device by device, each clear of the
 //!   ones before: one pass, so a renderer and the C accessors agree.
 //!   `refdesAnchors`
-//! - geom.4 (unmeasured) A pin's net name stands on the side away from the
+//! - geom.4 (habit) A port's net name stands on the side away from the
 //!   wire that meets it (a port whose wire leaves right is named on its
-//!   left); right when no wire meets it. `nameSide`
+//!   left); right when no wire meets it. People: 13,814 of 15,521 port
+//!   symbols one wire leaves, in 5,263 hand-drawn schematics; the side
+//!   with no wire is the engine's own (people: left 784, right 348 of
+//!   1,398). `nameSide`
 //! - geom.5 (habit) A ground rail carries no name: the symbol says ground.
 //!   Its name is written only to tell two grounds apart: in a drawing whose
 //!   ground rails stand on two nets or more, and then not on net "0".
@@ -169,6 +172,8 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
 /// The side a pin's name goes on: away from the wire that meets it (a port
 /// whose wire leaves to the right is named on its left). Right when no wire
 /// meets it.
+// People: 13,814 of 15,521 port symbols carry their name on the side away
+// from their wire (5,263 hand-drawn schematics).
 pub fn nameSide(p: *const Placed, pin: u32) library.Side {
     const at = p.pin_xy[pin];
     const net = p.pin_net[pin];
