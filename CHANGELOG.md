@@ -11,6 +11,7 @@ AnalogGenie pattern study (#8):
 - Engine: pinless coupling cards retain their electrical meaning without registering an empty symbol; all 2,202 AnalogGenie decks now render, including the eight that previously failed with `NoTerminals` (#8).
 - Schemify: register `netlist.import` and its `cktimg.import` compatibility alias; both commands produce identical cells and circuit-equivalent exports on the current and v1.0.1 hosts (#8).
 - Testing: round trips of subcircuit-only decks keep the models exported through a model-only bench and compare the actual component, with a missing-model negative check (#8).
+- Research: freeze the complete AnalogGenie render inventory and score source geometry by named device relations, with explicit source-limit markers, artifact hashes and identical results with one or four workers (`docs/research/figures/corpus_score.py`); the initial complete checkpoint matches all scored relations in 253 of 2,202 circuits, which is not visual equivalence (#8).
 
 Merged (rounds 4 and 5; each kept change's totals are its agent's, measured on its own branch over the 5,263 reference circuits: crossings, corners, wire units, written names; each trade's are measured on the merged tree, with -> without, and decided by merit = A - D, A the sum of nine agreement means, D the sum of |engine - people| / people over crossings, corners, wire and names):
 

@@ -1,0 +1,12 @@
+{
+  "device_mismatches": [],
+  "engine_errors": [],
+  "gate_findings": [],
+  "metric_disagreements": [],
+  "processing_errors": [],
+  "source_issues": [],
+  "unsupported_geometry": {
+    "ag-1146:x2": "source terminal has no electrical net: b<3:0>",
+    "ag-3495:x2": "source terminal has no electrical net: φ3"
+  }
+}
