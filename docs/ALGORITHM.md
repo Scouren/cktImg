@@ -274,26 +274,22 @@ nearer the supply through channel elements.
 next one's upper end on a net. Where several meet on a net, one link is kept:
 a stack block's (hinted or recognized, either way round), else none when
 either side is a differential or cross-coupled pair or a mate pair (a tail
-stands in a column of its own), else the best free device on each side: a
-transistor, one whose chain reaches a rail, the same type, then canonical
-order. The symmetry's mate net gets the mirrored link. A link that would
+stands in a column of its own), else the best free device on each side:
+the same type, a transistor, a part direct current passes (a capacitor
+beside the column), one whose chain reaches a rail, then canonical order
+(people 749 of 778). The symmetry's mate net gets the mirrored link. A link that would
 close a loop is not kept.
 
 **Mates.** The symmetry's mates where it has one; else each differential or
 cross-coupled pair's, and each two-member mirror's or bank's, carried up and
-down their two columns while the devices there are of one kind. Vertical
+down their two columns while the devices there are of one kind and one type
+(people: one type level 1,433 of 1,644; two types not level 153 of 170). Vertical
 devices only, and only where every member of a column has its mate in one
 column that maps back to it: columns are mirrored whole. A differential or
 cross-coupled pair takes its mates first, so its loads are its own before
-they are a mirror's other half. A drawing has one axis: block mates fall
-into clusters, two mated column pairs in one when the circuit wires them
-half to half (a net, no rail or bias, joins a column of one to a column of
-the other, and another net joins their two mates: a pair and its folded
-branches, two pairs on the same inputs). Where there are several clusters,
-the largest holding a differential or cross-coupled pair keeps its mates
-and the others lose theirs; none keeps them when none holds such a pair
-(mirrors along a chain of stages). Nested about one axis, an unrelated
-mirror's two would stand either side of the whole core.
+they are a mirror's other half. Two mated column pairs, however the
+circuit joins them, stand side by side, each about its own axis (people 406
+of 643; one shared axis 174).
 
 **Rows** (`levels.rows`). A device stands above another when its lower end is
 the other's upper end; a device's row is the longest path down those, after
@@ -319,28 +315,23 @@ device's type on the same rail (a fully differential second stage, as the
 book draws it).
 
 **Column order** (`columns.order`). Mated columns are the core: one of each
-pair on the left, its mate mirrored on the right. A column the mates map to
-itself, a pair's tail, or a column wired to both halves stands on the axis
-(where several share a row, a pair's tail first, the device on the net the
-pair's two end on, then by rank; the rest go free). The left
-half's order is the one whose wired nets span least (rails, bias nets and
-nets driven from outside aside: they are symbols or labels; a bridge between
-two wired nets counts the gap between their columns, so a column only a
-coupling capacitor joins to the rest stands beside it), tried
-exhaustively up to six columns, else by moving one column at a time while
-that helps. A column with no mate goes to the side of the core's half it
-shares more wired nets with (people: 70.4% of 1,459 such columns in the
-5,263 reference drawings); one neither half pulls goes right of the core
-when it reaches an output or a wired net joins it to a free column going
-right (a mirror's two stand on one side), else left of it; each side is
-ordered the same way. A circuit with no
-core (no mated column, none on an axis) has all its columns ordered at
-once, first by the signal's way: as few pins as can be stand left of the
-transistor or controlled source that drives their net (a gate before its
-driver, a load before its stage), so stages stand in the order the signal
-passes them, a mirror's reference left of its copies, and a loop is cut
-once; then by span, then by rank. The row is turned so that the columns an
-input reaches stand left of those that drive an output. A circuit of parts
+pair on one side, its mate mirrored on the other. A column whose current
+path meets a path of each half stands on the axis (a pair's tail, a start-up
+device between the halves; where several share a row, a pair's tail first,
+then by rank, the rest free); one that meets the halves through gates alone,
+or that the symmetry merely maps to itself, is a free column (people: 148
+of 180 such through gates stand outside the pair). Then one order for every
+circuit: the columns stand in one row, the core as one item of it (tried
+both ways round), in the signal's order: the fewest pins left of the
+transistor or controlled source that drives their net, then the narrowest
+wired nets (a net pulls its columns together when a column's current path
+ends on it, whatever its role; a bias or an input only gates read, and a
+rail, pull none), then by rank. So a second stage stands right of the pair
+that drives it, a bias generator left of what it biases, and of the core
+and its mirror image the one with fewer such pins stands (people: 1,036 of
+1,200 hand drawings with a core). Each half of the core, then the row, is
+tried exhaustively up to six columns, else by moving one column at a time
+while that helps. A circuit of parts
 (no transistor, no block) has no stage to tell the signal's way: there a
 source's column is where the signal enters, and with no output named the
 sources stand left of the row's middle (of two parts at different distances
@@ -361,7 +352,7 @@ axis; the member whose tip is on that column stands next to it. Any other bridge
 columns of its first and its last net that is no rail: its input and its
 output, as a subcircuit lists its ports (not the supply an op-amp's first
 port is on). A chain whose mate stands already mirrors it; taken slots
-move it outward. A block with no column on its first net, whose output (by its port's name) is on the gates of one column and nothing else, stands left of that column, level with the gate, its wire straight (an error amplifier before its pass device): of 487 blocks driving a gate in the reference drawings 346 stand left of it and 100 right.
+move it outward. A block stands in the signal's order, by its ports' names: left of the gate it drives, level with it, its wire straight (an error amplifier before its pass device), else right of what it reads (people 788 of 910 blocks).
 
 **Shelves** (`wrap.shelves`). A row of more than eight device columns (a
 person's page: their drawings of over 30 devices are 20 units wide at the
@@ -382,10 +373,12 @@ stand a shelf's gap apart. The width is the
 layout's `shelf` key (8; 0 keeps one row); `*@ shelf <columns>` sets it for
 one deck, `*@ shelf off` keeps one row.
 
-**Gates.** Every transistor's gate faces the rest of its gate net, or away
-from the middle when that is a rail or it has none; then a differential
-pair's face out, the two of a mirror, bank or cross-coupled pair face each
-other, and a larger mirror's or bank's all face left, as along one gate line.
+**Gates.** Every transistor's gate faces the rest of its gate net; one with
+nothing to face faces left, one with a mate elsewhere away from it (people
+2,684 of 3,317); then a differential pair's face out, and the two of a
+mirror, bank or cross-coupled pair face each other. A mirror or bank of
+three or more turns each gate the same way, to the rest of its gate line,
+not all left (people draw all left 12 of 1,103 mirrors).
 
 A symmetric circuit's cells are an exact mirror image: every mate pair's
 columns sum to the axis (asserted), and no two devices share a cell.
@@ -441,13 +434,10 @@ From the skeleton to a laid-out `Schematic` (`sketch.lay`).
 MOSFET drawn drain right, gate up, source left stands drain up, gate left,
 source down), then the first of the four flips that puts its upper end up
 and its gate on the skeleton's side. A bridge takes its class as drawn, its
-first pin on the side where its first net's other devices stand (by their
-mean column). A `face` line on it comes before all of that. Two things come
-next: a pin on a net the bridge shares with
-one other flat part of its row faces that part (two parts in series are one
-line: people draw 52.7% of 1,397 such pairs so, and the mean of a far outer
-net turned one end for end in 201), and a bridge with one pin alone on its
-net (a port's) turns the other pin toward that pin's net.
+end on the net of the nearest device beside it facing that device, and
+every flat device with a path turned by its path's two pins (people 4,414
+of 4,471, and 1,684 of 1,719). A `face` line on it comes before all of
+that.
 
 | id | pattern | rule | example | test |
 |----|---------|------|---------|------|
@@ -488,7 +478,7 @@ pitch: in 5,274 hand-drawn schematics two devices in series stand half a
 unit apart, pin to pin, when nothing else is on the node and about one when
 a gate or a branch joins there (two pieces of `tap`), a wire runs half a
 unit from a pin to its trunk, and a ground symbol hangs half a unit under
-its pin. `.layout = .{ .stack = 1, .rail = 1, .terminal = 1, .tap = 1 }` is
+a transistor's pin (on a two-pin part's pin itself). `.layout = .{ .stack = 1, .rail = 1, .terminal = 1, .tap = 1 }` is
 the roomier drawing of before.
 
 **Closing up** (`compact.zig`, when `compact` is on). The lattice leaves
@@ -570,20 +560,26 @@ another net's wire; crossing another net's wire is allowed. Every pin is a
 point of its net from the start. So no wire is ever on another net's point,
 and nothing drawn is moved or repaired afterwards.
 
-**Wires** (`wires.wire`). Nets go rails first, then inputs and bias nets,
-then the rest, each group in canonical order. A **stub** is a short wire out
+**Wires** (`wires.wire`). Nets go rails first, then internal nets and
+outputs, then inputs and bias nets, each group in canonical order. A **stub** is a short wire out
 from a pin along its side (`rail` long to a rail symbol, `terminal` to a
-port, `label` to a label); where a symbol's stub does not fit, a label goes
-on the pin instead. A label off a pin goes only where no other net's wire
+port, `label` to a label); a rail symbol on a two-pin part's end stands on
+the pin itself, no stub (people 6,883 of 8,367; a transistor's keeps its
+stub). Where a symbol's stub does not fit, a label goes
+on the pin instead. Every pin is an end of its wire, which leaves it the
+way the pin faces: no track runs through a pin's tip or turns on it, and a
+wire branches off its pins, never on them (people 87,922 of 93,770 pins).
+A net drawn by a pattern whose mirror mate is also drawn is drawn as its
+mirror image (people 1,070 of 1,112 pairs). A label off a pin goes only where no other net's wire
 crosses, so a label never joins two nets.
 
 | net | drawn as |
 |---|---|
-| ground | a ground symbol on a stub at each pin: one per branch, as the book draws it (`rail <net> bar`: one bar under the pins as at a supply; `plain`, and a reference by default: the bar with no symbol, every pin facing down brought to it however far, and the net's name on each piece where it cannot be one wire). No other net's wire crosses the stub: a person's symbol sits on its pin (3 of 16,030 rail stubs of half a unit or less are crossed in the 5,263 reference drawings) |
-| supply | its pins facing up, no more than two units below the bar: stubs to a bar `rail` above the highest, one supply symbol on each unbroken run of the bar, at its middle stub, and a run of two or more stubs going on `rail` past its outer ones where that fits (`rail_past`: 1,258 of the 2,506 supply bars people draw run on so, half a unit, and 1,185 end on their outer pins); any other supply pin, and one farther from the bar (97% of people's upright supply runs are two units or less), a symbol of its own. A stub of `rail` is crossed by no wire, as at ground, and neither is the bar (about 12 wires cross a supply's level run in the reference drawings) |
+| ground | a ground symbol on a stub at each pin (on the pin of a two-pin part's end): one per branch, with no name unless the drawing has two ground nets (people name 0 of 16,717); a sink named `vee…` takes the supply's glyph, below its pin (people 470 of 477), as the book draws it (`rail <net> bar`: one bar under the pins as at a supply; `plain`, and a reference by default: the bar with no symbol, every pin facing down brought to it however far, and the net's name on each piece where it cannot be one wire). No other net's wire crosses the stub: a person's symbol sits on its pin (3 of 16,030 rail stubs of half a unit or less are crossed in the 5,263 reference drawings) |
+| supply | its pins facing up, no more than two units below the bar: stubs to a bar `rail` above the highest. By default (`rail_past`) the bar is a named rail: no symbol on it, a run of two or more stubs going on `rail` past its outer ones where that fits, the net's name at its right end (people: 1,255 of 1,370 named bars run on so); `rail_past = false` draws the other bar people draw, one supply symbol on each unbroken run at its middle stub, ending on its outer pins (1,083 of 1,140 bars with a symbol); any other supply pin, and one farther from the bar (97% of people's upright supply runs are two units or less), a symbol of its own. A stub of `rail` is crossed by no wire, as at ground, and neither is the bar (about 12 wires cross a supply's level run in the reference drawings) |
 | input | its pins on one wire (a column or a trunk, as below) with one port out from the wire's left end, or its right, when the box around the pins is no more than 6 units around half and the port's stub has room, as people draw 87% of their inputs of two pins or more; else a port on a stub at each pin |
-| bias | a gate line between the two facing gates of one row, named at its middle; else its pins on one trunk with one input port out from a free end, when the box around them is no more than 6 units around half (people wire 187 of 215 such nets with one port); else an input port on a stub at each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in the 5,263 reference drawings, 3,228 carry port symbols and none a written name |
-| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to one line: of the tracks that fit, the one that costs the least as the router counts a path, its wire's length and `bend_cost` a corner, the first on a tie; a turn at a pin is a corner unless the wire also leaves the way the pin faces. The rows tried, in order: the row of a pin facing sideways that every pin facing down stands over and every pin facing up under, so that pin is joined straight (a gate level with a column's junction, or the gate a lone drain comes down to); the net's tap row, midway between the lowest pin facing down and the highest facing up, else `tap` past the pins; a quarter or half unit either side; half a unit past the pins' devices; each pin's own row. A net of at most 12 pins with no port or name on its wire may take an upright trunk instead: down the column of a pin facing up or down (the link between two devices of a column, a gate a straight stub to it), midway between two neighbouring pins, half a unit either side of a pin, or on a pin facing sideways). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
+| bias | a gate line between the two facing gates of one row, a port symbol hanging from its middle (people 197 of 264), never a written name; else its pins on one trunk with one input port out from a free end, when the box around them is no more than 6 units around half (people wire 187 of 215 such nets with one port); a track on which the bias's wire would cross another net's (a rail's aside) is not taken (people: 3,926 of 4,080 wired bias nets cross none); else an input port on a stub at each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in the 5,263 reference drawings, 3,228 carry port symbols and none a written name |
+| internal, output | the first pattern that fits: a **ladder** (pins facing each other in pairs along rows, one pair a row on two rows or more: a rung between each pair, and an upright through them all at the axis, or the middle, as a CMFB midpoint meets its gate line); a **column** (pins standing in one column, joined in order); a **trunk** (each pin brought to one line: of the tracks that fit, the one that costs the least as the router counts a path, its wire's length, `bend_cost` a corner and `cross_cost` each wire of another net drawn so far that it crosses, the first on a tie. The rows tried, in order: the rows of the pins facing sideways, nearest the tap row first, so such a pin is joined straight; `tap` out from the tips of the pins facing up or down (midway where they stand two taps apart), half a `tap` only where neither has room; half a unit past the pins' devices. A pin's own row is no track. A net of at most 12 pins with no port or name on its wire may take an upright trunk instead: down the column of a pin facing up or down (the link between two devices of a column, a gate a straight stub to it), midway between two neighbouring pins, or half a unit either side of a pin; never on a pin facing sideways). An output's port goes out from the outer end of its trunk or column. A net no pattern fits waits for the router |
 
 **Routes** (`routes.draw`), for the nets waiting, in canonical order:
 

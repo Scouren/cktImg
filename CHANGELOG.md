@@ -4,6 +4,42 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 ## Unreleased
 
+Merged (rounds 4 and 5; each kept change's totals are its agent's, measured on its own branch over the 5,263 reference circuits: crossings, corners, wire units, written names; each trade's are measured on the merged tree, with -> without, and decided by merit = A - D, A the sum of nine agreement means, D the sum of |engine - people| / people over crossings, corners, wire and names):
+
+- A block's ports stand one unit apart about each side's middle (`library.8`, ab5aaea): people 1,137 of 1,261 two-port sides; crossings 6,953 to 6,958, corners 28,269 to 28,233, wire 197,332 to 195,212, names 10,168 to 10,174.
+- A rail's name is read one way, by its start, as a net's and a port's (`library.4`, `schematic.2`, 8bf64f2): people 10 of 10 numbered grounds; crossings 6,958 to 6,954, corners 28,233 to 28,221, wire 195,212 to 195,174.
+- A rail symbol on a two-pin part's end stands on the pin, a transistor's keeps its stub (`wires.10`, 3965c3a): people 6,883 of 8,367; engine 0 to 9,640 of 9,916; wire -5,736.
+- A supply bar is a named rail: no symbol, running past its outer pins, its name at the right end (`wires.6`, `config.3`, e782211): people 1,255 of 1,370 named bars; names +2,502.
+- A bias gate line carries a port hanging from its middle, never a written name (`wires.11`, 0bcea70): people 197 of 264; named lines 413 to 2.
+- A strong face line beats a later weak one (`relations`, 79ecb1d): a bug fix.
+- Two mated column pairs stand side by side, each about its own axis (`mates.6` removed, 1ac9483): people 406 of 643; crossings 6,953 to 6,876, corners 28,269 to 28,159, wire 197,332 to 196,868, names 10,168 to 9,755.
+- One gate net's groups are listed in the device table's order of kinds (`structure.12`, ee187d1): people 88 of 93; drawings unchanged (0 of 5,380 decks).
+- A column goes on through the part direct current passes, a capacitor beside it (`skeleton.4`, 5f1bc67): people 749 of 778; crossings 6,953 to 6,895, corners 28,269 to 28,135, wire 197,332 to 196,738, names 10,168 to 10,187.
+- A mirror or bank of three turns each gate to the rest of its gate line, not all left (`skeleton.12` removed, f275625): people all left 12 of 1,103; crossings 6,895 to 6,749, corners 28,135 to 27,087, wire 196,738 to 196,449, names 10,187 to 10,020.
+- A flat part's end on the net of the nearest device beside it faces that device, and every flat device with a path is turned by its path's ends (`sketch.4`, 48458c8, 82ef8ee): people 4,414 of 4,471 and 1,684 of 1,719; crossings 6,953 to 6,931, corners 28,269 to 28,018, names 10,168 to 10,161.
+- One column order for every circuit, the signal's (`columns.13`, `span.2`, 5b6877d): people 1,036 of 1,200; crossings 6,953 to 6,946, corners 28,269 to 28,117, wire 197,332 to 196,109.
+- A block stands in the signal's order (`bridges.15`, 417091a): people 788 of 910; crossings 6,926 to 6,916, corners 27,953 to 27,368, wire to 195,048.
+- A net a column's current path ends on pulls its columns together, whatever its role (`columns.1`, af0872e): people 103 of 137 bias or input nets; crossings 7,177 to 7,174, corners 27,497 to 27,471, wire +827, names +232.
+- A ground symbol carries no name unless the drawing has two ground nets (`geom.5`, b8732d3): people 0 of 16,717; a device's name on the first side with no pin (`geom.1`, 47c0697): people 40,958 of 45,982; a supply's name beside its bar (`geom.6`, 6a3c307): people 4,531 of 6,169. JSON drawings unchanged.
+- A trunk's track costs each crossing of a wire drawn so far, inputs and biases wired after the rest (`trunk.2`, 752c634): people 33,360 of 37,990 nets cross none; crossings 7,395 to 7,279.
+- A net's mirror mate is drawn as the mirror image of its wire, whatever pattern drew it (`routes.2`, c20e791): people 1,070 of 1,112 pairs.
+- A sink named `vee…` is drawn with the supply glyph below its pin (`placed.9`): people 470 of 477.
+- The site shows the human drawing beside the engine's for every reference circuit (7f58835).
+- Trade kept, `mates.2` one type up a block's two columns (4b9ebab): people 153 of 170; with -> without: crossings 6,749 / 6,746, corners 37,656 / 37,735, wire 213,183 / 213,336, names 10,672 / 10,659; merit 5.27502 / 5.26697.
+- Trade kept, `skeleton.14` a gate with nothing to face faces left (c4b2210): people 2,684 of 3,317; crossings 6,749 / 6,769, corners 37,656 / 37,652, wire 213,183 / 213,150, names 10,672 / 10,652; merit 5.27502 / 5.25763.
+- Trade kept, `columns.4` the axis only for a column whose current joins both halves (18253e9): people 148 of 180; crossings 6,701 / 6,745, corners 37,122 / 37,058, wire 211,674 / 212,172, names 10,739 / 10,802; merit 5.32409 / 5.31261.
+- Trade kept, `trunk.14` a bias's wire crosses no other net's (824dba1): people 3,926 of 4,080; crossings 6,138 / 6,181, corners 35,185 / 35,287, wire 199,993 / 200,231, names 11,573 / 11,551; merit 5.58063 / 5.56531.
+- Trade kept against the rule, `trunk.13` a pin is an end of its wire (915bd9e): people 87,922 of 93,770; crossings 6,237 / 6,391, corners 36,697 / 26,151, wire 204,757 / 188,529, names 11,624 / 11,562; merit 5.47270 / 5.59134. Dropping it turns two tests of kept changes red (752c634's follower, 824dba1's Colpitts core). The scorer counts no turn on a pin's tip, about 6,900 of the corners without it.
+- Trade dropped, `cktimg-json` internal nets of a top cell (b643991): people 49 of 23,393; crossings 7,193 / 6,749, corners 37,983 / 37,656, wire 213,644 / 213,183, names 11,762 / 10,672; merit 5.15981 / 5.27504.
+- Trade dropped, `forms.19` an inductor off the rails lies flat (8cf615d): people 397 of 539; crossings 6,749 / 6,726, corners 37,656 / 37,158, wire 213,183 / 212,116, names 10,672 / 10,653; merit 5.27502 / 5.29890.
+- Trade dropped, `skeleton.15` a pair's member last for a column link (70cd9ed): people 382 of 491; crossings 6,726 / 6,703, corners 37,158 / 37,169, wire 212,116 / 211,829, names 10,653 / 10,747; merit 5.29864 / 5.32185.
+- Trade dropped, `opamp_grow.6` removal (b82c19e): people 29 of 61; crossings 6,703 / 6,701, corners 37,169 / 37,122, wire 211,829 / 211,674, names 10,747 / 10,739; merit 5.32185 / 5.32429.
+- Trade dropped, `config.9` a row of twelve columns (e1df8dd): people 504 of 686 keep one band; crossings 6,701 / 6,237, corners 37,122 / 36,697, wire 211,674 / 204,757, names 10,739 / 11,624; merit 5.32416 / 5.47218. The page stays eight columns.
+- Trade dropped, `wires.12` input and bias parts by reach (e4f6008): people 2,732 of 3,527 nets; crossings 6,237 / 6,138, corners 36,697 / 35,185, wire 204,757 / 199,993, names 11,624 / 11,573; merit 5.47218 / 5.58063.
+- Trade dropped against the rule, `trunk.7` facing gates joined straight on every track (1f378a7): people 4,328 of 4,394 pairs; crossings 6,173 / 6,138, corners 31,826 / 35,185, wire 197,814 / 199,993, names 11,530 / 11,573; merit 5.69721 / 5.58065. With it the test "a net over the crossing budget keeps its near pins wired" (Sallen-Key, with `sketch.4`) is red.
+- Not applied, `forms.10` a capacitor off the rails lies flat (patch): people 1,691 of 2,724; crossings 6,166 / 6,138, corners 36,964 / 35,185, wire 204,066 / 199,993, names 11,359 / 11,573; merit 5.50018 / 5.58055.
+- The merge over cf1f5f3: crossings 6,953 to 6,138 (people 3,412), corners 28,269 to 35,185 (30,645), wire 197,332 to 199,993 (179,956), dots 40,832 to 41,656 (48,780), names 10,168 to 11,573 (11,371); merit 5.20308 to 5.58123. `cktimg.wasm` 544,604 bytes.
+
 Added:
 
 - Every file of `src/` opens with a `Human Rules:` list: each rule the file makes true of a drawing, named `<file>.<n>`, with what it rests on (`order: potential`, `order: signal`, `habit` with its count from hand drawings, `book`, `invariant`, `choice`, `unmeasured`), and a `Narrowing:` line where the code is narrower than the rule. 328 rules in 44 files: 105 unmeasured, 79 choice, 71 invariant, 39 habit, 17 book, 17 of the two orders. Comments only.

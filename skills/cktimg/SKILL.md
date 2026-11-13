@@ -96,7 +96,8 @@ on a device overrides the relations on it.
   circuit, wired where they stand (`*@ driver <src> apart` sets one apart).
   A circuit of R, C, L, D and sources with no ground gets a reference: the
   net most parts end on becomes its bottom wire, drawn with no ground
-  symbol. `*@ role <net> ground` names another, with ground symbols.
+  symbol. `*@ role <net> ground` names another, with ground symbols. A
+  `vee*` net is drawn with the supply glyph below its pin.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:
@@ -115,7 +116,8 @@ on a device overrides the relations on it.
 - **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
   the drawing and keep every row and column; `src/config.zig` lists each
   with its default: a person's pitch, half a unit between stacked
-  devices and from a pin to its trunk or rail symbol (`.stack = 1, .tap = 1,
+  devices and from a pin to its trunk or a transistor's rail symbol (a
+  two-pin part's rail symbol stands on its pin; `.stack = 1, .tap = 1,
   .rail = 1, .terminal = 1` for a roomier drawing). The drawing is closed up
   to those lengths
   (`.compact = true`, the default); `.compact = false` keeps the roomier
@@ -123,8 +125,9 @@ on a device overrides the relations on it.
   most other wires one internal net's wire may cross before the net is
   joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
   it (6) for one with too many names; `*@ wire <net>` keeps one net wired.
-  `.rail_past` (true) runs a supply bar on past its outer pins, a rail;
-  `false` ends the bar on them.
+  `.rail_past` (true) draws a supply bar as a named rail, no symbol on it,
+  running on past its outer pins, its name at the right end; `false` draws
+  the bar with its supply symbol, ended on its outer pins.
   `.shelf` (8) is how many device columns a row holds before the drawing
   wraps into rows of columns: raise it for a wider page, `0` for one row;
   `*@ shelf <columns>|off` says so in one deck.
