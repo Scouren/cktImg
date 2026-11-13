@@ -17,10 +17,15 @@
 //!   core stays whole on one shelf and keeps its x. `cutCost`
 //! - wrap.4 (unmeasured) Every shelf starts at the left edge of the core's
 //!   shelf, or of the first shelf when there is no core. `cut`
-//! - wrap.5 (choice) No cut parts the devices a `row` or `order` line
-//!   names together, and a deck with `cell` or strong `at` lines is not
-//!   wrapped: those are places of the drawing as it stands (relaid from a
-//!   `weak at` stay, a deck wraps as it did). `cut`
+//! - wrap.5 (choice) No cut parts an honoured `row` or `order` group,
+//!   or puts an `above` line's upper device on a later shelf than its
+//!   lower device. Left shelves precede right shelves, so an upper-left
+//!   to lower-right pair may cross a cut. Rejected, dropped and unhandled
+//!   instructions impose no cut restriction. Admission and bridge
+//!   placement have already set these verdicts.
+//!   A deck with `cell` or strong `at` lines is not wrapped: those are
+//!   places of the drawing as it stands (relaid from a `weak at` stay,
+//!   a deck wraps as it did). `cut`, `cutCost`
 //! - wrap.6 (choice) Shelves stand `shelf_gap` (6) lattice rows apart, and
 //!   a shelf's rows that only another shelf's columns filled are closed
 //!   up: the shelves are read off the cells, so the engine's own decisions
@@ -68,6 +73,8 @@ const shelf_gap = 6;
 /// each device's shelf to `shelf`:
 /// the bands of rows `shelf_gap` apart, wrapped here or not. `mate` is
 /// each device's mirror image, or `none`: a pair is never parted.
+/// Relation verdicts must already contain their admission results;
+/// honoured relation arguments must name drawn devices.
 pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void {
     const n = nl.graph.edgeCount();
     assert(drawn.len == n and form.len == n and mate.len == n);
@@ -146,7 +153,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         var best: ?usize = null;
         var best_cost: u64 = std.math.maxInt(u64);
         for (@max(first + 1, ideal -| slack)..@min(cols, ideal + slack + 1)) |j| {
-            const cost = cutCost(nl, roles, drawn, form, mate, x, col[first], col[j]) orelse continue;
+            const cost = cutCost(nl, roles, drawn, form, mate, x, verdicts, col[first], col[j]) orelse continue;
             // Fewest nets cut, then nearest its place.
             const key = (@as(u64, cost) << 32) | @abs(@as(i64, @intCast(j)) - @as(i64, @intCast(ideal)));
             if (key < best_cost) {
@@ -238,12 +245,13 @@ fn shelfOf(starts: []const i32, x: i32) usize {
 
 /// How many nets but rails have a device on both sides of a cut before the
 /// column at `at`, among the devices at or right of `from`; null where the
-/// cut would part a device from its mate, or two devices a `row` or `order`
-/// line names together, or a certified power path from its required
+/// cut would reverse an honoured `above` pair or part a device from its
+/// mate, an honoured `row`/`order` group, or a certified power path from its required
 /// controls (their existing row/order relation would no longer hold).
-fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []const i32, from: i32, at: i32) ?u32 {
+fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []const i32, verdicts: []const ?hints.Verdict, from: i32, at: i32) ?u32 {
     const c = &nl.graph;
     assert(from < at);
+    assert(verdicts.len == nl.hints.len);
     for (mate, 0..) |m, d| {
         if (m == none or !drawn[d] or !drawn[m]) continue;
         if ((x[d] < at) != (x[m] < at)) return null;
@@ -264,14 +272,29 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         }
         if (lo < at and hi >= at) return null;
     }
-    for (nl.hints) |h| {
-        if (h.verb != .row and h.verb != .order) continue;
-        var sides = [2]bool{ false, false };
-        for (h.args) |name| {
-            const d = (nl.device(name) orelse continue).index();
-            if (drawn[d] and x[d] >= from) sides[@intFromBool(x[d] >= at)] = true;
+    for (nl.hints, verdicts) |h, verdict| {
+        if (h.verb != .row and h.verb != .order and h.verb != .above) continue;
+        const v = verdict orelse continue;
+        if (v.state != .honoured) continue;
+        if (h.verb == .above) {
+            assert(h.args.len >= 2);
+            for (h.args[0 .. h.args.len - 1], h.args[1..]) |upper, lower| {
+                const a = nl.device(upper).?.index();
+                const b = nl.device(lower).?.index();
+                assert(drawn[a] and drawn[b]);
+                if (x[a] >= at and x[b] < at) return null;
+            }
+            continue;
         }
-        if (sides[0] and sides[1]) return null;
+        var lo: i32 = std.math.maxInt(i32);
+        var hi: i32 = std.math.minInt(i32);
+        for (h.args) |name| {
+            const d = nl.device(name).?.index();
+            assert(drawn[d]);
+            lo = @min(lo, x[d]);
+            hi = @max(hi, x[d]);
+        }
+        if (lo < at and hi >= at) return null;
     }
     var cost: u32 = 0;
     for (roles, 0..) |r, net| {

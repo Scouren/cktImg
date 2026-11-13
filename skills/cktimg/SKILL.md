@@ -86,6 +86,10 @@ on a device overrides the relations on it.
   name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
   Inside a `.subckt`, lines are that cell's for the Schemify import, which
   logs every line it does not honour.
+  Shelves preserve accepted `row`, `order` and `above` relations. An
+  `above` chain may cross shelves when their top-to-bottom order agrees;
+  a cut that would reverse it is forbidden. Rejected or dropped relation
+  lines do not change shelf cuts.
 - **Roles.** A net's name decides its role: supply `vdd*` or `v+`, ground
   `0`, `gnd`, `vss` or `v-`, inputs `in*`/`vin*` (and a `vref*` no drain makes), outputs `out*`/`vout*`,
   bias `vb*`/`bias*`.

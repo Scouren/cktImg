@@ -685,3 +685,35 @@ six representative views were inspected. The four source/native examples
 above also pass the current Schemify host with six exact subcircuits.
 All 124 changed drawings produce identical geometry and report bytes when
 rerendered serially against the four-job corpus run.
+
+## Tenth measured pass: preserve admitted relations across shelves
+
+The frozen executable is
+`c094dc10d95a3d14e15494faef868cb5fad4b94648692c068f8f489644ac307c`.
+Shelf cuts now consult relation admission results. Accepted `row` and
+`order` groups stay together; an accepted `above` pair forbids a cut only
+when its upper device would move to a later shelf than its lower device.
+Forward upper-left to lower-right chains may cross shelves. Rejected,
+dropped and unhandled relations impose no cut restriction.
+
+The independent regressions reproduce a reversed accepted relation and
+geometry changed by rejected names. A separate mutation test rejects the
+overly restrictive rule that keeps every `above` chain on one shelf; the
+existing exported-layout fixed-point test catches the same error. Explicit
+coordinates retain precedence. Four new tests pass with compaction enabled
+and disabled, checking verdicts, strict ordering and electrical connectivity.
+
+All 2,202 AnalogGenie and 734 AMSNet drawings retain identical geometry,
+reports, per-drawing scores and source issues. The partial all-relation
+score remains **289/2,202**. All 31 gallery SVGs are byte-identical; the
+two-stage amplifier and before/after views of the new hint cases were
+inspected. This fixes a constraint violation without claiming new source
+layout equivalence.
+
+Validation passes 316 tests without LaTeX, 317 with it, 4,000 fuzz cases,
+formatting and unchanged legacy style findings. The full fixture inventory
+retains its exact 98 comparisons and two capacity refusals. Four explicit
+hint decks pass the release Schemify host; two also pass the current host.
+Their native geometry and reports are byte-identical between serial and
+four-job runs. The repeated plugin build is identical at 558,433 bytes,
+SHA-256 `a792fcf766aeaf3c4bfc6bd2054b8ccaa96777465ed65e992df4fc2614460b05`.

@@ -6,6 +6,10 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 AnalogGenie pattern study (#8):
 
+- Engine: shelf cuts preserve admitted vertical ordering, allow forward upper-to-lower chains across shelves, and ignore rejected or dropped relation spans (#8).
+- Engine: keep unique converter reservoirs outside their main switches and at or below the power path through placement, shelves and compaction; all 359 selected branches satisfy these bounded relations, while two source-level cases remain lower than their source (#8).
+- Engine: place unique grounded converter shunts inside their main-to-coil intervals and preserve actual terminal order during compaction; all 353 selected intervals and all 92 driver clearances hold (#8).
+- Engine and Schemify: replace eight bare integer sorts with heap sort, saving 7,520 plugin bytes against the eighth-pass implementation with identical geometry and reports across 2,202 AnalogGenie and 734 AMSNet decks (#8).
 - Engine: orient certified converter controllers upward and align their actual output pins with switch gates, preserving explicit placement and custom pin geometry; direct SVG evidence supports 67 of 75 source cases, with eight rightward source cases still unmatched (#8).
 - Engine: face external main-switch gates downward only on certified converter paths with grounded capacitors at both outer ends; all 107 selected source controls agree (#8).
 - Engine and Schemify: draw complete single-input amplifier/comparator contracts and the validated `comp` alias as triangles with their actual polarity; all 47 selected one-input source glyphs and their ordered bindings match (#8).
