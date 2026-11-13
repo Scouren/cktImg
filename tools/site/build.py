@@ -26,7 +26,12 @@ th{cursor:pointer;white-space:nowrap}.pair{display:grid;grid-template-columns:1f
 .pair img{width:100%;height:auto;max-height:75vh;object-fit:contain;background:#fff}figcaption{font-weight:600;margin-bottom:6px}
 .muted{color:#68707d}input,select{font:inherit;margin:0 6px 6px 0}.tb{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:12px}
 .tb figure{margin:0;border:1px solid #e3e6ec;padding:6px}.tb img{width:100%;height:auto}
-@media(max-width:800px){.pair{grid-template-columns:1fr}}"""
+@media(max-width:800px){.pair{grid-template-columns:1fr}}
+:root{color-scheme:light}html.dark{color-scheme:dark}html.dark body{color:#e3e6ec;background:#16181d}
+html.dark a{color:#8fb4ff}html.dark td,html.dark th,html.dark .pair figure,html.dark .tb figure{border-color:#3a3f4b}
+html.dark .muted{color:#9aa2b1}html.dark input,html.dark select{background:#22252c;color:#e3e6ec;border:1px solid #3a3f4b}
+html.dark .pair img,html.dark .tb img{filter:invert(1) hue-rotate(180deg)}
+#invert{position:fixed;top:10px;right:16px;font:inherit;padding:4px 10px;cursor:pointer;border:1px solid #9aa2b1;border-radius:6px;background:inherit;color:inherit}"""
 
 
 def segments(doc):
@@ -105,9 +110,20 @@ def draw(job):
                 os.remove(tmp + ext)
 
 
+# The colour inverter: a dark page with every drawing inverted (black lines on white become white on dark), chosen
+# by the button, else by the viewer's system setting; the choice is kept in localStorage, which may be unavailable.
+# `color-scheme` stops a browser's own forced dark mode from repainting the drawings' strokes.
+THEME = ("<script>(function(){var d;try{d=localStorage.getItem('dark')}catch(e){}"
+         "if(d===null)d=matchMedia('(prefers-color-scheme: dark)').matches?'1':'0';"
+         "if(d==='1')document.documentElement.classList.add('dark')})()</script>")
+TOGGLE = ("<button id=\"invert\" title=\"invert the colours\" onclick=\"var c=document.documentElement.classList;"
+          "c.toggle('dark');try{localStorage.setItem('dark',c.contains('dark')?'1':'0')}catch(e){}\">&#9681; invert</button>")
+
+
 def page(title, body, root=""):
     return ('<!doctype html><html lang="en"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">'
-            '<title>%s</title><link rel="stylesheet" href="%sstyle.css"></head><body>%s</body></html>' % (html.escape(title), root, body))
+            '<meta name="color-scheme" content="light only"><title>%s</title><link rel="stylesheet" href="%sstyle.css">%s</head>'
+            '<body>%s%s</body></html>' % (html.escape(title), root, THEME, TOGGLE, body))
 
 
 def metrics_table(h, o):
