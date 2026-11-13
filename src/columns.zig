@@ -10,9 +10,9 @@
 //! - columns.2 (unmeasured) Mated columns are the core: one of each pair
 //!   on the left, its mate its mirror image on the right. `order`
 //! - columns.3 (choice) Of two mated columns, the one nearer, along current
-//!   paths, the lowest-ranked mated device stands left: something must
-//!   pick a side, and one reference keeps each half on one side.
-//!   `assignSides`
+//!   paths, the lowest-ranked mated device stands in one half and its mate
+//!   in the other: one reference keeps each half whole. Which half stands
+//!   left is the row's to say (columns.13). `assignSides`
 //! - columns.4 (unmeasured) A column whose devices the symmetry maps to
 //!   themselves stands on the axis, as does a column wired to both halves
 //!   (a start-up device between them). `assignSides`
@@ -21,25 +21,29 @@
 //!   5,263 hand-drawn schematics stand between the pair's two. `order`
 //! - columns.6 (invariant) At most one column stands on the axis at any
 //!   row; the others, by rank, go free. `order`
-//! - columns.7 (habit) A column with no mate goes to the side of the
-//!   core's half it shares more wired nets with. People: 70.4% of 1,459
-//!   such columns in 5,263 hand-drawn schematics. `outputSide`
-//! - columns.8 (order: signal) A free column neither half pulls goes right
-//!   of the core when it has a pin on an output, else left. `outputSide`
-//! - columns.9 (unmeasured) A free column a wired net joins to a free
-//!   column going right goes right too, unless a half pulls it: a mirror's
-//!   two stand on one side. `outputSide`
-//! - columns.10 (unmeasured) Free columns stand outside the core, the
-//!   right ones from its right edge and the left ones up to its left edge,
-//!   each side in the order of span.1. `order`
-//! - columns.11 (order: signal) A circuit with no core (no mated column,
-//!   none on the axis) is one row of columns in the signal's way: span.2,
-//!   then span.1, then rank, and turned by span.3. `order`
-//! - columns.12 (choice) Each half or side tries every order up to
-//!   `exhaustive_max` (6) columns, else moves one column at a time up to
-//!   `move_reach` (12) places for `move_rounds` (16) passes; a tie keeps
-//!   the order tried first, the search starting from rank order (with no
-//!   core, the one nearer rank order): a bound on the work. `best`
+//! - columns.7, .8, .9, .11: retired; columns.13 is the rule they were
+//!   cases of (a free column on the side of the half it shares more nets
+//!   with: people 1,172 of 1,716; one on an output right, 577 of 760, any
+//!   other left, 1,403 of 2,618; a circuit with no core in one row).
+//! - columns.10 (invariant) No free column stands between the core's mated
+//!   columns: the core is one item of the row. People: 6,003 of 6,781 free
+//!   columns stand clear of the core (5,198 beside it, 805 over or under
+//!   it) in 5,263 hand-drawn schematics. `lay`
+//! - columns.12 (choice) Each half of the core, then the row, tries every
+//!   order up to `exhaustive_max` (6) columns, else moves one column at a
+//!   time up to `move_reach` (12) places for `move_rounds` (16) passes; of
+//!   equal orders the one nearer rank order stands: a bound on the work.
+//!   `best`
+//! - columns.13 (order: signal) The columns stand in one row, the core as
+//!   one of them, in the order span.2 then span.1 give: the fewest pins
+//!   left of what drives them, then the narrowest wired nets. A second
+//!   stage stands right of the pair that drives it, a bias generator left
+//!   of what it biases, and of the core and its mirror image the one with
+//!   fewer such pins stands. People: 1,036 of the 1,200 hand drawings with
+//!   a core that differ from their mirror image in those pins face the way
+//!   with fewer; a free column the core drives stands right of it in 599
+//!   of 843, one that drives the core left in 303 of 418; two free columns
+//!   a wired net joins stand on one side in 5,238 of 6,102. `order`
 //!
 //! Contents:
 //! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`, `Columns.count(c: Columns) u32`, `Columns.of(c: Columns, k: usize) []const u32`
@@ -88,10 +92,8 @@ pub const Ctx = struct {
     rank: []const u32,
     /// Nets whose span counts, as their devices' columns.
     wired: []const bool,
-    /// Columns with an x so far: the axis, then each side as it is ordered.
+    /// Columns with an x so far: the core's, then the whole row's.
     placed: []bool,
-    /// Whether an order is first judged by the signal's way (`against`).
-    flow: bool = false,
 };
 
 const none: u32 = std.math.maxInt(u32);
@@ -106,6 +108,23 @@ const move_reach = 12;
 const move_rounds = 16;
 
 const Side = enum(u8) { left, axis, right, free };
+
+/// The mirrored core as one item of the row: its columns `in`, each at
+/// `about` from the axis (so within `reach` of it), standing where the
+/// column `anchor` is listed; `sign` -1 lays its mirror image. `anchor` is
+/// `none` when no column is in the core.
+const Core = struct {
+    about: []const i32,
+    in: []const bool,
+    reach: i32 = 0,
+    anchor: u32 = none,
+    sign: i32 = 1,
+};
+
+/// How an order of columns is laid: leftward from minus the given x, each
+/// column's mate its mirror image about x = 0 (a half of the core); or left
+/// to right from 0, a channel between neighbours, the core among them.
+const Lay = union(enum) { mirrored: i32, row: Core };
 
 /// Each column's x. `column_of`, `mate`, `partner`, `rank` and `row` have
 /// one entry per device (`none` for a device in no column, or with no mate
@@ -137,17 +156,14 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     defer left.deinit(gpa);
     var axis: std.ArrayList(u32) = .empty;
     defer axis.deinit(gpa);
-    var free_left: std.ArrayList(u32) = .empty;
-    defer free_left.deinit(gpa);
-    var free_right: std.ArrayList(u32) = .empty;
-    defer free_right.deinit(gpa);
-    const outward = try outputSide(ctx, side);
-    defer gpa.free(outward);
+    // The row: every column with no place in the core, and the core as one.
+    var row_list: std.ArrayList(u32) = .empty;
+    defer row_list.deinit(gpa);
     for (side, 0..) |s, k| switch (s) {
         .left => try left.append(gpa, @intCast(k)),
         .axis => try axis.append(gpa, @intCast(k)),
         .right => {},
-        .free => try (if (outward[k]) &free_right else &free_left).append(gpa, @intCast(k)),
+        .free => try row_list.append(gpa, @intCast(k)),
     };
     sortByRank(ctx, left.items);
     sortByRank(ctx, axis.items);
@@ -172,41 +188,52 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
         if (!clash) {
             axis.items[kept] = k;
             kept += 1;
-        } else try (if (outward[k]) &free_right else &free_left).append(gpa, k);
+        } else try row_list.append(gpa, k);
     }
     axis.shrinkRetainingCapacity(kept);
-    sortByRank(ctx, free_left.items);
-    sortByRank(ctx, free_right.items);
 
     @memset(x, 0);
-    if (left.items.len == 0 and axis.items.len == 0) {
-        // No core: one row of columns, in one order, read left to right.
-        try free_left.appendSlice(gpa, free_right.items);
-        sortByRank(ctx, free_left.items);
-        var by_flow = ctx;
-        by_flow.flow = true;
-        try best(by_flow, free_left.items, inRow, x, col_mate, 0);
-        if (!order_cost.flowsRight(ctx, x)) {
-            const last = 2 * @as(i32, @intCast(n - 1));
-            for (x) |*v| v.* = last - v.*;
-        }
-        return x;
-    }
     for (axis.items) |k| placed[k] = true;
     // Axis columns share x = 0; the halves start one channel out, or two
     // when an axis column stands between them.
-    const inner: i32 = if (axis.items.len > 0) 2 else 1;
-    try best(ctx, left.items, mirrored, x, col_mate, inner);
-    var lo: i32 = -inner + 2;
-    var hi: i32 = inner - 2;
-    for (left.items) |k| {
-        lo = @min(lo, x[k]);
-        hi = @max(hi, x[col_mate[k]]);
+    _ = try best(ctx, left.items, .{ .mirrored = if (axis.items.len > 0) 2 else 1 }, x, col_mate);
+    // The core, as laid about x = 0, is one item of the row: it stands in
+    // it where its lowest-ranked column would.
+    const about = try gpa.dupe(i32, x);
+    defer gpa.free(about);
+    const in_core = try gpa.dupe(bool, placed);
+    defer gpa.free(in_core);
+    var core: Core = .{ .about = about, .in = in_core };
+    for (in_core, 0..) |in, k| {
+        if (!in) continue;
+        core.reach = @max(core.reach, @as(i32, @intCast(@abs(about[k]))));
+        if (core.anchor == none or rank[cols.of(k)[0]] < rank[cols.of(core.anchor)[0]]) core.anchor = @intCast(k);
     }
-    // Free columns outboard, each side in its order left to right: right
-    // ones from the core's right edge, left ones ending at its left edge.
-    try best(ctx, free_right.items, inRow, x, col_mate, hi + 2);
-    try best(ctx, free_left.items, inRow, x, col_mate, lo - 2 * @as(i32, @intCast(free_left.items.len)));
+    if (core.anchor != none) try row_list.append(gpa, core.anchor);
+    sortByRank(ctx, row_list.items);
+    // One row, in the order that costs least (`span.zig`): the fewest pins
+    // left of what drives them, then the narrowest wired nets. The core's
+    // mirror image is as symmetric as the core, so it is tried both ways
+    // round (people: 1,036 of the 1,200 drawings with a core that differ
+    // from their mirror image in pins left of their drivers face the way
+    // with fewer, in 5,263 hand-drawn schematics).
+    const turned = try gpa.dupe(u32, row_list.items);
+    defer gpa.free(turned);
+    const cost = try best(ctx, row_list.items, .{ .row = core }, x, col_mate);
+    if (core.anchor != none) {
+        core.sign = -1;
+        if (try best(ctx, turned, .{ .row = core }, x, col_mate) >= cost) {
+            core.sign = 1;
+            lay(.{ .row = core }, x, col_mate, row_list.items);
+        }
+        // The axis back at x = 0.
+        const axis_x = x[core.anchor] - core.sign * about[core.anchor];
+        for (x) |*v| v.* -= axis_x;
+    }
+    // Read left to right: the whole row turned end for end otherwise.
+    if (!order_cost.flowsRight(ctx, x)) for (x) |*v| {
+        v.* = -v.*;
+    };
     for (side, 0..) |s, k| if (s == .right) assert(x[k] == -x[col_mate[k]]);
     return x;
 }
@@ -239,9 +266,10 @@ fn columnMate(ctx: Ctx, mate: []const u32, k: usize) u32 {
     return found;
 }
 
-/// Mated columns: the one nearer the reference device on the left, its mate
-/// on the right. Unmated columns whose devices are their own mates, or
-/// wired to both halves, on the axis. Everything else is free.
+/// Mated columns: the one nearer the reference device in the half called
+/// left, its mate in the right one (the row may stand the core either way
+/// round). Unmated columns whose devices are their own mates, or wired to
+/// both halves, on the axis. Everything else is free.
 fn assignSides(ctx: Ctx, mate: []const u32, col_mate: []u32, side: []Side) !void {
     const n = ctx.cols.count();
     @memset(side, .free);
@@ -374,68 +402,6 @@ fn isTail(ctx: Ctx, mate: []const u32, k: u32) bool {
     return false;
 }
 
-/// Per column: whether, free, it goes right of the core. One the core's
-/// right half shares more wired nets with than its left does, and one the
-/// left half pulls does not; of the rest, one on an output does, and so
-/// does one a wired net joins to a free column going right: a mirror's two
-/// stand on one side.
-fn outputSide(ctx: Ctx, side: []const Side) ![]bool {
-    const c = &ctx.nl.graph;
-    const n = ctx.cols.count();
-    assert(side.len == n);
-    const right = try ctx.gpa.alloc(bool, n);
-    errdefer ctx.gpa.free(right);
-    // The half of the core a column shares more wired nets with pulls it to
-    // that side (people: 70.4% of 1,459 such columns in 5,263 hand-drawn
-    // schematics); only a column neither half pulls goes by its output.
-    const pulled = try ctx.gpa.alloc(bool, n);
-    defer ctx.gpa.free(pulled);
-    for (right, pulled, 0..) |*r, *p, k| {
-        var halves = [2]u32{ 0, 0 };
-        if (side[k] == .free) for (ctx.cols.of(k)) |d| for (c.members(EdgeId.from(d))) |net| {
-            if (!ctx.wired[net.index()]) continue;
-            for (c.incident(net)) |e| {
-                const j = ctx.column_of[e.index()];
-                if (j == none) continue;
-                if (side[j] == .left) halves[0] += 1;
-                if (side[j] == .right) halves[1] += 1;
-            }
-        };
-        p.* = halves[0] != halves[1];
-        r.* = if (p.*) halves[1] > halves[0] else touchesOutput(ctx, k);
-    }
-    var changed = true;
-    var rounds: usize = 0;
-    while (changed) : (rounds += 1) {
-        assert(rounds <= n);
-        changed = false;
-        for (ctx.wired, 0..) |w, net| {
-            if (!w) continue;
-            const on = c.incident(VertexId.from(@intCast(net)));
-            const any = for (on) |e| {
-                const k = ctx.column_of[e.index()];
-                if (k != none and side[k] == .free and right[k]) break true;
-            } else false;
-            if (!any) continue;
-            for (on) |e| {
-                const k = ctx.column_of[e.index()];
-                if (k == none or side[k] != .free or right[k] or pulled[k]) continue;
-                right[k] = true;
-                changed = true;
-            }
-        }
-    }
-    return right;
-}
-
-fn touchesOutput(ctx: Ctx, k: usize) bool {
-    assert(k < ctx.cols.count());
-    for (ctx.cols.of(k)) |d| for (ctx.nl.graph.members(EdgeId.from(d))) |net| {
-        if (ctx.roles[net.index()] == .output) return true;
-    };
-    return false;
-}
-
 /// By the rank of each column's top device.
 /// Columns `j` and `k` span a common row: one x would stack their devices
 /// or run their wires together.
@@ -461,27 +427,38 @@ fn sortByRank(ctx: Ctx, list: []u32) void {
     }.lt);
 }
 
-/// `list` left to right from `first`, a channel between neighbours.
-fn inRow(xs: []i32, _: []const u32, list: []const u32, first: i32) void {
-    for (list, 0..) |k, i| xs[k] = first + 2 * @as(i32, @intCast(i));
-}
-
-/// `list` leftward from `-first`, each column's mate (`cm`) its mirror
-/// image about x = 0.
-fn mirrored(xs: []i32, cm: []const u32, list: []const u32, first: i32) void {
-    for (list, 0..) |k, i| {
-        const at = -(first + 2 * @as(i32, @intCast(i)));
-        xs[k] = at;
-        xs[cm[k]] = -at;
+/// Gives `list`'s columns their x in `xs`, as `how` lays an order.
+fn lay(how: Lay, xs: []i32, cm: []const u32, list: []const u32) void {
+    switch (how) {
+        .mirrored => |first| for (list, 0..) |k, i| {
+            const at = -(first + 2 * @as(i32, @intCast(i)));
+            xs[k] = at;
+            xs[cm[k]] = -at;
+        },
+        .row => |core| {
+            var at: i32 = 0;
+            for (list) |k| {
+                if (k != core.anchor) {
+                    xs[k] = at;
+                    at += 2;
+                    continue;
+                }
+                for (core.about, core.in, 0..) |about, in, c| {
+                    if (in) xs[c] = at + core.reach + core.sign * about;
+                }
+                at += 2 * core.reach + 2;
+            }
+        },
     }
 }
 
 /// Tries the orders of `list` (all of them up to `exhaustive_max` columns,
 /// else one column moved at a time, up to `move_reach` places, while that
-/// helps), placing each with `place`, and keeps the one whose wired nets
-/// span least. Ties keep the earlier order, so by rank.
-fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u32, i32) void, x: []i32, col_mate: []const u32, first: i32) !void {
-    if (list.len == 0) return;
+/// helps), laying each as `how` says, keeps the one that costs least
+/// (`span.zig`) and returns its cost. Of equal orders the one nearer rank
+/// order stands.
+fn best(ctx: Ctx, list: []u32, how: Lay, x: []i32, col_mate: []const u32) !i64 {
+    if (list.len == 0) return 0;
     for (list) |k| {
         ctx.placed[k] = true;
         if (col_mate[k] != none) ctx.placed[col_mate[k]] = true;
@@ -491,7 +468,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
     // The order by rank, which an equal order is held against.
     const ranked = try ctx.gpa.dupe(u32, list);
     defer ctx.gpa.free(ranked);
-    place(x, col_mate, list, first);
+    lay(how, x, col_mate, list);
     var best_cost = try order_cost.span(ctx, x);
     if (list.len <= exhaustive_max) {
         // Heap's algorithm over `work`, iteratively.
@@ -503,9 +480,9 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
             if (c[i] < i) {
                 const j = if (i % 2 == 0) 0 else c[i];
                 std.mem.swap(u32, &work[j], &work[i]);
-                place(x, col_mate, work, first);
+                lay(how, x, col_mate, work);
                 const cost = try order_cost.span(ctx, x);
-                if (cost < best_cost or (ctx.flow and cost == best_cost and earlier(ranked, work, list))) {
+                if (cost < best_cost or (cost == best_cost and earlier(ranked, work, list))) {
                     best_cost = cost;
                     @memcpy(list, work);
                 }
@@ -536,7 +513,7 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
                         std.mem.copyForwards(u32, work[j + 1 .. i + 1], list[j..i]);
                     }
                     work[j] = list[i];
-                    place(x, col_mate, work, first);
+                    lay(how, x, col_mate, work);
                     const cost = try order_cost.span(ctx, x);
                     if (cost >= best_cost) continue;
                     best_cost = cost;
@@ -546,7 +523,8 @@ fn best(ctx: Ctx, list: []u32, comptime place: fn ([]i32, []const u32, []const u
             }
         }
     }
-    place(x, col_mate, list, first);
+    lay(how, x, col_mate, list);
+    return best_cost;
 }
 
 /// Whether order `a` comes before order `b` of the same columns, read as

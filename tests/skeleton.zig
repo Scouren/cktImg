@@ -406,28 +406,35 @@ test "skeleton: a circuit of parts stands with its source on the left, whatever 
     }
 }
 
-test "skeleton: a column outside the mirrored core stands on the side of the half it is wired to" {
-    // Oracle: a metamorphic relation. A second stage read from the right
-    // half's node stands right of the core, and the same stage read from
-    // the left half's node stands left of it: its wire then passes no
-    // column of the core. Neither net is an output by name. It went left
-    // either way, unless it reached an output.
+test "skeleton: what drives a net stands left of what reads it, a mirrored core or none: the core faces that way and a second stage stands right of it" {
+    // Oracle: the hand drawings, and a metamorphic relation. Of the 1,200
+    // hand drawings with a mirrored core (of 5,263) that differ from their
+    // mirror image in the pins standing left of every device that drives
+    // their net, 1,036 face the way with fewer; a column outside the core
+    // that the core drives stands right of it in 599 of 843. So a mirror's
+    // copy stands right of its reference whichever of the pair's two the
+    // reference loads, and a second stage right of the pair's device whose
+    // node it reads, from either half. The core faced by the rank of its
+    // devices once, and a stage read from the left half's node stood left
+    // of the core, its gate before its driver.
     var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
-    const core = "second stage\n.model nch nmos level=1\n.model pch pmos level=1\nVdd vdd 0 1.8\nM1 a in1 p 0 nch\nM2 b in2 p 0 nch\n" ++
-        "M3 a a vdd vdd pch\nM4 b a vdd vdd pch\nM5 p vb 0 0 nch\nR6 vdd x 1k\n";
-    const from_right = try lay(arena, core ++ "M6 x b 0 0 nch\n");
-    const from_left = try lay(arena, core ++ "M6 x a 0 0 nch\n");
-    errdefer std.debug.print("=> {s}\n=> {s}\n", .{ cells(arena, &from_right) catch "", cells(arena, &from_left) catch "" });
-    for ([_]*const Laid{ &from_right, &from_left }, [_]bool{ true, false }) |l, right| {
+    const head = "second stage\n.model nch nmos level=1\n.model pch pmos level=1\nVdd vdd 0 1.8\nM1 a in1 p 0 nch\nM2 b in2 p 0 nch\n" ++
+        "M5 p vb 0 0 nch\nR6 vdd x 1k\n";
+    for ([_]struct { load: []const u8, reference: []const u8, copy: []const u8 }{
+        .{ .load = "M3 a a vdd vdd pch\nM4 b a vdd vdd pch\n", .reference = "m3", .copy = "m4" },
+        .{ .load = "M3 a b vdd vdd pch\nM4 b b vdd vdd pch\n", .reference = "m4", .copy = "m3" },
+    }) |mirror| for ([_]struct { node: []const u8, driver: []const u8 }{
+        .{ .node = "a", .driver = "m1" },
+        .{ .node = "b", .driver = "m2" },
+    }) |stage| {
+        const l = try lay(arena, try std.mem.concat(arena, u8, &.{ head, mirror.load, "M6 x ", stage.node, " 0 0 nch\n" }));
+        errdefer std.debug.print("{s}M6 on {s} => {s}\n", .{ mirror.load, stage.node, cells(arena, &l) catch "" });
         const x = l.sk.x;
-        const m1 = x[l.nl.device("m1").?.index()];
-        const m2 = x[l.nl.device("m2").?.index()];
-        const m6 = x[l.nl.device("m6").?.index()];
-        try std.testing.expect(m1 < m2);
-        try std.testing.expect(if (right) m6 > m2 else m6 < m1);
-    }
+        try std.testing.expect(x[l.nl.device(mirror.reference).?.index()] < x[l.nl.device(mirror.copy).?.index()]);
+        try std.testing.expect(x[l.nl.device(stage.driver).?.index()] < x[l.nl.device("m6").?.index()]);
+    };
 }
 
 test "skeleton: a row of more than eight columns wraps into shelves, a pair never parted; `*@ shelf` sets the width" {

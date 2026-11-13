@@ -8,13 +8,19 @@
 //!   nets narrowest: each from its leftmost column to its rightmost, plus
 //!   the gap a flat two-pin device between two wired nets crosses. `span`
 //! - span.2 (order: signal) A pin stands right of the device that drives
-//!   its net: a gate after its driver, a load after its stage. Counted
-//!   before any width. `against`
-//!   Narrowing: only where `ctx.flow` is set, a circuit with no core (no
-//!   mated column, none on the axis; `columns.order`).
+//!   its net, on every net but a rail: a gate after its driver, a load
+//!   after its stage. Counted before any width, with a mirrored core or
+//!   without. People: 5,614 of 7,584 gates in circuits with a core stand
+//!   right of or level with the leftmost device driving their net, 1,863
+//!   of 2,507 in circuits without (74% both), in 5,263 hand-drawn
+//!   schematics: a tendency pin by pin (where the signal comes back round
+//!   a loop one pin must stand left), a rule of the whole drawing
+//!   (columns.13). `against`
 //! - span.3 (order: signal) The columns that read an input stand, on
 //!   average, no further right than those that drive an output; else the
-//!   whole row is turned end for end. `flowsRight`
+//!   whole row is turned end for end. People: 893 of the 931 hand drawings
+//!   with a named input and output that run either way run left to right.
+//!   `flowsRight`
 //! - span.4 (habit) In a circuit of parts the signal enters at its
 //!   source, on the left. People: the part farther from the source stands
 //!   right of the nearer in 90.1% of 1,676 pairs in 5,263 hand-drawn
@@ -41,14 +47,14 @@ const Ctx = columns.Ctx;
 
 const none: u32 = std.math.maxInt(u32);
 
-/// The total width of the wired nets, each from its leftmost column to its
-/// rightmost, and of the gaps the bridges cross, over the columns `placed`
-/// so far; with `ctx.flow`, each pin
-/// `against` the signal's way first, counted as more than any span.
+/// What the columns `placed` so far cost at `x`: each pin `against` the
+/// signal's way, counted as more than any width; then the total width of
+/// the wired nets, each from its leftmost column to its rightmost, and of
+/// the gaps the bridges cross.
 pub fn span(ctx: Ctx, x: []const i32) !i64 {
     const c = &ctx.nl.graph;
     assert(x.len == ctx.cols.count());
-    var total: i64 = if (ctx.flow) against(ctx, x) << 32 else 0;
+    var total: i64 = against(ctx, x) << 32;
     for (0..c.vertexCount()) |n| {
         if (!ctx.wired[n]) continue;
         var lo: i32 = std.math.maxInt(i32);
@@ -126,17 +132,21 @@ pub fn isChannelPin(ctx: Ctx, d: u32, pin: usize) bool {
 // ---- private ----
 
 /// How many pins stand left of every device that drives their net, over
-/// the wired nets and the columns `placed` so far: a gate, a base or a
-/// controlled source's input before its driver, a load before its stage.
+/// every net but a rail and the columns `placed` so far: a gate, a base or
+/// a controlled source's input before its driver, a load before its stage.
 /// The signal going right to left. A pin drives its net when it carries
 /// current and its device reads a net (`device.reads`): what it drives
-/// follows what it reads.
+/// follows what it reads. A net nothing here drives (an input, a bias from
+/// outside) counts nothing; one a bias generator drives counts as any.
 fn against(ctx: Ctx, x: []const i32) i64 {
     const c = &ctx.nl.graph;
     assert(x.len == ctx.cols.count());
     var count: i64 = 0;
     for (0..c.vertexCount()) |n| {
-        if (!ctx.wired[n]) continue;
+        // Any net a device here drives, whatever its name: a bias generator
+        // stands left of what it biases as a stage does of the next (people:
+        // 74% of 10,091 gates, with a mirrored core or without).
+        if (ctx.roles[n].isRail()) continue;
         var first: i32 = std.math.maxInt(i32);
         for ([_]bool{ true, false }) |drivers| for (c.incident(VertexId.from(n))) |e| {
             const d = e.index();
