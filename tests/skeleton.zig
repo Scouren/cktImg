@@ -257,6 +257,25 @@ test "skeleton: two mirrors that nets join half to half stand side by side, not 
     try std.testing.expect(@max(m1, m2) < @min(m8, m9) or @max(m8, m9) < @min(m1, m2));
 }
 
+test "skeleton: a pair's mirror runs up its two columns through devices of one type only" {
+    // Oracle: the hand drawings. Of the pairs up and down the two columns
+    // of a block's two, people draw 1,433 of 1,644 of one type level, and
+    // 17 of 170 of two types, in the 5,263 reference drawings. Over m1
+    // stands a p-type load, over m2 an n-type cascode under its own load:
+    // m3 stands with the other load under the supply. It stood level with
+    // the cascode, as its mirror image.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "A pair with a load of each type\n.model nch nmos level=1\n.model pch pmos level=1\nVdd vdd 0 1.8\n" ++
+        "M1 a in1 t 0 nch\nM2 b in2 t 0 nch\nM5 t vb 0 0 nch\nM3 a a vdd vdd pch\nM4 c vc b 0 nch\nM6 c c vdd vdd pch\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const y = l.sk.y;
+    try std.testing.expectEqual(y[l.nl.device("m1").?.index()], y[l.nl.device("m2").?.index()]);
+    try std.testing.expect(y[l.nl.device("m3").?.index()] < y[l.nl.device("m4").?.index()]);
+    try std.testing.expectEqual(y[l.nl.device("m3").?.index()], y[l.nl.device("m6").?.index()]);
+}
+
 test "skeleton: a circuit of parts stands with its source on the left, whatever the order of its cards" {
     // Oracle: the hand drawings, and a metamorphic relation. Of two parts
     // at different distances from a circuit's one source, people draw the

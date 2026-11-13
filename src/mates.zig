@@ -5,10 +5,13 @@
 //! Human Rules:
 //! - mates.1 (unmeasured) In a circuit with a symmetry, each upright device
 //!   stands opposite its image; a flat part is not mirrored. `find`
-//! - mates.2 (unmeasured) In a circuit with none, the two of each
-//!   differential pair, cross-coupled pair and two-member mirror stand
-//!   mirrored, with the devices of one kind above and below them in their
-//!   two columns. `pairMates`
+//! - mates.2 (habit) In a circuit with none, the two of each differential
+//!   pair, cross-coupled pair and two-member mirror stand mirrored, with
+//!   the devices of one type (kind, polarity and pin count, as a
+//!   symmetry's two) above and below them in their two columns. People,
+//!   drawn level: 946 of 1,057 differential pairs, 76 of 81 cross-coupled,
+//!   2,637 of 3,006 mirrors of two; 1,433 of 1,644 pairs of one type up
+//!   and down the two columns, and 17 of 170 of two types. `pairMates`
 //! - mates.3 (unmeasured) A bank's two are not mirrored: a tail and a
 //!   second stage's source share a bias line. `pairMates`
 //! - mates.4 (unmeasured) A pair's loads mirror with the pair before they
@@ -35,6 +38,7 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const structure = @import("structure.zig");
+const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
 const sch = @import("schematic.zig");
 
@@ -45,8 +49,8 @@ const Form = skeleton.Form;
 const none = structure.none;
 
 /// The symmetry's mates where it has one; else each pair's and two-member
-/// mirror's or bank's, carried up and down their two columns while the
-/// devices there are of one kind. Vertical devices only, and only where
+/// mirror's, carried up and down their two columns while the devices
+/// there are of one type. Vertical devices only, and only where
 /// each column's mates stand in one column (`mirrorable`); block mates
 /// about one axis only (`oneAxis`). The nets' roles are not read.
 pub fn find(gpa: Allocator, nl: *const Netlist, _: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32 {
@@ -69,12 +73,11 @@ pub fn find(gpa: Allocator, nl: *const Netlist, _: []const Role, st: *const Stru
 // ---- private ----
 
 /// Each pair's and two-member mirror's mates, carried up and down their two
-/// columns while the devices there are of one kind. Differential and
+/// columns while the devices there are of one type. Differential and
 /// cross-coupled pairs first: a pair's load is its own before it is some
 /// mirror's other half.
 fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, mate: []u32) void {
     const n = column_of.len;
-    const kinds = nl.graph.edges.items(.kind);
     for ([_]bool{ true, false }) |pairs| for (st.block_kind, 0..) |k, b| {
         const ms = st.members(b);
         // A bank's two need not mirror each other: a tail and a second
@@ -89,7 +92,10 @@ fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, colum
             a = ms[0];
             z = ms[1];
             var steps: usize = 0;
-            while (a != none and z != none and kinds[a] == kinds[z] and steps <= n) : (steps += 1) {
+            // Of one type, as a symmetry's two: people draw 1,433 of 1,644
+            // such pairs level, and 17 of 170 of two types (a p-type load
+            // over one of a pair, an n-type cascode over the other).
+            while (a != none and z != none and symmetry.sameType(nl, a, z) and steps <= n) : (steps += 1) {
                 if (mate[a] != none and mate[a] != z) break;
                 mate[a] = z;
                 mate[z] = a;

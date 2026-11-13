@@ -48,6 +48,7 @@
 //! - `pub const Polarity = device.Polarity`
 //! - `pub const Pin = struct`
 //! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool`
+//! - `pub fn sameType(nl: *const Netlist, a: u32, b: u32) bool`
 //! - `pub const polarity = device.polarity`
 
 const std = @import("std");
@@ -169,7 +170,23 @@ pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank
     return true;
 }
 
+/// Whether devices `a` and `b` are of one type: one kind, one polarity and
+/// as many pins. Only such two are drawn as each other's mirror image.
+pub fn sameType(nl: *const Netlist, a: u32, b: u32) bool {
+    return typeKey(nl, a) == typeKey(nl, b);
+}
+
 // ---- private ----
+
+/// A device's kind, polarity and pin count as one key.
+fn typeKey(nl: *const Netlist, d: u32) u64 {
+    const c = &nl.graph;
+    assert(d < c.edgeCount());
+    const e = EdgeId.from(d);
+    const kind: u64 = @backingInt(c.edges.items(.kind)[d]);
+    const pol: u64 = @backingInt(polarity(nl.modelType(e)));
+    return kind << 24 | pol << 16 | @min(c.members(e).len, 0xffff);
+}
 
 fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role) !Graph {
     const c = &nl.graph;
@@ -230,16 +247,10 @@ fn pinLabel(kind: DeviceKind, pin: usize) u8 {
 /// Devices by kind, polarity and pin count; nets by role. Colours are the
 /// ranks of the distinct keys, so they do not depend on numbering.
 fn initialColours(gpa: Allocator, nl: *const Netlist, roles: []const Role, g: Graph) ![]u32 {
-    const c = &nl.graph;
     assert(roles.len + g.devices == g.vertices());
     const key = try gpa.alloc(u64, g.vertices());
     defer gpa.free(key);
-    for (0..g.devices) |d| {
-        const e = EdgeId.from(d);
-        const kind: u64 = @backingInt(c.edges.items(.kind)[d]);
-        const pol: u64 = @backingInt(polarity(nl.modelType(e)));
-        key[d] = kind << 24 | pol << 16 | @min(c.members(e).len, 0xffff);
-    }
+    for (0..g.devices) |d| key[d] = typeKey(nl, @intCast(d));
     // A net driven from outside is an input or a bias by its stimulus: a
     // testbench that drives one input of a pair with `ac` and the other
     // with dc only still has a symmetric circuit.
