@@ -91,6 +91,14 @@
 //!   ag-813:m7 and ag-3103:m12 keep upward labelled controls from separate
 //!   drawing groups. This habit does not yet recognize those local groups.
 //!   `controlSide`, `fits`; docs/research/figures/gate_facing.py
+//! - sketch.22 (habit, bounded) A converter controller below its unique
+//!   main switch on the same final column points OUT up at its downward
+//!   gate: 67 of 75 selected source SVGs do so. AG1354/1358/1366/1369/
+//!   1372/1377/1393/1396 face right; their case remains unresolved. Cached
+//!   terminal geometry alone incorrectly suggests 75. The actual OUT pin sets
+//!   the controller's column, including a signed glyph's offset. Explicit
+//!   origins or definition sides, an off-column main gate and an unsafe
+//!   pin envelope abstain. `orientAll`; schematic.16
 //!
 //! Contents:
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
@@ -187,7 +195,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
     if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
-    orientAll(s, nl, sk);
+    orientAll(s, nl, sk, ats);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
     // Each drawn device's point: the lattice's.
@@ -339,15 +347,15 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
             info.items(.flip_x)[d] = f[0];
             info.items(.flip_y)[d] = f[1];
         };
+        sch.settleDevice(s, &nl.graph, @intCast(d));
     }
-    sch.settleDevices(s, &nl.graph);
 }
 
 /// Kept and driver flags, then each drawn device's flips: the first of the
 /// four that puts its upper end up and its gate on the skeleton's side (a
 /// vertical device), or its end toward the nearest device on its net (a
 /// bridge).
-fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
+fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At) void {
     const c = &nl.graph;
     const info = s.devices.slice();
     assert(info.len == c.edgeCount());
@@ -372,6 +380,25 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
         }
     }
     sch.settleDevices(s, c);
+    // Only initial candidates participate. Later rejected ats must not
+    // introduce a new turn after coordinates have already reserved room.
+    for (0..c.edgeCount()) |d| {
+        const main, const pin = power_paths.blockTarget(nl, s.roles, sk.drawn, sk.form, @intCast(d)) orelse continue;
+        if (ats[d] != null or ats[main] != null or sk.x[d] != sk.x[main] or sk.y[d] <= sk.y[main]) continue;
+        const directed = for (nl.defOf(EdgeId.from(d)).?.sides) |side| {
+            if (side != null) break true;
+        } else false;
+        if (directed or wiredSide(s, main, 1, c.members(EdgeId.from(main))[1].index()) != .down) continue;
+        const main_class = s.lib.at(info.items(.class)[main]);
+        if (info.items(.orient)[main].apply(main_class.terminals[1].at).x != info.items(.grid)[main].x) continue;
+        const side = s.lib.at(info.items(.class)[d]).side(pin, .r0) orelse continue;
+        const before = s.devices.get(d);
+        info.items(.orientation)[d] = if (side.isHorizontal()) .vertical else .horizontal;
+        info.items(.flip_x)[d] = side == .left or side == .down;
+        info.items(.flip_y)[d] = info.items(.flip_x)[d];
+        sch.settleDevice(s, c, @intCast(d));
+        if (s.pinSide(@intCast(d), pin) != .up or !sch.alignPin(s, c, @intCast(d), pin)) s.devices.set(d, before);
+    }
 }
 
 /// A flat MOS gate's side: a parallel pair's exterior first, a certified

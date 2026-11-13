@@ -39,6 +39,17 @@
 //!   source drawings, including AG1363:MP3. The input-bus family has 159
 //!   downward and 131 upward main gates, so one reservoir or an external
 //!   gate alone does not decide. `externalReservoirGate`
+//! - power_paths.7 (habit, bounded) A block driving one certified main
+//!   switch stands below that switch. Its actual SVG output lead faces up
+//!   on the gate's x line in 67 of 75 source drawings; AG1354, 1358, 1366,
+//!   1369, 1372, 1377, 1393 and 1396 face right with bent connections.
+//!   Cached terminal pairs align in all 75, but differ from 43 actual
+//!   output-lead endpoints: they do not establish glyph orientation.
+//!   The declared output identifies the terminal when an input shares its net.
+//!   Multiple qualifying outputs or targets leave the ordinary layout;
+//!   caller geometry and the actual symbol frame qualify the later pin
+//!   alignment. The eight source exceptions remain mismatches, with no
+//!   circuit-name guard. `blockTarget`, controller_glyphs.py, sketch.zig
 //!
 //! Data: reads existing netlist paths/CSR, model types, drawn and rail rows;
 //! writes only the caller's forms. The placement queries read existing
@@ -56,12 +67,14 @@
 //! - `pub fn series(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32`
 //! - `pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, coordinates: []const i32) ?[2]i32`
 //! - `pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool`
+//! - `pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[2]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
 const device = @import("device.zig");
+const library = @import("library.zig");
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
 const VertexId = netlist.VertexId;
@@ -222,6 +235,36 @@ pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []c
         if (!capacitor(nl, roles, drawn, outer, c.members(e)[1].index(), inner, true)) return false;
     }
     return true;
+}
+
+/// The unique `{main MOS, output port index}` driven by flat block `d`.
+/// The port index follows the subcircuit declaration, not a net's first
+/// occurrence or a class's terminal name. Distinct qualifying outputs or
+/// targets are ambiguous; duplicate CSR hits of the same pair are harmless.
+/// Reads existing rows and the series certificate, with no allocation.
+pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[2]u32 {
+    const c = &nl.graph;
+    assert(d < c.edgeCount() and form.len == c.edgeCount());
+    assert(roles.len == c.vertexCount() and drawn.len == c.edgeCount());
+    if (!drawn[d] or form[d] != .horizontal or c.edges.items(.kind)[d] != .subckt) return null;
+    const def = nl.defOf(EdgeId.from(d)) orelse return null;
+    const pins = c.members(EdgeId.from(d));
+    if (pins.len != def.ports.len) return null;
+    var found: ?[2]u32 = null;
+    for (pins, def.ports, 0..) |pin, name, i| {
+        if (library.portRole(def.ports, name) != .out) continue;
+        for (c.incident(pin)) |e| {
+            const v = e.index();
+            if (!drawn[v] or form[v] != .horizontal or c.edges.items(.kind)[v] != .mosfet) continue;
+            if (c.members(e)[1] != pin) continue;
+            const group = series(nl, roles, drawn, form, v) orelse continue;
+            if (v != group[0] and v != group[2]) continue;
+            const candidate: [2]u32 = .{ v, @intCast(i) };
+            if (found) |old| if (old[0] != candidate[0] or old[1] != candidate[1]) return null;
+            found = candidate;
+        }
+    }
+    return found;
 }
 
 // ---- private ----

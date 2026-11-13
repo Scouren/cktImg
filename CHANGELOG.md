@@ -6,6 +6,7 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 AnalogGenie pattern study (#8):
 
+- Engine: orient certified converter controllers upward and align their actual output pins with switch gates, preserving explicit placement and custom pin geometry; direct SVG evidence supports 67 of 75 source cases, with eight rightward source cases still unmatched (#8).
 - Engine: face external main-switch gates downward only on certified converter paths with grounded capacitors at both outer ends; all 107 selected source controls agree (#8).
 - Engine and Schemify: draw complete single-input amplifier/comparator contracts and the validated `comp` alias as triangles with their actual polarity; all 47 selected one-input source glyphs and their ordered bindings match (#8).
 - Engine: preserve certified converter paths and their control devices through shelf wrapping; orient flat MOS gates toward unanimous active drivers, retaining transmission-pair and explicit-placement precedence (#8).

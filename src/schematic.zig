@@ -89,6 +89,13 @@
 //! - schematic.15 (invariant) A pinless card has no drawable class. A
 //!   coupling (`K`) stays in the netlist without creating a symbol, as in
 //!   ag-1101 and ag-1157; class hints cannot give it pins. `initDevices`
+//! - schematic.16 (choice) A selected controller's output supplies its
+//!   column line: 67 of 75 source SVG outputs face up on their main gate's
+//!   x; eight face right. Cached terminals claim 75 aligned columns and
+//!   do not establish artwork direction. The chosen line must remain
+//!   between the visible perpendicular pins;
+//!   moving it past one would reverse its required reach. Hidden/reference
+//!   pins do not constrain the line or contribute reach. `alignPin`
 //!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
@@ -102,6 +109,8 @@
 //! - `pub fn roleWord(word: []const u8) ?Role`
 //! - `pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role, lib: *Library) !Schematic`
 //! - `pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void`
+//! - `pub fn settleDevice(s: *Schematic, circuit: *const Circuit.Graph, d: u32) void`
+//! - `pub fn alignPin(s: *Schematic, circuit: *const Circuit.Graph, d: u32, pin: usize) bool`
 //! - `pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool`
 //! - `pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool`
 //! - `pub fn form(o: Orientation) Orient`
@@ -440,45 +449,79 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
 /// where its row and column lines cross (`grid`), and how far its drawn
 /// pins reach from there per side.
 pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void {
+    assert(s.devices.len == circuit.edgeCount());
+    assert(s.device_pin_count.len == s.devices.len);
+    for (0..circuit.edgeCount()) |d| settleDevice(s, circuit, @intCast(d));
+}
+
+/// Recomputes one existing device's orient, grid and reach after changing
+/// its orientation/flip fields. Other devices and their chosen grid anchors
+/// are untouched. `d` must be in both existing device tables; no allocation.
+pub fn settleDevice(s: *Schematic, circuit: *const Circuit.Graph, d: u32) void {
     const info = s.devices.slice();
     assert(info.len == circuit.edgeCount());
-    for (0..circuit.edgeCount()) |d| {
-        const o = Orient.flipped(form(info.items(.orientation)[d]), info.items(.flip_x)[d], info.items(.flip_y)[d]);
-        info.items(.orient)[d] = o;
-        info.items(.grid)[d] = .zero;
-        info.items(.reach)[d] = @splat(0);
-        if (s.device_pin_count[d] == 0) continue;
-        const c = s.lib.at(info.items(.class)[d]);
-        // The middle of the up/down pins' x and of the left/right pins' y:
-        // with several pins on a side, the middle one's line, pin or not.
-        // People: two pins facing each other stand on one line in 6,581 of
-        // 6,694 nets of two such pins.
-        var lo: [2]i32 = .{ std.math.maxInt(i32), std.math.maxInt(i32) };
-        var hi: [2]i32 = .{ std.math.minInt(i32), std.math.minInt(i32) };
-        const members = circuit.members(EdgeId.from(d));
-        for (c.terminals, 0..) |t, i| {
-            if (i >= members.len or referencePin(s, @intCast(d), i, members[i].index())) continue;
-            const side = c.side(i, o) orelse continue;
-            const p = o.apply(t.at);
-            const ax: usize = if (side.isHorizontal()) 1 else 0;
-            const v = if (ax == 0) p.x else p.y;
-            lo[ax] = @min(lo[ax], v);
-            hi[ax] = @max(hi[ax], v);
-        }
-        var grid: Pt = .zero;
-        if (lo[0] <= hi[0]) grid.x = @divFloor(lo[0] + hi[0], 2);
-        if (lo[1] <= hi[1]) grid.y = @divFloor(lo[1] + hi[1], 2);
-        var reach: [4]i32 = @splat(0);
-        for (c.terminals, 0..) |t, i| {
-            if (i >= members.len or referencePin(s, @intCast(d), i, members[i].index())) continue;
-            const side = c.side(i, o) orelse continue;
-            const p = o.apply(t.at).sub(grid);
-            const r: i32 = @intCast(if (side.isHorizontal()) @abs(p.x) else @abs(p.y));
-            reach[@backingInt(side)] = @max(reach[@backingInt(side)], r);
-        }
-        info.items(.grid)[d] = grid;
-        info.items(.reach)[d] = reach;
+    assert(d < info.len);
+    const o = Orient.flipped(form(info.items(.orientation)[d]), info.items(.flip_x)[d], info.items(.flip_y)[d]);
+    info.items(.orient)[d] = o;
+    info.items(.grid)[d] = .zero;
+    info.items(.reach)[d] = @splat(0);
+    if (s.device_pin_count[d] == 0) return;
+    const c = s.lib.at(info.items(.class)[d]);
+    // The middle of the up/down pins' x and of the left/right pins' y:
+    // with several pins on a side, the middle one's line, pin or not.
+    // People: two pins facing each other stand on one line in 6,581 of
+    // 6,694 nets of two such pins.
+    var lo: [2]i32 = .{ std.math.maxInt(i32), std.math.maxInt(i32) };
+    var hi: [2]i32 = .{ std.math.minInt(i32), std.math.minInt(i32) };
+    const members = circuit.members(EdgeId.from(d));
+    for (c.terminals, 0..) |t, i| {
+        if (i >= members.len or referencePin(s, d, i, members[i].index())) continue;
+        const side = c.side(i, o) orelse continue;
+        const p = o.apply(t.at);
+        const ax: usize = if (side.isHorizontal()) 1 else 0;
+        const v = if (ax == 0) p.x else p.y;
+        lo[ax] = @min(lo[ax], v);
+        hi[ax] = @max(hi[ax], v);
     }
+    var grid: Pt = .zero;
+    if (lo[0] <= hi[0]) grid.x = @divFloor(lo[0] + hi[0], 2);
+    if (lo[1] <= hi[1]) grid.y = @divFloor(lo[1] + hi[1], 2);
+    info.items(.grid)[d] = grid;
+    info.items(.reach)[d] = pinReach(s, circuit, d, grid);
+}
+
+/// Aligns a settled device's row/column with a visible, nonreference pin.
+/// Refuses an absent pin or an anchor past any visible perpendicular pin,
+/// leaving all fields unchanged. Success changes only grid and reach.
+/// `d` must be in both device tables; the caller owns those tables.
+pub fn alignPin(s: *Schematic, circuit: *const Circuit.Graph, d: u32, pin: usize) bool {
+    assert(s.devices.len == circuit.edgeCount());
+    assert(d < s.devices.len);
+    const members = circuit.members(EdgeId.from(d));
+    if (pin >= max_pins or pin >= members.len or referencePin(s, d, pin, members[pin].index())) return false;
+    const info = s.devices.slice();
+    const c = s.lib.at(info.items(.class)[d]);
+    const o = info.items(.orient)[d];
+    const side = c.side(pin, o) orelse return false;
+    const p = o.apply(c.terminals[pin].at);
+    var grid = info.items(.grid)[d];
+    if (side.isHorizontal()) grid.y = p.y else grid.x = p.x;
+    for (c.terminals, 0..) |t, i| {
+        if (i >= members.len or referencePin(s, d, i, members[i].index())) continue;
+        const other = c.side(i, o) orelse continue;
+        if (other.isHorizontal() == side.isHorizontal()) continue;
+        const delta = o.apply(t.at).sub(grid);
+        const valid = switch (other) {
+            .left => delta.x <= 0,
+            .right => delta.x >= 0,
+            .up => delta.y <= 0,
+            .down => delta.y >= 0,
+        };
+        if (!valid) return false;
+    }
+    info.items(.grid)[d] = grid;
+    info.items(.reach)[d] = pinReach(s, circuit, d, grid);
+    return true;
 }
 
 /// R3: a V source from the sink to a supply, input or bias net drives a
@@ -505,6 +548,24 @@ pub fn form(o: Orientation) Orient {
 }
 
 // ---- private ----
+
+/// Visible card pins alone determine how far a side reaches from its line.
+fn pinReach(s: *const Schematic, circuit: *const Circuit.Graph, d: u32, grid: Pt) [4]i32 {
+    assert(s.devices.len == circuit.edgeCount());
+    assert(d < s.devices.len);
+    const members = circuit.members(EdgeId.from(d));
+    const c = s.lib.at(s.devices.items(.class)[d]);
+    const o = s.devices.items(.orient)[d];
+    var reach: [4]i32 = @splat(0);
+    for (c.terminals, 0..) |t, i| {
+        if (i >= members.len or referencePin(s, d, i, members[i].index())) continue;
+        const side = c.side(i, o) orelse continue;
+        const p = o.apply(t.at).sub(grid);
+        const r: i32 = @intCast(if (side.isHorizontal()) @abs(p.x) else @abs(p.y));
+        reach[@backingInt(side)] = @max(reach[@backingInt(side)], r);
+    }
+    return reach;
+}
 
 /// A pin's side in form `o`, or null: not drawn (a MOS bulk, a terminal the
 /// class lacks).

@@ -77,12 +77,13 @@
 //!   its grounded external-gate shunts and active gate drivers, before
 //!   the generic outside-column fallback. A block whose named output
 //!   drives one main switch stands below that switch in its column:
-//!   all 75 source outputs are below the path. They also align with the
-//!   driven gate, but this pass aligns lattice columns; exact output-pin
+//!   all 75 source outputs are below the path. Actual SVG output leads
+//!   align with the driven gate in 67 cases (all 75 cached terminals do),
+//!   but this pass aligns lattice columns; exact output-pin
 //!   alignment needs the later symbol geometry. An occupied cell moves
 //!   the block downward.
 //!   No order is imposed on unrelated bias devices; explicit deck
-//!   instructions run afterward. `power_paths.controlBounds`, `powerGate`
+//!   instructions run afterward. `power_paths.controlBounds`, `power_paths.blockTarget`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -198,7 +199,8 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
     // A block's output supplies the semantic relation, not its port order.
     for (order) |d| {
         if (!drawn[d] or form[d] != .horizontal) continue;
-        const main = powerGate(nl, roles, drawn, form, d) orelse continue;
+        const target = power_paths.blockTarget(nl, roles, drawn, form, d) orelse continue;
+        const main = target[0];
         const removed = taken.remove(.{ x[d], y[d] });
         assert(removed);
         var row = y[main] + 1;
@@ -214,29 +216,6 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
 }
 
 // ---- private ----
-
-/// The unique certified main switch driven by a named output of block
-/// `d`. Multiple distinct targets leave the ordinary block placement.
-fn powerGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?u32 {
-    const c = &nl.graph;
-    const def = nl.defOf(EdgeId.from(d)) orelse return null;
-    const pins = c.members(EdgeId.from(d));
-    if (pins.len != def.ports.len) return null;
-    var found: ?u32 = null;
-    for (pins, def.ports) |pin, name| {
-        if (library.portRole(def.ports, name) != .out) continue;
-        for (c.incident(pin)) |e| {
-            const v = e.index();
-            if (!drawn[v] or form[v] != .horizontal or c.edges.items(.kind)[v] != .mosfet) continue;
-            if (c.members(e)[1] != pin) continue;
-            const group = power_paths.series(nl, roles, drawn, form, v) orelse continue;
-            if (v != group[0] and v != group[2]) continue;
-            if (found) |old| if (old != v) return null;
-            found = v;
-        }
-    }
-    return found;
-}
 
 /// The bridges in series with `d` (two-pin parts and MOS channels joined
 /// by nets that hold just those paths), in order, into `out`; returns its end

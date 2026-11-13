@@ -13,6 +13,9 @@ remain unresolved. Gates and bodies are not current paths.
 
 The output retains selected names, exceptions, unresolved horizontal devices
 and input hashes. Repeated converter variants are correlated evidence.
+Ground shunts are also compared with the horizontal wire interval between
+their connected coil and main-MOS terminals. A unique eligible shunt at an
+endpoint is a topology-only refinement; amplifier tails can share that net.
 """
 
 import argparse
@@ -191,6 +194,39 @@ def block_outputs(text):
     return outputs
 
 
+def shunt_interval(coil, main, shunt):
+    """Literal terminal geometry, invariant under horizontal reflection."""
+    low, high = sorted((coil[0], main[0]))
+    return dict(coil_xy=coil, main_xy=main, shunt_xy=shunt,
+                inside=low <= shunt[0] <= high, strict=low < shunt[0] < high,
+                below=shunt[1] > max(coil[1], main[1]))
+
+
+def path_pin(device, net, native=False):
+    """One electrical path terminal on net; a gate or body cannot match."""
+    mos = device.get("card", device.get("name", "")).startswith("m")
+    pins = ([(p["term"], p["net"], p["xy"]) for p in device["pins"]] if native else
+            [(pin, device["nets"][pin], xy) for pin, xy in device["terminals"].items()])
+    matched = [xy for pin, on, xy in pins if on == net and (not mos or pin.lower() in ("d", "s"))]
+    if len(matched) != 1:
+        raise ValueError(f"{device.get('card', device.get('name'))}:{net}: ambiguous path pin")
+    return matched[0]
+
+
+def interval_summary(rows):
+    """Retain exact eligible names and counterexamples, not counts alone."""
+    result = {}
+    for name, selected in (("all", rows), ("unique_endpoint", [r for r in rows if r["unique_endpoint"]])):
+        result[name] = dict(devices=len(selected), circuits=len({r["id"] for r in selected}),
+                            inside=sum(r["interval"]["inside"] for r in selected),
+                            strict=sum(r["interval"]["strict"] for r in selected),
+                            below=sum(r["interval"]["below"] for r in selected),
+                            names=[r["id"] + ":" + r["card"] for r in selected],
+                            exceptions=[r for r in selected if not r["interval"]["inside"]])
+    result["ambiguous_endpoints"] = [r["id"] + ":" + r["card"] for r in rows if not r["unique_endpoint"]]
+    return result
+
+
 def controls(human, drawn, selected, outputs, pair, group):
     """Check independently selected power-path controls against source pins.
 
@@ -236,14 +272,23 @@ def controls(human, drawn, selected, outputs, pair, group):
                         for sink, other in ((a, b), (b, a)))):
             continue
         ends = [drawn[name]["terminals"][key] for key in "DS"]
-        shunts.append(dict(id=human["id"], coil=group["coil"], card=name, terminals=ends, power_y=power_y,
+        net = a if a in pair else b
+        main = next(m for m in main_switches if net in (selected[m]["nets"][0], selected[m]["nets"][2]))
+        interval = shunt_interval(path_pin(drawn[group["coil"]], net), path_pin(drawn[main], net),
+                                  path_pin(drawn[name], net))
+        shunts.append(dict(id=human["id"], coil=group["coil"], card=name, main=main, endpoint_net=net,
+                           interval=interval, terminals=ends, power_y=power_y,
                            below=min(pt[1] for pt in ends) > power_y))
+    counts = collections.Counter(r["endpoint_net"] for r in shunts)
+    for row in shunts:
+        row["unique_endpoint"] = counts[row["endpoint_net"]] == 1
     return drivers, blocks, shunts, gates
 
 
 def native_controls(directory, groups, chains, gates):
     """Check the same named terminal relations in retained native drawings."""
     drawings, inputs, summary = {}, {}, {}
+    intervals = []
 
     def devices_for(name):
         if name not in drawings:
@@ -272,6 +317,12 @@ def native_controls(directory, groups, chains, gates):
             else:
                 actual.update(below=min(pins["d"][1], pins["s"][1]) > power_y,
                               terminals=[pins["d"], pins["s"]])
+            if key == "ground_shunts":
+                net = row["endpoint_net"]
+                points = [path_pin(devices[d], net, True) for d in (row["coil"], row["main"], row["card"])]
+                actual.update(main=row["main"], endpoint_net=net, unique_endpoint=row["unique_endpoint"],
+                              interval=shunt_interval(*points))
+                intervals.append(actual)
             observed.append(actual)
         summary[key] = dict(devices=len(observed), below=sum(row["below"] for row in observed),
                             exceptions=[row for row in observed if not row["below"]])
@@ -308,10 +359,17 @@ def native_controls(directory, groups, chains, gates):
                                  native_down=down, agrees=down == row["gate_down"]))
         summary[key] = dict(devices=len(observed), agrees=sum(row["agrees"] for row in observed),
                             exceptions=[row for row in observed if not row["agrees"]])
-    return dict(input_sha256=inputs, summary=summary)
+    summary["shunt_intervals"] = interval_summary(intervals)
+    return dict(input_sha256=inputs, summary=summary, ground_shunt_intervals=intervals)
 
 
 def main():
+    # Literal geometry oracle, including endpoint equality and reflection.
+    assert shunt_interval([0, 0], [100, 0], [30, 40])["strict"]
+    assert shunt_interval([0, 0], [-100, 0], [-30, 40])["strict"]
+    assert not shunt_interval([0, 0], [100, 0], [110, 40])["inside"]
+    assert shunt_interval([0, 0], [100, 0], [0, 40])["inside"]
+    assert not shunt_interval([0, 0], [100, 0], [0, 40])["strict"]
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("examples", type=Path)
     parser.add_argument("output", type=Path)
@@ -320,6 +378,7 @@ def main():
     rows, coils, chains = [], [], []
     drivers, blocks, shunts, gates = [], [], [], []
     digest = hashlib.sha256()
+    source_svgs = {}
     paths = sorted(args.examples.glob("*.human.json"))
     if not paths:
         parser.error("no *.human.json files")
@@ -334,6 +393,9 @@ def main():
             digest.update(source.name.encode() + b"\0" + source.read_bytes() + b"\0")
         drawn = {device["card"]: device for device in human["devices"]}
         outputs = block_outputs(deck.read_text()) if path_coils else []
+        if path_coils:
+            svg = path.with_name(human["id"] + ".svg")
+            source_svgs[human["id"]] = hashlib.sha256(svg.read_bytes()).hexdigest()
         for name, row in selected.items():
             device = drawn[name]
             # Depletion is a threshold variant of the same channel polarity.
@@ -371,13 +433,14 @@ def main():
                             exceptions=[r for r in observed if not r["below"]])
     summary["block_outputs"].update(same_x=sum(r["same_x"] for r in blocks),
                                     at_or_below_gate=sum(r["at_or_below_gate"] for r in blocks))
+    summary["shunt_intervals"] = interval_summary(shunts)
     summary["gate_directions"] = {
         family: dict(devices=sum(r["reservoir_only"] == reservoir for r in gates),
                      down=sum(r["reservoir_only"] == reservoir and r["gate_down"] for r in gates),
                      external=sum(r["reservoir_only"] == reservoir and r["external"] for r in gates),
                      external_down=sum(r["reservoir_only"] == reservoir and r["external"] and r["gate_down"] for r in gates))
         for family, reservoir in (("reservoir_only", True), ("input_bus", False))}
-    result = dict(corpus_sha256=digest.hexdigest(), drawings=len(paths), summary=summary,
+    result = dict(corpus_sha256=digest.hexdigest(), source_svg_sha256=source_svgs, drawings=len(paths), summary=summary,
                   selected=[row for row in rows if row["selected"]], inductors=coils, chains=chains,
                   gate_drivers=drivers, block_outputs=blocks, ground_shunts=shunts, gate_directions=gates,
                   unselected_horizontal=[row for row in rows if not row["selected"] and row["horizontal"]],

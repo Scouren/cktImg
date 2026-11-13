@@ -538,3 +538,90 @@ These are glyph and electrical checks, not full drawing equivalence.
 For example, the generated AG1401 controller still points right while
 the source triangle points upward toward its switch gate. Controller
 placement and the surrounding branch rows remain separate layout work.
+
+## Converter shunts belong under their connection interval
+
+The source does not usually align a grounded switch with the coil's
+terminal. In [ag-1363](../../external/examples/analoggenie/ag-1363.svg),
+MN1.D is at x=310 while the connected LRX terminal is at x=340;
+MN2.D is at x=430 while its coil terminal is at x=400. Each shunt stands
+below the horizontal wire between that coil terminal and the connected
+main PMOS terminal. The same arrangement appears in
+[ag-1401](../../external/examples/analoggenie/ag-1401.svg),
+[ag-1370](../../external/examples/analoggenie/ag-1370.svg) and
+[ag-1432](../../external/examples/analoggenie/ag-1432.svg).
+
+[power_paths.py](figures/power_paths.py) retains the source and native
+coordinates of these three electrical terminals, selected by their shared
+net. Its topology predicate first requires the existing certified main
+PMOS/coil/PMOS path, then a distinct-D/S/G grounded NMOS whose control net
+touches MOS gates only. Requiring **one eligible shunt at the coil
+endpoint** selects **353 devices across 252 drawings**. All **353/353**
+source channel terminals lie within the connected main/coil x interval
+and below the path; 352 are strictly inside. The boundary case is
+[ag-1418:MN2](../../external/examples/analoggenie/ag-1418.svg), directly
+under its coil terminal. Among the 101 circuits with exactly two eligible
+shunts, both source upper channel terminals share a row in **101/101**.
+
+The broader 365-device predicate has four interval violations:
+[ag-1382:M12](../../external/examples/analoggenie/ag-1382.svg),
+[ag-1383:M7](../../external/examples/analoggenie/ag-1383.svg),
+[ag-1385:M12](../../external/examples/analoggenie/ag-1385.svg) and
+[ag-1388:M5](../../external/examples/analoggenie/ag-1388.svg). These are
+amplifier tail/bias channels, sharing the endpoint with its ordinary power
+shunt. Six endpoints have two eligible devices, so the uniqueness guard
+declines all twelve; it does not guess which device is the power switch.
+The source images verify this distinction without using control-net names.
+
+[converter_terminals.py](figures/converter_terminals.py) checks the actual
+SVG lead strokes against the cached coordinates used here. All **976**
+distinct shunt/main-switch/coil devices, comprising **1,952** electrical
+path terminals, match their transformed SVG endpoints. The check retains
+the exact expected and verified name lists and SHA-256 hashes of each
+source deck, human JSON and SVG. Custom controller glyphs can disagree with
+their cached port positions; they are excluded from this audit. That
+limitation does not affect these verified builtin D/S and coil endpoints.
+
+Frozen iteration-four native drawings satisfy the interval relation for
+only **14/353** selected devices, despite keeping all of them below the
+main path. This is proposed placement work, not an implemented result.
+The independent oracle is the terminal interval, preserved by horizontal
+reflection; a likely implementation can reserve an intermediate lattice
+column without requiring exact source spacing. Explicit placement/ordering
+instructions and mirror constraints must retain precedence. The script
+stores every selected name, all excluded names, native JSON hashes and
+the 252 source SVG hashes. Repeated converter variants remain correlated
+evidence, and this relation alone does not establish full drawing quality.
+
+```sh
+python3 docs/research/figures/power_paths.py external/examples/analoggenie \
+  /tmp/power-shunts.json --native /tmp/cktimg-human-rules/all-ag-iteration4
+```
+
+## Grounded reservoirs lie outside the main path
+
+The same certified paths select **359** grounded capacitors in **252**
+drawings, with exactly one at each eligible outer main-switch endpoint.
+All **359/359** stand vertically, ground below, strictly beyond that main
+switch's outer channel terminal on the side away from the coil. Their
+signal pin is never above that terminal: 357 are below, while
+[ag-1309:COP](../../external/examples/analoggenie/ag-1309.svg) and
+[ag-1329:COP](../../external/examples/analoggenie/ag-1329.svg) start on the
+power row. The direct SVG audit also verifies all **718** capacitor lead
+endpoints. This condition is invariant under horizontal reflection; it
+does not prescribe an absolute left-to-right signal direction.
+
+The grounded-capacitor requirement excludes both CFLY and the floating CO
+branch in [ag-1191](../../external/examples/analoggenie/ag-1191.svg), while
+retaining COP. A shared capacitor/shunt row is unsupported: among 353
+paired endpoints the source capacitor signal pin is above the shunt's
+upper pin in 202 cases, level in 111 and below in 40. Multiple grounded
+capacitors at one endpoint have no example in this cohort and would need
+a separate ordering rule. Frozen iterations five and six satisfy the
+outside relation for **335/359** capacitors and the at-or-below relation
+for **238/359**; capacitor placement remains proposed work.
+
+```sh
+python3 docs/research/figures/converter_terminals.py external/examples/analoggenie \
+  /tmp/converter-terminals.json --native /tmp/cktimg-human-rules/all-ag-iteration6
+```

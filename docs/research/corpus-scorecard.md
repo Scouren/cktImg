@@ -193,7 +193,8 @@ Among devices attached to those paths, the script records:
 | Grounded NMOS shunt with gate-only external control: both channel pins below the power row | 365 / 365 |
 | MOS channel directly driving a main switch's gate: both channel pins below the power row | 92 / 92 |
 | Named block output driving a main switch's gate: below the power row | 75 / 75 |
-| That output's x equal to the driven gate's x | 75 / 75 |
+| Cached output terminal's x equal to the driven gate's x | 75 / 75 |
+| Actual SVG output lead facing up on the driven gate's x | 67 / 75 |
 | Reservoir-only main switch's gate faces down | 214 / 214 |
 
 The 92 active transistor drivers occur in 32 drawings and include
@@ -212,6 +213,30 @@ device or terminal fails instead of reducing the denominator. It uses the
 actual block output pin for alignment, not the block's lattice column.
 Keeping a controller's lattice column under its main switch can improve
 ordering without yet aligning the two electrical terminals.
+
+[controller_glyphs.py](figures/controller_glyphs.py) independently checks
+the rendered source rather than treating cached terminal positions as glyph
+geometry. Of the same 75 controllers, 70 have triangular SVG bodies and
+five are opaque. Actual output leads face up on the main gate's x line in
+67 cases. AG1354, 1358, 1366, 1369, 1372, 1377, 1393 and 1396 face right,
+with a bent connection to the gate. All 75 actual output leads still lie
+below the main channel. Only 32 actual lead endpoints equal their cached
+OUT/VO coordinates; the other 43 cached coordinates describe a different
+terminal frame. Thus 75/75 cached alignment is not a 75/75 drawing rule.
+The eight right-facing cases remain named mismatches for an upward habit;
+they are not filtered out or selected by circuit name.
+
+The audit selects paths and unique semantic block outputs from the netlist,
+then locates the actual triangle apex and outgoing SVG lead. Opaque blocks
+require a unique SVG lead at the named output. Literal rotated-triangle and
+misplaced-cache examples check the oracle itself; every source is hashed,
+and the exact right-facing name inventory is checked. AMSNet's 734 drawings
+select no controllers. Run it with:
+
+```sh
+python3 -B -I docs/research/figures/controller_glyphs.py \
+  external/examples/analoggenie /tmp/controller-glyphs-ag.json
+```
 
 The bounds matter. The flying-capacitor family has 159 downward-facing
 and 131 upward-facing main-switch gates, so the reservoir direction rule
@@ -353,7 +378,8 @@ Preserving those groups is not a routing improvement by itself. Within the
 252 converter circuits, third-to-fourth crossings rise from 814 to 933 and
 bends from 4,503 to 4,781. Crossings worsen in 56 circuits and improve in 16;
 AG1213 adds eight, and AG1248/1347 add seven each. Exact block output/gate
-horizontal alignment remains 0/75. Source drawings separate control and
+horizontal alignment against cached terminals remains 0/75; only 67/75
+actual SVG output leads use that alignment. Source drawings separate control and
 bias groups more effectively; their composition and wiring remain work.
 
 The four admitted local feedback cells pass 30/30 checks, including their
@@ -389,7 +415,8 @@ The two-reservoir predicate now faces all 107 external main-switch gates
 down, matching their source drawings; all 107 actively driven mates still
 agree. The input-bus family remains outside this external-control rule.
 All 252 main paths retain their row/order and all 365 selected ground
-shunts remain below them. Block-output horizontal alignment remains 0/75.
+shunts remain below them. Block-output horizontal alignment against cached
+terminals remains 0/75; the actual SVG lead relation applies to 67/75.
 One active-driver terminal, AG1356:M12, now stands level with the coil
 instead of strictly below it, leaving 91/92 strict driver checks. This
 spacing regression remains recorded rather than changing the oracle.
@@ -422,3 +449,58 @@ produce identical cells and equivalent exports. The plugin rebuild is
 Source/native views were inspected for AG1363, 1401, 1370, 1432 and 1356.
 The remaining local-group, orientation, spacing and routing differences
 still prevent a claim of equivalence.
+
+## Sixth measured pass: actual controller pins
+
+The frozen executable is
+`9fd18dffd77da9555f06aa82b9cbeb8a930fb911e728b0df89fbf5165d5295e1`.
+Exactly the 75 selected converter-controller drawings change geometry;
+all other AnalogGenie drawings and every AMSNet drawing are unchanged.
+All decks render with the same issue inventory and no new native findings.
+Every generated controller output now faces up, shares its main gate's
+x coordinate and lies below that gate. Reanchoring uses the electrical
+terminal and reserves the oriented symbol's space before coordinates are
+assigned. Explicit positions and definition sides remain authoritative;
+unsupported custom pin envelopes retain their original geometry.
+
+The earlier 75/75 source-direction claim was based on cached terminal
+coordinates and was incorrect. Direct SVG artwork gives **67 upward
+outputs and eight rightward outputs**. The rightward drawings are
+AG1354, 1358, 1366, 1369, 1372, 1377, 1393 and 1396: their output wires
+bend upward to the switch. AG1393's cached OUT is on that routed
+connection above its right-facing triangle, not at the glyph's lead tip.
+Only 32/75 actual SVG output endpoints equal the cached coordinates.
+The rule therefore represents a 67/75 source habit, with eight retained
+mismatches, rather than a universal placement fact. No case ID selects
+production behavior.
+
+The 47 single-input glyphs retain correct triangles, signs and ordered
+bindings. Actual source-apex agreement changes from 3/47 to 45/47:
+AG1366/1369 regress from matching rightward glyphs to the upward default;
+AG2418 remains correctly rightward outside the converter group. This
+independent artwork check is separate from cached terminal signal flow.
+
+| Measure | Fifth pass | Sixth pass |
+|---|---:|---:|
+| Crossings | 5,002 | 5,006 |
+| Bends | 24,658 | 24,526 |
+| Left/right agreement, of 338,266 | 206,587 | 206,593 |
+| Above/below agreement, of 320,423 | 205,021 | 204,919 |
+| Cached terminal signal flow, of 683 | 491 | 526 |
+| All scored relations, of 2,202 | 288 | 288 |
+
+Crossing increases remain named: AG1362 +3, AG1358/1418 +2, and
+AG1365/1398/1453 +1. Main-path row/order, all 365 grounded-shunt below
+relations and both 107 reservoir gate directions remain correct. The
+AG1356 compaction exception persists at 91/92 strict driver checks.
+
+Both test configurations pass (288 without LaTeX, 289 with), as do 4,000
+fuzz cases, formatting and the gallery. The 91 exact fixture names give
+89 circuit-equivalent round trips and the same two capacity refusals.
+All 75 controller source decks also round-trip through the release host
+(152 named subcircuits), with eight representative decks passing the current
+host (16 named subcircuits). Both exact subcircuit inventories match.
+The plugin is 560,793 bytes, SHA-256
+`00c1df7ad2a5dcc0142808b01ff4b36bbf1c696032db67b072b87f3eba30c8bd`.
+The remaining shunt columns, group separation, terminal-side choices,
+rightward source exceptions and routing differences remain work.
