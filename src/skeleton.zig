@@ -26,6 +26,11 @@
 //!   schematics: the same type 278 of 291, a transistor 369 of 401, direct
 //!   current 749 of 778. Then one whose column reaches a rail, the engine's
 //!   tie-break (people: 261 of 465), then rank. `choose`
+//! - skeleton.15 (habit) Before skeleton.4, a member of a differential or
+//!   cross-coupled pair is the last choice for a column's next link, as
+//!   no column runs through a pair (skeleton.3). People: 382 of 491 nets
+//!   where one device meets several that differ on it (161 of 188 where
+//!   several stand over one device). `choose`
 //! - skeleton.5 (invariant) The net the symmetry pairs with a net gets
 //!   the mirror image of its link. `link`
 //! - skeleton.6 (choice) Device columns stand 8 lattice columns apart and
@@ -418,11 +423,14 @@ fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: [
     // a capacitor (749 of 778; 612 of 1,423 here while a load capacitor's
     // way to ground and its name won it the link). One whose column reaches
     // a rail is the engine's tie-break (people: 261 of 465), then rank.
+    // Before all of it, a pair's member is the last choice: people link a
+    // device of no pair in 382 of 491 such nets (161 of 188 over one
+    // device below), as no column runs through a pair.
     var u: u32 = none;
     var u_score: i64 = std.math.minInt(i64);
     for (ups) |d| {
         if (chain.below[d] != none) continue;
-        const s = flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .up));
+        const s = free(st, d) * 16 + flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .up));
         const score = s * 1_000_000 - st.device_rank[d];
         if (score > u_score) {
             u_score = score;
@@ -436,7 +444,7 @@ fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: [
     for (downs) |d| {
         if (chain.above[d] != none or d == u) continue;
         const same = isTransistor(kinds[d]) and symmetry.polarity(nl.modelType(EdgeId.from(d))) == pol_u;
-        const s = @as(i64, @intFromBool(same)) * 8 + flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .down));
+        const s = free(st, d) * 16 + @as(i64, @intFromBool(same)) * 8 + flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .down));
         const score = s * 1_000_000 - st.device_rank[d];
         if (score > l_score) {
             l_score = score;
@@ -455,6 +463,11 @@ fn isPair(st: *const Structure, ds: []const u32) bool {
     if (ds.len != 2) return false;
     if (st.device_mate[ds[0]] == ds[1]) return true;
     return blockPartner(st, ds[0]) == ds[1];
+}
+
+/// Whether `d` is in no differential or cross-coupled pair (1), else 0.
+fn free(st: *const Structure, d: u32) i64 {
+    return @intFromBool(blockPartner(st, d) == none);
 }
 
 /// How well a device of `kind` continues a column, the chain direct current

@@ -270,6 +270,23 @@ test "skeleton: an inductor off the rails lies flat where a resistor in its plac
     try std.testing.expectEqual(skeleton.Form.vertical, l.sk.form[l.nl.device("re1").?.index()]);
 }
 
+test "skeleton: a pair's member is the last choice for a column's next link" {
+    // Oracle: how people draw it. On the nets of 5,263 hand-drawn
+    // schematics where one device meets several that differ on it, people
+    // continue the column through a device of no pair in 382 of 491 (161
+    // of 188 where several stand over one device), as no column runs
+    // through a pair. Here `r4` shares the tail with the pair: the tail's
+    // source stands under `r4`, not under a half of the pair, though a
+    // transistor goes before a part (skeleton.4).
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "tail\n.model nch nmos level=1\nVDD vdd 0 1.8\nR1 vdd x 1k\nR2 vdd y 1k\n" ++
+        "M1 x inp t 0 nch\nM2 y inn t 0 nch\nR4 vdd t 10k\nI1 t 0 1u\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    try std.testing.expectEqual(l.sk.x[l.nl.device("r4").?.index()], l.sk.x[l.nl.device("i1").?.index()]);
+}
+
 test "skeleton: a column only a bridge joins to the rest stands beside the column the bridge leads to" {
     // Oracle: the bridge's own wire. `rl` hangs on the first stage's
     // collector through the coupling capacitor `c3` and on nothing else: a
