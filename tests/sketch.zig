@@ -1330,6 +1330,37 @@ test "sketch: a flat part's end faces the nearest device on its net" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: a flat switch faces the nearest device on its path's nets, as a two-pin part does" {
+    // Oracle: the places alone, and the hand drawings: a flat device with
+    // a path that is no two-pin card (a pass transistor, a switch) has its
+    // end on the nearest device's net facing that device in 1,684 of 1,719
+    // (98.0%, 5,263 hand-drawn schematics), as a two-pin part has. S2's
+    // second path pin is on x with C1 and S1, both to its left, and its
+    // first on a port: x faces left. Lying as its class is drawn, its
+    // first pin stood left and x's wire went round the switch.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "Switched capacitor\n.model sw sw\nC1 x n0 1p\nS1 out x phi2 0 sw\nS2 cm x phi1 0 sw\n" ++
+        "S3 n0 in phi2 0 sw\nS4 n0 bias phi1 0 sw\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const on_cm = pinOf(&p, "s2", 0);
+    const on_x = pinOf(&p, "s2", 1);
+    try std.testing.expectEqual(on_cm.y, on_x.y);
+    const mid = @divFloor(on_cm.x + on_x.x, 2);
+    for ([_][]const u8{ "c1", "s1" }) |name| {
+        const at = for (p.dev_name, p.dev_pos) |n, pos| {
+            if (std.mem.eql(u8, n, name)) break pos;
+        } else unreachable;
+        try std.testing.expect(at.x < mid);
+    }
+    try std.testing.expect(on_x.x < on_cm.x);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: the layout's `shelf` key sets how many columns a row holds; a deck's line says otherwise" {
     // Oracle: the key's own definition (`config.Layout.shelf`). Twelve
     // stages in a chain stand in rows of at most `shelf` columns: three

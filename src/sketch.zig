@@ -12,22 +12,21 @@
 //!   and this. `fits`
 //! - sketch.3 (invariant) A `face` line says which end of a flat part is
 //!   its left: the user's word. `firstLeft`
-//! - sketch.4 (habit) A flat part's end on the net of the nearest device
-//!   beside it faces that device: of the devices on its two nets that
-//!   stand in another column, the one fewest cells away, columns plus
-//!   rows. So two parts in series are one line, and a part with one end on
-//!   a port turns the other toward its net. People: 4,414 of 4,471 flat
-//!   two-pin parts (98.7%) in 5,263 hand-drawn schematics; turned by a
-//!   series neighbour, a lone pin and then the mean column, 91.5%.
-//!   `firstLeft`
-//!   Narrowing: sketch.4 and sketch.6 turn a card of just two pins (a box
-//!   of two ports with it); a flat transistor and a part with its control
-//!   pair on the card lie as their class is drawn (`fits`).
+//! - sketch.4 (habit) A flat device's end on the net of the nearest device
+//!   beside it faces that device: its ends are its path's two pins (a box
+//!   of two ports: its two pins), and of the devices on their two nets
+//!   that stand in another column, the nearest is the one fewest cells
+//!   away, columns plus rows. So two parts in series are one line, and a
+//!   part with one end on a port turns the other toward its net. People:
+//!   4,414 of 4,471 flat two-pin parts (98.7%) and 1,684 of 1,719 other
+//!   flat devices with a path (a pass transistor, a switch: 98.0%) in
+//!   5,263 hand-drawn schematics; turned by a series neighbour, a lone pin
+//!   and then the mean column, 91.5% of the parts. `fits`, `firstLeft`
 //! - sketch.6 (habit) Where no device stands beside it, or two as near
-//!   pull opposite ways, a flat part's first pin is its left end when the
-//!   devices on its net stand, at their mean column, no further right than
-//!   those on its second net. People: 370 of 460 such parts (80.4%).
-//!   `firstLeft`
+//!   pull opposite ways, a flat device's first end is its left one when
+//!   the devices on that end's net stand, at their mean column, no further
+//!   right than those on the other's. People: 370 of 460 such parts
+//!   (80.4%). `firstLeft`
 //! - sketch.7 (invariant) No two devices of the lattice touch: each column
 //!   is as wide as its widest device's reach on each side, each row as
 //!   tall as its tallest device's (its body, where that reaches more than
@@ -356,7 +355,7 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
 /// Whether turn `o` puts drawn device `d` on its line as the drawing's two
 /// orders have it. Upright, the rows': its end on the skeleton's upper net
 /// faces up, and its gate the skeleton's side. Flat, the columns': its
-/// first pin faces left when it is the left end (`firstLeft`).
+/// path's first pin faces left when it is the left end (`firstLeft`).
 fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool) bool {
     assert(sk.drawn[d]);
     const pins = nl.graph.members(EdgeId.from(d));
@@ -373,20 +372,26 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
         const g = class.side(gate, o) orelse return true;
         return (g == .right) == sk.gate_right[d];
     }
-    // Narrower than the device model's path, and wider: a card of just two
-    // pins is turned, a box of two ports with it; a flat transistor and a
-    // part with its control pair on the card lie as their class is drawn.
-    if (pins.len != 2) return true;
-    const s0 = class.side(0, o) orelse return true;
-    return (s0 == .left) == firstLeft(nl, sk, d);
+    // Its ends are its path's, whatever else is on its card (a gate, a
+    // control pair); a box of two ports has its two pins. People turn a
+    // flat transistor or switch as they turn a part: 1,684 of 1,719 face
+    // the nearest device on their nets (98.0%).
+    const path: [2]u8 = device.of(nl.graph.edges.items(.kind)[d]).path orelse if (pins.len == 2) .{ 0, 1 } else return true;
+    const s0 = class.side(path[0], o) orelse return true;
+    return (s0 == .left) == (firstLeft(nl, sk, d, path) orelse return true);
 }
 
-/// Whether the first pin of flat device `d`, of two pins, is its left end.
-fn firstLeft(nl: *const Netlist, sk: *const Skeleton, d: u32) bool {
-    const pins = nl.graph.members(EdgeId.from(d));
-    assert(pins.len == 2);
+/// Whether the first of flat device `d`'s two ends, card pins `path`, is
+/// its left end; null when both are on one net (a dummy, a MOS capacitor)
+/// and no line says: it faces nothing, and lies as its class is drawn.
+fn firstLeft(nl: *const Netlist, sk: *const Skeleton, d: u32, path: [2]u8) ?bool {
+    const all = nl.graph.members(EdgeId.from(d));
+    assert(path[0] < all.len and path[1] < all.len);
+    assert(path[0] != path[1]);
+    const pins = [2]netlist.VertexId{ all[path[0]], all[path[1]] };
     // A `face` line says which end is left.
     if (sk.left_end[d] != .auto) return sk.left_end[d] == .first;
+    if (pins[0] == pins[1]) return null;
     // The nearest device beside it, on either net, has that net's end
     // facing it; cells are counted along the columns plus along the rows.
     // People: 4,414 of 4,471 flat two-pin parts (98.7%) in 5,263 hand-drawn
