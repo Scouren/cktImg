@@ -511,6 +511,9 @@ test {
     _ = @import("power_reservoir_bounds.zig");
     _ = @import("converter_loops.zig");
     _ = @import("converter_loop_clearance.zig");
+    _ = @import("converter_bus.zig");
+    _ = @import("converter_bus_remote.zig");
+    _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");

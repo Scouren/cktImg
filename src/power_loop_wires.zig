@@ -26,8 +26,21 @@
 //!   toward its requested port side, so outside-pin wiring still sees the
 //!   whole local output extent. A local output with no outside pins gets
 //!   its port at the whole tree's boundary, toward the requested side or
-//!   the loop's output direction. The retained anchor is a routing handle,
-//!   not a new physical boundary inside the loop. `output`
+//!   the loop's output direction. An input's seeded component also gets
+//!   its port at this boundary before nearby outside pins attach to it;
+//!   distant pins keep their ordinary ports.
+//!   The retained anchor is a routing handle, not a new physical boundary
+//!   inside the loop. Default inputs follow their actual anchor pin side,
+//!   outputs point right, and projection ties choose the top-left point.
+//!   Requested sides and collision-safe port fallback retain precedence.
+//!   `port`
+//! - power_loop_wires.5 (habit, bounded) The input spine stands strictly
+//!   left of both selected switch terminals in 141/145 source drawings;
+//!   four put it on their shared terminal column. Try the existing `tap`
+//!   gap first, then that terminal column if a body or prior wire blocks
+//!   the gap. This is a bounded default preference, not a topology rule
+//!   selecting the four exceptions. Both candidates use actual pins and
+//!   roll back failed fragments before trying the next. `bus`
 //!
 //! Data: existing netlist/roles/drawn rows select temporary 68-byte groups,
 //! one capacity slot per drawn coil. Each wiring pass maps a group to 18
@@ -39,7 +52,7 @@
 //! Contents:
 //! - `pub fn collect(gpa: Allocator, nl: *const Netlist, roles: []const sch.Role, drawn: []const bool, lines: *const NetLines) Allocator.Error![]Group`
 //! - `pub fn seed(c: *Canvas, groups: []const Group, pins_of: []std.ArrayList(u32), mates: []u32, anchors: []u32) Allocator.Error!void`
-//! - `pub fn output(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!bool`
+//! - `pub fn port(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!bool`
 
 const std = @import("std");
 const assert = std.debug.assert;
@@ -128,7 +141,7 @@ pub fn seed(c: *Canvas, groups: []const Group, pins_of: []std.ArrayList(u32), ma
             assert(count < list.items.len);
             var anchor = row[0];
             if (net == group.nets[@backingInt(loops.Net.output)] and c.s.roles[net] == .output) {
-                const direction = outputSide(c, net).unit();
+                const direction = portSide(c, net, anchor).unit();
                 for (row[1..local.len]) |pin| {
                     const point = canvas.pinAt(c.s, pin);
                     const at = canvas.pinAt(c.s, anchor);
@@ -149,15 +162,17 @@ pub fn seed(c: *Canvas, groups: []const Group, pins_of: []std.ArrayList(u32), ma
     }
 }
 
-/// Finishes a successfully seeded output that retained only its anchor.
+/// Adds a boundary port to a successfully seeded input/output component.
 /// `anchor` is the handle recorded by `seed`, or `none` if it abstained.
-/// Outputs with outside terminals or no successful seed return false.
-pub fn output(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!bool {
-    assert(c.s.roles[net] == .output);
+/// The anchor must be last in `pins`. On success the caller still handles
+/// the preceding outside input pins. Outputs with outside terminals, and
+/// either role without a successful seed, return false without changes.
+pub fn port(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!bool {
+    assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
     assert(pins.len >= 1);
-    if (pins.len != 1 or anchor == sch.none) return false;
-    assert(pins[0] == anchor);
-    const side = outputSide(c, net);
+    if (anchor == sch.none or (c.s.roles[net] == .output and pins.len != 1)) return false;
+    assert(pins[pins.len - 1] == anchor);
+    const side = portSide(c, net, anchor);
     const direction = side.unit();
     var from = canvas.pinAt(c.s, anchor);
     var farthest = projection(from, direction);
@@ -177,8 +192,9 @@ pub fn output(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Er
 
 // ---- private ----
 
-fn outputSide(c: *const Canvas, net: u32) @import("library.zig").Side {
-    return if (c.port_side.len != 0) c.port_side[net] orelse .right else .right;
+fn portSide(c: *const Canvas, net: u32, anchor: u32) @import("library.zig").Side {
+    const side = if (c.s.roles[net] == .output) .right else c.s.pins.items(.side)[anchor];
+    return if (c.port_side.len != 0) c.port_side[net] orelse side else side;
 }
 
 fn projection(point: Pt, direction: Pt) i64 {
@@ -224,9 +240,7 @@ fn tree(c: *Canvas, nets: [7]u32, pins: [7][4]u32) Allocator.Error!bool {
     if (p[3][1].x != p[5][0].x or p[3][1].y >= p[5][0].y or p[5][0].y > p[5][1].y or p[5][1].x > p[5][0].x) return false;
     if (p[3][3].x != p[6][0].x or p[6][0].x != p[6][1].x or p[3][3].y >= p[6][0].y or p[6][0].y > p[6][1].y) return false;
     for (p[3][1..]) |point| if (point.x < p[3][0].x or point.y < row) return false;
-    // Input bus left of both channel bodies.
-    const bus_x = @min(p[0][0].x, p[0][1].x);
-    if (!try path(c, nets[0], &.{ p[0][0], .{ .x = bus_x, .y = p[0][0].y }, .{ .x = bus_x, .y = p[0][1].y }, p[0][1] })) return false;
+    if (!try bus(c, nets[0], p[0][0], p[0][1])) return false;
     if (!try path(c, nets[1], &.{ p[1][0], p[1][1] })) return false;
     if (!try path(c, nets[1], &.{ .{ .x = p[1][2].x, .y = row }, p[1][2] })) return false;
     if (!try path(c, nets[2], &.{ p[2][0], p[2][1] })) return false;
@@ -241,6 +255,19 @@ fn tree(c: *Canvas, nets: [7]u32, pins: [7][4]u32) Allocator.Error!bool {
     return path(c, nets[6], &.{ p[6][0], p[6][1] });
 }
 
+fn bus(c: *Canvas, net: u32, a: Pt, b: Pt) Allocator.Error!bool {
+    assert(a.y < b.y);
+    assert(c.len.tap > 0);
+    const nearest = @min(a.x, b.x);
+    const checkpoint = c.save();
+    errdefer c.restore(checkpoint);
+    for ([_]i32{ nearest - c.len.tap, nearest }) |x| {
+        if (try path(c, net, &.{ a, .{ .x = x, .y = a.y }, .{ .x = x, .y = b.y }, b })) return true;
+        c.restore(checkpoint);
+    }
+    return false;
+}
+
 fn path(c: *Canvas, net: u32, points: []const Pt) Allocator.Error!bool {
     assert(points.len >= 2 and points.len <= 4);
     for (points[0 .. points.len - 1], points[1..]) |a, b| {
@@ -252,7 +279,7 @@ fn path(c: *Canvas, net: u32, points: []const Pt) Allocator.Error!bool {
     return true;
 }
 
-test "power loop wires: hidden or projected terminals cannot certify a local tree" {
+test "power loop wires: actual frames and blocked buses never leave partial trees" {
     // Oracle: literal physical geometry, not the selector or router.
     // All aligned pins form a clear loop. Changing only CFLY's glyph puts
     // its ends at (170,160)/(150,200), while routing still projects both
@@ -266,6 +293,11 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
         .{ .name = "d", .at = .{ .x = 20, .y = 0 }, .side = .right },
         .{ .name = "g", .at = .{ .x = 0, .y = -20 }, .side = .up },
         .{ .name = "s", .at = .{ .x = -20, .y = 0 }, .side = .left },
+    } });
+    const long_mos = try lib.register(.{ .name = "loop_test_long_mos", .terminals = &.{
+        .{ .name = "d", .at = .{ .x = 20, .y = 0 }, .side = .right },
+        .{ .name = "g", .at = .{ .x = 0, .y = -20 }, .side = .up },
+        .{ .name = "s", .at = .{ .x = -40, .y = 0 }, .side = .left },
     } });
     const coil = try lib.register(.{ .name = "loop_test_coil", .terminals = &.{
         .{ .name = "a", .at = .{ .x = -20, .y = 0 }, .side = .left },
@@ -296,10 +328,13 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
         &.{ 5, 4 },    &.{ 3, 5 }, &.{ 3, 7 },    &.{ 3, 6 },    &.{ 6, 7 },
     };
     const group: Group = .{ .devices = .{ 0, 1, 2, 3, 4, 5, 6, 7, 8, 9 }, .nets = .{ 0, 1, 2, 3, 4, 5, 6 } };
-    for (0..3) |frame| {
+    for (0..6) |frame| {
         const shifted = frame == 1;
         const hidden = frame == 2;
-        const abstained = shifted or hidden;
+        const blocked_gap = frame == 3 or frame == 4;
+        const blocked_both = frame == 4;
+        const long_source = frame == 5;
+        const abstained = shifted or hidden or blocked_both;
         var s: sch.Schematic = .{
             .arena = .init(gpa),
             .lib = &lib,
@@ -317,7 +352,7 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
         s.labeled = try a.alloc(bool, 9);
         @memset(s.labeled, false);
         const branch = if (hidden) hidden_top else vertical;
-        const classes = [_]library.ClassId{ mos, coil, mos, mos, if (shifted) skew else vertical, diode, branch, branch, branch, vertical };
+        const classes = [_]library.ClassId{ mos, coil, mos, if (long_source) long_mos else mos, if (shifted) skew else vertical, diode, branch, branch, branch, vertical };
         var pins_of: [9]std.ArrayList(u32) = @splat(.empty);
         defer for (&pins_of) |*list| list.deinit(gpa);
         for (classes, card_nets, 0..) |class, nets, d| {
@@ -330,7 +365,7 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
                 .class = class,
                 .orient = .r0,
                 .grid = .zero,
-                .reach = @splat(20),
+                .reach = if (class == long_mos) .{ 40, 20, 20, 20 } else @splat(20),
             });
             const node = try s.addNode(.{ .kind = .device, .ref = @intCast(d), .group = sch.none });
             for (nets, 0..) |net, index| {
@@ -351,6 +386,10 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
         // abstention byte-for-byte; no terminal list is consumed either.
         try testing.expect(try c.commit(8, &.{ .{ .x = 700, .y = 400 }, .{ .x = 740, .y = 400 } }));
         c.wall();
+        // Block only the preferred x=60 track, then both x=60/x=80.
+        // A failed first shoulder must not survive either fallback.
+        if (blocked_gap) try c.points.append(gpa, .{ .at = .{ .x = 60, .y = 200 }, .net = 8 });
+        if (blocked_both) try c.points.append(gpa, .{ .at = .{ .x = 80, .y = 200 }, .net = 8 });
         const checkpoint = c.save();
         try testing.expectEqual(Pt{ .x = 160, .y = 160 }, canvas.pinAt(&s, 11));
         const actual = Pt{ .x = if (shifted) 170 else 160, .y = 160 };
@@ -365,6 +404,11 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
             try testing.expectEqual(checkpoint.points, c.points.items.len);
         } else {
             try testing.expect(c.segs.items.len > checkpoint.segs);
+            // The long caller source ends at x=60 despite the same x=100
+            // device origin as M1. Its clear spine therefore stands at40.
+            const bus_x: i32 = if (long_source) 40 else if (blocked_gap) 80 else 60;
+            try testing.expect(c.onNet(0, .{ .x = bus_x, .y = 200 }));
+            if (blocked_gap) try testing.expect(!c.onNet(0, .{ .x = 60, .y = 100 }));
         }
         for (group.nets, [_]usize{ 2, 3, 2, 4, 3, 2, 2 }) |net, before| {
             const count: usize = if (hidden and net == 3) 1 else if (abstained) before else 1;
@@ -374,7 +418,7 @@ test "power loop wires: hidden or projected terminals cannot certify a local tre
         if (hidden) {
             // Three caller classes hide their output terminal. The one
             // visible output pin is not evidence of a committed local tree.
-            try testing.expect(!try output(&c, 3, pins_of[3].items, anchors[3]));
+            try testing.expect(!try port(&c, 3, pins_of[3].items, anchors[3]));
             try testing.expectEqual(checkpoint.nodes, s.nodes.len);
         }
     }

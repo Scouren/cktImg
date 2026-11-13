@@ -5,6 +5,10 @@ PMOS–inductor–PMOS path. Its oracle is actual transformed SVG lead and
 conductor ink, followed by the source's observed terminal relations. The
 committed inventory retains the frozen iteration 9 baseline; measured
 iteration 12 results and remaining differences are reported separately below.
+Iteration13's [input-bus study](converter-bus.md) measures the preferred left
+spine and physical auxiliary-switch connections. Its
+[output-branch study](converter-branches.md) measures the common divider–cap–cap
+order and preserves all 31 minority source arrangements as exceptions.
 
 ## Electrical certificate
 
@@ -240,6 +244,18 @@ iteration 9 to this snapshot: crossings **562 → 464**, bends **3,534 → 2,696
 Crossings improve in 71 circuits and worsen in 52; bends improve in 115 and
 worsen in 18. These totals include remote wiring. A lower total is not a
 claim that every source arrangement improved.
+
+The full 2,202-drawing comparison against iteration 11 also records physical
+gate-direction changes. Of 23,252 source gate facts, matches rise from
+14,157 to 14,193: **549 improve and 513 regress**, with one changed direction
+matching neither version. Every improvement and regression concerns an
+unchanged upright transistor outside the ten loop members and selected
+grounded shunts. The 513 regressions span 61 circuits. This compares literal
+left/right/up/down directions without normalizing mirrored groups. Promoted
+forms affect earlier column ordering and its gate-facing choices; AG1194's
+MN1/MN2 pair provides a checked example, not a causal explanation for every
+changed device. Symbol-axis matches improve by 245 with no regressions;
+measured native flow directions are unchanged.
 
 Known differences remain named by the source inventory. In this snapshot,
 all 145 native input buses use the shared terminal column, while 141 source

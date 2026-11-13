@@ -104,6 +104,11 @@
 //!   nets. Its outside pins retain the normal port/name/wire choice.
 //!   All 145 selected source loops have seven continuous local trees with
 //!   no crossing between them; power_loop_wires.1 names the source audit.
+//!   A seeded input component gets its port at the actual tree boundary;
+//!   nearby outside pins attach under wires.12's distance limit. Measure
+//!   their whole cluster plus its shortest reach to the actual tree ink;
+//!   the retained routing handle is not its boundary. Distant pins retain
+//!   ports. This native proximity choice does not infer source block layout.
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
 //!
 //! Contents:
@@ -245,6 +250,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             seeded = true;
         }
         const pins = pins_of[net].items;
+        const anchor = if (anchors.len != 0) anchors[net] else sch.none;
         if (pins.len == 0 or drawn[net]) continue;
         drawn[net] = true;
         const axis2: ?i32 = if (own_mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
@@ -274,13 +280,13 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             },
             // A bias a line wires (never an input) is a wire like any
             // other, named once.
-            .port => if (style == .auto) try ported(&c, net, pins) else {
+            .port => if (style == .auto) try ported(&c, net, pins, anchor) else {
                 assert(s.roles[net] == .bias);
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
             },
             .wire => {
-                if (s.roles[net] == .output and try power_loop_wires.output(&c, net, pins, if (anchors.len != 0) anchors[net] else sch.none)) continue;
+                if (s.roles[net] == .output and try power_loop_wires.port(&c, net, pins, anchor)) continue;
                 const from = c.segs.items.len;
                 const pin_from = s.pins.len;
                 if (!try patterned(&c, net, pins, axis2, style)) {
@@ -466,11 +472,31 @@ fn within(c: *const Canvas, p: u32, q: u32) bool {
 
 /// Whether an input's pins stand near enough to share one wire and one
 /// port: the box around them no more than `input_reach` units around half.
-fn near(c: *const Canvas, pins: []const u32) bool {
+/// With an existing tree, the outside cluster must also reach its ink
+/// within that same bound; the whole tree need not fit in a new small box.
+fn near(c: *const Canvas, pins: []const u32, tree: ?u32) bool {
     assert(pins.len >= 1);
     var box: Rect = .point(pinAt(c.s, pins[0]));
     for (pins[1..]) |p| box = box.merge(.point(pinAt(c.s, p)));
-    return box.max.x - box.min.x + box.max.y - box.min.y <= input_reach * c.len.unit;
+    const limit = input_reach * c.len.unit;
+    if (tree) |net| return nearTree(box, net, c.segs.items, limit);
+    return box.max.x - box.min.x + box.max.y - box.min.y <= limit;
+}
+
+fn nearTree(box: Rect, net: u32, segments: []const maze.Wire, limit: i32) bool {
+    assert(box.min.x <= box.max.x and box.min.y <= box.max.y);
+    assert(limit >= 0);
+    const span = @as(i64, box.max.x) - box.min.x + @as(i64, box.max.y) - box.min.y;
+    if (span > limit) return false;
+    for (segments) |segment| {
+        if (segment.net != net) continue;
+        assert(segment.a.x == segment.b.x or segment.a.y == segment.b.y);
+        const reach = Rect.fromCorners(segment.a, segment.b);
+        const dx = @max(0, @max(@as(i64, reach.min.x) - box.max.x, @as(i64, box.min.x) - reach.max.x));
+        const dy = @max(0, @max(@as(i64, reach.min.y) - box.max.y, @as(i64, box.min.y) - reach.max.y));
+        if (span + dx + dy <= limit) return true;
+    }
+    return false;
 }
 
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
@@ -611,12 +637,23 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
 /// each pin, as people draw a bias: of 4,378 nets named `vb*` or `bias*` in
 /// 5,263 hand-drawn schematics, 3,228 carry port symbols and none a written
 /// name. Before either, a bias of two gates of one row facing each other:
-/// a gate line between them, named at its middle.
-fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
+/// a gate line between them, named at its middle. A successfully seeded
+/// input tree gets its boundary port before nearby outside pins attach;
+/// distant outside pins retain their ordinary input patterns and ports.
+fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
     const s = c.s;
-    assert(pins.len >= 1);
+    assert(all.len >= 1);
     const bias = s.roles[net] == .bias;
     assert(bias or s.roles[net] == .input);
+    var pins = all;
+    if (!bias and try power_loop_wires.port(c, net, pins, anchor)) {
+        pins = pins[0 .. pins.len - 1];
+        if (pins.len == 0) return;
+        if (near(c, pins, net)) {
+            try routes.attach(c, net, pins, anchor);
+            return;
+        }
+    }
     if (bias and pins.len == 2) {
         const a = pinAt(s, pins[0]);
         const b = pinAt(s, pins[1]);
@@ -633,7 +670,7 @@ fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
         }
     }
     // A bias's port stands where a name would, on a name's stub.
-    if (pins.len >= 2 and near(c, pins) and try trunk.draw(c, net, pins, if (bias) .name else .port)) return;
+    if (pins.len >= 2 and near(c, pins, null) and try trunk.draw(c, net, pins, if (bias) .name else .port)) return;
     for (pins) |p| try terminal(c, p);
     // A bias's ports are its name written out: it is drawn with labels.
     if (bias) s.labeled[net] = true;
@@ -686,4 +723,26 @@ fn ladder(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32) !bool {
     if (!linesFit(c, net, lines.items)) return false;
     for (lines.items) |*l| assert(try c.commit(net, l.slice()));
     return true;
+}
+
+test "wires: an outside cluster reaches actual same-net tree ink within the input bound" {
+    // Literal oracle: a long vertical tree can be reached at its middle
+    // or its lower end, independently of a retained pin at its top.
+    const tree = [_]maze.Wire{.{ .a = .{ .x = 0, .y = 0 }, .b = .{ .x = 0, .y = 100 }, .net = 7 }};
+    const middle: Rect = .point(.{ .x = 10, .y = 50 });
+    try std.testing.expect(nearTree(middle, 7, &tree, 10));
+    try std.testing.expect(!nearTree(middle, 7, &tree, 9));
+    const below: Rect = .point(.{ .x = 0, .y = 110 });
+    try std.testing.expect(nearTree(below, 7, &tree, 10));
+    try std.testing.expect(!nearTree(below, 7, &tree, 9));
+    try std.testing.expect(!nearTree(middle, 8, &tree, 100));
+    try std.testing.expect(!nearTree(middle, 7, &.{}, 100));
+    // A 10-by-10 outside cluster needs its 20 extent plus a 10-unit reach.
+    const cluster: Rect = .{ .min = .{ .x = 10, .y = 20 }, .max = .{ .x = 20, .y = 30 } };
+    try std.testing.expect(nearTree(cluster, 7, &tree, 30));
+    try std.testing.expect(!nearTree(cluster, 7, &tree, 29));
+    // Both pins individually stand near the tree, but their cluster is
+    // already 101 units tall. Per-pin chaining must not admit it at 100.
+    const wide: Rect = .{ .min = .{ .x = 1, .y = 0 }, .max = .{ .x = 1, .y = 101 } };
+    try std.testing.expect(!nearTree(wide, 7, &tree, 100));
 }

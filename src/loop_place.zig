@@ -6,11 +6,14 @@
 //!   lower MOS/diode return. All 145 source groups put the flying cap
 //!   between input main and coil, output branches beyond the output main,
 //!   and the downward divider above the diode. See converter-loops.md.
-//! - loop_place.2 (choice) Use one main row and one lower return row;
-//!   preserve the existing relative order of the three output branches.
-//!   Exact row equality and branch order have source exceptions. Start
-//!   at the existing main row and reserve its whole horizontal band,
-//!   with one clear row above and below. Outside devices in that band
+//! - loop_place.2 (choice) Use one main row and one lower return row.
+//!   Default to divider, floating cap, grounded cap after the main path:
+//!   114/145 source drawings use this order; the 31 named exceptions have
+//!   no proven topology selector (converter-branches.md). This preference
+//!   applies only after the caller/mate guards below. Exact row equality
+//!   also has source exceptions. Start at the existing main row and reserve
+//!   its whole horizontal band with one clear row above and below.
+//!   Outside devices in that band
 //!   can send supply bars across the loop even from distant columns.
 //!   On collision, try the next disjoint band above. This fallback and
 //!   its one-row margin are default-placement choices, not a guarantee
@@ -103,12 +106,9 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []c
         };
         if (held) continue;
 
-        // Preserve output-branch ordering, including the minority where
-        // the grounded capacitor precedes the floating one.
-        var branches = [3]u32{ d[6], d[7], d[8] };
-        for (0..branches.len) |_| for (0..branches.len - 1) |i| {
-            if (x[branches[i]] > x[branches[i + 1]]) std.mem.swap(u32, &branches[i], &branches[i + 1]);
-        };
+        // The common source order is a default, not a selector for the
+        // 31 minority drawings. Admitted caller relations abstained above.
+        const branches = [3]u32{ d[8], d[6], d[7] };
         const base = @min(x[d[0]], @min(x[d[1]], x[d[2]]));
         var top = @min(y[d[0]], @min(y[d[1]], y[d[2]]));
         var tries: usize = 0;

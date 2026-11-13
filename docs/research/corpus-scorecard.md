@@ -814,3 +814,80 @@ made. The final plugin is 559,658 bytes, SHA-256
 `def3d992a8eb6909712453b6cc8c76c4c08077e189406df9e8337008e37de570`.
 Its repeated build is byte-identical. All 145 changed drawings also reproduce
 identical geometry and report bytes in serial and four-job runs.
+
+## Thirteenth measured pass: converter branch order and input buses
+
+The frozen executable is
+`eaefa6ee157dd71f4ab2631b2a804dbf51180f24f15ab2334f6af8bef1f7f6cc`.
+The default output order is now divider, floating capacitor, grounded
+capacitor, following the common case in the
+[branch-order study](converter-branches.md). Complete three-branch agreement
+improves from **39/145 to 114/145**, with 88 named gains and 13 losses.
+The 31 minority arrangements remain unresolved: outer topology and controller
+position do not establish a reliable exception rule. Explicit caller geometry
+continues to take precedence.
+
+The local input bus now tries a spine one existing tap distance left of both
+switch terminals, falling back to their shared terminal column when blocked.
+All **145/145** native spines are strictly left; the source uses that relation
+in **141/145**. AG1267, AG1280, AG1312 and AG1345 remain named disagreements
+because their source spines use the terminal column. All 22 universal local
+terminal relations still hold in 145/145 groups. Each group's seven selected
+wire trees remains physically continuous, with zero proper crossings in all
+21 tree pairs. Exact earlier cohorts also remain correct: 252 main paths,
+365 shunts below, 353 unique shunt intervals, all four relations on 359
+grounded capacitors, 92 driver orders, 75 controller alignments, and both
+107-case reservoir gate policies.
+
+Visual review exposed an oracle gap: the seven local trees excluded the
+auxiliary input switch. The first boundary-port trial retained all local
+certificates but lost 63 of the 64 previously wired auxiliary branches,
+leaving electrical connections through ports. The expanded
+[auxiliary-bus audit](converter-bus.md) checks all three actual switch
+terminals and another 435 source D/G/S leads. The repaired proximity rule
+measures the outside cluster's extent plus its distance to actual existing
+tree ink, within the existing input distance limit. A retained routing pin
+does not stand in for the whole component. Wrong-net ink, empty ink and
+oversized clusters cannot satisfy that test.
+
+The final result physically joins **107/145** auxiliary branches, up from
+64, with none of the previous 64 lost. Source continuity agreement improves
+from **65/145 to 106/145**: 42 source-supported gains and one regression,
+AG1199:M1. Its source puts the auxiliary switch in a separate distant block;
+the current native placement puts it close enough to join. All 38 native
+branches still disconnected are connected in their sources. Auxiliary
+placement remains unfinished, and the distance choice does not reproduce
+the source's block separation. The public regressions require physical ink,
+electrical connectivity and no shorts. An older uncompact AG1316 known-gap
+marker failed on an unexpected improvement and was replaced by the same
+positive continuity assertion.
+
+All **2,956** corpus decks render with the same two named source issues and
+no native findings. Geometry changes in 145 AnalogGenie drawings and reports
+in 144; every other AG result and all 734 AMSNet results remain byte-identical.
+No physical device axis, gate direction or block flow changes. The partial
+all-relation score stays **289/2,202**, with no gained or lost names. Total
+AG crossings increase from **4,802 to 4,864**, and bends from **23,372 to
+23,435**. Crossings worsen in 64 named drawings. On the 145 selected loops,
+the corresponding totals are 464 to 526 crossings and 2,696 to 2,759 bends;
+these whole-circuit regressions are separate from the zero-crossing local
+trees. The source branch, bus and auxiliary exceptions prevent a claim of
+schematic equivalence.
+
+Validation passes **349 tests without LaTeX and 350 with it**, 4,000 fuzz
+cases, global formatting and style checks with the same five legacy API
+findings. All 31 gallery SVGs are byte-identical. All 145 selected drawings
+produce identical geometry and report bytes in serial and four-job runs.
+The full fixture suite retains 98 exact comparisons and the same two named
+capacity refusals; all 252 converter decks round-trip through the release
+Schemify host with 428 exact subcircuits. The nine-deck current-host check
+also passes, with 17 exact subcircuit names matching the corresponding
+release-host inventory. Final views of AG1191, 1199, 1249, 1268, 1294, 1316
+and 1349 were inspected against the frozen corpus geometry. They show clearer
+local loops and restored auxiliary wires, while auxiliary switches remain
+upright and below the loop, controller boxes and crossings remain, and
+AG1199 joins the block that its source draws separately.
+
+The plugin is **560,234 bytes**, SHA-256
+`f27345af840d847ac37f6c9341c4b8112b2c9e76478dfb8051bcd4fa95eb6e16`.
+Repeated native and plugin builds are byte-identical.
