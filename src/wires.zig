@@ -51,7 +51,7 @@ const Line = canvas.Line;
 
 const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
-const stepPt = canvas.stepPt;
+const topLeft = canvas.topLeft;
 
 /// The half perimeter, in units, of the box around an input's pins up to
 /// which they are wired to one port; farther apart, each pin gets a port.
@@ -186,7 +186,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     // On its top-left pin, so card order changes nothing.
     for (named.items) |net| if (!s.labeled[net]) {
         const of = pins_of[net].items;
-        try c.labelAt(of[routes.topLeft(s, of)]);
+        try c.labelAt(of[topLeft(s, of)]);
     };
     assert(xy.items.len == s.nodes.len);
 }
@@ -206,7 +206,7 @@ fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
         }
         return false;
     }
-    var from = pinAt(c.s, pins[routes.topLeft(c.s, pins)]);
+    var from = pinAt(c.s, pins[topLeft(c.s, pins)]);
     var drew = false;
     for (r.pts) |to| {
         if (to.eql(from)) continue;
@@ -222,8 +222,8 @@ fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
 }
 
 /// Commits polyline `pts` of `net`, each of its pins the polyline passes
-/// made a point of it (a pin joins a wire only at a point), in pieces of six
-/// points at most. False, with nothing drawn, when a piece does not fit.
+/// made a point of it (a pin joins a wire only at a point). False, with
+/// nothing drawn, when a piece does not fit.
 fn commitThrough(c: *Canvas, net: u32, pins: []const u32, pts: []const Pt) !bool {
     var all: std.ArrayList(Pt) = .empty;
     defer all.deinit(c.gpa);
@@ -245,17 +245,7 @@ fn commitThrough(c: *Canvas, net: u32, pins: []const u32, pts: []const Pt) !bool
         }
         try all.append(c.gpa, b);
     }
-    const cp = c.save();
-    var k: usize = 0;
-    while (k + 1 < all.items.len) {
-        const end = @min(k + 5, all.items.len - 1);
-        if (!try c.commit(net, all.items[k .. end + 1])) {
-            c.restore(cp);
-            return false;
-        }
-        k = end;
-    }
-    return true;
+    return c.commit(net, all.items);
 }
 
 /// Each net a route or via drew: its pins off that wire joined to it by
@@ -356,20 +346,16 @@ fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlin
 
 /// A rail's symbol or a port one gap out from pin `p`, on a stub: toward
 /// the side a `port` line asks, then the way the pin faces, the first whose
-/// stub fits; a label on the pin when neither does.
+/// stub fits; a label on the pin itself when neither does. Narrowing: no
+/// name's stub is tried before the pin, as `Canvas.labelAt` would.
 fn terminal(c: *Canvas, p: u32) !void {
-    const at = pinAt(c.s, p);
     const side = c.s.pins.items(.side)[p];
     const net = c.s.pins.items(.net)[p];
-    const reach = if (c.rails[net]) c.len.rail else c.len.terminal;
-    for ([_]Side{ c.port_side[net] orelse side, side }) |out| {
-        const end = stepPt(at, out, reach);
-        if (!try c.commit(net, &.{ at, end })) continue;
-        if (c.rails[net]) c.wall();
-        return c.leaf(.terminal, net, end, out.opposite());
-    }
-    try c.leaf(.label, net, at, side.opposite());
-    c.s.labeled[net] = true;
+    const rail = c.rails[net];
+    if (try c.markAt(.terminal, p, &.{ c.port_side[net] orelse side, side }, if (rail) c.len.rail else c.len.terminal)) {
+        // A rail's stub is a wall.
+        if (rail) c.wall();
+    } else c.s.labeled[net] = true;
 }
 
 /// Rail pins facing `out` (up for a supply, down for ground): stubs to a

@@ -50,9 +50,9 @@ const Role = sch.Role;
 const Skeleton = skeleton.Skeleton;
 const Structure = structure.Structure;
 const Lengths = canvas.Lengths;
-const boxAt = canvas.boxAt;
-const toPt = canvas.toPt;
-const toF = canvas.toF;
+const boxAt = Schematic.boxAt;
+const toPt = Pt.round;
+const toF = Pt.toF;
 const none = sch.none;
 
 /// How often the drawing is wired again after naming the nets that cross
@@ -221,7 +221,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
     for (0..n) |d| {
         if (!sk.drawn[d]) continue;
         boxes[d] = if (ats[d]) |a|
-            (a.orient orelse info.items(.orient)[d]).applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(a.origin)
+            s.lib.at(info.items(.class)[d]).box(a.orient orelse info.items(.orient)[d], a.origin)
         else
             boxAt(s, d, toPt(at[d]));
     }
@@ -252,7 +252,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
     for (0..n) |d| {
         const o = (ats[d] orelse continue).orient orelse continue;
         for ([_]sch.Orientation{ .vertical, .horizontal }) |form| for (flips) |f| {
-            if (!std.meta.eql(Orient.flipped(if (form == .vertical) .left else .r0, f[0], f[1]), o)) continue;
+            if (!std.meta.eql(Orient.flipped(sch.form(form), f[0], f[1]), o)) continue;
             info.items(.orientation)[d] = form;
             info.items(.flip_x)[d] = f[0];
             info.items(.flip_y)[d] = f[1];
@@ -280,7 +280,7 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
         info.items(.flip_y)[d] = false;
         if (!sk.drawn[d]) continue;
         const class = s.lib.at(info.items(.class)[d]);
-        const base: Orient = if (vertical) .left else .r0;
+        const base = sch.form(info.items(.orientation)[d]);
         for (flips) |f| {
             if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical)) continue;
             info.items(.flip_x)[d] = f[0];

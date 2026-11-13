@@ -10,7 +10,7 @@
 //! - `pub const none: u32`, `pub const max_pins`
 //! - `pub const Role = enum(u8)`, `Role.isRail(r: Role) bool`, `Role.isPort(r: Role) bool`, `pub const Orientation = enum(u1)`
 //! - `pub const DeviceInfo = struct`, `pub const NodeKind = enum(u8)`, `pub const Node = struct`, `pub const Pin = struct`, `pub const Route = struct`
-//! - `pub const Schematic = struct`, `Schematic.deinit`, `Schematic.pinSide`, `Schematic.reach`, `Schematic.pinPoint`, `Schematic.deviceNode`, `Schematic.addNode`, `Schematic.addPin`
+//! - `pub const Schematic = struct`, `Schematic.deinit`, `Schematic.pinSide`, `Schematic.reach`, `Schematic.pinPoint`, `Schematic.deviceNode`, `Schematic.boxAt`, `Schematic.addNode`, `Schematic.addPin`
 //! - `pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]Role`
 //! - `pub fn isReference(nl: *const netlist.Netlist, roles: []const Role, net: u32) bool`
 //! - `pub fn roleWord(word: []const u8) ?Role`
@@ -18,6 +18,7 @@
 //! - `pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void`
 //! - `pub fn isDriver(circuit: *const Circuit.Graph, roles: []const Role, d: u32) bool`
 //! - `pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool`
+//! - `pub fn form(o: Orientation) Orient`
 
 const std = @import("std");
 const hints = @import("hints.zig");
@@ -194,6 +195,13 @@ pub const Schematic = struct {
             if (k == .device and r == d and g == i) return @intCast(i);
         }
         return null;
+    }
+
+    /// Device `d`'s symbol as it is turned (`orient`, `grid`: settled), with
+    /// its grid point at `at`.
+    pub fn boxAt(self: *const Schematic, d: usize, at: Pt) library.Rect {
+        const info = self.devices.slice();
+        return self.lib.at(info.items(.class)[d]).box(info.items(.orient)[d], at.sub(info.items(.grid)[d]));
     }
 
     pub fn addNode(self: *Schematic, node: Node) !u32 {
@@ -389,13 +397,13 @@ pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool {
     return pin < c.terminals.len and c.terminals[pin].ground_ref and s.roles[net] == .sink;
 }
 
-// ---- private ----
-
 /// The class as drawn is the horizontal form; the vertical form is it
 /// turned a quarter left.
-fn form(o: Orientation) Orient {
+pub fn form(o: Orientation) Orient {
     return if (o == .vertical) .left else .r0;
 }
+
+// ---- private ----
 
 /// A pin's side in form `o`, or null: not drawn (a MOS bulk, a terminal the
 /// class lacks).

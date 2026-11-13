@@ -22,6 +22,13 @@
 //! registration with the same terminals returns the existing id, and one with
 //! different terminals is refused. Placed schematics hold ids, so an id that
 //! moved would silently redraw old output.
+//!
+//! Contents (the geometry and `Class`; what follows them is not listed yet):
+//! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
+//! - `pub const Rect = struct`, `Rect.intersects(a: Rect, b: Rect) bool`, `Rect.contains(r: Rect, p: Pt) bool`, `Rect.merge(a: Rect, b: Rect) Rect`, `Rect.point(p: Pt) Rect`, `Rect.fromCorners(a: Pt, b: Pt) Rect`, `Rect.translate(r: Rect, by: Pt) Rect`, `Rect.grow(r: Rect, d: i32) Rect`
+//! - `pub const Orient = packed struct(u8)`, `Orient.r0`, `Orient.left`, `Orient.apply(o: Orient, p: Pt) Pt`, `Orient.applyRect(o: Orient, r: Rect) Rect`, `Orient.flipped(base: Orient, flip_x: bool, flip_y: bool) Orient`
+//! - `pub const Side = enum(u2)`, `Side.opposite(s: Side) Side`, `Side.isHorizontal(s: Side) bool`, `Side.perpendicular(a: Side, b: Side) bool`, `Side.flipX(s: Side) Side`, `Side.flipY(s: Side) Side`, `Side.transposed(s: Side) Side`, `Side.unit(s: Side) Pt`, `Side.vec(s: Side) [2]f32`, `Side.of(p: Pt) ?Side`
+//! - `pub const Class = struct`, `Class.shows(c: Class, i: usize) bool`, `Class.side(c: Class, i: usize, o: Orient) ?Side`, `Class.box(c: Class, o: Orient, origin: Pt) Rect`, `Class.bbox(c: Class) Rect`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -48,6 +55,25 @@ pub const Pt = extern struct {
     }
     pub fn eql(a: Pt, b: Pt) bool {
         return a.x == b.x and a.y == b.y;
+    }
+    /// Whether `a` stands higher than `b`, or as high and further left: the
+    /// order a drawing's points are taken in where the cards' order must
+    /// choose nothing.
+    pub fn above(a: Pt, b: Pt) bool {
+        return if (a.y != b.y) a.y < b.y else a.x < b.x;
+    }
+    /// `p` mirrored about the diagonal: rows and columns change places.
+    pub fn transposed(p: Pt) Pt {
+        return .{ .x = p.y, .y = p.x };
+    }
+    /// The whole point nearest `p`, a point as `Schematic.xy` and a `Route`
+    /// hold one.
+    pub fn round(p: [2]f32) Pt {
+        return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
+    }
+    /// `p` as `Schematic.xy` and a `Route` hold a point.
+    pub fn toF(p: Pt) [2]f32 {
+        return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
     }
 };
 
@@ -76,6 +102,11 @@ pub const Rect = struct {
     }
     pub fn translate(r: Rect, by: Pt) Rect {
         return .{ .min = r.min.add(by), .max = r.max.add(by) };
+    }
+    /// `r` with `d` more on every side; with a negative `d` less, and then
+    /// `min` may pass `max`.
+    pub fn grow(r: Rect, d: i32) Rect {
+        return .{ .min = .{ .x = r.min.x - d, .y = r.min.y - d }, .max = .{ .x = r.max.x + d, .y = r.max.y + d } };
     }
 };
 
@@ -151,14 +182,23 @@ pub const Side = enum(u2) {
     pub fn flipY(s: Side) Side {
         return if (s.isHorizontal()) s else s.opposite();
     }
-    /// Unit vector; y grows downward.
-    pub fn vec(s: Side) [2]f32 {
+    /// `s` mirrored about the diagonal: left for up, right for down, and
+    /// back.
+    pub fn transposed(s: Side) Side {
+        return Side.of(s.unit().transposed()).?;
+    }
+    /// One step toward `s`; y grows downward.
+    pub fn unit(s: Side) Pt {
         return switch (s) {
-            .left => .{ -1, 0 },
-            .right => .{ 1, 0 },
-            .up => .{ 0, -1 },
-            .down => .{ 0, 1 },
+            .left => .{ .x = -1, .y = 0 },
+            .right => .{ .x = 1, .y = 0 },
+            .up => .{ .x = 0, .y = -1 },
+            .down => .{ .x = 0, .y = 1 },
         };
+    }
+    /// `unit` in floats.
+    pub fn vec(s: Side) [2]f32 {
+        return s.unit().toF();
     }
     /// The side a point lies on, seen from the origin; null at the origin.
     pub fn of(p: Pt) ?Side {
@@ -219,40 +259,40 @@ pub const Class = struct {
     terminals: []const Terminal,
     draw: []const DrawOp,
 
-    /// The side terminal `i` faces under `o`, or null if it is not drawn.
+    /// Whether the symbol shows card pin `i`: it has a terminal for it, and
+    /// not a hidden one. A pin past the terminals (a dependent source's
+    /// control pair) and a hidden one (a MOS body) take no wire.
+    pub fn shows(c: Class, i: usize) bool {
+        return i < c.terminals.len and !c.terminals[i].hidden;
+    }
+
+    /// The side terminal `i` faces under `o`, or null if it is not drawn
+    /// (`shows`).
     pub fn side(c: Class, i: usize, o: Orient) ?Side {
-        if (i >= c.terminals.len or c.terminals[i].hidden) return null;
+        if (!c.shows(i)) return null;
         const t = c.terminals[i];
-        const s = t.side orelse return Side.of(o.apply(t.at));
-        const unit: Pt = switch (s) {
-            .left => .{ .x = -1, .y = 0 },
-            .right => .{ .x = 1, .y = 0 },
-            .up => .{ .x = 0, .y = -1 },
-            .down => .{ .x = 0, .y = 1 },
-        };
-        return Side.of(o.apply(unit));
+        return Side.of(o.apply(if (t.side) |s| s.unit() else t.at));
+    }
+
+    /// The symbol's box (`bbox`) turned `o`, its origin at `origin`.
+    pub fn box(c: Class, o: Orient, origin: Pt) Rect {
+        return o.applyRect(c.bbox()).translate(origin);
     }
 
     /// Bounding box of terminals and strokes, in the canonical frame.
     pub fn bbox(c: Class) Rect {
         var r: ?Rect = null;
-        const grow = struct {
-            fn f(acc: *?Rect, p: Pt) void {
-                acc.* = if (acc.*) |a| a.merge(.point(p)) else .point(p);
+        const add = struct {
+            fn f(acc: *?Rect, b: Rect) void {
+                acc.* = if (acc.*) |a| a.merge(b) else b;
             }
         }.f;
-        for (c.terminals) |t| grow(&r, t.at);
+        for (c.terminals) |t| add(&r, .point(t.at));
         for (c.draw) |op| switch (op) {
-            .line => |l| {
-                grow(&r, l.a);
-                grow(&r, l.b);
-            },
-            .polyline => |ps| for (ps) |p| grow(&r, p),
-            .circle => |k| {
-                grow(&r, .{ .x = k.c.x - k.r, .y = k.c.y - k.r });
-                grow(&r, .{ .x = k.c.x + k.r, .y = k.c.y + k.r });
-            },
-            .text => |t| grow(&r, t.at),
+            .line => |l| add(&r, .fromCorners(l.a, l.b)),
+            .polyline => |ps| for (ps) |p| add(&r, .point(p)),
+            .circle => |k| add(&r, .fromCorners(.{ .x = k.c.x - k.r, .y = k.c.y - k.r }, .{ .x = k.c.x + k.r, .y = k.c.y + k.r })),
+            .text => |t| add(&r, .point(t.at)),
         };
         return r orelse .point(.zero);
     }
@@ -709,6 +749,22 @@ test "orient: mirror then rotate; the vertical form puts a MOSFET's drain up and
         const q = base.apply(g);
         try testing.expectEqual(Pt{ .x = if (fx) -q.x else q.x, .y = if (fy) -q.y else q.y }, o.apply(g));
     };
+}
+
+test "side: the mirror about the diagonal changes rows for columns, and back" {
+    // The oracle: the pairs an upright trunk's pins are turned by.
+    try testing.expectEqual(Side.up, Side.left.transposed());
+    try testing.expectEqual(Side.right, Side.down.transposed());
+    for ([_]Side{ .left, .right, .up, .down }) |s| {
+        try testing.expectEqual(s, s.transposed().transposed());
+        try testing.expectEqual(s, Side.of(s.unit()).?);
+        try testing.expectEqual(s.opposite().unit(), Pt.zero.sub(s.unit()));
+    }
+    // The reading order: higher first, then further left.
+    const p: Pt = .{ .x = 3, .y = 5 };
+    try testing.expect(p.above(.{ .x = 0, .y = 6 }) and p.above(.{ .x = 4, .y = 5 }) and !p.above(p));
+    try testing.expectEqual(Rect{ .min = .{ .x = 1, .y = 3 }, .max = .{ .x = 5, .y = 7 } }, Rect.point(p).grow(2));
+    try testing.expectEqual(p, Pt.round(p.toF()));
 }
 
 test "library: a symbol file registers its classes and reports the bad ones" {

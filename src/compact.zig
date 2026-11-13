@@ -32,7 +32,7 @@ const Rect = library.Rect;
 const Side = library.Side;
 const Schematic = sch.Schematic;
 const Lengths = canvas.Lengths;
-const pt = canvas.toPt;
+const pt = Pt.round;
 const none = sch.none;
 
 /// One thing drawn, as the room it takes: a symbol with its name, or one
@@ -278,7 +278,7 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
                 const class = s.lib.at(info.items(.class)[ref]);
                 const o = info.items(.orient)[ref];
                 const origin = at.sub(info.items(.grid)[ref]);
-                box = canvas.boxAt(s, ref, at);
+                box = s.boxAt(ref, at);
                 for (class.terminals[0..@min(class.terminals.len, s.device_pin_count[ref])]) |t| {
                     try d.ties.append(arena, .{ at, origin.add(o.apply(t.at)) });
                 }
@@ -313,7 +313,7 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
         const b = pt(r.pts[1]);
         const rail = s.roles[r.net].isRail();
         const stub = for (leaves.items) |l| {
-            if ((l.at.eql(a) and toward(a, b) == l.faces) or (l.at.eql(b) and toward(b, a) == l.faces)) break true;
+            if ((l.at.eql(a) and Side.of(b.sub(a)) == l.faces) or (l.at.eql(b) and Side.of(a.sub(b)) == l.faces)) break true;
         } else false;
         if ((rail and a.x == b.x and @abs(b.y - a.y) <= len.rail) or stub) try d.ties.append(arena, .{ a, b });
     }
@@ -390,12 +390,6 @@ fn nameBox(at: Pt, side: Side, name: []const u8) Rect {
         .up => .{ .min = .{ .x = at.x - @divFloor(w, 2), .y = at.y - h }, .max = .{ .x = at.x + @divFloor(w + 1, 2), .y = at.y } },
         .down => .{ .min = .{ .x = at.x - @divFloor(w, 2), .y = at.y }, .max = .{ .x = at.x + @divFloor(w + 1, 2), .y = at.y + h } },
     };
-}
-
-/// The side of `from` that `to` lies on, the two on one row or column.
-fn toward(from: Pt, to: Pt) Side {
-    assert(from.x == to.x or from.y == to.y);
-    return if (to.x > from.x) .right else if (to.x < from.x) .left else if (to.y > from.y) .down else .up;
 }
 
 fn along(p: Pt, ax: u1) i32 {

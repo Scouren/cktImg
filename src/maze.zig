@@ -179,7 +179,7 @@ fn window(q: Query, nearest_only: bool) Rect {
         }
     };
     if (nearest) |c| r = r.merge(.point(c));
-    r = grow(r, 8 * q.step);
+    r = r.grow(8 * q.step);
     var rounds: usize = 0;
     while (true) : (rounds += 1) {
         assert(rounds <= q.boxes.len + 1);
@@ -270,7 +270,7 @@ fn search(gpa: Allocator, q_all: Query, win: ?Rect) Allocator.Error!?[]Pt {
 /// `q` with only the boxes, marks and wires within `clear` of `win`.
 fn nearby(a: Allocator, q: Query, win: ?Rect) Allocator.Error!Query {
     const w = win orelse return q;
-    const reach = grow(w, q.clear);
+    const reach = w.grow(q.clear);
     var boxes: std.ArrayList(Rect) = .empty;
     for (q.boxes) |b| if (b.intersects(reach)) try boxes.append(a, b);
     var marks: std.ArrayList(Mark) = .empty;
@@ -325,11 +325,6 @@ fn indexOf(g: Grid, p: Pt) ?u32 {
 
 fn order(a: i32, b: i32) std.math.Order {
     return std.math.order(a, b);
-}
-
-/// `r` with `d` more on every side.
-fn grow(r: Rect, d: i32) Rect {
-    return .{ .min = .{ .x = r.min.x - d, .y = r.min.y - d }, .max = .{ .x = r.max.x + d, .y = r.max.y + d } };
 }
 
 /// The indices of the sorted `vs` from `lo` to `hi`, both included.
@@ -428,7 +423,7 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
     for (q.marks) |m| {
         if (m.net != q.net) {
             // The grid points nearer than `clear` to another net's point.
-            flag(g, g.closed, grow(.point(m.at), q.clear - 1));
+            flag(g, g.closed, Rect.point(m.at).grow(q.clear - 1));
         } else {
             const i = indexOf(g, m.at).?;
             if (!g.target[i]) g.closed[i] = true;

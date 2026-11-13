@@ -16,7 +16,6 @@
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
-//! - `pub fn topLeft(s: *const Schematic, pins: []const u32) usize`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
 
 const std = @import("std");
@@ -32,6 +31,7 @@ const Pt = library.Pt;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
 const pinAt = canvas.pinAt;
+const topLeft = canvas.topLeft;
 const none = sch.none;
 
 /// The drawing's mirror: twice the x of its axis, and each net's image
@@ -86,17 +86,6 @@ pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Er
     try finish(c, net, anchor, failed.items);
 }
 
-/// The index in `pins` of the topmost pin, then the leftmost: a net's first
-/// pin by place, so the order of the cards chooses nothing. Asserts a pin.
-pub fn topLeft(s: *const Schematic, pins: []const u32) usize {
-    assert(pins.len >= 1);
-    var first: usize = 0;
-    for (pins, 0..) |p, i| if (above(pinAt(s, p), pinAt(s, pins[first]))) {
-        first = i;
-    };
-    return first;
-}
-
 /// An output's port out from the topmost of its wires' outermost points,
 /// on the drawing's nearer side; nothing for any other net.
 pub fn port(c: *Canvas, net: u32) !void {
@@ -112,7 +101,7 @@ pub fn port(c: *Canvas, net: u32) !void {
             const edge = if (right) hi else lo;
             var from: ?Pt = null;
             for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-                if (e.x == edge and (from == null or above(e, from.?))) from = e;
+                if (e.x == edge and (from == null or e.above(from.?))) from = e;
             };
             try c.port(net, from.?, if (right) .right else .left);
         }
@@ -145,7 +134,7 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
             const at = pinAt(s, p);
             var d = nearest(s, pins, joined, at);
             if (half) |h| d = @min(d, @abs(h - at.x));
-            if (pick == null or d < pick_d or (d == pick_d and above(at, pinAt(s, pins[pick.?])))) {
+            if (pick == null or d < pick_d or (d == pick_d and at.above(pinAt(s, pins[pick.?])))) {
                 pick = i;
                 pick_d = d;
             }
@@ -173,13 +162,7 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
             continue;
         };
         defer gpa.free(path);
-        // A route holds six points: a longer path goes in pieces.
-        var k: usize = 0;
-        while (k + 1 < path.len) {
-            const end = @min(k + 5, path.len - 1);
-            assert(try c.commit(net, path[k .. end + 1]));
-            k = end;
-        }
+        assert(try c.commit(net, path));
         wired = true;
     }
     return first;
@@ -291,12 +274,6 @@ fn image(s: *const Schematic, among: []const u32, p: u32, axis2: i32) ?u32 {
 
 fn flip(p: Pt, axis2: i32) Pt {
     return .{ .x = axis2 - p.x, .y = p.y };
-}
-
-/// Higher, then further left.
-fn above(a: Pt, b: Pt) bool {
-    if (a.y != b.y) return a.y < b.y;
-    return a.x < b.x;
 }
 
 /// The distance from `at` to the nearest joined pin; the largest `u32`

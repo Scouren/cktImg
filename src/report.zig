@@ -372,9 +372,9 @@ fn inCircuit(nl: *const Netlist, sk: *const Skeleton, p: ?*const Placed, lib: ?*
         const drawing = p orelse return true;
         const l = lib orelse return true;
         const d = checks.deviceIn(drawing, c.edges.items(.name)[e.index()]) orelse return true;
-        const terms = l.at(drawing.dev_class[d]).terminals;
+        const class = l.at(drawing.dev_class[d]);
         for (c.members(e), 0..) |pin, k| {
-            if (pin.index() == net and k < terms.len and !terms[k].hidden) return true;
+            if (pin.index() == net and class.shows(k)) return true;
         }
     }
     return false;

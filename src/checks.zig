@@ -121,12 +121,11 @@ pub fn connected(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed,
         for (0..p.deviceCount()) |d| {
             const class = lib.at(p.dev_class[d]);
             const lo, const hi = p.pinRange(d);
-            for (lo..@min(hi, lo + class.terminals.len)) |pin| {
-                const t = class.terminals[pin - lo];
-                if (p.pin_net[pin] != n or t.hidden) continue;
+            for (lo..hi) |pin| {
+                if (p.pin_net[pin] != n or !class.shows(pin - lo)) continue;
                 pins += 1;
                 const at = try uf.node(gpa, &index, &parent, &where, p.pin_xy[pin]);
-                if (hi - lo == 1 or t.ground_ref) uf.join(parent.items, at, 0);
+                if (hi - lo == 1 or class.terminals[pin - lo].ground_ref) uf.join(parent.items, at, 0);
             }
         }
         if (pins < 2) continue;

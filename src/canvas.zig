@@ -15,15 +15,15 @@
 //! - `Canvas.commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool`, `Canvas.fits(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
 //! - `Canvas.wall(c: *Canvas) void`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
+//! - `Canvas.stub(c: *Canvas, kind: sch.NodeKind, net: u32, from: Pt, side: Side, d: i32) Allocator.Error!bool`, `Canvas.markAt(c: *Canvas, kind: sch.NodeKind, p: u32, toward: []const Side, d: i32) Allocator.Error!bool`
 //! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`, `Canvas.onNet(c: *const Canvas, net: u32, at: Pt) bool`
 //! - `Canvas.middle2(c: *const Canvas) i32`
 //! - `Canvas.save(c: *const Canvas) Checkpoint`, `Canvas.restore(c: *Canvas, cp: Checkpoint) void`
 //! - `pub const Line = struct`, `Line.of(pts: []const Pt) Line`, `Line.push(l: *Line, p: Pt) void`, `Line.slice(l: *const Line) []const Pt`
-//! - `pub fn pinAt(s: *const Schematic, p: u32) Pt`
-//! - `pub fn boxAt(s: *const Schematic, d: usize, at: Pt) Rect`
+//! - `pub fn pinAt(s: *const Schematic, p: u32) Pt`, `pub fn topLeft(s: *const Schematic, pins: []const u32) usize`
 //! - `pub fn stepPt(p: Pt, side: Side, d: i32) Pt`
 //! - `pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool`
-//! - `pub fn toPt(p: [2]f32) Pt`, `pub fn toF(p: Pt) [2]f32`
+//! - `pub fn ways(s: *const Schematic, pins: []const u32, lines: []const Line, at: Pt) u4`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -142,18 +142,24 @@ pub const Canvas = struct {
         c.points.deinit(c.gpa);
     }
 
-    /// Draws the polyline `pts` (two to six points) for `net` when every
-    /// piece fits; returns whether it did.
+    /// Draws the polyline `pts` (two points or more) for `net` when every
+    /// piece fits; returns whether it did, with nothing drawn when not. A
+    /// `Route` holds six points: a longer polyline is drawn as several, each
+    /// from the last one's end.
     pub fn commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool {
-        assert(pts.len >= 2 and pts.len <= 6);
+        assert(pts.len >= 2);
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| if (!c.fits(net, a, b)) return false;
         const before = c.segs.items.len;
         defer assert(c.segs.items.len == before + pts.len - 1);
-        var route: sch.Route = .{ .pts = undefined, .len = @intCast(pts.len), .net = net };
-        for (pts, 0..) |p, i| route.pts[i] = toF(p);
-        try c.s.routes.append(c.s.arena.allocator(), route);
-        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| try c.segs.append(c.gpa, .{ .a = a, .b = b, .net = net });
-        for (pts) |p| try c.points.append(c.gpa, .{ .at = p, .net = net });
+        var k: usize = 0;
+        while (k + 1 < pts.len) : (k += 5) {
+            const piece = pts[k..@min(k + 6, pts.len)];
+            var route: sch.Route = .{ .pts = undefined, .len = @intCast(piece.len), .net = net };
+            for (piece, 0..) |p, i| route.pts[i] = p.toF();
+            try c.s.routes.append(c.s.arena.allocator(), route);
+            for (piece[0 .. piece.len - 1], piece[1..]) |a, b| try c.segs.append(c.gpa, .{ .a = a, .b = b, .net = net });
+            for (piece) |p| try c.points.append(c.gpa, .{ .at = p, .net = net });
+        }
         return true;
     }
 
@@ -174,7 +180,7 @@ pub const Canvas = struct {
         }
         for (c.boxes) |bx| {
             // Through a body: its interior, its pins' edge excluded.
-            const inner: Rect = .{ .min = .{ .x = bx.min.x + 1, .y = bx.min.y + 1 }, .max = .{ .x = bx.max.x - 1, .y = bx.max.y - 1 } };
+            const inner = bx.grow(-1);
             if (inner.min.x > inner.max.x or inner.min.y > inner.max.y) continue;
             if (crossesInterior(inner, a, b)) return false;
         }
@@ -186,7 +192,7 @@ pub const Canvas = struct {
     pub fn leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void {
         const s = c.s;
         const node = try s.addNode(.{ .kind = kind, .ref = net, .group = none });
-        try c.xy.append(s.arena.allocator(), toF(at));
+        try c.xy.append(s.arena.allocator(), at.toF());
         // The list may have moved: pin points are read through `s.xy`.
         s.xy = c.xy.items;
         assert(s.xy.len == s.nodes.len);
@@ -203,13 +209,31 @@ pub const Canvas = struct {
         c.segs.items[c.segs.items.len - 1].wall = true;
     }
 
+    /// A `kind` node at the end of a stub of `d` out from `from` toward
+    /// `side`, which a port, a rail symbol and a name each are; false, with
+    /// nothing drawn, when the stub does not fit.
+    pub fn stub(c: *Canvas, kind: sch.NodeKind, net: u32, from: Pt, side: Side, d: i32) Allocator.Error!bool {
+        const end = stepPt(from, side, d);
+        if (!try c.commit(net, &.{ from, end })) return false;
+        try c.leaf(kind, net, end, side.opposite());
+        return true;
+    }
+
+    /// A `kind` node on a stub of `d` out from pin `p`, toward the first of
+    /// `toward` whose stub fits. When none does, a label on the pin itself,
+    /// and false.
+    pub fn markAt(c: *Canvas, kind: sch.NodeKind, p: u32, toward: []const Side, d: i32) Allocator.Error!bool {
+        const at = pinAt(c.s, p);
+        const net = c.s.pins.items(.net)[p];
+        for (toward) |side| if (try c.stub(kind, net, at, side, d)) return true;
+        try c.leaf(.label, net, at, c.s.pins.items(.side)[p].opposite());
+        return false;
+    }
+
     /// A label on a stub from pin `p`, or on the pin when the stub does not
     /// fit.
     pub fn labelAt(c: *Canvas, p: u32) Allocator.Error!void {
-        const at = pinAt(c.s, p);
-        const side = c.s.pins.items(.side)[p];
-        const net = c.s.pins.items(.net)[p];
-        if (!try c.stub(.label, net, at, side, c.len.label)) try c.leaf(.label, net, at, side.opposite());
+        _ = try c.markAt(.label, p, &.{c.s.pins.items(.side)[p]}, c.len.label);
     }
 
     /// An output's or input's port on a stub out from `from`: toward the
@@ -231,26 +255,12 @@ pub const Canvas = struct {
         if (c.fits(net, from, from)) {
             try c.leaf(.label, net, from, (free orelse asked).opposite());
         } else {
-            // The net's top-left pin: by place, so card order changes nothing.
-            var first: ?u32 = null;
-            for (c.s.pins.items(.net), 0..) |n, p| {
-                if (n != net) continue;
-                const a = pinAt(c.s, @intCast(p));
-                const b = if (first) |f| pinAt(c.s, f) else a;
-                if (first == null or a.y < b.y or (a.y == b.y and a.x < b.x)) first = @intCast(p);
-            }
-            try c.labelAt(first.?);
+            // Every pin of the net drawn so far, a symbol's or a name's too.
+            var all: std.ArrayList(u32) = .empty;
+            defer all.deinit(c.gpa);
+            for (c.s.pins.items(.net), 0..) |n, p| if (n == net) try all.append(c.gpa, @intCast(p));
+            try c.labelAt(all.items[topLeft(c.s, all.items)]);
         }
-    }
-
-    /// A `kind` node at the end of a stub of `d` out from `from` toward
-    /// `side`, which a port, a rail symbol and a name each are; false, with
-    /// nothing drawn, when the stub does not fit.
-    fn stub(c: *Canvas, kind: sch.NodeKind, net: u32, from: Pt, side: Side, d: i32) Allocator.Error!bool {
-        const end = stepPt(from, side, d);
-        if (!try c.commit(net, &.{ from, end })) return false;
-        try c.leaf(kind, net, end, side.opposite());
-        return true;
     }
 
     /// Whether a stub of `terminal` out from `from` toward `side` runs along
@@ -296,25 +306,25 @@ pub const Canvas = struct {
 pub fn pinAt(s: *const Schematic, p: u32) Pt {
     assert(p < s.pins.len);
     assert(s.pins.items(.home)[p] < s.xy.len);
-    return toPt(s.pinPoint(p));
+    return .round(s.pinPoint(p));
 }
 
-/// Device `d`'s symbol as it is turned (`orient`, `grid`: settled), with
-/// its grid point at `at`.
-pub fn boxAt(s: *const Schematic, d: usize, at: Pt) Rect {
-    const info = s.devices.slice();
-    return info.items(.orient)[d].applyRect(s.lib.at(info.items(.class)[d]).bbox()).translate(at.sub(info.items(.grid)[d]));
+/// The index in `pins` of the topmost pin, then the leftmost: a net's first
+/// pin by place, so the order of the cards chooses nothing. Asserts a pin.
+pub fn topLeft(s: *const Schematic, pins: []const u32) usize {
+    assert(pins.len >= 1);
+    var first: usize = 0;
+    for (pins, 0..) |p, i| if (pinAt(s, p).above(pinAt(s, pins[first]))) {
+        first = i;
+    };
+    return first;
 }
 
 /// `d` from `p` toward `side`.
 pub fn stepPt(p: Pt, side: Side, d: i32) Pt {
     assert(d >= 0);
-    return switch (side) {
-        .left => .{ .x = p.x - d, .y = p.y },
-        .right => .{ .x = p.x + d, .y = p.y },
-        .up => .{ .x = p.x, .y = p.y - d },
-        .down => .{ .x = p.x, .y = p.y + d },
-    };
+    const u = side.unit();
+    return .{ .x = p.x + d * u.x, .y = p.y + d * u.y };
 }
 
 /// Whether every line fits for `net` (`Canvas.fits`).
@@ -326,14 +336,25 @@ pub fn linesFit(c: *const Canvas, net: u32, lines: []const Line) bool {
     return true;
 }
 
-/// A node's point (`Schematic.xy`) on the drawing's whole units: the nearest.
-pub fn toPt(p: [2]f32) Pt {
-    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
-}
-
-/// A whole point as `Schematic.xy` and a `Route` hold one.
-pub fn toF(p: Pt) [2]f32 {
-    return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
+/// The ways a net leaves `at`, bit `@backingInt(side)` for each `Side`:
+/// along each of its `lines` (one ending there is one way, one through it
+/// two) and, for each of its `pins` standing there, toward the pin's device,
+/// back from the side the pin faces. Zero for a point off them all.
+pub fn ways(s: *const Schematic, pins: []const u32, lines: []const Line, at: Pt) u4 {
+    var out: u4 = 0;
+    for (pins) |p| {
+        if (pinAt(s, p).eql(at)) out |= @as(u4, 1) << @backingInt(s.pins.items(.side)[p].opposite());
+    }
+    for (lines) |*l| {
+        const pts = l.slice();
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| {
+            const r = Rect.fromCorners(a, b);
+            if (!r.contains(at)) continue;
+            out |= @as(u4, @intFromBool(r.min.x < at.x)) | @as(u4, @intFromBool(r.max.x > at.x)) << 1 |
+                @as(u4, @intFromBool(r.min.y < at.y)) << 2 | @as(u4, @intFromBool(r.max.y > at.y)) << 3;
+        }
+    }
+    return out;
 }
 
 // ---- private ----
@@ -357,4 +378,34 @@ test "lengths: units scale to whole target units, at least 1" {
     try std.testing.expectEqual(2, at3.label);
     try std.testing.expectEqual(1, at3.clearance);
     try std.testing.expectEqual(1, at3.stack);
+}
+
+test "canvas: a polyline longer than a route holds is drawn as several, whole or not at all" {
+    const gpa = std.testing.allocator;
+    var lib: library.Library = .init(gpa);
+    defer lib.deinit();
+    var s: Schematic = .{ .arena = .init(gpa), .lib = &lib, .device_kind = &.{}, .device_name = &.{}, .net_name = &.{ "a", "b" }, .device_pin_count = &.{}, .roles = &.{ .internal, .internal } };
+    defer s.deinit();
+    var xy: std.ArrayList([2]f32) = .empty;
+    // Net b has a point at (60, 80).
+    var c: Canvas = try .init(gpa, &s, &xy, .of(.{}, 40), &.{}, &.{.{ .at = .{ .x = 60, .y = 80 }, .net = 1 }});
+    defer c.deinit();
+    // The oracle, by hand: nine points of a staircase are a route of six
+    // and one of four, the sixth point in both.
+    var stairs: [9]Pt = undefined;
+    for (&stairs, 0..) |*p, i| p.* = .{ .x = @intCast(10 * ((i + 1) / 2)), .y = @intCast(10 * (i / 2)) };
+    try std.testing.expect(try c.commit(0, &stairs));
+    try std.testing.expectEqual(2, s.routes.items.len);
+    try std.testing.expectEqual(6, s.routes.items[0].len);
+    try std.testing.expectEqual(4, s.routes.items[1].len);
+    try std.testing.expectEqual(stairs[5].toF(), s.routes.items[1].pts[0]);
+    try std.testing.expectEqual(stairs[8].toF(), s.routes.items[1].pts[3]);
+    try std.testing.expectEqual(8, c.segs.items.len);
+    // Seven points whose last piece runs through net b's point: the first
+    // six fit, and nothing is drawn.
+    const through = [_]Pt{ .{ .x = 0, .y = 50 }, .{ .x = 10, .y = 50 }, .{ .x = 10, .y = 60 }, .{ .x = 20, .y = 60 }, .{ .x = 20, .y = 80 }, .{ .x = 30, .y = 80 }, .{ .x = 90, .y = 80 } };
+    try std.testing.expect(!try c.commit(0, &through));
+    try std.testing.expectEqual(2, s.routes.items.len);
+    try std.testing.expectEqual(8, c.segs.items.len);
+    try std.testing.expect(try c.commit(0, through[0..6]));
 }

@@ -17,7 +17,6 @@ const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const canvas = @import("canvas.zig");
-const routes = @import("routes.zig");
 
 const Pt = library.Pt;
 const Side = library.Side;
@@ -171,11 +170,8 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
         try c.port(net, from, side);
         return true;
     }
-    const to = stepPt(from, side, reach);
-    if (!try c.commit(net, &.{ from, to })) return nameOnPin(c, pins);
     // A bias net's name is a port, as people draw it.
-    try c.leaf(if (role == .bias) .terminal else .label, net, to, side.opposite());
-    return true;
+    return try c.stub(if (role == .bias) .terminal else .label, net, from, side, reach) or try nameOnPin(c, pins);
 }
 
 // ---- private ----
@@ -183,7 +179,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
 /// The part's name at its top-left pin, by place, so card order changes
 /// nothing: the wire has no free end to carry it.
 fn nameOnPin(c: *Canvas, pins: []const u32) !bool {
-    try c.labelAt(pins[routes.topLeft(c.s, pins)]);
+    try c.labelAt(pins[canvas.topLeft(c.s, pins)]);
     return true;
 }
 
@@ -232,29 +228,8 @@ fn corners(s: *const Schematic, pins: []const u32, lines: []const Line) ?u32 {
             for (pts[0..if (mi == li) pi else pts.len]) |o| if (o.eql(p)) break :seen true;
         } else false;
         if (seen) continue;
-        // The ways out: left, right, up, down. A pin's device is one, back
-        // from the side it faces.
-        var arms: u4 = 0;
-        for (pins) |pin| if (pinAt(s, pin).eql(p)) {
-            arms |= switch (s.pins.items(.side)[pin]) {
-                .right => 1,
-                .left => 2,
-                .down => 4,
-                .up => 8,
-            };
-        };
-        for (lines) |*m| {
-            const pts = m.slice();
-            for (pts[0 .. pts.len - 1], pts[1..]) |a, b| {
-                if (p.x < @min(a.x, b.x) or p.x > @max(a.x, b.x) or p.y < @min(a.y, b.y) or p.y > @max(a.y, b.y)) continue;
-                for ([_]Pt{ a, b }) |e| {
-                    if (e.x < p.x) arms |= 1;
-                    if (e.x > p.x) arms |= 2;
-                    if (e.y < p.y) arms |= 4;
-                    if (e.y > p.y) arms |= 8;
-                }
-            }
-        }
+        // The ways out: bits 0 and 1 along the row, 2 and 3 along the column.
+        const arms = canvas.ways(s, pins, lines, p);
         if (@popCount(arms) < 2) return null;
         count += @intFromBool(@popCount(arms) == 2 and arms & 3 != 0 and arms & 12 != 0);
     };
@@ -374,13 +349,8 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
         if (done) continue;
         const at = pinAt(s, p);
         const line: Line = switch (lay) {
-            .column => .of(&.{.{ .x = at.y, .y = at.x }}),
-            .upright => wayTo(.{ .x = at.y, .y = at.x }, switch (sides[p]) {
-                .left => .up,
-                .up => .left,
-                .right => .down,
-                .down => .right,
-            }, t, gap),
+            .column => .of(&.{at.transposed()}),
+            .upright => wayTo(at.transposed(), sides[p].transposed(), t, gap),
             .rungs, .level => wayTo(at, sides[p], t, gap),
         };
         // A pin on the trunk already needs no line of its own.
@@ -396,7 +366,9 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
     for (ends.items[0 .. ends.items.len - 1], ends.items[1..]) |a, b| {
         if (a != b) try lines.append(gpa, .of(&.{ .{ .x = a, .y = y }, .{ .x = b, .y = y } }));
     }
-    if (upright) for (lines.items) |*l| for (l.pts[0..l.len]) |*pt| std.mem.swap(i32, &pt.x, &pt.y);
+    if (upright) for (lines.items) |*l| for (l.pts[0..l.len]) |*pt| {
+        pt.* = pt.transposed();
+    };
     // A column's port goes out sideways from it, at its tap.
     if (lay == .column) {
         lo.* = y;

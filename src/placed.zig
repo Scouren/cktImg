@@ -39,6 +39,8 @@ const ClassId = library.ClassId;
 const Library = library.Library;
 const Schematic = sch.Schematic;
 const EdgeId = netlist_mod.EdgeId;
+const round = Pt.round;
+const toF = Pt.toF;
 
 /// A pin on no net, or a label about no net.
 pub const no_net: u32 = std.math.maxInt(u32);
@@ -69,7 +71,7 @@ pub const Placed = struct {
     dev_pin0: []const u32,
 
     // --- pins ---
-    /// `no_net` for a pin the card had but the class has no terminal for.
+    /// Each card pin's net, a pin the class has no terminal for too.
     pin_net: []const u32,
     /// The class terminal, placed; the device origin when there is none.
     pin_xy: []const Pt,
@@ -126,7 +128,7 @@ pub const Placed = struct {
 
     /// Device `d`'s symbol box, placed.
     pub fn deviceRect(self: *const Placed, lib: *const Library, d: usize) Rect {
-        return self.dev_orient[d].applyRect(lib.at(self.dev_class[d]).bbox()).translate(self.dev_pos[d]);
+        return lib.at(self.dev_class[d]).box(self.dev_orient[d], self.dev_pos[d]);
     }
 
     /// Everything drawn: symbols, wires, dots, label points, crosses. Null
@@ -467,14 +469,6 @@ fn strictlyInside(p: Pt, u: Pt, v: Pt) bool {
     if (u.x == v.x) return p.x == u.x and p.y > @min(u.y, v.y) and p.y < @max(u.y, v.y);
     if (u.y == v.y) return p.y == u.y and p.x > @min(u.x, v.x) and p.x < @max(u.x, v.x);
     return false;
-}
-
-fn round(p: [2]f32) Pt {
-    return .{ .x = @intFromFloat(@round(p[0])), .y = @intFromFloat(@round(p[1])) };
-}
-
-fn toF(p: Pt) [2]f32 {
-    return .{ @floatFromInt(p.x), @floatFromInt(p.y) };
 }
 
 /// Which way a terminal's or label's name runs: away from its wire.

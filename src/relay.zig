@@ -26,7 +26,6 @@ const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
 const pinned = @import("pinned.zig");
-const canvas = @import("canvas.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -69,7 +68,7 @@ pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []con
     for (boxes, 0..) |*b, d| {
         if (!sk.drawn[d]) continue;
         const p: Pt = .{ .x = out[@intCast(sk.x[d])], .y = out[xs.len + @as(usize, @intCast(sk.y[d]))] };
-        b.* = canvas.boxAt(s, d, p);
+        b.* = s.boxAt(d, p);
         for (boxes[0..d], 0..) |other, e| if (sk.drawn[e] and b.intersects(other)) return false;
     }
     for (at, 0..) |*p, d| if (sk.drawn[d]) {

@@ -12,13 +12,12 @@ const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
+const canvas = @import("canvas.zig");
 
 const Pt = library.Pt;
-const Side = library.Side;
 const Schematic = sch.Schematic;
+const Line = canvas.Line;
 const none = sch.none;
-
-const eps: f32 = 1e-4;
 
 /// The junction dots of `s`, each once, in `out`; overlapping wires of one
 /// net count once. `gpa` backs the work.
@@ -30,8 +29,7 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
     const al = scratch.allocator();
     const pin_net = s.pins.items(.net);
     const pin_dev = s.pins.items(.device);
-    const pin_side = s.pins.items(.side);
-    // Routes and device pins by net.
+    // Routes, on the target's units, and device pins by net.
     const nets = s.net_name.len;
     const r_off = try al.alloc(u32, nets + 1);
     const p_off = try al.alloc(u32, nets + 1);
@@ -45,52 +43,35 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
         r_off[i] += r_off[i - 1];
         p_off[i] += p_off[i - 1];
     }
-    const r_by_net = try al.alloc(u32, s.routes.items.len);
+    const lines = try al.alloc(Line, s.routes.items.len);
     const p_by_net = try al.alloc(u32, p_off[nets]);
     const rf = try al.dupe(u32, r_off[0..nets]);
-    for (s.routes.items, 0..) |r, i| {
-        r_by_net[rf[r.net]] = @intCast(i);
+    for (s.routes.items) |r| {
+        const l = &lines[rf[r.net]];
         rf[r.net] += 1;
+        l.* = .{};
+        for (r.pts[0..r.len]) |p| l.push(.round(p));
     }
     const pf = try al.dupe(u32, p_off[0..nets]);
     for (pin_net, pin_dev, 0..) |n, d, p| if (d != none) {
         p_by_net[pf[n]] = @intCast(p);
         pf[n] += 1;
     };
-    for (s.routes.items) |cr| for (cr.pts[0..cr.len]) |c| {
-        var dirs: [4]bool = @splat(false);
-        for (r_by_net[r_off[cr.net]..r_off[cr.net + 1]]) |ri| {
-            const r = s.routes.items[ri];
-            for (r.pts[0 .. r.len - 1], r.pts[1..r.len]) |u, v| {
-                if (near(u, v)) continue;
-                if (inside(c, u, v)) {
-                    const horiz = @abs(u[1] - v[1]) < eps;
-                    dirs[@backingInt(if (horiz) Side.left else Side.up)] = true;
-                    dirs[@backingInt(if (horiz) Side.right else Side.down)] = true;
-                } else if (near(c, u)) {
-                    dirs[@backingInt(toward(u, v))] = true;
-                } else if (near(c, v)) {
-                    dirs[@backingInt(toward(v, u))] = true;
-                }
-            }
-        }
-        for (p_by_net[p_off[cr.net]..p_off[cr.net + 1]]) |p| {
-            if (near(s.pinPoint(p), c)) dirs[@backingInt(pin_side[p].opposite())] = true;
-        }
-        var count: u32 = 0;
-        for (dirs) |x| count += @intFromBool(x);
-        if (count >= 3) try mark(out, &found, c);
+    for (s.routes.items) |r| for (r.pts[0..r.len]) |c| {
+        const at: Pt = .round(c);
+        const arms = canvas.ways(s, p_by_net[p_off[r.net]..p_off[r.net + 1]], lines[r_off[r.net]..r_off[r.net + 1]], at);
+        if (@popCount(arms) >= 3) try mark(out, &found, at);
     };
-    // A net's horizontal piece crossing one of its own vertical pieces,
-    // strictly inside both: four ways out of a point that is no route's.
-    for (s.routes.items) |hr| for (hr.pts[0 .. hr.len - 1], hr.pts[1..hr.len]) |a, b| {
-        if (@abs(a[1] - b[1]) >= eps or near(a, b)) continue;
-        for (r_by_net[r_off[hr.net]..r_off[hr.net + 1]]) |vi| {
-            const vr = s.routes.items[vi];
-            for (vr.pts[0 .. vr.len - 1], vr.pts[1..vr.len]) |c, d| {
-                if (@abs(c[0] - d[0]) >= eps or near(c, d)) continue;
-                const x: [2]f32 = .{ c[0], a[1] };
-                if (inside(x, a, b) and inside(x, c, d)) try mark(out, &found, x);
+    // A net's level piece crossing one of its own upright pieces, strictly
+    // inside both: four ways out of a point that is no route's.
+    for (s.routes.items) |r| for (r.pts[0 .. r.len - 1], r.pts[1..r.len]) |fa, fb| {
+        const a: Pt = .round(fa);
+        const b: Pt = .round(fb);
+        if (a.y != b.y) continue;
+        for (lines[r_off[r.net]..r_off[r.net + 1]]) |*l| {
+            const pts = l.slice();
+            for (pts[0 .. pts.len - 1], pts[1..]) |c, d| {
+                if (c.x == d.x and between(c.x, a.x, b.x) and between(a.y, c.y, d.y)) try mark(out, &found, .{ .x = c.x, .y = a.y });
             }
         }
     };
@@ -100,29 +81,15 @@ pub fn find(gpa: Allocator, out: Allocator, s: *const Schematic) Allocator.Error
 
 // ---- private ----
 
-/// A dot at `c`, rounded to the target's units, unless one is there.
-fn mark(out: Allocator, found: *std.ArrayList(Pt), c: [2]f32) Allocator.Error!void {
-    const at: Pt = .{ .x = @intFromFloat(@round(c[0])), .y = @intFromFloat(@round(c[1])) };
+/// A dot at `at`, unless one is there.
+fn mark(out: Allocator, found: *std.ArrayList(Pt), at: Pt) Allocator.Error!void {
     for (found.items) |j| {
         if (j.eql(at)) return;
     }
     try found.append(out, at);
 }
 
-fn near(p: [2]f32, q: [2]f32) bool {
-    return @abs(p[0] - q[0]) < eps and @abs(p[1] - q[1]) < eps;
-}
-
-/// Whether `p` lies strictly inside the axis-aligned segment u–v.
-fn inside(p: [2]f32, u: [2]f32, v: [2]f32) bool {
-    if (@abs(u[1] - v[1]) < eps) {
-        return @abs(p[1] - u[1]) < eps and p[0] > @min(u[0], v[0]) + eps and p[0] < @max(u[0], v[0]) - eps;
-    }
-    return @abs(p[0] - u[0]) < eps and p[1] > @min(u[1], v[1]) + eps and p[1] < @max(u[1], v[1]) - eps;
-}
-
-/// The way from `u` toward `v` along their segment.
-fn toward(u: [2]f32, v: [2]f32) Side {
-    if (@abs(u[1] - v[1]) < eps) return if (v[0] > u[0]) .right else .left;
-    return if (v[1] > u[1]) .down else .up;
+/// Whether `v` lies strictly between `a` and `b`.
+fn between(v: i32, a: i32, b: i32) bool {
+    return v > @min(a, b) and v < @max(a, b);
 }
