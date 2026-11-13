@@ -396,6 +396,33 @@ test "geom: a ground symbol carries no name; of two ground nets, the one that is
     try testing.expect(!np.geom.namesRail(&two, lib, zero));
 }
 
+test "placed: a negative supply named vee is drawn with the supply glyph, a ground with the ground's" {
+    // Oracle: the hand drawings. 470 of 477 `vee` rail symbols in 5,263
+    // hand-drawn schematics are the supply's glyph, below the pin
+    // (placed.9); `vss` keeps the ground's.
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    var p = try placeText(lib, "Negative supply\nR1 in out 1k\nR2 out vee 1k\nC1 out vss 1p\n");
+    defer p.deinit();
+    // Per net: supply glyphs, ground glyphs.
+    var vee: [2]u32 = .{ 0, 0 };
+    var vss: [2]u32 = .{ 0, 0 };
+    for (p.dev_class, p.dev_pin0[0..p.deviceCount()]) |c, pin| {
+        const k: usize = switch (lib.at(c).role) {
+            .power_rail => 0,
+            .ground_rail => 1,
+            else => continue,
+        };
+        const name = p.net_name[p.pin_net[pin]];
+        if (std.mem.eql(u8, name, "vee")) vee[k] += 1;
+        if (std.mem.eql(u8, name, "vss")) vss[k] += 1;
+    }
+    try testing.expect(vee[0] >= 1);
+    try testing.expectEqual(0, vee[1]);
+    try testing.expect(vss[1] >= 1);
+    try testing.expectEqual(0, vss[0]);
+}
+
 test "geom: a device's name stands on a side of its symbol no pin of it stands on" {
     // Oracle: the hand drawings. 40,958 of 45,982 named devices in 5,263
     // hand-drawn schematics carry the name on the first side no pin stands

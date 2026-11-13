@@ -46,6 +46,9 @@
 //!   there, so every wire that meets a dot ends on it and a netlister that
 //!   joins wires only at their ends (xschem) reads one net.
 //!   `splitAtJunctions`
+//! - placed.9 (habit) A sink named `vee…` is drawn with the supply's
+//!   glyph, below its pin, not the ground's. People: 470 of 477 `vee` rail
+//!   symbols in 5,263 hand-drawn schematics. `roleClass`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -477,7 +480,9 @@ const Builder = struct {
 pub fn roleClass(s: *const Schematic, net: u32) ?ClassId {
     const role: library.Role = switch (s.roles[net]) {
         .supply => .power_rail,
-        .sink => .ground_rail,
+        // A negative supply (`vee…`) is the sink by role, but people draw
+        // it with the supply glyph, below its pin (placed.9).
+        .sink => if (std.ascii.startsWithIgnoreCase(s.net_name[net], "vee")) .power_rail else .ground_rail,
         .input, .bias => .input_port,
         .output => .output_port,
         .internal => return null,
