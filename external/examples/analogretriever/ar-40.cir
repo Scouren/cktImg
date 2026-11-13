@@ -1,0 +1,11 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt dut Base Collector Emitter
+Cmu net0 Collector 1p
+Cpi net0 Emitter 1p
+G1 Collector Emitter net0 Emitter 1m
+Rb Base net0 1k
+Rmu net0 Collector 1k
+Ro Collector Emitter 1k
+Rpi net0 Emitter 1k
+.ends dut

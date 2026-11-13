@@ -1,0 +1,28 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model qnpn npn
+
+.subckt opamp VDD VSS VIP VIN VOUT params: gain=1e6 vhigh=5 vlow=-5
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(vhigh+(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12)))-sqrt((vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))*(vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))}
+.ends opamp
+
+* Potentiometer: end 1 to wiper r*pos, wiper to end 2 r*(1-pos)
+.subckt potentiometer n1 nw n2 params: r=10k pos=0.5
+R1 n1 nw {max(r*pos,1m)}
+R2 nw n2 {max(r*(1-pos),1m)}
+.ends potentiometer
+
+.subckt dut VSS Vin Vout
+.model icm_zener_DZ D(BV=4.7)
+DZ VSS net4 icm_zener_DZ
+Q1 net2 net5 Vout VSS qnpn m=1
+Q2 Vin net2 net5 VSS qnpn m=1
+R3 Vin net4 820kΩ
+R4 net5 Vout 3Ω
+R5 net3 net2 1kΩ
+R6 Vout net1 750Ω
+R7 net6 VSS 750Ω
+RL Vout VSS 1k
+X1 0 VSS net4 net0 net3 opamp gain=1e6
+X2 net1 net0 net6 potentiometer pos=0.5 r=1kΩ
+.ends dut

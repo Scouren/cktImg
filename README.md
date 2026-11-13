@@ -340,6 +340,15 @@ each one the engine does not honour.
 Each drawing below comes straight from its netlist, with no hand edits
 (`zig build gallery -- --svgs out/` regenerates them).
 
+**Beside a person's drawing.** The site at <https://scouren.github.io/cktImg/>
+(the pattern is `https://<owner>.github.io/<repo>/`) shows all 5,274 reference
+circuits of the [Analog Canvas](https://analog-canvas.tokenzhang.com) gallery,
+the drawing a person made beside the one cktImg makes from the same netlist,
+with both drawings' crossings, corners, wire length and written names, and the
+textbook circuits below. `.github/workflows/site.yml` rebuilds it on every push
+to `main` from the cached drawings in [`external/examples`](external/examples)
+(`python3 -I tools/site/build.py external/examples zig-out/bin site` locally).
+
 **Telescopic cascode OTA.** Two columns of four transistors, mirrored about
 the tail. The bias lines `vb2` and `vb3` are named wires between their gates;
 `vb1`, on the tail's one gate, is a label.
@@ -507,6 +516,8 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 | `src/` | The library: parser (`netlist.zig`, `hints.zig`), layout (`schematic.zig`, then `structure.zig`, `skeleton.zig`, `sketch.zig` and the files they name), result (`placed.zig`), symbol sets (`library.zig`), lint and render settings (`config.zig`), C ABI (`abi.zig`) |
 | `include/cktimg.h` | The C header |
 | `tools/` | `cktimg-json` and `cktimg-tex` |
+| `tools/site/` | The public site: `build.py` (static pages), `fetch.py` and `convert.py` (fill `external/examples`) |
+| `external/examples/` | The Analog Canvas reference circuits, cached: deck, drawing and preview of each |
 | `tools/schemify/` | The Schemify plugin: SPICE reader, cell mapping, layout through the engine, file writer, wasm glue, and Schemify's plugin ABI (`abi.zig`, vendored) |
 | `cktimg.wasm`, `schemify.project` | The built plugin and its package manifest (what `schemify pack` installs) |
 | `latex/cktimg.sty` | The LaTeX package |

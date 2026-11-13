@@ -1,0 +1,28 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VCM VCP VCN CLKC2 CLKs_bar CLKsDcal CLKsDcal_bar
+.model ideal_switch SW(RON=1 ROFF=1e12 VT=0.5 VH=0)
+C1 VDD net4 1p
+C2 net1 VSS 1p
+C3 net7 VSS 1p
+M1 net0 net7 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M10 net3 net6 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M11 net6 CLKC2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M12 net3 CLKC2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M13 net0 CLKC2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M14 net5 CLKC2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 net5 VCM net2 VSS nch l=0.15 w=1 nf=1 m=1
+M3 net2 CLKC2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 net0 VCP net8 VSS nch l=0.15 w=1 nf=1 m=1
+M5 net5 VCN net8 VSS nch l=0.15 w=1 nf=1 m=1
+M6 net8 CLKC2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M7 net6 net3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M8 net3 net6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M9 net6 net3 net0 VSS nch l=0.15 w=1 nf=1 m=1
+S1 VDD net4 CLKs_bar VSS ideal_switch
+S2 net4 net7 CLKsDcal VSS ideal_switch
+S3 net7 net1 CLKsDcal_bar VSS ideal_switch
+S4 net1 VSS CLKs_bar VSS ideal_switch
+.ends dut

@@ -1,0 +1,20 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt shockley a k params: vbo=10
+.model qn NPN(IS=1e-16 BF=100 VAF=100)
+.model qp PNP(IS=1e-16 BF=50 VAF=50)
+.model dj D(IS=1e-14 N=1)
+Q1 p2 n1 a qp
+Q2 n1 p2 k qn
+VBO n1 nz DC {vbo-1.9}
+DBO nz p2 dj
+RGK p2 k 1k
+CGK p2 k 10p
+.ends shockley
+
+.subckt dut VCC VSS vout
+C1 vout VSS 0.1uF
+R1 VCC net0 50kΩ
+R2 net0 vout 1kΩ
+X1 vout VSS shockley vbo=10
+.ends dut

@@ -1,0 +1,45 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model qnpn npn
+.model qpnp pnp
+
+.subckt dut VCC VEE VSS INP INN NULL1 NULL2 Output
+C1 net0 VX1 30pF
+Q1 net3 INP net7 VSS qnpn m=1
+Q10 net1 net11 net13 VSS qnpn m=1
+Q11 net11 net11 VEE VSS qnpn m=1
+Q12 net16 net16 VCC qpnp m=1
+Q13A net8 net16 VCC qpnp m=1
+Q13B net0 net16 VCC qpnp m=1
+Q14 VCC net8 net4 VSS qnpn m=1
+Q15 net8 net4 Output VSS qnpn m=1
+Q16 VCC VX1 net10 VSS qnpn m=1
+Q17 net0 net10 net15 VSS qnpn m=1
+Q18 net8 net8 net9 VSS qnpn m=1
+Q19 net8 net9 net6 VSS qnpn m=1
+Q2 net3 INN net12 VSS qnpn m=1
+Q20 VEE net6 net17 qpnp m=1
+Q21 VX2 net17 Output qpnp m=1
+Q22A VEE net0 VX1 qpnp m=1
+Q22B VEE net0 net6 qpnp m=1
+Q23 VX1 VX2 VEE VSS qnpn m=1
+Q24 VX2 VX2 VEE VSS qnpn m=1
+Q3 net14 net1 net7 qpnp m=1
+Q4 net2 net1 net12 qpnp m=1
+Q5 net14 net5 NULL1 VSS qnpn m=1
+Q6 net2 net5 NULL2 VSS qnpn m=1
+Q7 VCC net14 net5 VSS qnpn m=1
+Q8 net3 net3 VCC qpnp m=1
+Q9 net1 net3 VCC qpnp m=1
+R1 NULL1 VEE 1kΩ
+R10 net9 net6 50kΩ
+R11 VX2 VEE 50kΩ
+R12 net2 VX1 300Ω
+R2 NULL2 VEE 1kΩ
+R3 net5 VEE 50kΩ
+R4 net13 VEE 5kΩ
+R5 net16 net11 40kΩ
+R6 net4 Output 27Ω
+R7 Output net17 22Ω
+R8 net15 VEE 100Ω
+R9 net10 VEE 50kΩ
+.ends dut

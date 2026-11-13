@@ -1,0 +1,12 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt dut VDD VSS Vin Vb Vout
+C1 X VSS 1p
+C2 Y VSS 1p
+C3 Vout VSS 1p
+M1 Y X VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 Vout Vb Y VSS nch l=0.15 w=1 nf=1 m=1
+RL VDD Vout 1k
+RS Vin X 1k
+.ends dut

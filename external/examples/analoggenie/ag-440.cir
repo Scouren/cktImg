@@ -1,0 +1,27 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt PFD A B QA QB
+.ends PFD
+
+.subckt dut VDD VSS A B Vb2 Vb1 Vcont
+C Vcont VSS 1p
+M1 net1 Vb1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net0 Vb2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M3 Vcont QBDELTA net1 VSS nch l=0.15 w=1 nf=1 m=1
+M4 Vcont QA_bar net0 VDD pch l=0.15 w=1 nf=1 m=1
+M5 QB VDD QBDELTA VSS nch l=0.15 w=1 nf=1 m=1
+M6 QBDELTA VSS QB VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS QA QA_bar inverter td=10p vt=10m
+XPFD A B QA QB PFD
+.ends dut

@@ -1,0 +1,58 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt ea VDD VSS OUT INP INN VX2
+M12 net3 net3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M13 OUT net3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M14 net2 net8 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M15 net4 INN net2 VDD pch l=0.15 w=1 nf=1 m=1
+M16 VX2 INP net2 VDD pch l=0.15 w=1 nf=1 m=1
+M17 net3 VX2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 OUT net4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M19 net4 net4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M20 VX2 VX2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M21 net8 net8 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M22 net8 VB1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 VB1 net9 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M24 VB1 VB1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M25 net9 net9 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M26 net9 net5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M27 net5 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M28 VB2 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M29 VB2 net7 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M30 net0 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M31 net1 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M32 net0 net0 net7 VSS nch l=0.15 w=1 nf=1 m=1
+M33 net7 net0 net6 VSS nch l=0.15 w=1 nf=1 m=1
+M34 net6 net1 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M35 net5 net5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M36 net1 net1 net6 VSS nch l=0.15 w=1 nf=1 m=1
+.ends ea
+
+.subckt isr VDD VSS VC VB3 VA IOUT
+M10 IOUT net0 VA VDD pch l=0.15 w=1 nf=1 m=1
+M11 net1 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M6 net1 VC VA VDD pch l=0.15 w=1 nf=1 m=1
+M7 net1 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M8 net0 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M9 net0 net0 VA VDD pch l=0.15 w=1 nf=1 m=1
+.ends isr
+
+.subckt dut VDD VSS VIN VS5 VS1 VS2 VS3 VS4 VB3 VREF VP
+.model DIODE D(IS=1e-14 N=1)
+CFLY VX1 VX2 1p
+CO VP VN 1p
+COP VP VSS 1p
+D1 VN VX2 DIODE
+L1 VX1 VX3 1n
+M1 VX1 VS1 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M2 VX2 VS2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M3 VP VS3 VX3 VDD pch l=0.15 w=1 nf=1 m=1
+M4 VX3 VS4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 net0 VS5 VIN VDD pch l=0.15 w=1 nf=1 m=1
+R1 VP VFP1 1k
+R2 VFP1 VSS 1k
+X1 VDD VSS net1 VB3 net0 VX1 isr
+X2 VDD VSS net1 VREF VFP1 VX2 ea
+.ends dut

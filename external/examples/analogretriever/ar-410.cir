@@ -1,0 +1,15 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt icm_opamp_vdd_vss VDD VSS VIP VIN VOUT params: gain=1e6
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(V(VDD)+(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12)))-sqrt((V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))*(V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))}
+.ends icm_opamp_vdd_vss
+
+.subckt dut VDD VBIAS VSS Vo
+I1 VDD Vo DC 100uA
+M1 net0 net2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 Vo net1 net0 VSS nch l=0.15 w=1 nf=1 m=1
+Vi net2 VSS DC 1
+X1 VDD VSS VBIAS net0 net1 icm_opamp_vdd_vss gain=1e6
+.ends dut

@@ -1,0 +1,53 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VCONT1 VCONT2 VCONT3 VIN VCONT4 VCONT5 VP VB4 VB1 VB2 VREF VB3
+.model DIODE D(IS=1e-14 N=1)
+CFLY VX1 VX2 1p
+CO VP VN 1p
+COP VP VSS 1p
+D1 VN VX2 DIODE
+L1 VX1 VX3 1n
+M1 net0 VCONT1 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M2 VX1 VCONT2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M3 VX2 VCONT3 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M4 VX3 VCONT4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 VX3 VCONT5 VP VDD pch l=0.15 w=1 nf=1 m=1
+MN1 net9 VFP1 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN10 net12 VB4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN11 VB5 VB5 net11 VSS nch l=0.15 w=1 nf=1 m=1
+MN12 net11 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN13 VBP net4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN14 net6 net6 net4 VSS nch l=0.15 w=1 nf=1 m=1
+MN15 net4 net6 net5 VSS nch l=0.15 w=1 nf=1 m=1
+MN16 net8 net8 net5 VSS nch l=0.15 w=1 nf=1 m=1
+MN17 net5 net8 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+MN18 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN2 net7 VREF net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN3 net2 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN4 net10 VB5 VX1 VSS nch l=0.15 w=1 nf=1 m=1
+MN5 VEA VB5 net1 VSS nch l=0.15 w=1 nf=1 m=1
+MN6 VX1 net10 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN7 net1 net10 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN8 net12 net12 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN9 net3 net12 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MP1 VFP1 net9 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP10 net3 net3 net0 VDD pch l=0.15 w=1 nf=1 m=1
+MP11 VX1 net3 net0 VDD pch l=0.15 w=1 nf=1 m=1
+MP12 VB5 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP13 VBP VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP14 net6 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP15 net8 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP16 VB3 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP2 net14 net9 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP3 VN net7 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP4 net13 net7 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP5 net10 VB1 VFP1 VDD pch l=0.15 w=1 nf=1 m=1
+MP6 net9 VB1 net14 VDD pch l=0.15 w=1 nf=1 m=1
+MP7 net7 VB1 VN VDD pch l=0.15 w=1 nf=1 m=1
+MP8 VEA VB1 net13 VDD pch l=0.15 w=1 nf=1 m=1
+MP9 net12 VEA net0 VDD pch l=0.15 w=1 nf=1 m=1
+R1 VP VFP1 1k
+R2 VFP1 VSS 1k
+.ends dut

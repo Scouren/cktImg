@@ -1,0 +1,54 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VIN VB1 VB2 VREF VB5 VB6 VB4 VB3 VOUT
+CF1 VOUT VFB 1p
+Cm1 VOUT VO1 1p
+Cm2 VD VO1 1p
+M1 VM net0 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M10 net8 VN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 VD VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 net0 VFB VD VSS nch l=0.15 w=1 nf=1 m=1
+M13 net7 VREF VD VSS nch l=0.15 w=1 nf=1 m=1
+M14 VN VBN net2 VSS nch l=0.15 w=1 nf=1 m=1
+M15 net2 VN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M16 VX VB4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M17 VX VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 VX VO1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 VG net0 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M21 VM VO1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M22 VG VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 VM VM VIN VDD pch l=0.15 w=1 nf=1 m=1
+M24 VG VM VIN VDD pch l=0.15 w=1 nf=1 m=1
+M3 net5 net7 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M31 VBP VBP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M32 VBP net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M33 net9 VBP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M34 net9 net9 net3 VSS nch l=0.15 w=1 nf=1 m=1
+M35 net3 net9 net11 VSS nch l=0.15 w=1 nf=1 m=1
+M36 net10 VBP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M37 net10 net10 net11 VSS nch l=0.15 w=1 nf=1 m=1
+M38 VB3 VBP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M39 net11 net10 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+M4 net6 net7 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M40 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M41 VBN VBP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M42 VBN VBN net13 VSS nch l=0.15 w=1 nf=1 m=1
+M43 net13 VBN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 VO1 VB1 VM VDD pch l=0.15 w=1 nf=1 m=1
+M6 net0 VB1 VG VDD pch l=0.15 w=1 nf=1 m=1
+M7 net7 VB1 net5 VDD pch l=0.15 w=1 nf=1 m=1
+M8 VN VB1 net6 VDD pch l=0.15 w=1 nf=1 m=1
+M9 VO1 VBN net8 VSS nch l=0.15 w=1 nf=1 m=1
+MD1 VD VO1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD2 net1 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD3 net12 VD net1 VSS nch l=0.15 w=1 nf=1 m=1
+MD4 net4 VB6 net1 VSS nch l=0.15 w=1 nf=1 m=1
+MD5 net12 net12 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD6 net4 net4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD7 VD net4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MPT VOUT VG VIN VDD pch l=0.15 w=1 nf=1 m=1
+RF1 VOUT VFB 1k
+RF2 VFB VSS 1k
+.ends dut

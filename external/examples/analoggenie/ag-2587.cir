@@ -1,0 +1,38 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt opamp VDD VSS INP INN OUT TAIL VB1 VB2 VB3
+M10 TAIL VB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M11 net5 INP TAIL VDD pch l=0.15 w=1 nf=1 m=1
+M12 net2 INN TAIL VDD pch l=0.15 w=1 nf=1 m=1
+M13 net6 VB3 net7 VDD pch l=0.15 w=1 nf=1 m=1
+M14 OUT VB3 net8 VDD pch l=0.15 w=1 nf=1 m=1
+M15 net6 VC net5 VSS nch l=0.15 w=1 nf=1 m=1
+M16 OUT VC net2 VSS nch l=0.15 w=1 nf=1 m=1
+M17 net5 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 net2 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M19 VC net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M20 net0 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M21 net1 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M22 net0 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 net4 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M24 VC VC net3 VSS nch l=0.15 w=1 nf=1 m=1
+M25 net3 VC VSS VSS nch l=0.15 w=1 nf=1 m=1
+M8 net7 net6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M9 net8 net6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+R3 net1 net4 1k
+.ends opamp
+
+.subckt dut VDD VSS Vref Vout biasp biascas biasn VB1 VB2 VB3
+C1 Vset VSS 1p
+C2 n3 Vout 1p
+M1 Vout n3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 n1 Vset Vout VDD pch l=0.15 w=1 nf=1 m=1
+M3 n1 biasn VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 n3 biasp VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 n3 biascas n1 VSS nch l=0.15 w=1 nf=1 m=1
+R1 fb VSS 1k
+R2 Vout fb 1k
+X1 VDD VSS Vref fb Vset n3 VB1 VB2 VB3 opamp
+.ends dut

@@ -1,0 +1,58 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt dut VDD VSS A0 B0 A1 B1 A2 B2 A3 B3 EQ
+M1 net15 A0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M10 VX net13 net19 VSS nch l=0.15 w=1 nf=1 m=1
+M11 net12 net22 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 VX B1 net12 VSS nch l=0.15 w=1 nf=1 m=1
+M13 net18 net22 net16 VSS nch l=0.15 w=1 nf=1 m=1
+M14 net16 net13 VX VSS nch l=0.15 w=1 nf=1 m=1
+M15 net18 A1 net27 VSS nch l=0.15 w=1 nf=1 m=1
+M16 net27 B1 VX VSS nch l=0.15 w=1 nf=1 m=1
+M17 net5 A2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 net1 net8 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M19 net24 net17 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net18 net6 net15 VSS nch l=0.15 w=1 nf=1 m=1
+M20 net1 B2 net24 VSS nch l=0.15 w=1 nf=1 m=1
+M21 VX net17 net3 VSS nch l=0.15 w=1 nf=1 m=1
+M22 net3 net8 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M23 VX A2 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M24 net0 B2 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M25 net26 A3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M26 net2 net21 net26 VSS nch l=0.15 w=1 nf=1 m=1
+M27 net4 net20 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M28 net2 B3 net4 VSS nch l=0.15 w=1 nf=1 m=1
+M29 net1 net20 net23 VSS nch l=0.15 w=1 nf=1 m=1
+M3 net10 net11 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M30 net23 net21 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M31 net1 A3 net14 VSS nch l=0.15 w=1 nf=1 m=1
+M32 net14 B3 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M33 net2 net7 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M4 net18 B0 net10 VSS nch l=0.15 w=1 nf=1 m=1
+M5 VDD net11 net9 VSS nch l=0.15 w=1 nf=1 m=1
+M6 net9 net6 net18 VSS nch l=0.15 w=1 nf=1 m=1
+M7 VDD A0 net25 VSS nch l=0.15 w=1 nf=1 m=1
+M8 net25 B0 net18 VSS nch l=0.15 w=1 nf=1 m=1
+M9 net19 A1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS A0 net11 inverter td=10p vt=10m
+X10 VDD VSS net7 EQ inverter td=10p vt=10m
+X2 VDD VSS B0 net6 inverter td=10p vt=10m
+X3 VDD VSS A1 net22 inverter td=10p vt=10m
+X4 VDD VSS B1 net13 inverter td=10p vt=10m
+X5 VDD VSS A2 net17 inverter td=10p vt=10m
+X6 VDD VSS B2 net8 inverter td=10p vt=10m
+X7 VDD VSS A3 net20 inverter td=10p vt=10m
+X8 VDD VSS B3 net21 inverter td=10p vt=10m
+X9 VDD VSS net2 net7 inverter td=10p vt=10m
+.ends dut

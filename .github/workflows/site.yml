@@ -1,0 +1,51 @@
+name: site
+
+# The public site: every Analog Canvas reference circuit (external/examples), the
+# person's drawing beside cktImg's, and the textbook circuits. Built from main only;
+# the hand drawings come from the committed cache, never from Analog Canvas.
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deployment at a time; a running one finishes before the next starts.
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4.4.0
+
+      - uses: mlugg/setup-zig@d1434d08867e3ee9daa34448df10607b98908d29 # v2.2.1
+        with:
+          version: 0.17.0
+
+      - name: Engine
+        run: zig build -Doptimize=ReleaseSafe
+
+      - name: Site
+        run: |
+          python3 -I tools/site/build.py external/examples zig-out/bin site
+          du -sm --apparent-size site | awk '{print "site: " $1 " MB"; if ($1 >= 800) exit 1}'
+
+      - uses: actions/upload-pages-artifact@7b1f4a764d45c48632c6b24a0339c27f5614fb0b # v4.0.0
+        with:
+          path: site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-24.04
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - id: deployment
+        uses: actions/deploy-pages@d6db90164ac5ed86f2b6aed7e0febac5b3c0c03e # v4.0.5

@@ -1,0 +1,38 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut V+ V- In+ In- Out
+C1 net7 Out 1pF
+C2 Out net15 1pF
+I1 net0 V- DC 20uA
+M1 net16 net0 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M10 net11 In- net9 V- nch l=0.15 w=1 nf=1 m=1
+M11 net11 net0 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M12 net2 net0 net11 V+ pch l=0.15 w=1 nf=1 m=1
+M13 net5 net0 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M14 net7 net0 net5 V+ pch l=0.15 w=1 nf=1 m=1
+M15 net2 net2 net18 V- nch l=0.15 w=1 nf=1 m=1
+M16 net18 net2 V- V- nch l=0.15 w=1 nf=1 m=1
+M17 net15 net2 net10 V- nch l=0.15 w=1 nf=1 m=1
+M18 net10 net2 V- V- nch l=0.15 w=1 nf=1 m=1
+M19 net15 net6 net7 V+ pch l=0.15 w=1 nf=1 m=1
+M2 net0 net0 net16 V+ pch l=0.15 w=1 nf=1 m=1
+M20 net6 net8 V- V- nch l=0.15 w=1 nf=1 m=1
+M21 net17 net17 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M22 net6 net6 net17 V+ pch l=0.15 w=1 nf=1 m=1
+M23 net7 net1 net15 V- nch l=0.15 w=1 nf=1 m=1
+M24 net1 net0 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M25 net1 net1 net14 V- nch l=0.15 w=1 nf=1 m=1
+M26 net14 net14 V- V- nch l=0.15 w=1 nf=1 m=1
+M27 Out net7 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M29 Out net15 V- V- nch l=0.15 w=1 nf=1 m=1
+M3 net4 net0 V+ V+ pch l=0.15 w=1 nf=1 m=1
+M4 net13 net0 net4 V+ pch l=0.15 w=1 nf=1 m=1
+M5 net8 net13 net12 V- nch l=0.15 w=1 nf=1 m=1
+M6 net12 net8 V- V- nch l=0.15 w=1 nf=1 m=1
+M7 net9 net13 net3 V- nch l=0.15 w=1 nf=1 m=1
+M8 net3 net8 V- V- nch l=0.15 w=1 nf=1 m=1
+M9 net5 In+ net9 V- nch l=0.15 w=1 nf=1 m=1
+R1 net13 net8 10kΩ
+.ends dut

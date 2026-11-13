@@ -1,0 +1,42 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt Bias_Circuit VDD VSS VCTRL VBT
+M13 VCTRL net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M14 net2 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M15 net0 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M16 VBT net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M17 VCTRL net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 net2 VCTRL net1 VSS nch l=0.15 w=1 nf=1 m=1
+M19 net0 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M20 VBT VBT VSS VSS nch l=0.15 w=1 nf=1 m=1
+R1 net1 VSS 1k
+.ends Bias_Circuit
+
+.subckt Error_Amplifier VDD VSS VREF VEA VBT
+M10 VEA VEA VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 net1 VEA net2 VSS nch l=0.15 w=1 nf=1 m=1
+M12 net2 VBT VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 net0 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 VEA net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M6 VEA net1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M7 net1 net1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M8 net0 VREF net2 VSS nch l=0.15 w=1 nf=1 m=1
+M9 VEA VEA VSS VSS nch l=0.15 w=1 nf=1 m=1
+.ends Error_Amplifier
+
+.subckt dut VDD VSS VIN VOUT pb VREF nb
+M1 net4 VEA VIN VDD pch l=0.15 w=1 nf=1 m=1
+M2 net3 net3 net4 VDD pch l=0.15 w=1 nf=1 m=1
+M3 net3 nb VSS VSS nch l=0.15 w=1 nf=1 m=1
+MBIAS VERR nb VSS VSS nch l=0.15 w=1 nf=1 m=1
+MCHG net0 pb VIN VDD pch l=0.15 w=1 nf=1 m=1
+MCTRL VERR net3 VOUT VDD pch l=0.15 w=1 nf=1 m=1
+MGEN net1 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MINJ VERR net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MRES VOUT VERR VIN VDD pch l=0.15 w=1 nf=1 m=1
+MSEN net1 VEA net0 VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS VREF VEA net2 Error_Amplifier
+X2 VDD VSS net3 net2 Bias_Circuit
+.ends dut

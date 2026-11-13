@@ -1,0 +1,17 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt ujt e b1 b2 params: rbb=7k eta=0.65
+.model de D(IS=1e-14 N=1)
+RB1 nb b1 {rbb*eta}
+RB2 b2 nb {rbb*(1-eta)}
+DE e nb de
+.ends ujt
+
+.subckt dut VBB VSS Vin Vout
+C1 net1 VSS 1p
+R1 VBB net2 1k
+R2 net2 net1 1k
+R3 VBB net0 1k
+R4 Vout VSS 1k
+X1 Vin Vout net0 ujt eta=0.65 rbb=7k
+.ends dut

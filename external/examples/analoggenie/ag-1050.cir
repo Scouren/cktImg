@@ -1,0 +1,42 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal and-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt and_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(V(hA)*V(hB))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends and_gate
+
+.subckt dut VDD VSS Dip Din Vinm Vinp CLK CMPoutm CAL CMPoutp
+.model ideal_switch SW(RON=1 ROFF=1e12 VT=0.5 VH=0)
+VB1 net6 VSS DC 1
+CH net0 VSS 1p
+ICP1 VDD net2 DC 1m
+ICP2 net8 VSS DC 1m
+M1 Dip Vinm net1 VSS nch l=0.15 w=1 nf=1 m=1
+M10 CMPoutm CMPoutp net7 VDD pch l=0.15 w=1 nf=1 m=1
+M11 CMPoutp CMPoutm net4 VDD pch l=0.15 w=1 nf=1 m=1
+M12 net7 Dip VSS VSS nch l=0.15 w=1 nf=1 m=1
+M13 net4 Din VSS VSS nch l=0.15 w=1 nf=1 m=1
+M14 net7 Dip VDD VDD pch l=0.15 w=1 nf=1 m=1
+M15 net4 Din VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 Din Vinp net1 VSS nch l=0.15 w=1 nf=1 m=1
+M3 Dip CLK VDD VDD pch l=0.15 w=1 nf=1 m=1
+M4 Din CLK VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 net1 CLK VSS VSS nch l=0.15 w=1 nf=1 m=1
+M6 CMPoutm CMPoutp VSS VSS nch l=0.15 w=1 nf=1 m=1
+M7 CMPoutp CMPoutm VSS VSS nch l=0.15 w=1 nf=1 m=1
+M8 CMPoutm Dip VSS VSS nch l=0.15 w=1 nf=1 m=1
+M9 CMPoutp Din VSS VSS nch l=0.15 w=1 nf=1 m=1
+MC1 Dip net6 net1 VSS nch l=0.15 w=1 nf=1 m=1
+MC2 Din net0 net1 VSS nch l=0.15 w=1 nf=1 m=1
+S1 net2 net0 net5 VSS ideal_switch
+S2 net0 net8 net3 VSS ideal_switch
+X1 VDD VSS CMPoutm CAL net5 and_gate td=10p vt=10m
+X2 VDD VSS CMPoutp CAL net3 and_gate td=10p vt=10m
+.ends dut

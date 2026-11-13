@@ -1,0 +1,53 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VC1 VC2 VC3 VIN VC5 VC4 VP VB4 VB2 VREF
+.model DIODE D(IS=1e-14 N=1)
+CFLY VX1 VX2 1p
+CO VP VN 1p
+COP VP VSS 1p
+D1 VN VX2 DIODE
+L1 VX1 VX3 1n
+M1 VX1 VC2 VIN VIN pch l=0.15 w=1 nf=1 m=1
+M10 VA VA VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 VA VB4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 net9 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M13 VG1 VFP1 net9 VA pch l=0.15 w=1 nf=1 m=1
+M14 net1 VREF net9 VA pch l=0.15 w=1 nf=1 m=1
+M15 VD1 net7 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M16 VD2 net7 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M17 net7 VB1 VD1 VDD pch l=0.15 w=1 nf=1 m=1
+M18 VEA VB1 VD2 VDD pch l=0.15 w=1 nf=1 m=1
+M19 VG1 VB5 VX1 VSS nch l=0.15 w=1 nf=1 m=1
+M2 VX2 VC3 VIN VIN pch l=0.15 w=1 nf=1 m=1
+M20 VX1 VG1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M21 net1 VB5 net8 VSS nch l=0.15 w=1 nf=1 m=1
+M22 net8 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 net7 VB5 net10 VSS nch l=0.15 w=1 nf=1 m=1
+M24 net10 net1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M25 VEA VB5 net4 VSS nch l=0.15 w=1 nf=1 m=1
+M26 net4 VG1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M27 VB5 VB6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M28 VB5 VB5 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M29 net5 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 VX3 VC5 VP VP pch l=0.15 w=1 nf=1 m=1
+M30 VB6 VB6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M31 VB6 VD2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M32 VD1 VB6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M33 VD1 VD1 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M34 net0 VD1 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+M35 net6 VB6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M36 net6 net6 VD2 VSS nch l=0.15 w=1 nf=1 m=1
+M37 VD2 net6 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M38 VB3 VB6 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M39 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 VX3 VC4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 net3 VC1 VIN VIN pch l=0.15 w=1 nf=1 m=1
+M6 VX1 net2 net3 net3 pch l=0.15 w=1 nf=1 m=1
+M7 net2 net2 net3 net3 pch l=0.15 w=1 nf=1 m=1
+M8 VA VEA net3 net3 pch l=0.15 w=1 nf=1 m=1
+M9 net2 VA VSS VSS nch l=0.15 w=1 nf=1 m=1
+R1 VP VFP1 1k
+R2 VFP1 VSS 1k
+.ends dut

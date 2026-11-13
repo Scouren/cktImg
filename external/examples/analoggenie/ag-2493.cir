@@ -1,0 +1,50 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VB1 VREF VIN VB3 VB4 VB6 VB5 VOUT
+CF1 VOUT VFB 1p
+Cm1 VOUT VX 1p
+Cm2 VX net0 1p
+M1 VY VC VIN VDD pch l=0.15 w=1 nf=1 m=1
+M10 net11 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M11 net7 VB1 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M12 net8 VFB net7 VDD pch l=0.15 w=1 nf=1 m=1
+M13 net13 VREF net7 VDD pch l=0.15 w=1 nf=1 m=1
+M14 net8 VN2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 net13 VN2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M16 net6 VB4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M17 net6 VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 net6 net6 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M19 net11 net11 net12 VSS nch l=0.15 w=1 nf=1 m=1
+M2 net5 VC VIN VDD pch l=0.15 w=1 nf=1 m=1
+M20 net12 net11 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+M21 net2 VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M22 net1 net6 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 net2 net2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M24 net1 net2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M25 net3 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M26 net3 net3 net10 VSS nch l=0.15 w=1 nf=1 m=1
+M27 net10 net3 net12 VSS nch l=0.15 w=1 nf=1 m=1
+M28 VP VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M29 VP net10 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 VC VB2 VY VDD pch l=0.15 w=1 nf=1 m=1
+M30 VB3 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M31 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 VX VB2 net5 VDD pch l=0.15 w=1 nf=1 m=1
+M5 VC VN1 net8 VSS nch l=0.15 w=1 nf=1 m=1
+M6 VX VN1 net13 VSS nch l=0.15 w=1 nf=1 m=1
+M7 VN1 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+M8 VN1 VN1 VN2 VSS nch l=0.15 w=1 nf=1 m=1
+M9 VN2 VN2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD1 net0 VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD2 VY VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD3 net9 net0 VY VSS nch l=0.15 w=1 nf=1 m=1
+MD4 net4 VB6 VY VSS nch l=0.15 w=1 nf=1 m=1
+MD5 net0 net4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD6 net4 net4 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD7 net9 net9 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MPT VOUT net1 VIN VDD pch l=0.15 w=1 nf=1 m=1
+RF1 VOUT VFB 1k
+RF2 VFB VSS 1k
+.ends dut

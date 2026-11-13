@@ -1,0 +1,11 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt dut VDD VSS A A_bar B_bar B f
+.model NMOS nmos level=54
+MDA f A net0 VSS nch l=0.15 w=1 nf=1 m=1
+MDA_bar net0 A_bar VSS VSS nch l=0.15 w=1 nf=1 m=1
+MDB net0 B VSS VSS nch l=0.15 w=1 nf=1 m=1
+MDB_bar f B_bar net0 VSS nch l=0.15 w=1 nf=1 m=1
+ML VDD f f VSS NMOS l=150n m=1 nf=1 w=1u
+.ends dut

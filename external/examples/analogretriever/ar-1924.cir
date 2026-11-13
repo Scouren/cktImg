@@ -1,0 +1,20 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Crystal: Butterworth-Van Dyke model, fs = 1/(2*pi*sqrt(lm*cm))
+.subckt crystal n1 n2 params: rm=25 lm=12.7m cm=20f c0=5p
+Rm n1 nr {rm}
+Lm nr nl {lm}
+Cm nl n2 {cm}
+C0 n1 n2 {c0}
+.ends crystal
+
+.subckt dut VDD VSS
+CA X VSS 1p
+CB net0 VSS 1p
+M1 net0 X VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net0 X VDD VDD pch l=0.15 w=1 nf=1 m=1
+RF X net0 1k
+X1 X net0 crystal c0=5p cm=20f lm=12.7m rm=25
+.ends dut

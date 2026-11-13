@@ -1,0 +1,19 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+
+* Project model: applied version 1
+* Ideal fully differential difference amplifier: Vout+ - Vout- = A*((INP1-INN1)+(INP2-INN2))
+.subckt dda inp1 inn1 inp2 inn2 outp outn
+E1 outp n1 inp1 inn1 2.5e5
+E2 n1 0 inp2 inn2 2.5e5
+E3 outn n2 inn1 inp1 2.5e5
+E4 n2 0 inn2 inp2 2.5e5
+.ends dda
+
+.subckt dut Vs1 Vs2 Vodp Vodn VCM
+R1 VCM net1 1k
+R2 net1 Vodp 1k
+R3 VCM net0 1k
+R4 net0 Vodn 1k
+X1 Vs1 Vs2 net0 net1 Vodp Vodn dda
+.ends dut

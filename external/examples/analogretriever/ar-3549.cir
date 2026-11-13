@@ -1,0 +1,45 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model qnpn npn
+.model qpnp pnp
+
+* Potentiometer: end 1 to wiper r*pos, wiper to end 2 r*(1-pos)
+.subckt potentiometer n1 nw n2 params: r=10k pos=0.5
+R1 n1 nw {max(r*pos,1m)}
+R2 nw n2 {max(r*(1-pos),1m)}
+.ends potentiometer
+
+.subckt dut VCC VEE VSS Vinp Vinn Vout NULL1 NULL2
+C1 net4 net10 30pF
+Q1 net6 Vinp net3 VSS qnpn m=1
+Q10 net0 net1 net13 VSS qnpn m=1
+Q11 net1 net1 VEE VSS qnpn m=1
+Q12 net7 net7 VCC qpnp m=1
+Q13 net4 net7 VCC qpnp m=1
+Q14 VCC net4 net16 VSS qnpn m=1
+Q15 net4 net16 Vout VSS qnpn m=1
+Q16 net15 net10 net9 VSS qnpn m=1
+Q17 net15 net9 net2 VSS qnpn m=1
+Q18 net15 net8 net4 qpnp m=1
+Q19 net10 net2 VEE VSS qnpn m=1
+Q2 net6 Vinn net5 VSS qnpn m=1
+Q20 VEE net15 net14 qpnp m=1
+Q3 net12 net0 net3 qpnp m=1
+Q4 net10 net0 net5 qpnp m=1
+Q5 net12 net11 NULL1 VSS qnpn m=1
+Q6 net10 net11 NULL2 VSS qnpn m=1
+Q7 VCC net12 net11 VSS qnpn m=1
+Q8 net6 net6 VCC qpnp m=1
+Q9 net0 net6 VCC qpnp m=1
+R1 NULL1 VEE 1kΩ
+R10 Vout net14 50Ω
+R11 net2 VEE 50Ω
+R12 net9 VEE 50kΩ
+R2 NULL2 VEE 1kΩ
+R3 net11 VEE 50kΩ
+R4 net13 VEE 5kΩ
+R5 net7 net1 35kΩ
+R7 net8 net4 45kΩ
+R8 net8 net15 75kΩ
+R9 net16 Vout 25Ω
+X1 NULL1 VEE NULL2 potentiometer pos=0.5 r=10kΩ
+.ends dut

@@ -1,0 +1,12 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt icm_ideal_comparator_vdd VDD VIP VIN VOUT params: vlow=0 vtransition=1m
+Bcmp VOUT 0 V={vlow+(V(VDD)-vlow)*0.5*(1+tanh((V(VIP)-V(VIN))/vtransition))}
+.ends icm_ideal_comparator_vdd
+
+.subckt dut VCC VS VSS vin Vout
+R1 VCC net0 1k
+R2 net0 VSS 1k
+R3 VS Vout 1kΩ
+X1 VCC vin net0 Vout icm_ideal_comparator_vdd vlow=0 vtransition=1m
+.ends dut

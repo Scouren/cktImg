@@ -1,0 +1,24 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt icm_opamp_vdd_vss VDD VSS VIP VIN VOUT params: gain=1e6
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(V(VDD)+(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12)))-sqrt((V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))*(V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))}
+.ends icm_opamp_vdd_vss
+
+.subckt dut VDD VSS GND vin Hold Sample vout
+.model DIODE D(IS=1e-14 N=1)
+CH net1 GND 1p
+D1 net3 vin DIODE
+D2 net3 net1 DIODE
+D3 vin net0 DIODE
+D4 net1 net0 DIODE
+D5 vout net3 DIODE
+D6 net0 vout DIODE
+I1 VDD net3 DC 1m
+I2 VDD net0 DC 1m
+I3 net2 VSS DC 1m
+M1 net3 Hold net2 VSS nch l=0.15 w=1 nf=1 m=1
+M2 net0 Sample net2 VSS nch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS vout net1 vout icm_opamp_vdd_vss gain=1e6
+.ends dut

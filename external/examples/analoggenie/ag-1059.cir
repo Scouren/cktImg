@@ -1,0 +1,53 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS in_bar in clk clk_bar bias bias2 out out_bar
+M1 VX1 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M10 VY1 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M11 VY2 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M12 VY1 net15 net6 VSS nch l=0.15 w=1 nf=1 m=1
+M13 VY2 VX1 net6 VSS nch l=0.15 w=1 nf=1 m=1
+M14 net1 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M15 net13 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M16 VY1 VY2 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M17 VY2 VY1 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M18 net12 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+M19 net0 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net15 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M20 net3 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M21 net3 clk net4 VSS nch l=0.15 w=1 nf=1 m=1
+M22 net5 clk_bar net4 VSS nch l=0.15 w=1 nf=1 m=1
+M23 VY2 VZ2 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M24 VY1 VZ1 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M25 net4 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+M26 VZ1 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M27 VZ2 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M28 VZ1 VY2 net11 VSS nch l=0.15 w=1 nf=1 m=1
+M29 VZ2 VY1 net11 VSS nch l=0.15 w=1 nf=1 m=1
+M3 VX1 in_bar net14 VSS nch l=0.15 w=1 nf=1 m=1
+M30 net11 bias2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M31 VU1 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M32 net10 VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M33 VU1 VZ1 net8 VSS nch l=0.15 w=1 nf=1 m=1
+M34 net10 VZ2 net8 VSS nch l=0.15 w=1 nf=1 m=1
+M35 net8 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+M36 out_bar VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M37 out VSS VDD VDD pch l=0.15 w=1 nf=1 m=1
+M38 out_bar net10 net16 VSS nch l=0.15 w=1 nf=1 m=1
+M39 out VU1 net16 VSS nch l=0.15 w=1 nf=1 m=1
+M4 net15 in net14 VSS nch l=0.15 w=1 nf=1 m=1
+M40 net16 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 VX1 net15 net9 VSS nch l=0.15 w=1 nf=1 m=1
+M6 net15 VX1 net9 VSS nch l=0.15 w=1 nf=1 m=1
+M7 net14 clk_bar net7 VSS nch l=0.15 w=1 nf=1 m=1
+M8 net9 clk net7 VSS nch l=0.15 w=1 nf=1 m=1
+M9 net7 bias VSS VSS nch l=0.15 w=1 nf=1 m=1
+mn1 net6 clk net12 VSS nch l=0.15 w=1 nf=1 m=1
+mn2 net2 clk net0 VSS nch l=0.15 w=1 nf=1 m=1
+mn3 net1 clk_bar net12 VSS nch l=0.15 w=1 nf=1 m=1
+mn4 net13 clk_bar net0 VSS nch l=0.15 w=1 nf=1 m=1
+mp1 net15 clk VX1 VDD pch l=0.15 w=1 nf=1 m=1
+mp2 net6 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+mp3 net2 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+.ends dut

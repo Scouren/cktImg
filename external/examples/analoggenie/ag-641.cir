@@ -1,0 +1,49 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model qnpn npn
+.model qpnp pnp
+
+.subckt dut +12V VSS Square C R Triangle
+Cext C VSS 20pF
+Q1 net22 net8 net17 qpnp m=1
+Q10 net4 net4 VSS VSS qnpn m=1
+Q11 net7 net4 VSS VSS qnpn m=1
+Q12 net9 net19 VSS VSS qnpn m=1
+Q13 C net9 net14 VSS qnpn m=1
+Q14 Square net0 net14 VSS qnpn m=1
+Q15 net0 net19 VSS VSS qnpn m=1
+Q16 +12V C Triangle VSS qnpn m=1
+Q17 Triangle net19 VSS VSS qnpn m=1
+Q18 net11 Triangle net16 VSS qnpn m=1
+Q19 net2 net11 net18 VSS qnpn m=1
+Q2 net20 net8 net21 qpnp m=1
+Q20 net16 net3 net10 VSS qnpn m=1
+Q21 net18 A net16 VSS qnpn m=1
+Q22 net15 net5 net18 VSS qnpn m=1
+Q23 net18 Triangle net1 VSS qnpn m=1
+Q24 net1 net3 net12 VSS qnpn m=1
+Q25 net5 B net1 VSS qnpn m=1
+Q26 net3 net3 net19 VSS qnpn m=1
+Q27 net19 net19 VSS VSS qnpn m=1
+Q3 VSS net22 net8 qpnp m=1
+Q4 net6 net6 net22 qpnp m=1
+Q5 C net6 net20 qpnp m=1
+Q6 R R net13 VSS qnpn m=1
+Q7 net6 R net4 VSS qnpn m=1
+Q8 net14 R net7 VSS qnpn m=1
+Q9 net13 net4 VSS VSS qnpn m=1
+R1 +12V net17 5kΩ
+R10 A B 7.5kΩ
+R11 B net3 7.5kΩ
+R12 net10 VSS 1.5kΩ
+R13 net12 VSS 1.5kΩ
+R14 +12V Square 13kΩ
+R2 +12V net21 5kΩ
+R3 net2 net9 15kΩ
+R4 net15 net0 15kΩ
+R5 +12V net15 375Ω
+R6 +12V net2 375Ω
+R7 net15 net11 750Ω
+R8 net2 net5 750Ω
+R9 +12V A 7.5kΩ
+Rext +12V R 65kΩ
+.ends dut

@@ -1,0 +1,10 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt dut VDD VSS vO VL
+.model DIODE D(IS=1e-14 N=1)
+D1 vO net1 DIODE
+D2 net1 net0 DIODE
+D3 net0 VSS DIODE
+R VDD vO 1kΩ
+RL VL VSS 1kΩ
+.ends dut

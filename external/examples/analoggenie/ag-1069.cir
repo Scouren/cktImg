@@ -1,0 +1,27 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt dut VDD VSS CLK OUTPUT D0 D1 D2 D3
+M1 NODE_1 CLK VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 net2 CLK VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN0 net0 D0 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN1 net0 D1 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN2 net0 D2 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN3 net0 D3 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MP0 net0 D0 NODE_1 VDD pch l=0.15 w=1 nf=1 m=1
+MP1 net0 D1 NODE_1 VDD pch l=0.15 w=1 nf=1 m=1
+MP2 net0 D2 NODE_1 VDD pch l=0.15 w=1 nf=1 m=1
+MP3 net0 D3 NODE_1 VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS NODE_1 net1 inverter td=10p vt=10m
+X2 VDD VSS net1 OUTPUT inverter td=10p vt=10m
+.ends dut

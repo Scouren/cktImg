@@ -1,0 +1,53 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt EA VDD VSS VB1 VB3 VB2 INP INN OUT VB4
+MN1 VM VC net3 VSS nch l=0.15 w=1 nf=1 m=1
+MN10 net5 net7 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MN11 net7 net7 net5 VSS nch l=0.15 w=1 nf=1 m=1
+MN12 VB4 VB4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN2 OUT VC net0 VSS nch l=0.15 w=1 nf=1 m=1
+MN3 net3 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN4 net0 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN5 VC VC net8 VSS nch l=0.15 w=1 nf=1 m=1
+MN6 net8 VC VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN7 VBP net5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN8 net2 net6 VB4 VSS nch l=0.15 w=1 nf=1 m=1
+MN9 net6 net6 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MP1 net3 INP net1 VDD pch l=0.15 w=1 nf=1 m=1
+MP10 net6 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP11 net7 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP12 VB4 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP2 net0 INN net1 VDD pch l=0.15 w=1 nf=1 m=1
+MP3 net1 VB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP4 net9 VM VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP5 net4 VM VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP6 VM VB3 net9 VDD pch l=0.15 w=1 nf=1 m=1
+MP7 OUT VB3 net4 VDD pch l=0.15 w=1 nf=1 m=1
+MP8 VC VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP9 VBP VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+.ends EA
+
+.subckt dut VDD VSS VIN VP VCONT1 VCONT2 VCONT3 VCONT5 VB5 VREF VB1 VB2 VB3 VB4 VCONT4
+.model DIODE D(IS=1e-14 N=1)
+CFLY VX1 VX2 1p
+CO VP VN 1p
+COP VP VSS 1p
+D1 VN VX2 DIODE
+L1 VX1 VX3 1n
+M1 VX1 VCONT2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M2 VX2 VCONT3 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M3 VP VCONT5 VX3 VDD pch l=0.15 w=1 nf=1 m=1
+M4 VX3 VCONT4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 net0 VCONT1 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MN13 net2 net2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN14 net1 net2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MN15 net2 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MP13 net1 net1 net0 VDD pch l=0.15 w=1 nf=1 m=1
+MP14 VX1 net1 net0 VDD pch l=0.15 w=1 nf=1 m=1
+MP15 net2 VCTRL net0 VDD pch l=0.15 w=1 nf=1 m=1
+R1 VP VFP1 1k
+R2 VFP1 VSS 1k
+X1 VDD VSS VB1 VB3 VB2 VREF VFP1 VCTRL VB4 EA
+.ends dut

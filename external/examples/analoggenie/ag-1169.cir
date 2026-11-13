@@ -1,0 +1,46 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VBUF VDD VSS VBIAS VBANK VCTRL VON VOP VG
+C1 net3 net1 1p
+C2 net0 net2 1p
+C3 VDD net18 1p
+CBANK1 net9 net6 1p
+CBANK2 net11 net5 1p
+CBYP1 VDD VSS 1p
+CBYP2 VBUF VSS 1p
+CBYP3 VBUF VSS 1p
+COUT1 net19 VON 1p
+COUT2 net16 VOP 1p
+CVAR1 net8 net6 1p
+CVAR2 net8 net5 1p
+LD1A net18 net6 1n
+LD1B net18 net5 1n
+LD2A VBUF net19 1n
+LD2B VBUF net16 1n
+LD3A net6 net1 1n
+LD3B net5 net0 1n
+M1 net1 net2 VSS net17 nch l=0.15 w=1 nf=1 m=1
+M2 net0 net3 VSS net7 nch l=0.15 w=1 nf=1 m=1
+M3 net1 net0 VSS net10 nch l=0.15 w=1 nf=1 m=1
+M4 net0 net1 VSS net15 nch l=0.15 w=1 nf=1 m=1
+M5 net19 net6 VSS net20 nch l=0.15 w=1 nf=1 m=1
+M6 net16 net5 VSS net12 nch l=0.15 w=1 nf=1 m=1
+M7 net11 net13 net9 net14 nch l=0.15 w=1 nf=1 m=1
+M8 net18 VBIAS VDD VDD pch l=0.15 w=1 nf=1 m=1
+R1 net4 VG 1k
+R2 net2 net4 1k
+R3 net3 net4 1k
+R4 net8 VCTRL 1k
+R5 net17 VSS 1k
+R6 net7 VSS 1k
+R7 net10 VSS 1k
+R8 net15 VSS 1k
+RB VSS net14 1k
+RB5 net20 VSS 1k
+RB6 net12 VSS 1k
+RD net11 VSS 1k
+RG net13 VBANK 1k
+RS net9 VSS 1k
+.ends dut

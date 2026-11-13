@@ -1,0 +1,57 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal and-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt and_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(V(hA)*V(hB))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends and_gate
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+* Ideal xnor-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt xnor_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-(V(hA)+V(hB)-2*V(hA)*V(hB)))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends xnor_gate
+
+.subckt dut VDD VSS vip vin Dp Dn clk1
+C1 VB1 clk1 1p
+C2 clk1n VB2 1p
+M1 A vip net2 VB1 nch l=0.15 w=1 nf=1 m=1
+M10 VB1 clk1n VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 net1 clk1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 A B C VDD pch l=0.15 w=1 nf=1 m=1
+M13 B A C VDD pch l=0.15 w=1 nf=1 m=1
+M14 A B net1 VSS nch l=0.15 w=1 nf=1 m=1
+M15 B A net1 VSS nch l=0.15 w=1 nf=1 m=1
+M2 B vin net2 VB1 nch l=0.15 w=1 nf=1 m=1
+M3 net2 clk2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 A vip C VB2 pch l=0.15 w=1 nf=1 m=1
+M5 B vin C VB2 pch l=0.15 w=1 nf=1 m=1
+M6 A clk2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M7 B clk2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M8 C clk1n VDD VDD pch l=0.15 w=1 nf=1 m=1
+M9 VB2 clk1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS A Dp inverter td=10p vt=10m
+X2 VDD VSS B Dn inverter td=10p vt=10m
+X3 VDD VSS clk1 clk1n inverter td=10p vt=10m
+X4 VDD VSS clk1 net0 clk2 and_gate td=10p vt=10m
+X5 VDD VSS Dp Dn net0 xnor_gate td=10p vt=10m
+.ends dut

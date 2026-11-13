@@ -1,0 +1,8 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt dut VCM-VGS22 VCM-VGS21 VCM+VGS24 VCM+VGS23 Vtot
+R1 Vtot VCM-VGS21 1k
+R2 Vtot VCM-VGS22 1k
+R3 VCM+VGS23 Vtot 1k
+R4 VCM+VGS24 Vtot 1k
+.ends dut

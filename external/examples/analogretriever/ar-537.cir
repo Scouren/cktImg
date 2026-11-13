@@ -1,0 +1,19 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt CM_half_circuit_for_CM_sense voc vcmc
+.ends CM_half_circuit_for_CM_sense
+
+.subckt dut VSS
+C net0 voc 1p
+CF vic voc 1p
+CL voc VSS 1p
+CS VSS vic 1p
+M2 net0 vic net1 VSS pch l=0.15 w=1 nf=1 m=1
+M5h net1 vcmc VSS VSS pch l=0.15 w=1 nf=1 m=1
+M6 voc net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+ro4 net0 VSS 1k
+ro7 VSS voc 1k
+X1 voc vcmc CM_half_circuit_for_CM_sense
+.ends dut

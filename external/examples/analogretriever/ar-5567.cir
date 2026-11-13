@@ -1,0 +1,20 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt opamp VDD VSS VIP VIN VOUT params: gain=1e6 vhigh=5 vlow=-5
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(vhigh+(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12)))-sqrt((vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))*(vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))}
+.ends opamp
+
+.subckt dut VSS vI1 vI2 vO
+R1 net2 VSS 1k
+R2 net2 net1 1k
+R3 net1 net0 1k
+R4 net0 vO 1k
+R5 VSS net3 1k
+R6 net3 net4 1k
+R7 net4 net5 1k
+R8 net5 VSS 1k
+XA1 0 VSS vI1 net2 net1 opamp gain=1e6
+XA2 0 VSS vI2 net3 net4 opamp gain=1e6
+XA3 0 VSS net5 net0 vO opamp gain=1e6
+.ends dut

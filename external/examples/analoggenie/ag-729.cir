@@ -1,0 +1,29 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt icm_opamp_vdd_vss VDD VSS VIP VIN VOUT params: gain=1e6
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(V(VDD)+(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12)))-sqrt((V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))*(V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))}
+.ends icm_opamp_vdd_vss
+
+.subckt dut VDD VSS Vcasc-p Vbias-p Vcasc-n Vbias-n
+Cc Vbias-n VSS 1p
+M1 net2 Vbias-n VSS VSS nch l=0.15 w=1 nf=1 m=1
+M10 Vbias-n net5 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M11 Vcasc-n net5 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M12 net0 Vbias-n VSS VSS nch l=0.15 w=1 nf=1 m=1
+M13 Vcasc-p Vbias-n VSS VSS nch l=0.15 w=1 nf=1 m=1
+M14 Vcasc-p Vcasc-p VDD VDD pch l=0.15 w=1 nf=1 m=1
+M15 net0 Vcasc-p net3 net3 pch l=0.15 w=1 nf=1 m=1
+M2 Vbias-p Vcasc-n net2 VSS nch l=0.15 w=1 nf=1 m=1
+M3 Vbias-p Vcasc-p net1 VDD pch l=0.15 w=1 nf=1 m=1
+M4 net1 Vbias-p VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 Vcasc-n Vcasc-n VSS VSS nch l=0.15 w=1 nf=1 m=1
+M6 Vcasc-n Vcasc-p net4 VDD pch l=0.15 w=1 nf=1 m=1
+M7 net4 Vbias-p VDD VDD pch l=0.15 w=1 nf=1 m=1
+M8 net5 VDD VSS VSS nch l=0.15 w=1 nf=1 m=1
+M9 net5 Vbias-p VDD VDD pch l=0.15 w=1 nf=1 m=1
+RB VDD net3 1k
+X1 VDD VSS net0 Vcasc-p Vbias-n icm_opamp_vdd_vss gain=1e6
+.ends dut

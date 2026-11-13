@@ -1,0 +1,54 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+.model qpnp pnp
+
+.subckt icm_opamp_vdd_vss VDD VSS VIP VIN VOUT params: gain=1e6
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(V(VDD)+(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12)))-sqrt((V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))*(V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))}
+.ends icm_opamp_vdd_vss
+
+.subckt opamp_differential VDD VSS VIP VIN VOP VON params: gain=1e6 vocm=0
+VCM ncm 0 DC {vocm}
+EPLUS VOP ncm VIP VIN {gain/2}
+EMINUS VON ncm VIN VIP {gain/2}
+.ends opamp_differential
+
+.subckt dut VDD VDDL VSS Voutn Voutp
+M10 net19 net3 VDDL VDD pch l=0.15 w=1 nf=1 m=1
+M11 net6 net6 net11 VSS nch l=0.15 w=1 nf=1 m=1
+M12 net5 net3 VDDL VDD pch l=0.15 w=1 nf=1 m=1
+M13 VR1 net9 net5 VDD pch l=0.15 w=1 nf=1 m=1
+M14 net3 net9 net2 VDD pch l=0.15 w=1 nf=1 m=1
+M15 net14 net3 VDDL VDD pch l=0.15 w=1 nf=1 m=1
+M16 VX net9 net14 VDD pch l=0.15 w=1 nf=1 m=1
+M17 net17 net3 VDDL VDD pch l=0.15 w=1 nf=1 m=1
+M18 net6 net9 net17 VDD pch l=0.15 w=1 nf=1 m=1
+M19 E net9 net19 VDD pch l=0.15 w=1 nf=1 m=1
+M2 net2 net3 VDDL VDD pch l=0.15 w=1 nf=1 m=1
+M20 net9 VX net0 VSS nch l=0.15 w=1 nf=1 m=1
+M21 net0 net4 net16 VSS nch l=0.15 w=1 nf=1 m=1
+M22 net4 VX net7 VSS nch l=0.15 w=1 nf=1 m=1
+M23 net7 net4 net12 VSS nch l=0.15 w=1 nf=1 m=1
+M24 net8 net8 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M25 net8 VR1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M26 net1 net8 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M27 net1 net1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M28 VX net1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M9 F net6 net10 VSS nch l=0.15 w=1 nf=1 m=1
+Q1 VSS net15 net13 qpnp m=1
+Q2 VSS net11 net12 qpnp m=1
+Q3 VSS VSS net15 qpnp m=1
+Q4 VSS VSS net11 qpnp m=1
+R1 net16 net13 1k
+R2 net3 net9 1k
+R3 VX net4 1k
+R4 F Voutp 1k
+R5 E Voutn 1k
+R6 net10 VSS 1k
+RM VR1 net15 1k
+Rr1 VDDL net18 1k
+Rr2 net18 VSS 1k
+X1 VDD VSS E F Voutp Voutn opamp_differential gain=1e6 vocm=0
+X2 VDD VSS VR1 net18 VDDL icm_opamp_vdd_vss gain=1e6
+.ends dut

@@ -1,0 +1,52 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt Bias VDD VSS VP VB3
+M1 VP VP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M10 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 VP net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 net1 VP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M4 net1 net1 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M5 net0 net1 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M6 net3 VP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M7 net3 net3 net2 VSS nch l=0.15 w=1 nf=1 m=1
+M8 net2 net3 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+M9 VB3 VP VDD VDD pch l=0.15 w=1 nf=1 m=1
+.ends Bias
+
+.subckt AEA VDD VSS VB1 VB2 VREF OUT VX VP
+M1 net5 VX VDD VDD pch l=0.15 w=1 nf=1 m=1
+M10 VY VC net0 VSS nch l=0.15 w=1 nf=1 m=1
+M11 net0 VY VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 VX OUT net1 VSS nch l=0.15 w=1 nf=1 m=1
+M13 net3 VREF net1 VSS nch l=0.15 w=1 nf=1 m=1
+M14 net1 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 OUT VC net6 VSS nch l=0.15 w=1 nf=1 m=1
+M16 net6 VY VSS VSS nch l=0.15 w=1 nf=1 m=1
+M17 VC VC OUT VSS nch l=0.15 w=1 nf=1 m=1
+M18 OUT VC VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net4 VX VDD VDD pch l=0.15 w=1 nf=1 m=1
+M3 net7 net3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M4 net2 net3 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 VC VP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M6 VY VB1 net5 VDD pch l=0.15 w=1 nf=1 m=1
+M7 VX VB1 net4 VDD pch l=0.15 w=1 nf=1 m=1
+M8 net3 VB1 net7 VDD pch l=0.15 w=1 nf=1 m=1
+M9 OUT VB1 net2 VDD pch l=0.15 w=1 nf=1 m=1
+.ends AEA
+
+.subckt dut VDD VSS VIN pb nb VOUT VERR VREF VB1 VB2 VB3
+M1 net2 VEAOUT VIN VDD pch l=0.15 w=1 nf=1 m=1
+M2 net3 net3 net2 VDD pch l=0.15 w=1 nf=1 m=1
+M3 net3 nb VSS VSS nch l=0.15 w=1 nf=1 m=1
+MBIAS VERR nb VSS VSS nch l=0.15 w=1 nf=1 m=1
+MCHG net1 pb VIN VDD pch l=0.15 w=1 nf=1 m=1
+MCTRL VERR net3 VOUT VDD pch l=0.15 w=1 nf=1 m=1
+MGEN net0 net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MINJ VERR net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MRES VOUT VERR VIN VDD pch l=0.15 w=1 nf=1 m=1
+MSEN net0 VEAOUT net1 VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS VB1 VB2 VREF VEAOUT net3 net4 AEA
+X2 VDD VSS net4 VB3 Bias
+.ends dut

@@ -1,0 +1,28 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS Vtune Ibias Vout+ Vout-
+L1 net3 net2 1n
+L2 net5 net3 1n
+M1 net2 net5 VDD VDD pch l=0.35 w=112 nf=1 m=1
+M10 net0 net5 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M11 net2 net5 net4 VSS nch l=0.35 w=54 nf=1 m=1
+M12 net5 net2 net4 VSS nch l=0.35 w=54 nf=1 m=1
+M13 net4 Ibias VSS VSS nch l=1 w=2010 nf=1 m=1
+M14 Ibias Ibias VSS VSS nch l=1 w=2010 nf=1 m=1
+M15 net1 Ibias VSS VSS nch l=1 w=804 nf=1 m=1
+M16 Vout+ net5 VDD VDD pch l=0.35 w=48 nf=1 m=1
+M17 Vout+ net5 net1 VSS nch l=0.35 w=21.6 nf=1 m=1
+M18 Vout- net2 VDD VDD pch l=0.35 w=48 nf=1 m=1
+M19 Vout- net2 net1 VSS nch l=0.35 w=21.6 nf=1 m=1
+M2 net5 net2 VDD VDD pch l=0.35 w=112 nf=1 m=1
+M3 net0 net2 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M4 net0 net2 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M5 net0 net2 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M6 net0 net2 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M7 net0 net5 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M8 net0 net5 net0 VDD pch l=0.35 w=132 nf=1 m=1
+M9 net0 net5 net0 VDD pch l=0.35 w=132 nf=1 m=1
+R1 net0 Vtune 2.5kΩ
+.ends dut

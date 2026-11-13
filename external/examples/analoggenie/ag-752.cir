@@ -1,0 +1,13 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt voltage_amplifier VDD VSS VIN VOUT params: gain=1
+ECORE VOUT 0 VIN 0 {gain}
+.ends voltage_amplifier
+
+.subckt dut VSS Vin Vout phiclk phiclk_bar
+Chld VP VSS 1p
+M1 Vin phiclk VP VSS nch l=0.15 w=1 nf=1 m=1
+M2 VP phiclk_bar VP VSS nch l=0.15 w=1 nf=1 m=1
+X1 0 VSS VP Vout voltage_amplifier gain=1
+.ends dut

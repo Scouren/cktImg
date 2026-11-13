@@ -1,0 +1,1002 @@
+[
+{
+"id": "ct-100",
+"name": "CircuitThink #100 \u00b7 Inductively degenerated cascode LNA",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 100 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:20:00.000Z",
+"previewRevision": "e4674e50cb46e8f8c2b7cbaaec5161a704aa7f081c5871d9cc9cd20f3ccf837b",
+"previewWidth": 444.40190384000005,
+"previewHeight": 402.8718
+},
+{
+"id": "ct-099",
+"name": "CircuitThink #099 \u00b7 TSPC flip-flop",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 099 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:21:00.000Z",
+"previewRevision": "c3dbeaa3562164adfe800674b38f6675c8b287faf57c6fb31b1ee00a8c93fa88",
+"previewWidth": 632.01722,
+"previewHeight": 337
+},
+{
+"id": "ct-098",
+"name": "CircuitThink #098 \u00b7 TSPC flip-flop",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 098 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:22:00.000Z",
+"previewRevision": "b2c02678e184c672282b1544452983711769b3bcd5f5d3ccb7501066db51ccb4",
+"previewWidth": 592.01722,
+"previewHeight": 337
+},
+{
+"id": "ct-097",
+"name": "CircuitThink #097 \u00b7 Wide-swing cascode bias generator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 097 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:23:00.000Z",
+"previewRevision": "9181904b9c85fe530effa36fe31886957b7c4981f2a2ad18431da259de942b3f",
+"previewWidth": 575.348,
+"previewHeight": 522.8718
+},
+{
+"id": "ct-096",
+"name": "CircuitThink #096 \u00b7 Differential pair with resistor loads and PMOS current-source bleeders",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 096 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:24:00.000Z",
+"previewRevision": "f0471b9ec29a749fb3f4c129b4b5b004f62f408e975980e120b6bc17fbf3aad1",
+"previewWidth": 417.36433344,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-095",
+"name": "CircuitThink #095 \u00b7 Five-transistor OTA with capacitive-divider feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 095 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:25:00.000Z",
+"previewRevision": "7c67b0cd51df4354eaa77075fda0b86803b2248036af4366a0dd892093bb9cde",
+"previewWidth": 403.2572958399999,
+"previewHeight": 332.8718
+},
+{
+"id": "ct-094",
+"name": "CircuitThink #094 \u00b7 Feedback transimpedance amplifier with source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 094 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:26:00.000Z",
+"previewRevision": "77dbc8add1f40d7bca6a7756d87d2ca52d75d30d27ac33d735824d024f57a227",
+"previewWidth": 438.25729584,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-093",
+"name": "CircuitThink #093 \u00b7 Differential pair with cross-coupled and diode-connected PMOS loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 093 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:27:00.000Z",
+"previewRevision": "037a48dd0c0c2911850bdd03d0613da85d84ed97a40f5b9285ebeab621ca04a4",
+"previewWidth": 429.04630096000005,
+"previewHeight": 382.8718
+},
+{
+"id": "ct-092",
+"name": "CircuitThink #092 \u00b7 Five-transistor OTA in non-inverting resistive feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 092 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:28:00.000Z",
+"previewRevision": "acedb7a6137688944fc7a6688c3cc1ae339f62c55ee9b0d257d208e478318d19",
+"previewWidth": 403.2572958399999,
+"previewHeight": 332.8718
+},
+{
+"id": "ct-091",
+"name": "CircuitThink #091 \u00b7 Differential pair with mirror load, outputs shorted, common-mode input",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 091 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:29:00.000Z",
+"previewRevision": "8a305b44091026a4a544e535cb655542bdcce64d943e6ef778b20dafb2e02de8",
+"previewWidth": 358.63510496,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-090",
+"name": "CircuitThink #090 \u00b7 Five-transistor OTA with load capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 090 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:30:00.000Z",
+"previewRevision": "d4dfe55f2db4c5645f049fecabfc3018c09a41181f7f207486f1804fc39d2360",
+"previewWidth": 433.25729584000004,
+"previewHeight": 342.8718
+},
+{
+"id": "ct-089",
+"name": "CircuitThink #089 \u00b7 Two-stage op amp with PMOS second stage and NMOS mirror output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 089 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:31:00.000Z",
+"previewRevision": "ae9719d1f1a4b21d49484034102fc90b4cc98d4ba0667dd0923cb29b0be40518",
+"previewWidth": 475.53883440000004,
+"previewHeight": 442.8718
+},
+{
+"id": "ct-088",
+"name": "CircuitThink #088 \u00b7 Capacitively coupled stage with bridging capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 088 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:32:00.000Z",
+"previewRevision": "97071615a9752edd4fe0e0b94c728b7aac23f84d0522e8211ba7eb7126d494a2",
+"previewWidth": 544.40190384,
+"previewHeight": 239
+},
+{
+"id": "ct-087",
+"name": "CircuitThink #087 \u00b7 OTA with resistor-biased PMOS load",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 087 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:33:00.000Z",
+"previewRevision": "9a3debd28617a2bdffd88f3e49d4adb248ed522002c2a8c8359bc17376b6d564",
+"previewWidth": 376.3643998399999,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-086",
+"name": "CircuitThink #086 \u00b7 Two-stage fully differential op amp with resistive CMFB",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 086 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:34:00.000Z",
+"previewRevision": "7549b7ba892e9732d38500741bd31c1ea81e3e4743b11c4f30e53d0663cd880d",
+"previewWidth": 593.8900312000001,
+"previewHeight": 452.8718
+},
+{
+"id": "ct-085",
+"name": "CircuitThink #085 \u00b7 Differential pair with RC self-biased PMOS loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 085 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:35:00.000Z",
+"previewRevision": "1a83cd34d38a6793cad3add69e7f08a6235baa5f3614cccb5db33f48e64fdd41",
+"previewWidth": 439.04630096000005,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-084",
+"name": "CircuitThink #084 \u00b7 Differential pair with diode-connected loads and output resistor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 084 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:36:00.000Z",
+"previewRevision": "e2f105aa2ab294c880b23053cca6c4a5161dec08b2ffd792c701d050389bf47c",
+"previewWidth": 353.8900312,
+"previewHeight": 402.8718
+},
+{
+"id": "ct-083",
+"name": "CircuitThink #083 \u00b7 Cascode amplifier with self-biased PMOS load",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 083 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:37:00.000Z",
+"previewRevision": "00ec9eef2e128615bd74ed7057bf22b703d7e902e3b3893524133bcd67a59b4f",
+"previewWidth": 318.38147888000003,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-082",
+"name": "CircuitThink #082 \u00b7 Five-transistor OTA with tail resistor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 082 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:38:00.000Z",
+"previewRevision": "8d608a75fccffc00cfcf6e52b957c1c74a4b63702842fc2abd9dff2829295f4d",
+"previewWidth": 350.15019184,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-081",
+"name": "CircuitThink #081 \u00b7 Five-transistor OTA with capacitive feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 081 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:39:00.000Z",
+"previewRevision": "0ac95cc77f7db10d44027b2eec09d39051cd7c8f620ab0f2a4dd8144e0557296",
+"previewWidth": 393.2572958399999,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-080",
+"name": "CircuitThink #080 \u00b7 Five-transistor OTA with capacitive feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 080 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:40:00.000Z",
+"previewRevision": "38cd604b947b47eb48b480349834fdedc1fa442cc3e0aa35700cea14d0fc2bbc",
+"previewWidth": 393.2572958399999,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-079",
+"name": "CircuitThink #079 \u00b7 LC VCO with MOS varactors",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 079 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:41:00.000Z",
+"previewRevision": "7a7ce9ee20c9fbcaba393a4911102e09285557c6a5909e886c2b5f19faccd9cb",
+"previewWidth": 605.6874849600001,
+"previewHeight": 432.8718
+},
+{
+"id": "ct-078",
+"name": "CircuitThink #078 \u00b7 Transimpedance amplifier with source follower",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 078 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:42:00.000Z",
+"previewRevision": "60e641de4c9aa5345ca5d8e34bdb78ecd8617b82989e7582021477ef290df750",
+"previewWidth": 408.2572958399999,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-077",
+"name": "CircuitThink #077 \u00b7 Common-source stage with feedback capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 077 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:43:00.000Z",
+"previewRevision": "a624a1afff4bb89d632aede952a7404d48da175da8df9db89bc0c47b92accd7e",
+"previewWidth": 402.3392950399999,
+"previewHeight": 342.8718
+},
+{
+"id": "ct-076",
+"name": "CircuitThink #076 \u00b7 CML XOR gate",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 076 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:44:00.000Z",
+"previewRevision": "e24bb635a9ecc103737cb2a63b87032123051e70bae429f5b8298b9ec25b4614",
+"previewWidth": 723.837932,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-075",
+"name": "CircuitThink #075 \u00b7 Four-input source-coupled stage with shared resistive load",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 075 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:45:00.000Z",
+"previewRevision": "abd2fba874e5a9ac1d7a1083ebe713fc65666d9048e2cfbcda3059248c7cc3b3",
+"previewWidth": 583.263524,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-074",
+"name": "CircuitThink #074 \u00b7 Two-stage differential amplifier with PMOS common-source second stages",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 074 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:46:00.000Z",
+"previewRevision": "43b930811449b32d691df70e9ff95aa296816916bd0d7a5452ad5902618eda41",
+"previewWidth": 533.8900312000001,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-073",
+"name": "CircuitThink #073 \u00b7 TSPC D flip-flop",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 073 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:47:00.000Z",
+"previewRevision": "f23b752e30764c4e9d9eef6662fc173b0ab27b8bfd30970fd4c056f9eea63ca9",
+"previewWidth": 573.067016,
+"previewHeight": 312.8718
+},
+{
+"id": "ct-072",
+"name": "CircuitThink #072 \u00b7 Differential pair with cross-fed tail transistors and PMOS mirror bias",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 072 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:48:00.000Z",
+"previewRevision": "6b10b8eee2929d9b9abfd90edcf8a752ff255d67f7440968e2a4bada5e518ce6",
+"previewWidth": 424.13693056,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-071",
+"name": "CircuitThink #071 \u00b7 Degenerated differential pair with local PMOS feedback network",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 071 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:49:00.000Z",
+"previewRevision": "240b0f53947b44758d147b37495d143ecee918435b6297e34cb4daaa658499d7",
+"previewWidth": 499.496576,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-070",
+"name": "CircuitThink #070 \u00b7 Output stage with PMOS-diode bias and capacitor-coupled M15 compensation",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 070 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:50:00.000Z",
+"previewRevision": "f0cf8489b4a8fdd072a4c802456a9035052163b17f67677d6042db95d3354e2a",
+"previewWidth": 540.4092841600001,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-069",
+"name": "CircuitThink #069 \u00b7 Common-source output stage with PMOS mirror load and Miller feedback capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 069 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:51:00.000Z",
+"previewRevision": "f41ede49f97ab22d2c83aea40594bb31f520c0e0c9ba0efcb499cf1f2651a06f",
+"previewWidth": 394.36439984,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-068",
+"name": "CircuitThink #068 \u00b7 Degenerated differential pair with PMOS source feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 068 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:52:00.000Z",
+"previewRevision": "6ae0aad61b42589e0958be73ec6a687ea6887b91fcc40c9470d8966259f8575d",
+"previewWidth": 435.348,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-067",
+"name": "CircuitThink #067 \u00b7 Five-transistor OTA with resistor between the differential drains",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 067 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:53:00.000Z",
+"previewRevision": "1d266e9abd9346b0f9243fff731a422fd57d8a2402e35d6620670342f5c86fc8",
+"previewWidth": 350.15019184,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-066",
+"name": "CircuitThink #066 \u00b7 Differential pair with mirror load and resistor from mirror node to tail",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 066 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:54:00.000Z",
+"previewRevision": "32a404b0501ada70d41871cb807353eaade59add41bc82f961039891bca1f085",
+"previewWidth": 370.15019184,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-065",
+"name": "CircuitThink #065 \u00b7 Five-transistor OTA with capacitor between the differential drains",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 065 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:55:00.000Z",
+"previewRevision": "f3633dce4415454648aebbadc434b4a9bd3bc881c14263e3536bd6a6fbe0e894",
+"previewWidth": 350.15019184,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-064",
+"name": "CircuitThink #064 \u00b7 Differential pair with replica-pair-driven PMOS mirror loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 064 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:56:00.000Z",
+"previewRevision": "65252d5215ea5a0bbff08bc855e96893598c7bbb108ce246d4d2ea0f2c9fbb0c",
+"previewWidth": 598.1392000000001,
+"previewHeight": 432.8718
+},
+{
+"id": "ct-063",
+"name": "CircuitThink #063 \u00b7 Differential pair with PMOS current-source loads biased by a diode-connected mirror",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 063 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:57:00.000Z",
+"previewRevision": "956651fcbad8f8b99e7ea696f5abe962fb6d5fe17eee8189044d03be4d3d5d41",
+"previewWidth": 431.55050432,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-062",
+"name": "CircuitThink #062 \u00b7 Self-biased current reference with start-up circuit",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 062 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:58:00.000Z",
+"previewRevision": "a022a4afb11d52334357d76ebc8412c4068ccdcd3b56a86df2026d281bb6071b",
+"previewWidth": 394.0218672,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-061",
+"name": "CircuitThink #061 \u00b7 Beta-multiplier bias with compensated output stage (RZ-CC)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 061 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T10:59:00.000Z",
+"previewRevision": "5bdbd776811644d50d892e3fbc4c377d3f37a3f04d9affb4a6da664a19802a78",
+"previewWidth": 642.32780688,
+"previewHeight": 345.8718
+},
+{
+"id": "ct-060",
+"name": "CircuitThink #060 \u00b7 Single-balanced passive MOS mixer with gate-source/gate-drain capacitances",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 060 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:00:00.000Z",
+"previewRevision": "38efb96a7f79484587c6e8aa87186c536390b9f910fe6a40b909becc35ceb294",
+"previewWidth": 462.95995392,
+"previewHeight": 407.9265904
+},
+{
+"id": "ct-059",
+"name": "CircuitThink #059 \u00b7 Differential pair with current-mirror load and output resistances rO1, rO2",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 059 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:01:00.000Z",
+"previewRevision": "5abdc9c755cce2eecb20b5da864c110ba4c7827cd37c2e990faa6cde802f2e16",
+"previewWidth": 394.78433456,
+"previewHeight": 382.8718
+},
+{
+"id": "ct-058",
+"name": "CircuitThink #058 \u00b7 Two-stage Miller-compensated op amp in unity-gain feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 058 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:02:00.000Z",
+"previewRevision": "ad595bbc2106edba31e4757407c2572c36075b806c700f8d75ce7e64c7663059",
+"previewWidth": 433.2572958399999,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-057",
+"name": "CircuitThink #057 \u00b7 Capacitively cross-coupled LC oscillator with tail noise source",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 057 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:03:00.000Z",
+"previewRevision": "5b441b9f4fbb377107c048ad560d01164bdbe739054e6bd77e64ba9d5c1af4aa",
+"previewWidth": 382.3795904000001,
+"previewHeight": 452.8718
+},
+{
+"id": "ct-056",
+"name": "CircuitThink #056 \u00b7 Two cascaded common-source stages with PMOS current-source loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 056 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:04:00.000Z",
+"previewRevision": "c8dd4d1b61c5f520a51e99c65acbc177eb1208baf59cb9c1b8b3b26716794be6",
+"previewWidth": 453.2572958399999,
+"previewHeight": 292.8718
+},
+{
+"id": "ct-055",
+"name": "CircuitThink #055 \u00b7 Common-gate stage with mirror-biased current-source noise model",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 055 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:05:00.000Z",
+"previewRevision": "8bae183fff3a049298dfb6e5eeb2a3e1c7029296498eb97ef49b3292c8223cdf",
+"previewWidth": 421.90169296,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-054",
+"name": "CircuitThink #054 \u00b7 AC-coupled CS amplifier with self-biased PMOS load and diode bias",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 054 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:06:00.000Z",
+"previewRevision": "38e695d59d870daea1b02c6437b862439eae96e31fbcd9dfb06c95746830ff95",
+"previewWidth": 430.40190384000005,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-053",
+"name": "CircuitThink #053 \u00b7 Two-stage buffer: differential pair with PMOS current-source load and source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 053 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:07:00.000Z",
+"previewRevision": "8647c453422f2fffd3ed493f7e3a7849c0e4bceccfd5e239fb9a770c9e2bb841",
+"previewWidth": 479.4715038400001,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-052",
+"name": "CircuitThink #052 \u00b7 Two-stage buffer: OTA with source-follower output and unity feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 052 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:08:00.000Z",
+"previewRevision": "5d4a477f261504690100a6a568db91ccb3da3f9136daacbe1c94674d97a9a0cc",
+"previewWidth": 463.25729584000004,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-051",
+"name": "CircuitThink #051 \u00b7 Small-signal model of a cascode/folded output path with feedforward current IF",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 051 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:09:00.000Z",
+"previewRevision": "fadfdc7c495a7ec6c02b3f036f8e5b3bfb91b26e13421cb99aa128be1c074466",
+"previewWidth": 378.38147888000003,
+"previewHeight": 389
+},
+{
+"id": "ct-050",
+"name": "CircuitThink #050 \u00b7 Differential pair with cross-coupled and diode-connected PMOS loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 050 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:10:00.000Z",
+"previewRevision": "a4b1a33b0c3a1075fea473dacf998f4513c705035dd5137ad8f3b7288443761d",
+"previewWidth": 429.04630096000005,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-049",
+"name": "CircuitThink #049 \u00b7 Two-stage Miller-compensated op amp in unity-gain feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 049 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:11:00.000Z",
+"previewRevision": "75ca81047335924732dd53c98e8b208783949f0c2654ab8e2a42098718ccefb6",
+"previewWidth": 473.25729584000004,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-048",
+"name": "CircuitThink #048 \u00b7 Common-source amplifier with PMOS mirror load and diode-biased gate",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 048 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:12:00.000Z",
+"previewRevision": "128d6103f371d78526eac888c66dd79d49ae59c050375abef0ea9663dddc1684",
+"previewWidth": 415.40190384,
+"previewHeight": 422.8718
+},
+{
+"id": "ct-047",
+"name": "CircuitThink #047 \u00b7 PTAT current reference with bipolar \u0394VBE core and PMOS output mirror",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 047 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:13:00.000Z",
+"previewRevision": "923d9b8659d159867108bd5ba9f2cda4cfca5e3f10c16d6d9501cd8336e805c5",
+"previewWidth": 431.04630096000005,
+"previewHeight": 402.8718
+},
+{
+"id": "ct-046",
+"name": "CircuitThink #046 \u00b7 Differential pair with capacitive common-mode sensing and switched CMFB",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 046 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:14:00.000Z",
+"previewRevision": "45c10b48970918517ad0fb37966a2e789187377fc54ae16a6906e7134b51696c",
+"previewWidth": 588.79458896,
+"previewHeight": 472.8718
+},
+{
+"id": "ct-045",
+"name": "CircuitThink #045 \u00b7 Differential super-source-follower transconductor with source degeneration RS",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 045 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:15:00.000Z",
+"previewRevision": "3d9e563a0556857d14e3e8538a84d1f39c9847fe4bcebbfe789a6b3b179c9413",
+"previewWidth": 414.78433456000005,
+"previewHeight": 382.8718
+},
+{
+"id": "ct-044",
+"name": "CircuitThink #044 \u00b7 Common-source stage driving a PMOS common-source stage with RC load at its gate",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 044 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:16:00.000Z",
+"previewRevision": "740b0626f1ae65b13f816f20dd3043b27a3f31ebfe1f04b1a58eeac468977cbe",
+"previewWidth": 516.3894720000001,
+"previewHeight": 332.8718
+},
+{
+"id": "ct-043",
+"name": "CircuitThink #043 \u00b7 PMOS common-source output stage with Miller RC compensation",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 043 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:17:00.000Z",
+"previewRevision": "221fd9de11d5be96c083a0629ec40a7b3699b3d959aabbb84b9b78e2b79934e9",
+"previewWidth": 484.40190384000005,
+"previewHeight": 322.8718
+},
+{
+"id": "ct-042",
+"name": "CircuitThink #042 \u00b7 Two-stage op amp with source-follower output in unity-gain feedback",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 042 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:18:00.000Z",
+"previewRevision": "b7d8bf8bcf1edb785d3ef0c7c5d5e4fd11542b98f492e685142a369d42dbb2fb",
+"previewWidth": 503.25729584000004,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-041",
+"name": "CircuitThink #041 \u00b7 Current-reuse resistive-feedback LNA with source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 041 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:19:00.000Z",
+"previewRevision": "b113136886ced82512eb7a4cba275ea60c5cc1bfdc379056af2b2561eeea2b17",
+"previewWidth": 564.40190384,
+"previewHeight": 433.9265904
+},
+{
+"id": "ct-040",
+"name": "CircuitThink #040 \u00b7 Differential noise-cancelling LNA (CG-CS with cascode)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 040 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:20:00.000Z",
+"previewRevision": "16654a235e9b31e0da0944ad71ef611b861fa8a4dcbddd5bc8d9abccf3884ac3",
+"previewWidth": 659.496576,
+"previewHeight": 452.8718
+},
+{
+"id": "ct-039",
+"name": "CircuitThink #039 \u00b7 Common-source amplifier with MOS pseudo-resistor gate bias",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 039 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:21:00.000Z",
+"previewRevision": "409ff10e0744f53f3a16efba4096447fa0d534d94ae7f5de538f30a88d073559",
+"previewWidth": 495.40190384000005,
+"previewHeight": 372.8718
+},
+{
+"id": "ct-038",
+"name": "CircuitThink #038 \u00b7 Common-gate TIA with mirror-biased input sink and PMOS mirror load",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 038 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:22:00.000Z",
+"previewRevision": "dcae38d38a0dbad9b3f8356010c6b78fd896e234228d4c620f0206982d9e6387",
+"previewWidth": 441.90169296,
+"previewHeight": 422.8718
+},
+{
+"id": "ct-037",
+"name": "CircuitThink #037 \u00b7 Three-stage differential ring oscillator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 037 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:23:00.000Z",
+"previewRevision": "33220c2709b20a6ec3aaf2aed029f1e69c77e0d1f6db02ec5dbaaafeaf0cf46c",
+"previewWidth": 759.04630096,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-036",
+"name": "CircuitThink #036 \u00b7 PMOS cross-coupled LC VCO with MOS varactors",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 036 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:24:00.000Z",
+"previewRevision": "d105bf8b575ddac3fb2f598c7dd420e1102b19253df374fc50056aba620a933f",
+"previewWidth": 447.73268384,
+"previewHeight": 375.9265904
+},
+{
+"id": "ct-035",
+"name": "CircuitThink #035 \u00b7 Common-gate stage in a feedback loop with test source (loop-gain setup)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 035 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:25:00.000Z",
+"previewRevision": "287afa256fea3a040f88ec8cc1baac5e16a4e1670dc0df7be4f66c019e3af1b2",
+"previewWidth": 441.04630096000005,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-034",
+"name": "CircuitThink #034 \u00b7 PMOS differential pair with dual single-ended outputs via mirror loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 034 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:26:00.000Z",
+"previewRevision": "cba31158c6c91c8ca53018cd2a222549b10923b6c0963fe1cd6bbef9346fb6a2",
+"previewWidth": 693.8900312000001,
+"previewHeight": 438.9265904
+},
+{
+"id": "ct-033",
+"name": "CircuitThink #033 \u00b7 Cross-coupled LC VCO with MOS varactors",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 033 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:27:00.000Z",
+"previewRevision": "2a82efd5b59d7ebbb3c0d96250f85fcbf34fffd9f68256f65866e4a37ba8af46",
+"previewWidth": 471.40270768,
+"previewHeight": 422.8718
+},
+{
+"id": "ct-032",
+"name": "CircuitThink #032 \u00b7 Differential pair with diode-connected and cross-coupled PMOS loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 032 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:28:00.000Z",
+"previewRevision": "98228278579b5019305478b878e9a0aec7718769cb43aa9e8e2f838e0a2b5208",
+"previewWidth": 429.04630096000005,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-031",
+"name": "CircuitThink #031 \u00b7 Cross-coupled LC oscillator with tail inductor filter and noise current source",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 031 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:29:00.000Z",
+"previewRevision": "b32d9d23b5f9d0358a98fda20178a7368e7fd00943eee393949cb4ecb58aec99",
+"previewWidth": 332.04910864,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-030",
+"name": "CircuitThink #030 \u00b7 Cross-coupled LC oscillator with tail inductor filter and noise current source",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 030 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:30:00.000Z",
+"previewRevision": "deff0e3f0cf67dbf22fae824e262844a10d25f3e0e6cee90c3b6e2154744a3c8",
+"previewWidth": 332.04910864,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-029",
+"name": "CircuitThink #029 \u00b7 Shunt-feedback CMOS amplifier with current-source-fed PMOS load (AC-coupled input)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 029 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:31:00.000Z",
+"previewRevision": "71f7dbfcf981b095d7d5204d97d46609d0168fc85f3cdfd2c6845e36adb48cc7",
+"previewWidth": 414.40190384,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-028",
+"name": "CircuitThink #028 \u00b7 Feedback TIA-style amplifier with PMOS-loaded input, AC-coupled source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 028 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:32:00.000Z",
+"previewRevision": "5cf97384829de87bb34015506bc56018907951b8ada70b115282b2a6ca1ded85",
+"previewWidth": 534.4019038399999,
+"previewHeight": 382.8718
+},
+{
+"id": "ct-027",
+"name": "CircuitThink #027 \u00b7 Differential Colpitts oscillator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 027 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:33:00.000Z",
+"previewRevision": "7401d49bee0a9196a5ae178156b65cf7a0d705b18d28314bde4fe096ed66ae2e",
+"previewWidth": 642.26738368,
+"previewHeight": 292.8718
+},
+{
+"id": "ct-026",
+"name": "CircuitThink #026 \u00b7 Colpitts oscillator (common-gate with parallel RLC tank)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 026 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:34:00.000Z",
+"previewRevision": "f26c0409c583132fe2d657cd55ae6f8b1399b6bea6cac711ea07f5557fa906ec",
+"previewWidth": 305.40190384,
+"previewHeight": 398.8718
+},
+{
+"id": "ct-025",
+"name": "CircuitThink #025 \u00b7 Differential super source follower (flipped follower) with degeneration resistor and PMOS output sta",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 025 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:35:00.000Z",
+"previewRevision": "6c9c798cc1e2fdd3d56377ac4e6ce304a42b5bd715b0716597b3887283c3637d",
+"previewWidth": 711.293516,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-024",
+"name": "CircuitThink #024 \u00b7 Common-gate (current-input) stage with mirror-biased current source and bias capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 024 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:36:00.000Z",
+"previewRevision": "296ee9676cdd55bb550cae6ac041aa98727f5ec2386f1943bdb41511b3ac8d14",
+"previewWidth": 401.90169296,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-023",
+"name": "CircuitThink #023 \u00b7 Self-biased current reference with resistive-divider start-up / regulation loop",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 023 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:37:00.000Z",
+"previewRevision": "1d910e74a1d0f52ecf4166d0af10f8df9577bd191e2df68cfa3e6e0537fad2d2",
+"previewWidth": 424.0218672,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-022",
+"name": "CircuitThink #022 \u00b7 Differential pair with diode loads mirrored to resistive output branches",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 022 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:38:00.000Z",
+"previewRevision": "ff45ca23ffa13e021456972d9f06f91f9e980dfcf34b82b5816becbca389c5f4",
+"previewWidth": 653.8900312000001,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-021",
+"name": "CircuitThink #021 \u00b7 Differential stage with cross-coupled current-mirror loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 021 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:39:00.000Z",
+"previewRevision": "13a39d6fdd59d9adde12af428d4102586383fae8a06267d76e5ebc02fd8c1b05",
+"previewWidth": 550.59680528,
+"previewHeight": 358.9265904
+},
+{
+"id": "ct-020",
+"name": "CircuitThink #020 \u00b7 Comparator with internal hysteresis (positive-feedback load) and output buffer",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 020 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:40:00.000Z",
+"previewRevision": "0d928fbb2b8d8fa8ab9505ae2fe22b75d69254c06ccd5fe3237b4050940447a0",
+"previewWidth": 572.6729817600001,
+"previewHeight": 392.8718
+},
+{
+"id": "ct-019",
+"name": "CircuitThink #019 \u00b7 Cross-coupled LC oscillator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 019 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:41:00.000Z",
+"previewRevision": "ab2b6a945961594bd428fafd6cf453be20f5ffc9ca5717d58703680138e60495",
+"previewWidth": 441.61255856,
+"previewHeight": 312.8718
+},
+{
+"id": "ct-018",
+"name": "CircuitThink #018 \u00b7 Common-gate stage driving a PMOS common-source stage with compensation capacitor",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 018 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:42:00.000Z",
+"previewRevision": "8d4218f76d209771670dbbc23ba1795ed4242cbd13d7212e253d7ec4f4b8d028",
+"previewWidth": 377.40190384,
+"previewHeight": 334
+},
+{
+"id": "ct-017",
+"name": "CircuitThink #017 \u00b7 Differential stage with cross-coupled current-mirror loads",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 017 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:43:00.000Z",
+"previewRevision": "383cd9b941a98516e7d269519bba9071a2c105129a20eac787242ce7fe4b9740",
+"previewWidth": 544.59680528,
+"previewHeight": 358.9265904
+},
+{
+"id": "ct-016",
+"name": "CircuitThink #016 \u00b7 PMOS-input differential amplifier with cross-coupled current-mirror output stages",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 016 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:44:00.000Z",
+"previewRevision": "81b9967ca63b29caa1d7f8c2313a0b59e7affd0aff83f09cbc071570de057dad",
+"previewWidth": 798.79458896,
+"previewHeight": 362.8718
+},
+{
+"id": "ct-015",
+"name": "CircuitThink #015 \u00b7 Complementary cross-coupled LC VCO with MOS varactors",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 015 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:45:00.000Z",
+"previewRevision": "8ab6bf7b969e386cd71613e1b5d7dd74620bd81d4568238eeb7285b6e560e4d9",
+"previewWidth": 533.2823679999999,
+"previewHeight": 402.8718
+},
+{
+"id": "ct-014",
+"name": "CircuitThink #014 \u00b7 Self-biased bandgap reference with PTAT output branch",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 014 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:46:00.000Z",
+"previewRevision": "bef981b6de5a1e2e459b58c2609bd04319c79f20a3306bc8aa53c0b7e75cf260",
+"previewWidth": 452.40190384000005,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-013",
+"name": "CircuitThink #013 \u00b7 Cross-coupled LC VCO with MOS varactors",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 013 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:47:00.000Z",
+"previewRevision": "91a0fade6834b39e9581effdec43558ef6f0e67c8b3fe39b24e125280aad3fc0",
+"previewWidth": 613.2823679999999,
+"previewHeight": 412.8718
+},
+{
+"id": "ct-012",
+"name": "CircuitThink #012 \u00b7 Common-gate (cascode) amplifier with mirror-biased current sources",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 012 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:48:00.000Z",
+"previewRevision": "262948d376cecc916bec027e45b1100a623309b17ed48cafef39e6fcd7b881d3",
+"previewWidth": 471.90169296000005,
+"previewHeight": 402.8718
+},
+{
+"id": "ct-011",
+"name": "CircuitThink #011 \u00b7 Bandgap reference core with base-current compensation",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 011 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:49:00.000Z",
+"previewRevision": "491a273efa088b06fc3f0db9b5cecfe145b60547d618b1cac96458b7380a1266",
+"previewWidth": 443.59680528000007,
+"previewHeight": 442.8718
+},
+{
+"id": "ct-010",
+"name": "CircuitThink #010 \u00b7 Common-gate amplifier with LC tank and capacitive feedback (Colpitts-style)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 010 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:50:00.000Z",
+"previewRevision": "1dd3bbb45cb589a408cbb0bca8f6e3da06ea24d7e2d3d2ddd84eb717408bbcf0",
+"previewWidth": 308.25729584,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-009",
+"name": "CircuitThink #009 \u00b7 Cascode common-gate LNA with current-mirror gate bias",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 009 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:51:00.000Z",
+"previewRevision": "b3a3e2b8d5fd2aefb7dc95273565830973ec2f92e2b6b947a82e2898c9d58d92",
+"previewWidth": 403.04630096000005,
+"previewHeight": 442.8718
+},
+{
+"id": "ct-008",
+"name": "CircuitThink #008 \u00b7 Three-stage common-source ring oscillator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 008 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:52:00.000Z",
+"previewRevision": "eab21c03fba905830881572d08ebe41451e221a4d0ba54eb7e8a94cedc1916f5",
+"previewWidth": 620.40190384,
+"previewHeight": 255.8718
+},
+{
+"id": "ct-007",
+"name": "CircuitThink #007 \u00b7 Two-stage LC-tuned oscillator (cascaded tuned amplifiers in a loop)",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 007 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:53:00.000Z",
+"previewRevision": "7baa55e3eeab3641c6d77c40bdf159eda80d5517711ab386040c8c9a4805b980",
+"previewWidth": 495.46226879999995,
+"previewHeight": 295.8718
+},
+{
+"id": "ct-006",
+"name": "CircuitThink #006 \u00b7 Three-stage common-source ring oscillator",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 006 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:54:00.000Z",
+"previewRevision": "bd031b5e549141356889ddeb4073f3698d9ef56ed267076564ba48db5fdef697",
+"previewWidth": 620.40190384,
+"previewHeight": 255.8718
+},
+{
+"id": "ct-005",
+"name": "CircuitThink #005 \u00b7 Feedback transimpedance amplifier with source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 005 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:55:00.000Z",
+"previewRevision": "0ee6933626f8947812fbdd8edb8085ce0486195fce7a8bb2665187256c35e1b6",
+"previewWidth": 497.40190384000005,
+"previewHeight": 352.8718
+},
+{
+"id": "ct-004",
+"name": "CircuitThink #004 \u00b7 Bandgap reference core with differential-pair amplifier",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 004 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:56:00.000Z",
+"previewRevision": "385e58418d10659049d3510adc4b7dc8bc8ce85d650776fb5aef1b742cda73f3",
+"previewWidth": 516.65790656,
+"previewHeight": 452.8718
+},
+{
+"id": "ct-003",
+"name": "CircuitThink #003 \u00b7 Cross-coupled LC oscillator with lossy RLC tanks",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 003 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:57:00.000Z",
+"previewRevision": "90d3e3b90d16f0affc49ff8d2088eac92e84ca414dd9cdfd813817406cc9fa7c",
+"previewWidth": 439.61255856,
+"previewHeight": 367.8718
+},
+{
+"id": "ct-002",
+"name": "CircuitThink #002 \u00b7 Cross-coupled LC VCO with switched-capacitor band control",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 002 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:58:00.000Z",
+"previewRevision": "a4c157ed48da99e7f276f5a0cabb659b43276a5a3576fa7bae3ba9b48dc5e77a",
+"previewWidth": 419.97637008,
+"previewHeight": 422.8718
+},
+{
+"id": "ct-001",
+"name": "CircuitThink #001 \u00b7 Feedback transimpedance amplifier with source-follower output",
+"author": "CircuitThink (redrawn)",
+"description": "Redrawn in Analog Canvas from CircuitThink figure 001 (Apache-2.0), number for number.",
+"createdAt": "2026-10-13T11:59:00.000Z",
+"previewRevision": "d8706e2f306eef14087a510aa5765ac652ffb005f45d868f227a3159047ec3e9",
+"previewWidth": 477.40190383999993,
+"previewHeight": 332.8718
+}
+]

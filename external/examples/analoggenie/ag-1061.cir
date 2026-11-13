@@ -1,0 +1,39 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt dut VDD VSS Clock_bar Vin Vref Voutn Voutp
+M1 Voutn Voutp net11 VDD pch l=0.15 w=1 nf=1 m=1
+M2 Voutn Voutp VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 Voutp Voutn net10 VDD pch l=0.15 w=1 nf=1 m=1
+M4 Voutp Voutn VSS VSS nch l=0.15 w=1 nf=1 m=1
+MA1 net5 Vin net12 VDD pch l=0.15 w=1 nf=1 m=1
+MA2 net5 Vin net12 VDD pch l=0.15 w=1 nf=1 m=1
+MB1 net9 Vin net5 VDD pch l=0.15 w=1 nf=1 m=1
+MB2 net9 Vin net5 VDD pch l=0.15 w=1 nf=1 m=1
+MB3 net9 Vin net5 VDD pch l=0.15 w=1 nf=1 m=1
+MC1 net11 Vin net9 VDD pch l=0.15 w=1 nf=1 m=1
+MC2 net11 Vin net9 VDD pch l=0.15 w=1 nf=1 m=1
+MC3 net11 Vin net9 VDD pch l=0.15 w=1 nf=1 m=1
+Mclk net12 Clock_bar VDD VDD pch l=0.15 w=1 nf=1 m=1
+MD0 net6 Vin net6 VDD pch l=0.15 w=1 nf=1 m=1
+MD1 net1 Vin net1 VDD pch l=0.15 w=1 nf=1 m=1
+MD2 net8 Vin net8 VDD pch l=0.15 w=1 nf=1 m=1
+MD3 net3 Vin net3 VDD pch l=0.15 w=1 nf=1 m=1
+MR1 net0 Vref net12 VDD pch l=0.15 w=1 nf=1 m=1
+MR2 net2 Vref net0 VDD pch l=0.15 w=1 nf=1 m=1
+MR3 net10 Vref net2 VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS net12 net6 inverter td=10p vt=10m
+X2 VDD VSS net5 net1 inverter td=10p vt=10m
+X3 VDD VSS net9 net8 inverter td=10p vt=10m
+X4 VDD VSS net11 net3 inverter td=10p vt=10m
+.ends dut

@@ -1,0 +1,35 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+.model qpnp pnp
+
+.subckt opamp VDD VSS INP INN OUT VB1 VB3 VB2
+M1 net5 VX VDD VDD pch l=0.15 w=1 nf=1 m=1
+M10 net7 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 net1 VB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M12 VB5 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M13 VB5 VB5 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M14 net0 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 net2 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M16 net2 VB4 net3 VSS nch l=0.15 w=1 nf=1 m=1
+M17 VB4 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M18 VB4 VB4 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net4 VX VDD VDD pch l=0.15 w=1 nf=1 m=1
+M3 net7 INP net1 VDD pch l=0.15 w=1 nf=1 m=1
+M4 net6 INN net1 VDD pch l=0.15 w=1 nf=1 m=1
+M5 OUT VB3 net5 VDD pch l=0.15 w=1 nf=1 m=1
+M6 VX VB3 net4 VDD pch l=0.15 w=1 nf=1 m=1
+M7 OUT VB5 net6 VSS nch l=0.15 w=1 nf=1 m=1
+M8 VX VB5 net7 VSS nch l=0.15 w=1 nf=1 m=1
+M9 net6 VB2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+R4 net3 VSS 1k
+.ends opamp
+
+.subckt dut VDD VSS Vout VB1 VB2 VB3
+Q1 VSS VSS X qpnp m=1
+Q2 VSS VSS net0 qpnp m=1
+R1 Vout X 1k
+R2 Vout Y 1k
+R3 Y net0 1k
+X1 VDD VSS X Y Vout VB1 VB3 VB2 opamp
+.ends dut

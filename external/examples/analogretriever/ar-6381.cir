@@ -1,0 +1,23 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt icm_opamp_vdd_vss VDD VSS VIP VIN VOUT params: gain=1e6
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(V(VDD)+(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12)))-sqrt((V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))*(V(VDD)-(0.5*(V(VSS)+V(nlin)+sqrt((V(nlin)-V(VSS))*(V(nlin)-V(VSS))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))))+(1e-4*(V(VDD)-V(VSS)))*(1e-4*(V(VDD)-V(VSS)))+1e-12))}
+.ends icm_opamp_vdd_vss
+
+.subckt dut VDD VEE VSS vO
+.model DIODE D(IS=1e-14 N=1)
+Cp net1 VSS 16nF
+Cs net1 net0 16nF
+D1 v1 a DIODE
+D2 b v1 DIODE
+R1 VSS v1 10kΩ
+R2 v1 vO 20.3kΩ
+R3 VDD a 3kΩ
+R4 a vO 1kΩ
+R5 vO b 1kΩ
+R6 b VEE 3kΩ
+Rp net1 VSS 10kΩ
+Rs net0 vO 10kΩ
+X1 VDD VEE net1 v1 vO icm_opamp_vdd_vss gain=1e6
+.ends dut

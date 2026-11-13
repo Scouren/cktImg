@@ -77,6 +77,7 @@ jobs:
           PATH="$GITHUB_WORKSPACE/zig-out/bin:$PATH" pdflatex -shell-escape -interaction=nonstopmode -halt-on-error figure.tex
           test -s figure.pdf
 
+      # Every change's drawings; main's are also published on the site (site.yml).
       - uses: actions/upload-artifact@v4
         with:
           name: gallery

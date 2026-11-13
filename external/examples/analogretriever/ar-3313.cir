@@ -1,0 +1,26 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+* Ideal xor-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt xor_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(V(hA)+V(hB)-2*V(hA)*V(hB))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends xor_gate
+
+.subckt dut VDD VSS Vin Vout1 Vout2
+.model DIODE D(IS=1e-14 N=1)
+C1 net2 VSS 1p
+D1 net2 Vout1 DIODE
+D2 net2 Vout2 DIODE
+I1 net0 VSS DC 1m
+L1 VDD Vout1 1n
+L2 VDD Vout2 1n
+M1 Vout1 Vout2 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M2 Vout2 Vout1 net0 VSS nch l=0.15 w=1 nf=1 m=1
+R1 net1 net2 1k
+X1 VDD VSS Vin Vout2 net1 xor_gate td=10p vt=10m
+.ends dut

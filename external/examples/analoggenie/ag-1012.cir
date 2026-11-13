@@ -1,0 +1,30 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VPB1 VPB2 VNB2 VNB1 voutn voutp vinp vinn S1 S2 S3 S4 S5
+.model ideal_switch SW(RON=1 ROFF=1e12 VT=0.5 VH=0)
+VB1 net1 VSS DC 1
+C1 net2 VX 1p
+C2 VX net0 1p
+M1 net4 vinp net8 VSS nch l=0.15 w=1 nf=1 m=1
+M10 net7 VNB1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 net5 VNB1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 net5 VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M13 net7 VX VSS VSS nch l=0.15 w=1 nf=1 m=1
+M14 net3 net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 net3 VPB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 net6 vinn net8 VSS nch l=0.15 w=1 nf=1 m=1
+M3 net8 VNB1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M4 net4 VPB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 net6 VPB1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M6 voutn VPB2 net4 VDD pch l=0.15 w=1 nf=1 m=1
+M7 voutp VPB2 net6 VDD pch l=0.15 w=1 nf=1 m=1
+M8 voutn VNB2 net7 VSS nch l=0.15 w=1 nf=1 m=1
+M9 voutp VNB2 net5 VSS nch l=0.15 w=1 nf=1 m=1
+S1 net2 net1 S1 VSS ideal_switch
+S2 VX net3 S2 VSS ideal_switch
+S3 net0 net1 S3 VSS ideal_switch
+S4 voutp net2 S4 VSS ideal_switch
+S5 voutn net0 S5 VSS ideal_switch
+.ends dut

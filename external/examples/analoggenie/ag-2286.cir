@@ -1,0 +1,53 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt bias VDD VSS VB5 VC1 VC2
+M26 VB5 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M27 VB5 VB5 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M28 net0 VB5 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M29 net1 VC2 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+M30 VC1 net2 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M31 VC2 VC2 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M32 net2 net2 VC1 VSS nch l=0.15 w=1 nf=1 m=1
+M33 VB3 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M34 VBP VC1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M35 VC2 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M36 net2 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M37 VB3 VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+M38 VBP VBP VDD VDD pch l=0.15 w=1 nf=1 m=1
+.ends bias
+
+.subckt dut VDD VSS VB2 VREF VB1 VB4 IBUF VIN FB VOUT
+CL VOUT net9 1p
+M10 net2 VB1 VC2 VDD pch l=0.15 w=1 nf=1 m=1
+M11 VC1 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M12 VC2 net2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M13 net7 VB4 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M14 net3 EAO net7 VDD pch l=0.15 w=1 nf=1 m=1
+M15 net3 net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M16 GATE net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M17 VDD net7 GATE VSS nch l=0.15 w=1 nf=1 m=1
+M18 net8 EAO IBUF VSS nch l=0.15 w=1 nf=1 m=1
+M19 net8 net8 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 EAO VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M20 GATE net8 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M21 VSS IBUF GATE VDD pch l=0.15 w=1 nf=1 m=1
+M22 net0 VB5 net6 VSS nch l=0.15 w=1 nf=1 m=1
+M23 net6 net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M24 net3 VB5 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M25 net1 net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 net3 VREF EAO VDD pch l=0.15 w=1 nf=1 m=1
+M4 net0 FB EAO VDD pch l=0.15 w=1 nf=1 m=1
+M5 net5 net0 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M6 net4 net3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M7 EAO VB5 net5 VSS nch l=0.15 w=1 nf=1 m=1
+M8 net2 VB5 net4 VSS nch l=0.15 w=1 nf=1 m=1
+M9 EAO VB1 VC1 VDD pch l=0.15 w=1 nf=1 m=1
+MNP VIN GATE VOUT VSS nch l=0.15 w=1 nf=1 m=1
+R1 FB VSS 1k
+R2 VOUT FB 1k
+R3 net9 VSS 1k
+RL VOUT VSS 1k
+X1 VDD VSS VB5 VC1 VC2 bias
+.ends dut

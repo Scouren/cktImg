@@ -1,0 +1,89 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal buffer: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt buffer VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends buffer
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+* Ideal nand-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt nand_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA)*V(hB))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends nand_gate
+
+* Ideal nor-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt nor_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*((1-V(hA))*(1-V(hB)))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends nor_gate
+
+* Ideal or-gate: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt or_gate VDD VSS A B Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+BhB hB 0 V={0.5*(1+tanh((V(B,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-(1-V(hA))*(1-V(hB)))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends or_gate
+
+.subckt CP VDD VSS cal_bar out out_bar Vc
+Cm net1 VSS 1p
+Cp net3 VSS 1p
+M1 net3 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+M2 Vc net4 net3 VDD pch l=0.15 w=1 nf=1 m=1
+M3 Vc net5 net1 VSS nch l=0.15 w=1 nf=1 m=1
+M4 net1 cal_bar VSS VSS nch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS cal_bar net0 inverter td=10p vt=10m
+X2 VDD VSS cal_bar net2 inverter td=10p vt=10m
+X3 VDD VSS out net2 net4 or_gate td=10p vt=10m
+X4 VDD VSS net2 out_bar net5 nor_gate td=10p vt=10m
+.ends CP
+
+.subckt dut VDD VSS clk out_bar out Vip Vim cal valid cal_bar
+Ccal_n net3 VSS 1p
+Ccal_p net4 VSS 1p
+MN1m net0 net1 net6 VSS nch l=0.15 w=1 nf=1 m=1
+MN1p net1 net0 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MNcm net6 net3 net5 VSS nch l=0.15 w=1 nf=1 m=1
+MNcp net2 net4 net5 VSS nch l=0.15 w=1 nf=1 m=1
+MNim net6 Vim net5 VSS nch l=0.15 w=1 nf=1 m=1
+MNip net2 Vip net5 VSS nch l=0.15 w=1 nf=1 m=1
+MNs Vip cal Vim VSS nch l=0.15 w=1 nf=1 m=1
+MNt net5 clk VSS VSS nch l=0.15 w=1 nf=1 m=1
+MP1m net0 net1 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP1p net1 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP2m net0 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP2p net1 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP3m net6 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP3p net2 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+MP4 net5 clk VDD VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS net1 out_bar buffer td=10p vt=10m
+X2 VDD VSS net0 out buffer td=10p vt=10m
+X3 VDD VSS out out_bar valid nand_gate td=10p vt=10m
+X4 VDD VSS cal_bar out out_bar net4 CP
+X5 VDD VSS cal_bar out_bar out net3 CP
+.ends dut

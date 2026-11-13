@@ -1,0 +1,13 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt dut E C B
+.model DIODE D(IS=1e-14 N=1)
+DC __icm_sense_node_a63807bf3d3bf715 C DIODE
+V__icm_sense_a63807bf3d3bf715 B __icm_sense_node_a63807bf3d3bf715 DC 0
+DE __icm_sense_node_79bc23910e11749d E DIODE
+V__icm_sense_79bc23910e11749d B __icm_sense_node_79bc23910e11749d DC 0
+F1 E B V__icm_sense_a63807bf3d3bf715 1
+F2 C B V__icm_sense_79bc23910e11749d 1
+I1 E B DC 1m
+I2 C B DC 1m
+.ends dut

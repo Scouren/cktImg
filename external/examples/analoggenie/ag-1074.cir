@@ -1,0 +1,37 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt dut VDD VSS CLK CLKB VIP VIN DON DOP VTOP
+C1 VTOP CLK 1p
+C2 net1 CLKB 1p
+C3 VTOP VSS 1p
+M1 DIN VIP net0 VSS nch l=0.15 w=1 nf=1 m=1
+M10 OUTP OUTN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M11 OUTN OUTP VSS VSS nch l=0.15 w=1 nf=1 m=1
+M12 QP DIN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M13 QN DIP VSS VSS nch l=0.15 w=1 nf=1 m=1
+M14 OUTP DIN VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 OUTN DIP VSS VSS nch l=0.15 w=1 nf=1 m=1
+M16 VDD net1 VTOP VSS nch l=0.15 w=1 nf=1 m=1
+M17 VDD VTOP net1 VSS nch l=0.15 w=1 nf=1 m=1
+M2 DIP VIN net0 VSS nch l=0.15 w=1 nf=1 m=1
+M3 DIN CLK VDD VDD pch l=0.15 w=1 nf=1 m=1
+M4 DIP CLK VDD VDD pch l=0.15 w=1 nf=1 m=1
+M5 net0 CLK VSS VSS nch l=0.15 w=1 nf=1 m=1
+M6 QP DIN VTOP VDD pch l=0.15 w=1 nf=1 m=1
+M7 QN DIP VTOP VDD pch l=0.15 w=1 nf=1 m=1
+M8 OUTP OUTN QP VDD pch l=0.15 w=1 nf=1 m=1
+M9 OUTN OUTP QN VDD pch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS OUTP DON inverter td=10p vt=10m
+X2 VDD VSS OUTN DOP inverter td=10p vt=10m
+.ends dut

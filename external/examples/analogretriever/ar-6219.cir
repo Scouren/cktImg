@@ -1,0 +1,20 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model qnpn npn
+.model qpnp pnp
+
+* Potentiometer: end 1 to wiper r*pos, wiper to end 2 r*(1-pos)
+.subckt potentiometer n1 nw n2 params: r=10k pos=0.5
+R1 n1 nw {max(r*pos,1m)}
+R2 nw n2 {max(r*(1-pos),1m)}
+.ends potentiometer
+
+.subckt dut VCC VEE VSS vI vO
+IBIAS VCC net2 DC 1m
+Q1 net2 net3 vI VEE qnpn m=1
+QN VCC net2 vO VEE qnpn m=1
+QP VEE vI vO qpnp m=1
+R3 net0 vI 1k
+R4 net2 net1 1k
+RL vO VSS 1k
+X1 net1 net3 net0 potentiometer pos=0.5 r=10k
+.ends dut

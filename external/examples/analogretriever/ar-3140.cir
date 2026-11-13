@@ -1,0 +1,17 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+
+.subckt opamp_differential VDD VSS VIP VIN VOP VON params: gain=1e6 vocm=0
+VCM ncm 0 DC {vocm}
+EPLUS VOP ncm VIP VIN {gain/2}
+EMINUS VON ncm VIN VIP {gain/2}
+.ends opamp_differential
+
+.subckt dut Vin1 Vin2 Vout1 Vout2
+C1 Vin1 net1 1p
+C2 Vin2 net3 1p
+R1 net1 net2 50kΩ
+R2 net2 Vout1 100kΩ
+R3 net3 net0 50kΩ
+R4 net0 Vout2 100kΩ
+X1 0 0 net2 net0 Vout2 Vout1 opamp_differential gain=1e6 vocm=0
+.ends dut

@@ -1,0 +1,34 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt opamp VDD VSS VIP VIN VOUT params: gain=1e6 vhigh=5 vlow=-5
+Blin nlin 0 V={gain*(V(VIP)-V(VIN))}
+Bcore VOUT 0 V={0.5*(vhigh+(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12)))-sqrt((vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))*(vhigh-(0.5*(vlow+V(nlin)+sqrt((V(nlin)-vlow)*(V(nlin)-vlow)+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))))+(1e-4*(vhigh-vlow))*(1e-4*(vhigh-vlow))+1e-12))}
+.ends opamp
+
+* Ideal inverter: switches at V(VDD,VSS)/2; vt sets the step width, td the delay
+.subckt inverter VDD VSS A Y params: vt=10m td=10p
+BhA hA 0 V={0.5*(1+tanh((V(A,VSS)-0.5*V(VDD,VSS))/vt))}
+Bf nfn VSS V={V(VDD,VSS)*(1-V(hA))}
+Rd nfn ndl 1k
+Cd ndl VSS {td/1000}
+BY Y VSS V={V(ndl,VSS)}
+.ends inverter
+
+.subckt dut VDD VSS vin vout phi1 phi2 phica phiA phiB
+C1 net1 net3 1p
+C2 net3 net0 1p
+C3 net4 vout 1p
+M1 net1 phiA vin VSS nch l=0.15 w=1 nf=1 m=1
+M10 phi1 net2 phiA VSS nch l=0.15 w=1 nf=1 m=1
+M2 net1 phiB VSS VSS nch l=0.15 w=1 nf=1 m=1
+M3 net4 phi2 net3 VSS nch l=0.15 w=1 nf=1 m=1
+M4 net4 phi1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M5 VSS phi2 net0 VSS nch l=0.15 w=1 nf=1 m=1
+M6 net0 phi1 vout VSS nch l=0.15 w=1 nf=1 m=1
+M7 phi1 phica phiB VSS nch l=0.15 w=1 nf=1 m=1
+M8 phi2 net2 phiB VSS nch l=0.15 w=1 nf=1 m=1
+M9 phi2 phica phiA VSS nch l=0.15 w=1 nf=1 m=1
+X1 VDD VSS VSS net3 vout opamp gain=1e6
+X2 VDD VSS phica net2 inverter td=10p vt=10m
+.ends dut

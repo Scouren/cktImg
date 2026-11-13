@@ -1,0 +1,51 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut VDD VSS VIN VB2 VB1 VREF VB5 VB7 VB6 VOUT
+CF1 VOUT VFB 1p
+Cm1 VOUT V1 1p
+Cm2 V1 V4 1p
+M1 net1 VX VIN VDD pch l=0.15 w=1 nf=1 m=1
+M10 net8 VC V3 VSS nch l=0.15 w=1 nf=1 m=1
+M11 net12 VB2 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M12 net8 VFB net12 VDD pch l=0.15 w=1 nf=1 m=1
+M13 V2 VREF net12 VDD pch l=0.15 w=1 nf=1 m=1
+M14 V3 net8 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M15 net5 V2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M16 V2 VB5 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M17 V2 V1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M18 V2 V2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M2 net10 VX VIN VDD pch l=0.15 w=1 nf=1 m=1
+M21 net3 V1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M22 net7 V2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M23 net3 net3 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M24 net7 net3 VIN VDD pch l=0.15 w=1 nf=1 m=1
+M3 V1 VB1 net1 VDD pch l=0.15 w=1 nf=1 m=1
+M4 VX VB1 net10 VDD pch l=0.15 w=1 nf=1 m=1
+M5 V1 VC net2 VSS nch l=0.15 w=1 nf=1 m=1
+M6 VX VC net4 VSS nch l=0.15 w=1 nf=1 m=1
+M7 net2 V2 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M8 net4 net8 VSS VSS nch l=0.15 w=1 nf=1 m=1
+M9 V2 VC net5 VSS nch l=0.15 w=1 nf=1 m=1
+MB1 net9 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+MB10 net11 VC VSS VSS nch l=0.15 w=1 nf=1 m=1
+MB2 net9 net9 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MB3 VP VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+MB4 VP VB4 VB3 VSS nch l=0.15 w=1 nf=1 m=1
+MB5 VB3 net9 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MB6 VB4 VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+MB7 VB4 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MB8 VC VP VIN VDD pch l=0.15 w=1 nf=1 m=1
+MB9 VC VC net11 VSS nch l=0.15 w=1 nf=1 m=1
+MD1 V4 V1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD2 net6 VB6 VSS VSS nch l=0.15 w=1 nf=1 m=1
+MD3 V3 V4 net6 VSS nch l=0.15 w=1 nf=1 m=1
+MD4 net0 VB7 net6 VSS nch l=0.15 w=1 nf=1 m=1
+MD5 V4 net0 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD6 net0 net0 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MD7 V3 V3 VIN VDD pch l=0.15 w=1 nf=1 m=1
+MPT VOUT net7 VIN VDD pch l=0.15 w=1 nf=1 m=1
+RF1 VOUT VFB 1k
+RF2 VFB VSS 1k
+.ends dut
