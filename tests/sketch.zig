@@ -439,7 +439,10 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     // hand-drawn schematics, 75% keep the pins standing near each other
     // wired and cut only the far connection. With no crossing budget one
     // node of the Sallen-Key filter (three pins) is cut: fewer names than
-    // pins, a wire left, and the names still join the whole net.
+    // pins, a wire left, and the names still join the whole net. R2's left
+    // end is the deck's word here: turned toward the amplifier beside it
+    // (sketch.4) its pin stands near the node's other two, the node is one
+    // part, and no connection of it is far.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -448,7 +451,8 @@ test "sketch: a net over the crossing budget keeps its near pins wired, one name
     const deck = for (textbook.beyond) |c| {
         if (std.mem.eql(u8, c.name, "sallen_key")) break c.spice;
     } else unreachable;
-    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{ .cross_max = 0 });
+    const told = try std.mem.concat(arena_state.allocator(), u8, &.{ deck, "\n*@ face r2 a left\n" });
+    const p = try draw(arena_state.allocator(), lib, &.{told}, .{ .cross_max = 0 });
     // The cut net: the one that carries names.
     try std.testing.expect(p.labels.len > 0);
     const net = p.labels[0].net;
@@ -1265,8 +1269,11 @@ test "sketch: two flat parts in series face each other" {
     // Oracle: the places alone. A coupling capacitor and a gate resistor in
     // series through a net that joins just the two stand on one row; each
     // one's pin on that net lies between the two parts' centres, so one
-    // straight wire joins them. Turned by the mean column of its far net,
-    // each faced away, and the wire went round both with four corners.
+    // straight wire joins them: each is the nearest device on the other's
+    // net (people: the end on the nearest device's net faces it in 4,414
+    // of 4,471 flat two-pin parts, 5,263 hand-drawn schematics). Turned by
+    // the mean column of its far net, each faced away, and the wire went
+    // round both with four corners.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1281,6 +1288,44 @@ test "sketch: two flat parts in series face each other" {
     const r3_mid = @divFloor(pinOf(&p, "r3", 1).x + r3.x, 2);
     try std.testing.expectEqual(c1.y, r3.y);
     for ([_]i32{ c1.x, r3.x }) |x| try std.testing.expect(x > @min(c1_mid, r3_mid) and x < @max(c1_mid, r3_mid));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
+test "sketch: a flat part's end faces the nearest device on its net" {
+    // Oracle: the places alone, and the hand drawings: of the devices on a
+    // flat part's two nets that stand beside it, the nearest has its net's
+    // end facing it (people: 4,414 of 4,471 flat two-pin parts, 98.7%, in
+    // 5,263 hand-drawn schematics). The inductor's net b holds M5 and M2,
+    // a column to its left, and M6, further to its right: its end on b
+    // faces left and its output goes out on the right. Turned by the mean
+    // column of b's devices, it faced M6 and its port stood inside.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck = "Nearest\n.model nch nmos level=1\n.model pch pmos level=1\nVDD vdd 0 1.8\nM1 y y vdd vdd pch\nI1 y 0 10u\n" ++
+        "M5 b y vdd vdd pch\nM2 b x 0 0 nch\nM6 b vb6 vdd vdd pch\nL2 b out 1n\n";
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    const on_b = pinOf(&p, "l2", 0);
+    const on_out = pinOf(&p, "l2", 1);
+    const mid = @divFloor(on_b.x + on_out.x, 2);
+    // The devices on b, by how far along x plus along y each stands.
+    var nearest: ?np.Pt = null;
+    var least: u32 = std.math.maxInt(u32);
+    for ([_][]const u8{ "m5", "m2", "m6" }) |name| {
+        const at = for (p.dev_name, p.dev_pos) |n, pos| {
+            if (std.mem.eql(u8, n, name)) break pos;
+        } else unreachable;
+        const far = @abs(at.x - mid) + @abs(at.y - on_b.y);
+        if (far < least) {
+            least = far;
+            nearest = at;
+        }
+    }
+    try std.testing.expect(nearest.?.x != mid);
+    try std.testing.expectEqual(nearest.?.x < mid, on_b.x < on_out.x);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }

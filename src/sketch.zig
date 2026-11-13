@@ -12,20 +12,22 @@
 //!   and this. `fits`
 //! - sketch.3 (invariant) A `face` line says which end of a flat part is
 //!   its left: the user's word. `firstLeft`
-//! - sketch.4 (habit) A flat two-pin part's pin on a net it shares with
-//!   just one other flat part of its row faces that part: two parts in
-//!   series are one line. People: 52.7% of 1,397 such pairs in 5,263
-//!   hand-drawn schematics; the mean of a far outer net turned one of them
-//!   end for end in 201. `firstLeft`
-//!   Narrowing: sketch.4 to sketch.6 turn a card of just two pins (a box
+//! - sketch.4 (habit) A flat part's end on the net of the nearest device
+//!   beside it faces that device: of the devices on its two nets that
+//!   stand in another column, the one fewest cells away, columns plus
+//!   rows. So two parts in series are one line, and a part with one end on
+//!   a port turns the other toward its net. People: 4,414 of 4,471 flat
+//!   two-pin parts (98.7%) in 5,263 hand-drawn schematics; turned by a
+//!   series neighbour, a lone pin and then the mean column, 91.5%.
+//!   `firstLeft`
+//!   Narrowing: sketch.4 and sketch.6 turn a card of just two pins (a box
 //!   of two ports with it); a flat transistor and a part with its control
 //!   pair on the card lie as their class is drawn (`fits`).
-//! - sketch.5 (unmeasured) A flat part with one pin alone on its net (a
-//!   port's) turns its other pin toward where that pin's net's devices
-//!   stand. `firstLeft`
-//! - sketch.6 (unmeasured) Else a flat part's first pin is its left end
-//!   when the devices on its net stand, at their mean column, no further
-//!   right than those on its second net. `firstLeft`
+//! - sketch.6 (habit) Where no device stands beside it, or two as near
+//!   pull opposite ways, a flat part's first pin is its left end when the
+//!   devices on its net stand, at their mean column, no further right than
+//!   those on its second net. People: 370 of 460 such parts (80.4%).
+//!   `firstLeft`
 //! - sketch.7 (invariant) No two devices of the lattice touch: each column
 //!   is as wide as its widest device's reach on each side, each row as
 //!   tall as its tallest device's (its body, where that reaches more than
@@ -323,7 +325,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
 
 /// Kept and driver flags, then each drawn device's flips: the first of the
 /// four that puts its upper end up and its gate on the skeleton's side (a
-/// vertical device), or its first pin toward its first net's devices (a
+/// vertical device), or its end toward the nearest device on its net (a
 /// bridge).
 fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     const c = &nl.graph;
@@ -385,48 +387,28 @@ fn firstLeft(nl: *const Netlist, sk: *const Skeleton, d: u32) bool {
     assert(pins.len == 2);
     // A `face` line says which end is left.
     if (sk.left_end[d] != .auto) return sk.left_end[d] == .first;
-    // A pin on a net it shares with one other flat part of its row faces
-    // that part: two parts in series are one line, as people draw them
-    // (52.7% of 1,397 such pairs in 5,263 hand-drawn schematics; the mean
-    // of a far outer net turned one of them end for end in 201).
-    for (pins, 0..) |net, i| {
-        const other = seriesNeighbour(nl, sk, net.index(), d) orelse continue;
-        if (sk.x[other] == sk.x[d]) continue;
-        return (i == 0) == (sk.x[other] < sk.x[d]);
-    }
-    // A pin alone on its net (a port's) has no column to face: the other
-    // pin faces its net from where the part stands.
-    for (pins, 0..) |net, i| {
-        if (!alone(nl, sk, net.index(), d) or alone(nl, sk, pins[1 - i].index(), d)) continue;
-        const there = meanX(nl, sk, pins[1 - i].index(), d);
-        if (there == 2 * @as(i64, sk.x[d])) break;
-        return (i == 1) == (there < 2 * @as(i64, sk.x[d]));
-    }
-    return meanX(nl, sk, pins[0].index(), d) <= meanX(nl, sk, pins[1].index(), d);
-}
-
-/// Whether no drawn device but `d` is on `net`.
-fn alone(nl: *const Netlist, sk: *const Skeleton, net: u32, d: u32) bool {
-    for (nl.graph.incident(netlist.VertexId.from(net))) |e| {
-        if (e.index() != d and sk.drawn[e.index()]) return false;
-    }
-    return true;
-}
-
-/// The one other drawn device on `net` when it is a flat two-pin part in
-/// `d`'s row and the net joins just the two; else null.
-fn seriesNeighbour(nl: *const Netlist, sk: *const Skeleton, net: u32, d: u32) ?u32 {
-    var other: ?u32 = null;
-    for (nl.graph.incident(netlist.VertexId.from(net))) |e| {
+    // The nearest device beside it, on either net, has that net's end
+    // facing it; cells are counted along the columns plus along the rows.
+    // People: 4,414 of 4,471 flat two-pin parts (98.7%) in 5,263 hand-drawn
+    // schematics. Two as near that pull opposite ways decide nothing.
+    // ponytail: cells stand in for lengths (a device column is four, a row
+    // two), and the drawing's own nearest is this one for 96.1% of its
+    // flat parts; the lengths themselves if the two drift further apart.
+    var best: u32 = std.math.maxInt(u32);
+    var pulls = [2]bool{ false, false }; // the first pin rightward, leftward
+    for (pins, 0..) |net, i| for (nl.graph.incident(net)) |e| {
         const v = e.index();
-        if (v == d or !sk.drawn[v]) continue;
-        if (other != null) return null;
-        other = v;
-    }
-    const o = other orelse return null;
-    // A part by its card's two pins, as `fits` turns one: not `device.isPart`.
-    if (sk.form[o] != .horizontal or sk.y[o] != sk.y[d] or nl.graph.members(EdgeId.from(o)).len != 2) return null;
-    return o;
+        if (v == d or !sk.drawn[v] or sk.x[v] == sk.x[d]) continue;
+        const cells = @abs(sk.x[v] - sk.x[d]) + @abs(sk.y[v] - sk.y[d]);
+        if (cells > best) continue;
+        if (cells < best) pulls = .{ false, false };
+        best = cells;
+        pulls[@intFromBool((i == 0) == (sk.x[v] < sk.x[d]))] = true;
+    };
+    if (pulls[0] != pulls[1]) return pulls[1];
+    // None beside it, or a tie: the mean columns (people: 370 of 460 such
+    // parts, 80.4%).
+    return meanX(nl, sk, pins[0].index(), d) <= meanX(nl, sk, pins[1].index(), d);
 }
 
 /// The mean column of the drawn devices other than `skip` on `net`, twice.
