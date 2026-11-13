@@ -414,19 +414,20 @@ test "skeleton: a bias net current paths end on pulls its columns together: the 
     // for 1,719 of the 2,316 a current path ends on at both (74.2%), and
     // for 103 of the 137 of those that are a bias or an input; a net of
     // gates alone, 304 of 733 (a random order: 35%). `vb` is a bias the
-    // capacitor c and the coil l2 (under q1, in its column) end on: it
-    // pulled nothing, being no internal net, and l1 stood between (deck
-    // ar-6385 of the reference corpus).
+    // capacitor c and the resistor r2 (under q1, in its column) end on: it
+    // pulled nothing, being no internal net, and r1 stood between (deck
+    // ar-6385 of the reference corpus, its coils made resistors: an
+    // inductor off the rails lies flat, forms.19, and leaves the column).
     var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena_state.deinit();
     const arena = arena_state.allocator();
-    const l = try lay(arena, "Oscillator core\n.model qnpn npn\nC vin vb 1p\nL1 vin net0 1n\nL2 net0 vb 1n\nQ1 vin vb net0 0 qnpn\n");
+    const l = try lay(arena, "Oscillator core\n.model qnpn npn\nC vin vb 1p\nR1 vin net0 1k\nR2 net0 vb 1k\nQ1 vin vb net0 0 qnpn\n");
     errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
     const x = l.sk.x;
     const q1 = x[l.nl.device("q1").?.index()];
-    try std.testing.expectEqual(q1, x[l.nl.device("l2").?.index()]);
+    try std.testing.expectEqual(q1, x[l.nl.device("r2").?.index()]);
     const c = x[l.nl.device("c").?.index()];
-    const l1 = x[l.nl.device("l1").?.index()];
+    const l1 = x[l.nl.device("r1").?.index()];
     try std.testing.expect(@abs(c - q1) < @abs(l1 - q1));
 }
 
