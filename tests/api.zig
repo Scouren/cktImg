@@ -435,14 +435,18 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
             return @as(u4, 1) << @backingInt(s);
         }
     }.of;
-    // One pin on the supply: its symbol ends the pin's stub.
+    // One pin on the supply, a two-pin part's end: its symbol stands on the
+    // pin (wires.10), so no wire leaves it.
     var one = try placeText(lib, "One supply pin\n.model nch nmos\nM1 out in 0 0 nch\nR1 vdd out 1k\n");
     defer one.deinit();
     const pin = supplyPin(&one, lib);
-    try testing.expectEqual(bit(.down), np.checks.ways(&one, one.pin_net[pin], one.pin_xy[pin]));
+    try testing.expectEqual(@as(u4, 0), np.checks.ways(&one, one.pin_net[pin], one.pin_xy[pin]));
     try testing.expectEqual(np.Side.right, np.geom.railSide(&one, pin));
-    // Three pins on one bar: the symbol stands on the bar's run.
-    var bar = try placeText(lib, "Supply bar\n.model nch nmos\nM1 a in 0 0 nch\nR1 vdd a 1k\nM2 b a 0 0 nch\nR2 vdd b 1k\nM3 out b 0 0 nch\nR3 vdd out 1k\n");
+    // Three pins on one bar carrying its symbol (`rail_past` off; the
+    // default bar is a named rail with none, wires.6): the symbol stands on
+    // the bar's run.
+    const symbol_bar: np.Config = .{ .layout = .{ .rail_past = false } };
+    var bar = try np.place(testing.allocator, &symbol_bar, lib, &.{"Supply bar\n.model nch nmos\nM1 a in 0 0 nch\nR1 vdd a 1k\nM2 b a 0 0 nch\nR2 vdd b 1k\nM3 out b 0 0 nch\nR3 vdd out 1k\n"}, null);
     defer bar.deinit();
     const on = supplyPin(&bar, lib);
     const ways = np.checks.ways(&bar, bar.pin_net[on], bar.pin_xy[on]);
