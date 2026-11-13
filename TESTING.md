@@ -81,3 +81,50 @@ does not remove individual regressions. Report source-agreeing and
 source-disagreeing changes, their exact names, repeated-family dependence
 and changes to other readability measures. Electrical equivalence and a
 passing structural score do not certify human schematic equivalence.
+
+## Manual reference-amplifier continuity gate
+
+[reference_continuity.zig](tests/reference_continuity.zig) is deliberately
+unimported while these three recorded source regressions remain unresolved.
+The ordinary green test suites do **not** cover them. The expected failure
+markers are the exact names in
+[reference_continuity_failures.py](tests/reference_continuity_failures.py):
+
+| Exact test name | Positive physical-source oracle |
+| --- | --- |
+| `reference continuity: AG2415 keeps the source VIN branch wire` | One ink component joins M1.S, MCHG.S and MRES.S. |
+| `reference continuity: AG2428 keeps the source VIN branch wire` | One ink component joins M1.S, M4.S and M8.S. |
+| `reference continuity: AG2436 keeps the source amplifier output gate tree` | One ink component joins X1.OUT, M1.G and MSEN.G. |
+
+All three currently fail the `ink.connected` assertion with compaction;
+electrical correctness and no-short checks pass in both compaction modes.
+[The routing study](docs/research/reference-routing.md) records the source
+ink and actual decisions. AG2434's source-separated VIN terminals remain a
+negative research control, not a blanket positive bus expectation.
+
+Run this separately, with no other Zig process active. The log checker
+requires these exact failures at the physical-wire assertion. An unexpected
+pass, missing case, unrelated failure or changed name fails the manual gate.
+A successful **log check** means the known disagreements were reproduced;
+it is not a source-continuity pass. Repair each case, remove its marker and
+activate its positive test before claiming that source relation is covered.
+
+```sh
+cat > /tmp/reference-continuity-options.zig <<'EOF'
+pub const latex_renderer = false;
+pub const zon_config = false;
+pub const c_abi = false;
+EOF
+if nix develop -c zig test --dep NetlistParser \
+  -Mroot=tests/reference_continuity.zig --dep build_options \
+  -MNetlistParser=src/root.zig \
+  -Mbuild_options=/tmp/reference-continuity-options.zig \
+  --test-filter 'reference continuity:' \
+  > /tmp/reference-continuity.log 2>&1; then
+  reference_status=0
+else
+  reference_status=$?
+fi
+python3 -B tests/reference_continuity_failures.py \
+  /tmp/reference-continuity.log --exit-code "$reference_status"
+```

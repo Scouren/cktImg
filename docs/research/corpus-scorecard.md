@@ -1194,12 +1194,85 @@ markers and earlier cohort inventories replay exactly. Real release-host
 Schemify round trips retain 98 fixture comparisons and the two named
 capacity refusals; all 35 changed decks yield 40 exact subcircuits. The
 35 changed drawings reproduce identical geometry and reports with one and
-four jobs, including an independent replay. The current-host changed-deck
-run is pending at this documentation snapshot. Source and native views of AG2318
-confirm the repaired gate interval and the still different whole layout.
+four jobs, including an independent replay. The completed current-host run also yields the same exact 40 named
+subcircuits from all 35 changed decks, with source hashes and the completion
+trailer independently checked. Source and native views of AG2318 confirm
+the repaired gate interval and the still different whole layout.
 
 The final plugin is **556,416 bytes**, SHA-256
 `3ac32d22402e31a27805988b8456b405bb45c3d80380a6fe53c8dd6cf8deb9a4`,
 6,784 bytes below the strict cap. Repeated native and plugin builds are
 byte-identical. This checkpoint improves a bounded policy while retaining
 the exact source mismatches; it does not establish human equivalence.
+
+
+## Eighteenth measured pass: unsigned reference-amplifier contracts
+
+The frozen executable is
+`c99fc4e18eaadd443a39c453207f50016710a387c0ea99cc339aaed061114248`.
+The [reference-amplifier study](reference-amplifiers.md) admits complete
+VREF/OUT-or-VEA contracts in four exact families: AEA, ERRORAMP,
+ERROR_AMPLIFIER and ERROR_AMP. It replaces **15 source-backed boxes with
+unsigned triangles**, preserving **all 68 ordered electrical ports and
+bindings**. Actual native SVG certificates require one own-body lead per
+port, VREF at the base, the output at the apex, no orphan lead and no
+polarity or comparator step. Missing source VSS geometry does not remove
+a declared native pin. Near misses, the signed AG2423 contract, caller
+symbols, side hints and conflicting Schemify PININFO retain precedence.
+
+Exactly the fifteen selected AG drawings and their reports change; every
+other drawing/report is byte-identical, including all 734 AMS cases.
+All **2,936** render with the same two source issues and no native findings.
+The partial all-relation sets remain **289/2,202 AG and 243/734 AMS**.
+Device axes, physical gate direction and block flow do not change. AG
+crossings rise from **4,982 to 4,988**, while bends fall from **20,677 to
+20,668**. AMS remains at 203 crossings and 1,545 bends. Canonical native
+bias/rail sides still differ from source exceptions; local glyph
+recognition does not establish source placement or physical equivalence.
+
+The [complete changed-pin audit](figures/reference_amplifiers_connectivity.py)
+finds **no newly joined pairs and twelve newly separated pairs**, all with
+actual source lead and conductor certificates. **Nine separations are
+regressions**: all three VIN source-pin pairs in AG2415, all three VIN
+source-pin pairs in AG2428, and all three pairs among AG2436 X1.OUT, M1.G
+and MSEN.G on net4. **Three separations agree with the source**: the VIN
+source-pin pairs in AG2434. These correlated observations cover four nets.
+The [frozen result](figures/reference_amplifiers_connectivity_cases.json)
+retains every exact name, source expectation, endpoint, ink proof and
+artifact hash. Its evidence replay passes; its physical-preservation check
+intentionally remains red for the nine losses. Earlier failed preservation
+oracles are retained without weakening their source expectations.
+
+The [routing traces](reference-routing.md) distinguish three input clusters
+that exceed the existing size limit before trunk routing from AG2436's
+post-thinning local route failure. In AG2436, a connected automatic route
+is cut after four nonrail crossings; a later two-pin group cannot fit its
+finite candidate routes around the foreign bias-net spine. Its source
+connection bends, so a source-straight-only oracle would miss the loss.
+These remain named placement/routing work, separate from this glyph change.
+
+Earlier power, grounded-capacitor, controller, reservoir and input-resistor
+cohorts remain intact. All 145 converter groups retain their universal
+geometry, seven continuous local trees and zero crossings in their 21
+tree pairs; the exact auxiliary-bus joined/disconnected names remain
+unchanged. Previously supported signed, comparator, digital and
+single-input symbols retain their actual glyph checks. The broader
+physical-preservation audit fails as described above.
+
+Validation passes **403 tests without LaTeX and 404 with it**, 4,000 fuzz
+cases, formatting and style checks. All 31 gallery SVGs remain
+byte-identical. One-job and four-job runs reproduce identical geometry
+and reports for all fifteen changed decks. Real release-host round trips
+retain **98 exact fixture comparisons** and the same two named capacity
+refusals; the fifteen selected source decks yield **38 exact subcircuits**.
+Four current-host decks covering the four families yield **ten exact
+subcircuits**. Exact names, source hashes and completed logs are checked.
+Electrical round trips pass while the named source-continuity failures
+remain visible.
+
+The plugin is **556,733 bytes**, SHA-256
+`29d0644fef19fa0e969035d26a5f43ff14f3c80de35ea8e03f3157b38de73728`,
+6,467 bytes below the strict cap. Repeated native and plugin builds are
+byte-identical. The next bounded placement study addresses externally
+driven gate banks and their source-backed exceptions; this checkpoint does
+not claim handwritten equivalence.

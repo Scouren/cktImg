@@ -44,6 +44,14 @@
 //!   input. Unknown controls remain boxed, including AG1752's extra Z.
 //!   Every declared port remains present despite omitted source VSS ink.
 //!   docs/research/remaining-amplifiers.md; `identify`, `draw`
+//! - block_symbols.9 (choice) Exact AEA/ERRORAMP/ERROR_AMPLIFIER/ERROR_AMP
+//!   reference contracts use unsigned triangles: all 15 source glyphs
+//!   agree. VREF enters left; OUT/VEA leaves the apex. Optional VDD/VSS
+//!   and one VB1/VBN/NB bias keep distinct leads. Unknown controls and
+//!   ERRAMP remain boxes; AEA without VREF retains its signed contract.
+//!   Declared VSS survives absent source ink; supply/bias side exceptions
+//!   do not change the canonical glyph. docs/research/reference-amplifiers.md;
+//!   `identify`, `draw`
 //!
 //! Cold, bounded work: at most eight ports, once per registered symbol.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
@@ -62,7 +70,7 @@ const Pt = lib.Pt;
 const DrawOp = lib.DrawOp;
 
 /// Appearance only; every recognized symbol remains an electrical subcircuit.
-pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier };
+pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier };
 
 /// Terminals and strokes allocated in `arena`, which the caller releases
 /// together. `ports` and its strings must outlive the returned drawing.
@@ -90,6 +98,9 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
         .{ .names = "xnor_gate xnor", .shape = .xnor_gate },
     };
     const shape: Shape = found: {
+        if (oneOf(name, "aea erroramp error_amplifier error_amp")) {
+            for (ports) |port| if (oneOf(port, "vref")) break :found .reference_amplifier;
+        }
         for (aliases) |row| if (oneOf(name, row.names)) break :found row.shape;
         return .box;
     };
@@ -126,12 +137,13 @@ pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i3
     assert(ports.len >= 2);
     assert(ports.len <= ports_max);
     const differential = shape == .differential_amplifier;
-    const triangle = differential or shape == .amplifier or shape == .comparator or shape == .buffer or shape == .inverter;
+    const triangle = differential or shape == .amplifier or shape == .comparator or shape == .buffer or shape == .inverter or shape == .reference_amplifier;
     const rounded = shape == .or_gate or shape == .nor_gate or shape == .xor_gate or shape == .xnor_gate;
     const exclusive = shape == .xor_gate or shape == .xnor_gate;
     const inverted = shape == .inverter or shape == .nand_gate or shape == .nor_gate or shape == .xnor_gate;
     const biased = for (ports) |name| {
-        if (oneOf(name, "vb vb1 vb2 vb3 bias")) break true;
+        const r = role(shape, ports, name);
+        if (r == .bias1 or r == .bias2 or r == .bias3) break true;
     } else false;
     var ops: std.ArrayList(DrawOp) = .empty;
     const outline: []const [2]i32 = if (triangle)
@@ -201,6 +213,13 @@ fn oneOf(name: []const u8, words: []const u8) bool {
 }
 
 fn role(shape: Shape, ports: []const []const u8, name: []const u8) Role {
+    if (shape == .reference_amplifier) {
+        if (oneOf(name, "vdd")) return .supply;
+        if (oneOf(name, "vss")) return .ground;
+        if (oneOf(name, "vref")) return .input;
+        if (oneOf(name, "out vea")) return .output;
+        return if (oneOf(name, "vb1 vbn nb")) .bias1 else .unknown;
+    }
     if (lib.named(name, .role)) |named| switch (named) {
         .supply => return .supply,
         .ground => return .ground,

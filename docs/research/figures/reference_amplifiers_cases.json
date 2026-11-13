@@ -1,0 +1,4785 @@
+{
+  "audit_sha256": {
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "reference_amplifiers.py": "a0c97f5446e4820701a9c3e578035443e4111af37fdc96b352cd65c7da3e2502",
+    "remaining_amplifiers.py": "4b727e43ec6ffd7f1786385df86e8604fb353633982a7cbc458d77e2d2f4b9bb",
+    "remaining_amplifiers_cases.json": "45448ca088e156e1d134ddc36af31f546251e605022b2f89b76576135946b925",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a"
+  },
+  "corpus_counts": {
+    "amsnet": 734,
+    "analoggenie": 2202
+  },
+  "corpus_sha256": {
+    "amsnet": "4d9e2ff15cc8a8ea814cfe8a6762ef90f3631cd63ca7f64c4035c6a824033b6c",
+    "analoggenie": "b882223f01fef03f98ef636783c6ad0db5d4ea7086a917ad6d7647cb864a95bd"
+  },
+  "excluded": [
+    {
+      "family": "aea",
+      "name": "ag-2362:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "vref",
+        "vx",
+        "out"
+      ]
+    },
+    {
+      "family": "error_amplifier",
+      "name": "ag-2363:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vb2",
+        "vb1",
+        "out",
+        "vc"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2367:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "vref",
+        "out",
+        "vx",
+        "vp"
+      ]
+    },
+    {
+      "family": "error_amplifier",
+      "name": "ag-2370:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out",
+        "vx"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2377:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "inp",
+        "vb2",
+        "vb1",
+        "vx",
+        "out",
+        "vb3"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2379:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "out",
+        "vref",
+        "x"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2380:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "out",
+        "vb1",
+        "vb2",
+        "vref",
+        "vc"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2384:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "inp",
+        "out",
+        "vx"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2387:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "vref",
+        "out",
+        "vx"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2388:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out",
+        "vc"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2404:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vx",
+        "vy",
+        "vg",
+        "veaout",
+        "vc"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2423:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb"
+      ]
+    },
+    {
+      "family": "error_amplifier",
+      "name": "ag-2429:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vea",
+        "vbt"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2430:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "ib",
+        "out"
+      ]
+    },
+    {
+      "family": "erroramp",
+      "name": "ag-2438:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vea",
+        "vx"
+      ]
+    },
+    {
+      "family": "erramp",
+      "name": "ag-2442:x2",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ]
+    },
+    {
+      "family": "aea",
+      "name": "ag-2445:x1",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out",
+        "vx"
+      ]
+    }
+  ],
+  "method_checks": [
+    "accept_case_and_permutation",
+    "accept_no_vdd",
+    "accept_reference_and_output_only",
+    "reject_erramp_box",
+    "reject_family_suffix",
+    "reject_ea1",
+    "reject_second_input",
+    "reject_extra_control",
+    "reject_duplicate_bias",
+    "reject_duplicate_output",
+    "reject_missing_reference",
+    "reject_signed_ink",
+    "reject_missing_base_lead",
+    "reject_changed_literal_label",
+    "reject_disconnected_label_stub"
+  ],
+  "rows": [
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net4"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vdd"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2415",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out"
+      ],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "4659fe6fb05802d93164f8b5167c42dfc9b752d83a8d55c03c26d69af0e3a45f",
+        ".human.json": "a48700eb30f0f685b4343731c79216eba991ef4c4ed6988774dd6c92a8c0ccd8",
+        ".svg": "b89612ffe6b0cd9ae17ecaca6f653bef20091d317162d02302d535cc4d754c76"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            20.0,
+            90.0
+          ],
+          "lead": 2,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net4",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                80.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    20.0,
+                    90.0
+                  ],
+                  [
+                    21.2,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    21.2,
+                    90.0
+                  ],
+                  [
+                    70.0,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    40.0
+                  ],
+                  [
+                    70.0,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    40.0
+                  ],
+                  [
+                    78.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    78.8,
+                    40.0
+                  ],
+                  [
+                    80.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net4",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                200.0,
+                90.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    20.0,
+                    90.0
+                  ],
+                  [
+                    21.2,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    21.2,
+                    90.0
+                  ],
+                  [
+                    70.0,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    90.0
+                  ],
+                  [
+                    198.8,
+                    90.0
+                  ]
+                ],
+                [
+                  [
+                    198.8,
+                    90.0
+                  ],
+                  [
+                    200.0,
+                    90.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              9.282,
+              90.0
+            ],
+            [
+              20.0,
+              90.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            -10.0,
+            60.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vdda",
+              "name": "vdd",
+              "object": "vddA",
+              "symbol": "vdd-port",
+              "terminal": [
+                -10.0,
+                60.0
+              ],
+              "wire_tree": []
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              -10.0,
+              78.868
+            ],
+            [
+              -10.0,
+              60.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            -70.0,
+            70.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                -90.0,
+                70.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    -90.0,
+                    70.0
+                  ],
+                  [
+                    -88.8,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    -88.8,
+                    70.0
+                  ],
+                  [
+                    -71.2,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    -71.2,
+                    70.0
+                  ],
+                  [
+                    -70.0,
+                    70.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              -60.0,
+              70.0
+            ],
+            [
+              -70.0,
+              70.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "veaout"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x1",
+      "family": "erroramp",
+      "id": "ag-2420",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out"
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "123939b1186e51a0a347504550df62c796c4730b19e26d040959ea1d6e530618",
+        ".human.json": "93683352484071b360df17e84553c7e2c4c62960b3cbeb41962c6c92c0c76ffd",
+        ".svg": "be655ec0fbe8a06ee8038d81a075ad1496d8b3d4f59f494aff398221dbc95727"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            40.0,
+            110.0
+          ],
+          "lead": 1,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "veaout",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                100.0,
+                50.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    40.0,
+                    110.0
+                  ],
+                  [
+                    41.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    41.2,
+                    110.0
+                  ],
+                  [
+                    90.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    90.0,
+                    50.0
+                  ],
+                  [
+                    90.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    90.0,
+                    50.0
+                  ],
+                  [
+                    98.8,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    98.8,
+                    50.0
+                  ],
+                  [
+                    100.0,
+                    50.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "veaout",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                220.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    40.0,
+                    110.0
+                  ],
+                  [
+                    41.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    41.2,
+                    110.0
+                  ],
+                  [
+                    90.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    90.0,
+                    110.0
+                  ],
+                  [
+                    218.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    218.8,
+                    110.0
+                  ],
+                  [
+                    220.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              29.282,
+              110.0
+            ],
+            [
+              40.0,
+              110.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            10.0,
+            60.0
+          ],
+          "lead": 2,
+          "markers": [
+            {
+              "label": "power-label-vddt",
+              "name": "vdd",
+              "object": "vddt",
+              "symbol": "vdd-port",
+              "terminal": [
+                10.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    10.0,
+                    40.0
+                  ],
+                  [
+                    10.0,
+                    41.2
+                  ]
+                ],
+                [
+                  [
+                    10.0,
+                    41.2
+                  ],
+                  [
+                    10.0,
+                    58.8
+                  ]
+                ],
+                [
+                  [
+                    10.0,
+                    58.8
+                  ],
+                  [
+                    10.0,
+                    60.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              10.0,
+              98.868
+            ],
+            [
+              10.0,
+              60.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            -50.0,
+            110.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                -70.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    -70.0,
+                    110.0
+                  ],
+                  [
+                    -68.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    -68.8,
+                    110.0
+                  ],
+                  [
+                    -51.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    -51.2,
+                    110.0
+                  ],
+                  [
+                    -50.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              -40.0,
+              110.0
+            ],
+            [
+              -50.0,
+              110.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net0",
+        "net5"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vdd",
+        "vref"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2421",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "9e9b13f5a4cf9e99ce0d7f3e8b933ff5e823f32bef89e20ed885dfaefd5c7b86",
+        ".human.json": "7eb57079affc74ec985c0e3af230c39ac2244660cdd6651e0acbf16271c2febb",
+        ".svg": "93a8c1c9e3f1b771c03cadb8d1600ba2edefa02da7d78b6433c9934768ea39af"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            280.0,
+            110.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net5",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                340.0,
+                60.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    280.0,
+                    110.0
+                  ],
+                  [
+                    281.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    281.2,
+                    110.0
+                  ],
+                  [
+                    340.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    340.0,
+                    60.0
+                  ],
+                  [
+                    340.0,
+                    61.2
+                  ]
+                ],
+                [
+                  [
+                    340.0,
+                    61.2
+                  ],
+                  [
+                    340.0,
+                    110.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net5",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                480.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    280.0,
+                    110.0
+                  ],
+                  [
+                    281.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    281.2,
+                    110.0
+                  ],
+                  [
+                    340.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    340.0,
+                    110.0
+                  ],
+                  [
+                    478.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    478.8,
+                    110.0
+                  ],
+                  [
+                    480.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              271.962,
+              110.0
+            ],
+            [
+              280.0,
+              110.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "cached_terminal": [
+            240,
+            80
+          ],
+          "declared_net": "net0",
+          "endpoint": [
+            240.0,
+            80.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "up",
+          "path": [
+            [
+              240.0,
+              91.547
+            ],
+            [
+              240.0,
+              80.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "anchor_kind": "route",
+          "endpoint": [
+            250.0,
+            140.0
+          ],
+          "label": "label-ff8ddaf5-3f1a-4ab7-9cc9-03035ed127fe",
+          "label_position": [
+            240,
+            160
+          ],
+          "label_text": "vdd",
+          "lead": 0,
+          "method": "reviewed_literal_label_and_stub",
+          "outward_direction": "down",
+          "path": [
+            [
+              250.0,
+              122.679
+            ],
+            [
+              250.0,
+              140.0
+            ]
+          ],
+          "role": "supply",
+          "stub_endpoint": [
+            250,
+            160
+          ],
+          "wire_tree": [
+            [
+              [
+                250.0,
+                140.0
+              ],
+              [
+                250.0,
+                141.2
+              ]
+            ],
+            [
+              [
+                250.0,
+                141.2
+              ],
+              [
+                250,
+                160
+              ]
+            ]
+          ]
+        },
+        "vref": {
+          "endpoint": [
+            210.0,
+            110.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                200.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    200.0,
+                    110.0
+                  ],
+                  [
+                    201.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    201.2,
+                    110.0
+                  ],
+                  [
+                    208.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    208.8,
+                    110.0
+                  ],
+                  [
+                    210.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              220.0,
+              110.0
+            ],
+            [
+              210.0,
+              110.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net3",
+        "vea"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vref"
+      ],
+      "card": "x1",
+      "family": "error_amp",
+      "id": "ag-2422",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "756b28d330efa3b9f79583bec5dd9a446314584d883c548078b58dd4c9981271",
+        ".human.json": "30b6907a028bd7006f62bd348ff4ad29e36b967ef59217fc4dacc34a1bd7a065",
+        ".svg": "5abfcf0a5a507f14748dd7ace300671bd423d8fb080238e1ff98b22f6aa3faa1"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            180.0,
+            130.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "vea",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                270.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    180.0,
+                    130.0
+                  ],
+                  [
+                    181.2,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    181.2,
+                    130.0
+                  ],
+                  [
+                    250.0,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    250.0,
+                    100.0
+                  ],
+                  [
+                    250.0,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    250.0,
+                    100.0
+                  ],
+                  [
+                    268.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    268.8,
+                    100.0
+                  ],
+                  [
+                    270.0,
+                    100.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "vea",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                410.0,
+                160.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    180.0,
+                    130.0
+                  ],
+                  [
+                    181.2,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    181.2,
+                    130.0
+                  ],
+                  [
+                    250.0,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    250.0,
+                    130.0
+                  ],
+                  [
+                    390.0,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    390.0,
+                    130.0
+                  ],
+                  [
+                    390.0,
+                    160.0
+                  ]
+                ],
+                [
+                  [
+                    390.0,
+                    160.0
+                  ],
+                  [
+                    408.8,
+                    160.0
+                  ]
+                ],
+                [
+                  [
+                    408.8,
+                    160.0
+                  ],
+                  [
+                    410.0,
+                    160.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              169.282,
+              130.0
+            ],
+            [
+              180.0,
+              130.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "cached_terminal": [
+            150,
+            180
+          ],
+          "declared_net": "net3",
+          "endpoint": [
+            150.0,
+            180.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "down",
+          "path": [
+            [
+              150.0,
+              141.132
+            ],
+            [
+              150.0,
+              180.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "endpoint": [
+            150.0,
+            80.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vdd1",
+              "name": "vdd",
+              "object": "vdd1",
+              "symbol": "vdd-port",
+              "terminal": [
+                150.0,
+                60.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    150.0,
+                    60.0
+                  ],
+                  [
+                    150.0,
+                    61.2
+                  ]
+                ],
+                [
+                  [
+                    150.0,
+                    61.2
+                  ],
+                  [
+                    150.0,
+                    78.8
+                  ]
+                ],
+                [
+                  [
+                    150.0,
+                    78.8
+                  ],
+                  [
+                    150.0,
+                    80.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              150.0,
+              118.868
+            ],
+            [
+              150.0,
+              80.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            90.0,
+            110.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                70.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    70.0,
+                    110.0
+                  ],
+                  [
+                    71.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    71.2,
+                    110.0
+                  ],
+                  [
+                    88.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    88.8,
+                    110.0
+                  ],
+                  [
+                    90.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              100.0,
+              110.0
+            ],
+            [
+              90.0,
+              110.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "veaout"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vdd",
+        "vref"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2425",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "08313d1249d09a906918bc2f590d3daac4f73eaf764bb8951296c5629998e3fb",
+        ".human.json": "543349004e175d3e530b860bb841e3a28ff5a09ab48b66aa7ab953266169d3fb",
+        ".svg": "7717354a6ccb110bc4ac7b9c97ce6f5e69749d8c6b1c64f5b98f93b0712a9cda"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            180.0,
+            70.0
+          ],
+          "lead": 2,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "veaout",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                220.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    180.0,
+                    70.0
+                  ],
+                  [
+                    181.2,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    181.2,
+                    70.0
+                  ],
+                  [
+                    220.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    220.0,
+                    40.0
+                  ],
+                  [
+                    220.0,
+                    41.2
+                  ]
+                ],
+                [
+                  [
+                    220.0,
+                    41.2
+                  ],
+                  [
+                    220.0,
+                    70.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "veaout",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                340.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    180.0,
+                    70.0
+                  ],
+                  [
+                    181.2,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    181.2,
+                    70.0
+                  ],
+                  [
+                    220.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    220.0,
+                    70.0
+                  ],
+                  [
+                    320.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    320.0,
+                    70.0
+                  ],
+                  [
+                    320.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    320.0,
+                    100.0
+                  ],
+                  [
+                    338.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    338.8,
+                    100.0
+                  ],
+                  [
+                    340.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              169.282,
+              70.0
+            ],
+            [
+              180.0,
+              70.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            140.0,
+            20.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vddm",
+              "name": "vdd",
+              "object": "vddM",
+              "symbol": "vdd-port",
+              "terminal": [
+                140.0,
+                10.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    140.0,
+                    10.0
+                  ],
+                  [
+                    140.0,
+                    11.2
+                  ]
+                ],
+                [
+                  [
+                    140.0,
+                    11.2
+                  ],
+                  [
+                    140.0,
+                    18.8
+                  ]
+                ],
+                [
+                  [
+                    140.0,
+                    18.8
+                  ],
+                  [
+                    140.0,
+                    20.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              140.0,
+              53.094
+            ],
+            [
+              140.0,
+              20.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            90.0,
+            50.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                80.0,
+                50.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    80.0,
+                    50.0
+                  ],
+                  [
+                    81.2,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    81.2,
+                    50.0
+                  ],
+                  [
+                    88.8,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    88.8,
+                    50.0
+                  ],
+                  [
+                    90.0,
+                    50.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              100.0,
+              50.0
+            ],
+            [
+              90.0,
+              50.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vss",
+        "vref",
+        "vea"
+      ],
+      "cached_frame_mismatches": [
+        "vea",
+        "vref"
+      ],
+      "card": "x1",
+      "family": "error_amplifier",
+      "id": "ag-2427",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vss",
+        "vref",
+        "vea"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "0d0e2084e76d7c9e9f19400114c0afffc896124d78a3827836f17df9fc1ea6bb",
+        ".human.json": "bacf83191046ff52a675a35e9c83dc101d61fb162ee9ede8bc5e45a705630d8a",
+        ".svg": "f54c3f7baec737d09a159953dcb6f56631f6225451a0f96c6c262a0cad145b9d"
+      },
+      "visible_port_mapping": {
+        "vea": {
+          "endpoint": [
+            30.0,
+            70.0
+          ],
+          "lead": 1,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "vea",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                80.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    30.0,
+                    70.0
+                  ],
+                  [
+                    31.2,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    31.2,
+                    70.0
+                  ],
+                  [
+                    70.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    40.0
+                  ],
+                  [
+                    70.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    40.0
+                  ],
+                  [
+                    78.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    78.8,
+                    40.0
+                  ],
+                  [
+                    80.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "vea",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                190.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    30.0,
+                    70.0
+                  ],
+                  [
+                    31.2,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    31.2,
+                    70.0
+                  ],
+                  [
+                    70.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    70.0
+                  ],
+                  [
+                    170.0,
+                    70.0
+                  ]
+                ],
+                [
+                  [
+                    170.0,
+                    70.0
+                  ],
+                  [
+                    170.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    170.0,
+                    100.0
+                  ],
+                  [
+                    188.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    188.8,
+                    100.0
+                  ],
+                  [
+                    190.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              19.282,
+              70.0
+            ],
+            [
+              30.0,
+              70.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vref": {
+          "anchor_kind": "route",
+          "endpoint": [
+            -60.0,
+            70.0
+          ],
+          "label": "label-da6754ef-805c-4b0b-ae63-65dde46536dd",
+          "label_position": [
+            -80,
+            60
+          ],
+          "label_text": "vref",
+          "lead": 0,
+          "method": "reviewed_literal_label_and_stub",
+          "outward_direction": "left",
+          "path": [
+            [
+              -50.0,
+              70.0
+            ],
+            [
+              -60.0,
+              70.0
+            ]
+          ],
+          "role": "input",
+          "stub_endpoint": [
+            -80,
+            70
+          ],
+          "wire_tree": [
+            [
+              [
+                -80,
+                70
+              ],
+              [
+                -61.2,
+                70.0
+              ]
+            ],
+            [
+              [
+                -61.2,
+                70.0
+              ],
+              [
+                -60.0,
+                70.0
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "veaout",
+        "vb1"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vb1",
+        "vdd"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2428",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out",
+        "vb1"
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "59c1993836dfd4723b09d8e892ab8659373b1125862100d1a807c3812a25b964",
+        ".human.json": "458a28c366de6e8625808234f969116ac06dd8ddec36d1f9d3fca4f50dc6f554",
+        ".svg": "cd1251252126c144ca9e32f6176946d886f47e379d82217fdc7f44ec9a239f21"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            230.0,
+            100.0
+          ],
+          "lead": 1,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "veaout",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                280.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    230.0,
+                    100.0
+                  ],
+                  [
+                    231.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    231.2,
+                    100.0
+                  ],
+                  [
+                    270.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    270.0,
+                    40.0
+                  ],
+                  [
+                    270.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    270.0,
+                    40.0
+                  ],
+                  [
+                    278.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    278.8,
+                    40.0
+                  ],
+                  [
+                    280.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "m5",
+              "declared_net": "veaout",
+              "lead": 1,
+              "pin": "G",
+              "terminal": [
+                440.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    230.0,
+                    100.0
+                  ],
+                  [
+                    231.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    231.2,
+                    100.0
+                  ],
+                  [
+                    270.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    270.0,
+                    100.0
+                  ],
+                  [
+                    438.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    438.8,
+                    100.0
+                  ],
+                  [
+                    440.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              219.282,
+              100.0
+            ],
+            [
+              230.0,
+              100.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vb1": {
+          "endpoint": [
+            190.0,
+            150.0
+          ],
+          "lead": 3,
+          "markers": [
+            {
+              "label": "instance-label-pVB1",
+              "name": "vb1",
+              "object": "pVB1",
+              "symbol": "port",
+              "terminal": [
+                190.0,
+                170.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    190.0,
+                    150.0
+                  ],
+                  [
+                    190.0,
+                    151.2
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    151.2
+                  ],
+                  [
+                    190.0,
+                    168.8
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    168.8
+                  ],
+                  [
+                    190.0,
+                    170.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "down",
+          "path": [
+            [
+              190.0,
+              116.906
+            ],
+            [
+              190.0,
+              150.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "endpoint": [
+            190.0,
+            50.0
+          ],
+          "lead": 2,
+          "markers": [
+            {
+              "label": "power-label-vdd",
+              "name": "vdd",
+              "object": "vdd",
+              "symbol": "vdd-port",
+              "terminal": [
+                190.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    190.0,
+                    40.0
+                  ],
+                  [
+                    190.0,
+                    41.2
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    41.2
+                  ],
+                  [
+                    190.0,
+                    48.8
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    48.8
+                  ],
+                  [
+                    190.0,
+                    50.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              190.0,
+              83.094
+            ],
+            [
+              190.0,
+              50.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            140.0,
+            100.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                120.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    120.0,
+                    100.0
+                  ],
+                  [
+                    121.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    121.2,
+                    100.0
+                  ],
+                  [
+                    138.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    138.8,
+                    100.0
+                  ],
+                  [
+                    140.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              150.0,
+              100.0
+            ],
+            [
+              140.0,
+              100.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net2"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2434",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out"
+      ],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "90bfaf8f9167bec7634f84413937db76a05c7ffa8151eb0cf51b9a541aaa2067",
+        ".human.json": "b8794ff6c7ee55f044945f6e54a253975d8dd16ea4eafb31524bf0593f2dd7d6",
+        ".svg": "e8e174574d1f5559a5248c1d8c67c7a1b06dd96f1fd8ec2b24bd36b4e6068e1b"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            20.0,
+            110.0
+          ],
+          "lead": 2,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net2",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                80.0,
+                50.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    20.0,
+                    110.0
+                  ],
+                  [
+                    21.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    21.2,
+                    110.0
+                  ],
+                  [
+                    70.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    50.0
+                  ],
+                  [
+                    70.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    50.0
+                  ],
+                  [
+                    78.8,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    78.8,
+                    50.0
+                  ],
+                  [
+                    80.0,
+                    50.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net2",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                200.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    20.0,
+                    110.0
+                  ],
+                  [
+                    21.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    21.2,
+                    110.0
+                  ],
+                  [
+                    70.0,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    110.0
+                  ],
+                  [
+                    198.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    198.8,
+                    110.0
+                  ],
+                  [
+                    200.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              9.282,
+              110.0
+            ],
+            [
+              20.0,
+              110.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            -10.0,
+            60.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vddm",
+              "name": "vdd",
+              "object": "vddm",
+              "symbol": "vdd-port",
+              "terminal": [
+                -10.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    -10.0,
+                    40.0
+                  ],
+                  [
+                    -10.0,
+                    41.2
+                  ]
+                ],
+                [
+                  [
+                    -10.0,
+                    41.2
+                  ],
+                  [
+                    -10.0,
+                    58.8
+                  ]
+                ],
+                [
+                  [
+                    -10.0,
+                    58.8
+                  ],
+                  [
+                    -10.0,
+                    60.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              -10.0,
+              98.868
+            ],
+            [
+              -10.0,
+              60.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            -70.0,
+            110.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                -90.0,
+                110.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    -90.0,
+                    110.0
+                  ],
+                  [
+                    -88.8,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    -88.8,
+                    110.0
+                  ],
+                  [
+                    -71.2,
+                    110.0
+                  ]
+                ],
+                [
+                  [
+                    -71.2,
+                    110.0
+                  ],
+                  [
+                    -70.0,
+                    110.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              -60.0,
+              110.0
+            ],
+            [
+              -70.0,
+              110.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "veaout"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vdd",
+        "vref"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2435",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "c1390e595ec54fbb990493d86d9135895231ad36758a414a67a07c93336cfe99",
+        ".human.json": "4de33c8746a9d2a24dc2dc14da6ae51b2c16530d8db7ae66ac2cfeaa41d076a1",
+        ".svg": "1aa70d75094e60a90d66b831978f70d7b25c719c75aabba44d69e34b38e3688d"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            20.0,
+            50.0
+          ],
+          "lead": 2,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "veaout",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                70.0,
+                50.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    20.0,
+                    50.0
+                  ],
+                  [
+                    21.2,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    21.2,
+                    50.0
+                  ],
+                  [
+                    68.8,
+                    50.0
+                  ]
+                ],
+                [
+                  [
+                    68.8,
+                    50.0
+                  ],
+                  [
+                    70.0,
+                    50.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              9.282,
+              50.0
+            ],
+            [
+              20.0,
+              50.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            -40.0,
+            0.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vddt",
+              "name": "vdd",
+              "object": "vddT",
+              "symbol": "vdd-port",
+              "terminal": [
+                -40.0,
+                -10.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    -40.0,
+                    -10.0
+                  ],
+                  [
+                    -40.0,
+                    -8.8
+                  ]
+                ],
+                [
+                  [
+                    -40.0,
+                    -8.8
+                  ],
+                  [
+                    -40.0,
+                    -1.2000000000000002
+                  ]
+                ],
+                [
+                  [
+                    -40.0,
+                    -1.2000000000000002
+                  ],
+                  [
+                    -40.0,
+                    0.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              -40.0,
+              21.547
+            ],
+            [
+              -40.0,
+              0.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "anchor_kind": "route",
+          "endpoint": [
+            -70.0,
+            50.0
+          ],
+          "label": "label-9a1560f9-4ef2-4960-a428-af06e155f467",
+          "label_position": [
+            -90,
+            40
+          ],
+          "label_text": "vref",
+          "lead": 1,
+          "method": "reviewed_literal_label_and_stub",
+          "outward_direction": "left",
+          "path": [
+            [
+              -60.0,
+              50.0
+            ],
+            [
+              -70.0,
+              50.0
+            ]
+          ],
+          "role": "input",
+          "stub_endpoint": [
+            -90,
+            50
+          ],
+          "wire_tree": [
+            [
+              [
+                -90,
+                50
+              ],
+              [
+                -71.2,
+                50.0
+              ]
+            ],
+            [
+              [
+                -71.2,
+                50.0
+              ],
+              [
+                -70.0,
+                50.0
+              ]
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net0",
+        "net4"
+      ],
+      "cached_frame_mismatches": [],
+      "card": "x1",
+      "family": "error_amp",
+      "id": "ag-2436",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "nb",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "4de769b21202bb2925faa35dcdfc34907d125d7683e390a68e6e232f1b243265",
+        ".human.json": "cf3142bc15ac6898a6e0be06a661a8f27d72e1c7ef7978374de6f8a4f1f6daac",
+        ".svg": "36e66ba0b331d4337ebe78c8b87ba07ec74dc39ee13d99667be8dad90ef09043"
+      },
+      "visible_port_mapping": {
+        "nb": {
+          "cached_terminal": [
+            210,
+            170
+          ],
+          "declared_net": "net0",
+          "endpoint": [
+            210.0,
+            170.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "down",
+          "path": [
+            [
+              210.0,
+              113.812
+            ],
+            [
+              210.0,
+              170.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "out": {
+          "endpoint": [
+            240.0,
+            100.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net4",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                270.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    240.0,
+                    100.0
+                  ],
+                  [
+                    241.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    241.2,
+                    100.0
+                  ],
+                  [
+                    260.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    260.0,
+                    40.0
+                  ],
+                  [
+                    260.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    260.0,
+                    40.0
+                  ],
+                  [
+                    268.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    268.8,
+                    40.0
+                  ],
+                  [
+                    270.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net4",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                390.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    240.0,
+                    100.0
+                  ],
+                  [
+                    241.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    241.2,
+                    100.0
+                  ],
+                  [
+                    260.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    260.0,
+                    100.0
+                  ],
+                  [
+                    388.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    388.8,
+                    100.0
+                  ],
+                  [
+                    390.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              233.923,
+              100.0
+            ],
+            [
+              240.0,
+              100.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            180.0,
+            30.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vdda",
+              "name": "vdd",
+              "object": "vddA",
+              "symbol": "vdd-port",
+              "terminal": [
+                180.0,
+                20.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    180.0,
+                    20.0
+                  ],
+                  [
+                    180.0,
+                    21.2
+                  ]
+                ],
+                [
+                  [
+                    180.0,
+                    21.2
+                  ],
+                  [
+                    180.0,
+                    28.8
+                  ]
+                ],
+                [
+                  [
+                    180.0,
+                    28.8
+                  ],
+                  [
+                    180.0,
+                    30.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              180.0,
+              68.868
+            ],
+            [
+              180.0,
+              30.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            120.0,
+            80.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                100.0,
+                80.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    100.0,
+                    80.0
+                  ],
+                  [
+                    101.2,
+                    80.0
+                  ]
+                ],
+                [
+                  [
+                    101.2,
+                    80.0
+                  ],
+                  [
+                    118.8,
+                    80.0
+                  ]
+                ],
+                [
+                  [
+                    118.8,
+                    80.0
+                  ],
+                  [
+                    120.0,
+                    80.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              130.0,
+              80.0
+            ],
+            [
+              120.0,
+              80.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "net3"
+      ],
+      "cached_frame_mismatches": [
+        "out",
+        "vbn",
+        "vdd"
+      ],
+      "card": "x2",
+      "family": "aea",
+      "id": "ag-2440",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "93ec0801ec5af72062e8a4f9c230be25738b279f4692be8b941e0f499540d6d4",
+        ".human.json": "1818b812eea6afe57c02113d0ef583971a4c2078cd37543076ff42eb5a25243b",
+        ".svg": "e2619fa7b83d8cfe883c7e22f8aa79b07a274594d7f2dac6c8eda4a8c7cef17d"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            230.0,
+            270.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net3",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                410.0,
+                150.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    230.0,
+                    270.0
+                  ],
+                  [
+                    231.2,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    231.2,
+                    270.0
+                  ],
+                  [
+                    400.0,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    400.0,
+                    150.0
+                  ],
+                  [
+                    400.0,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    400.0,
+                    150.0
+                  ],
+                  [
+                    408.8,
+                    150.0
+                  ]
+                ],
+                [
+                  [
+                    408.8,
+                    150.0
+                  ],
+                  [
+                    410.0,
+                    150.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net3",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                660.0,
+                270.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    230.0,
+                    270.0
+                  ],
+                  [
+                    231.2,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    231.2,
+                    270.0
+                  ],
+                  [
+                    400.0,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    400.0,
+                    270.0
+                  ],
+                  [
+                    658.8,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    658.8,
+                    270.0
+                  ],
+                  [
+                    660.0,
+                    270.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              219.282,
+              270.0
+            ],
+            [
+              230.0,
+              270.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "anchor_kind": "route",
+          "endpoint": [
+            190.0,
+            320.0
+          ],
+          "label": "label-a5f1e066-2177-4f82-99b1-fe3d8f08792d",
+          "label_position": [
+            198,
+            350
+          ],
+          "label_text": "vbn",
+          "lead": 2,
+          "method": "reviewed_literal_label_and_stub",
+          "outward_direction": "down",
+          "path": [
+            [
+              190.0,
+              286.906
+            ],
+            [
+              190.0,
+              320.0
+            ]
+          ],
+          "role": "bias",
+          "stub_endpoint": [
+            190,
+            350
+          ],
+          "wire_tree": [
+            [
+              [
+                190.0,
+                320.0
+              ],
+              [
+                190.0,
+                321.2
+              ]
+            ],
+            [
+              [
+                190.0,
+                321.2
+              ],
+              [
+                190,
+                350
+              ]
+            ]
+          ]
+        },
+        "vdd": {
+          "endpoint": [
+            190.0,
+            220.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vdd2",
+              "name": "vdd",
+              "object": "vdd2",
+              "symbol": "vdd-port",
+              "terminal": [
+                190.0,
+                200.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    190.0,
+                    200.0
+                  ],
+                  [
+                    190.0,
+                    201.2
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    201.2
+                  ],
+                  [
+                    190.0,
+                    218.8
+                  ]
+                ],
+                [
+                  [
+                    190.0,
+                    218.8
+                  ],
+                  [
+                    190.0,
+                    220.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              190.0,
+              253.094
+            ],
+            [
+              190.0,
+              220.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            140.0,
+            270.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                90.0,
+                270.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    90.0,
+                    270.0
+                  ],
+                  [
+                    91.2,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    91.2,
+                    270.0
+                  ],
+                  [
+                    138.8,
+                    270.0
+                  ]
+                ],
+                [
+                  [
+                    138.8,
+                    270.0
+                  ],
+                  [
+                    140.0,
+                    270.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              150.0,
+              270.0
+            ],
+            [
+              140.0,
+              270.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net2",
+        "net0"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2441",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "out",
+        "vbn"
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "3497cc4588e609cfc0231d193ed0ba9a1ec57317a61c82fa3db5900427ef99ca",
+        ".human.json": "9d9b19e5bc253505a455d683993ef328bec4d07067924b15ac71755ac2835e74",
+        ".svg": "c3f4387c8b82a985c987ac3f0b8bc8ca379cc960125bbaa02be74718b6172425"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            320.0,
+            100.0
+          ],
+          "lead": 2,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net2",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                380.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    320.0,
+                    100.0
+                  ],
+                  [
+                    321.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    321.2,
+                    100.0
+                  ],
+                  [
+                    370.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    370.0,
+                    40.0
+                  ],
+                  [
+                    370.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    370.0,
+                    40.0
+                  ],
+                  [
+                    378.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    378.8,
+                    40.0
+                  ],
+                  [
+                    380.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net2",
+              "lead": 2,
+              "pin": "G",
+              "terminal": [
+                520.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    320.0,
+                    100.0
+                  ],
+                  [
+                    321.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    321.2,
+                    100.0
+                  ],
+                  [
+                    370.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    370.0,
+                    100.0
+                  ],
+                  [
+                    518.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    518.8,
+                    100.0
+                  ],
+                  [
+                    520.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              309.282,
+              100.0
+            ],
+            [
+              320.0,
+              100.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "cached_terminal": [
+            290,
+            170
+          ],
+          "declared_net": "net0",
+          "endpoint": [
+            290.0,
+            170.0
+          ],
+          "lead": 3,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "down",
+          "path": [
+            [
+              290.0,
+              111.132
+            ],
+            [
+              290.0,
+              170.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "endpoint": [
+            290.0,
+            30.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vd1",
+              "name": "vdd",
+              "object": "vd1",
+              "symbol": "vdd-port",
+              "terminal": [
+                290.0,
+                10.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    290.0,
+                    10.0
+                  ],
+                  [
+                    290.0,
+                    11.2
+                  ]
+                ],
+                [
+                  [
+                    290.0,
+                    11.2
+                  ],
+                  [
+                    290.0,
+                    28.8
+                  ]
+                ],
+                [
+                  [
+                    290.0,
+                    28.8
+                  ],
+                  [
+                    290.0,
+                    30.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              290.0,
+              88.868
+            ],
+            [
+              290.0,
+              30.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            230.0,
+            80.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pREF",
+              "name": "vref",
+              "object": "pREF",
+              "symbol": "port",
+              "terminal": [
+                210.0,
+                80.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    210.0,
+                    80.0
+                  ],
+                  [
+                    211.2,
+                    80.0
+                  ]
+                ],
+                [
+                  [
+                    211.2,
+                    80.0
+                  ],
+                  [
+                    228.8,
+                    80.0
+                  ]
+                ],
+                [
+                  [
+                    228.8,
+                    80.0
+                  ],
+                  [
+                    230.0,
+                    80.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              240.0,
+              80.0
+            ],
+            [
+              230.0,
+              80.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net0",
+        "vea"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2443",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "nb",
+        "out"
+      ],
+      "source_object": "XEA",
+      "source_sha256": {
+        ".cir": "c099464caf8d46ba38a9062a43162afed48f0042f61af24e584bd7b247f1307f",
+        ".human.json": "03b5a403feffbdc085488bdb5b93b28f84b174e08c4add1c582361f4d9dc166b",
+        ".svg": "5c7cba915dae6514ca25aa40459f75c8848c3ee9da838999aaa5c649c460a730"
+      },
+      "visible_port_mapping": {
+        "nb": {
+          "cached_terminal": [
+            190,
+            180
+          ],
+          "declared_net": "net0",
+          "endpoint": [
+            190.0,
+            180.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "down",
+          "path": [
+            [
+              190.0,
+              139.585
+            ],
+            [
+              190.0,
+              180.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "out": {
+          "endpoint": [
+            220.0,
+            130.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "vea",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                270.0,
+                130.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    220.0,
+                    130.0
+                  ],
+                  [
+                    221.2,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    221.2,
+                    130.0
+                  ],
+                  [
+                    268.8,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    268.8,
+                    130.0
+                  ],
+                  [
+                    270.0,
+                    130.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              206.603,
+              130.0
+            ],
+            [
+              220.0,
+              130.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vdd": {
+          "endpoint": [
+            150.0,
+            80.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vea",
+              "name": "vdd",
+              "object": "vEA",
+              "symbol": "vdd-port",
+              "terminal": [
+                150.0,
+                60.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    150.0,
+                    60.0
+                  ],
+                  [
+                    150.0,
+                    61.2
+                  ]
+                ],
+                [
+                  [
+                    150.0,
+                    61.2
+                  ],
+                  [
+                    150.0,
+                    78.8
+                  ]
+                ],
+                [
+                  [
+                    150.0,
+                    78.8
+                  ],
+                  [
+                    150.0,
+                    80.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              150.0,
+              97.321
+            ],
+            [
+              150.0,
+              80.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            110.0,
+            130.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                80.0,
+                130.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    80.0,
+                    130.0
+                  ],
+                  [
+                    81.2,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    81.2,
+                    130.0
+                  ],
+                  [
+                    108.8,
+                    130.0
+                  ]
+                ],
+                [
+                  [
+                    108.8,
+                    130.0
+                  ],
+                  [
+                    110.0,
+                    130.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              120.0,
+              130.0
+            ],
+            [
+              110.0,
+              130.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net3",
+        "net2"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x2",
+      "family": "aea",
+      "id": "ag-2444",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ],
+      "source_object": "XA",
+      "source_sha256": {
+        ".cir": "592e6a7b30150af4c40b040a1c2ef9cce82809ecb7b3d65aa42d9123d2f18db2",
+        ".human.json": "88641e7e35c210c415f193476ddf853394c0b3cea609f6a63ba9f334dc825a8e",
+        ".svg": "e691bec1ff6d87343c7128556d51fc79f253135f73942b8906f411abe1838eb9"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            0.0,
+            60.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net2",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                80.0,
+                0.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    0.0,
+                    60.0
+                  ],
+                  [
+                    1.2000000000000002,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    1.2000000000000002,
+                    60.0
+                  ],
+                  [
+                    70.0,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    0.0
+                  ],
+                  [
+                    70.0,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    0.0
+                  ],
+                  [
+                    78.8,
+                    0.0
+                  ]
+                ],
+                [
+                  [
+                    78.8,
+                    0.0
+                  ],
+                  [
+                    80.0,
+                    0.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net2",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                210.0,
+                60.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    0.0,
+                    60.0
+                  ],
+                  [
+                    1.2000000000000002,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    1.2000000000000002,
+                    60.0
+                  ],
+                  [
+                    70.0,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    70.0,
+                    60.0
+                  ],
+                  [
+                    208.8,
+                    60.0
+                  ]
+                ],
+                [
+                  [
+                    208.8,
+                    60.0
+                  ],
+                  [
+                    210.0,
+                    60.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              -13.397,
+              60.0
+            ],
+            [
+              0.0,
+              60.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "cached_terminal": [
+            -80,
+            10
+          ],
+          "declared_net": "net3",
+          "endpoint": [
+            -80.0,
+            10.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "up",
+          "path": [
+            [
+              -80.0,
+              21.547
+            ],
+            [
+              -80.0,
+              10.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "endpoint": [
+            0.0,
+            10.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-vdd1",
+              "name": "vdd",
+              "object": "vdd1",
+              "symbol": "vdd-port",
+              "terminal": [
+                0.0,
+                -20.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    0.0,
+                    -20.0
+                  ],
+                  [
+                    0.0,
+                    -18.8
+                  ]
+                ],
+                [
+                  [
+                    0.0,
+                    -18.8
+                  ],
+                  [
+                    0.0,
+                    8.8
+                  ]
+                ],
+                [
+                  [
+                    0.0,
+                    8.8
+                  ],
+                  [
+                    0.0,
+                    10.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "right",
+          "path": [
+            [
+              -40.0,
+              44.641
+            ],
+            [
+              -40.0,
+              10.0
+            ],
+            [
+              0.0,
+              10.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            -110.0,
+            60.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                -110.0,
+                60.0
+              ],
+              "wire_tree": []
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              -100.0,
+              60.0
+            ],
+            [
+              -110.0,
+              60.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net3",
+        "net5"
+      ],
+      "cached_frame_mismatches": [
+        "out"
+      ],
+      "card": "x1",
+      "family": "aea",
+      "id": "ag-2447",
+      "missing_geometry": [
+        "vss"
+      ],
+      "output_direction": "right",
+      "polarity": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vref",
+        "vbn",
+        "out"
+      ],
+      "source_object": "XA",
+      "source_sha256": {
+        ".cir": "bffaa46e672a38313dbe0d818eb5362710682ab13f57a4a30a10be6bef811440",
+        ".human.json": "5f8fdceceaee48540a72c39d834ce2d5b4187ffd496f7f5872a6b1fe9a4d3d27",
+        ".svg": "49609dece03f25f0d5b7c97fd7538f9cdfb3aa8c89a08985b3f8f037663094a9"
+      },
+      "visible_port_mapping": {
+        "out": {
+          "endpoint": [
+            280.0,
+            100.0
+          ],
+          "lead": 3,
+          "method": "declared_outside_pin_and_actual_wire",
+          "outside_pins": [
+            {
+              "card": "m1",
+              "declared_net": "net5",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                310.0,
+                40.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    280.0,
+                    100.0
+                  ],
+                  [
+                    281.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    281.2,
+                    100.0
+                  ],
+                  [
+                    300.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    300.0,
+                    40.0
+                  ],
+                  [
+                    300.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    300.0,
+                    40.0
+                  ],
+                  [
+                    308.8,
+                    40.0
+                  ]
+                ],
+                [
+                  [
+                    308.8,
+                    40.0
+                  ],
+                  [
+                    310.0,
+                    40.0
+                  ]
+                ]
+              ]
+            },
+            {
+              "card": "msen",
+              "declared_net": "net5",
+              "lead": 3,
+              "pin": "G",
+              "terminal": [
+                420.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    280.0,
+                    100.0
+                  ],
+                  [
+                    281.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    281.2,
+                    100.0
+                  ],
+                  [
+                    300.0,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    300.0,
+                    100.0
+                  ],
+                  [
+                    418.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    418.8,
+                    100.0
+                  ],
+                  [
+                    420.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "outward_direction": "right",
+          "path": [
+            [
+              266.603,
+              100.0
+            ],
+            [
+              280.0,
+              100.0
+            ]
+          ],
+          "role": "output"
+        },
+        "vbn": {
+          "cached_terminal": [
+            230,
+            150
+          ],
+          "declared_net": "net3",
+          "endpoint": [
+            230.0,
+            150.0
+          ],
+          "lead": 2,
+          "method": "declared_cached_pin_matches_actual_lead",
+          "outward_direction": "down",
+          "path": [
+            [
+              230.0,
+              121.132
+            ],
+            [
+              230.0,
+              150.0
+            ]
+          ],
+          "role": "bias"
+        },
+        "vdd": {
+          "endpoint": [
+            230.0,
+            50.0
+          ],
+          "lead": 0,
+          "markers": [
+            {
+              "label": "power-label-v1",
+              "name": "vdd",
+              "object": "v1",
+              "symbol": "vdd-port",
+              "terminal": [
+                230.0,
+                30.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    230.0,
+                    30.0
+                  ],
+                  [
+                    230.0,
+                    31.2
+                  ]
+                ],
+                [
+                  [
+                    230.0,
+                    31.2
+                  ],
+                  [
+                    230.0,
+                    48.8
+                  ]
+                ],
+                [
+                  [
+                    230.0,
+                    48.8
+                  ],
+                  [
+                    230.0,
+                    50.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "up",
+          "path": [
+            [
+              230.0,
+              78.868
+            ],
+            [
+              230.0,
+              50.0
+            ]
+          ],
+          "role": "supply"
+        },
+        "vref": {
+          "endpoint": [
+            170.0,
+            100.0
+          ],
+          "lead": 1,
+          "markers": [
+            {
+              "label": "instance-label-pVREF",
+              "name": "vref",
+              "object": "pVREF",
+              "symbol": "port",
+              "terminal": [
+                140.0,
+                100.0
+              ],
+              "wire_tree": [
+                [
+                  [
+                    140.0,
+                    100.0
+                  ],
+                  [
+                    141.2,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    141.2,
+                    100.0
+                  ],
+                  [
+                    168.8,
+                    100.0
+                  ]
+                ],
+                [
+                  [
+                    168.8,
+                    100.0
+                  ],
+                  [
+                    170.0,
+                    100.0
+                  ]
+                ]
+              ]
+            }
+          ],
+          "method": "named_actual_marker_and_wire",
+          "outward_direction": "left",
+          "path": [
+            [
+              180.0,
+              100.0
+            ],
+            [
+              170.0,
+              100.0
+            ]
+          ],
+          "role": "input"
+        }
+      }
+    }
+  ],
+  "selected": [
+    "ag-2415:x1",
+    "ag-2420:x1",
+    "ag-2421:x1",
+    "ag-2422:x1",
+    "ag-2425:x1",
+    "ag-2427:x1",
+    "ag-2428:x1",
+    "ag-2434:x1",
+    "ag-2435:x1",
+    "ag-2436:x1",
+    "ag-2440:x2",
+    "ag-2441:x1",
+    "ag-2443:x1",
+    "ag-2444:x2",
+    "ag-2447:x1"
+  ]
+}
