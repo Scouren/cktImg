@@ -57,10 +57,12 @@
 //!   Narrowing: only between two left ports named as `portRole` reads
 //!   them; `vin` is the inverting input only beside a non-inverting one;
 //!   only a port's role reads a name in any case (`named`).
-//! - library.8 (unmeasured) A generated block's ports on a side stand one
-//!   unit apart, centred and symmetric about its middle, the middle row
-//!   left empty when the side has an even count. `blockFor`,
-//!   `centeredSlot`
+//! - library.8 (habit) A generated block's ports on a side stand one unit
+//!   apart, centred on its middle: an even count stands half a unit either
+//!   side of it. People: neighbouring ports stand a unit apart or less in
+//!   1,535 of 1,670 gaps of the blocks of 5,263 hand-drawn schematics, the
+//!   two ports of a two-port side in 1,137 of 1,261 (two units, a row left
+//!   empty between them, in 13). `blockFor`
 //!
 //! Contents (the geometry and `Class`; what follows them is not listed yet):
 //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
@@ -453,8 +455,9 @@ pub const Library = struct {
     /// `*@ left/right/top/bottom` directives, else by name: supplies on top,
     /// grounds and bias lines (`vb`, `vb1`, …) at the bottom, `out…` and
     /// `vo` on the right, the rest on the left — and
-    /// spaces them one unit apart exactly where the layout will put the copies
-    /// it splits a crowded side into, so no wire needs a lead.
+    /// spaces a side's ports one unit apart about its middle, where the
+    /// layout puts the copies it splits a crowded side into, so no wire
+    /// needs a lead.
     pub fn blockFor(self: *Library, def: *const netlist.Subckt) RegisterError!ClassId {
         if (self.find(def.name)) |id| return id;
         var name_buf: [128]u8 = undefined;
@@ -491,19 +494,23 @@ pub const Library = struct {
             break;
         };
         const u = self.unit;
-        const m_lr = @max(per[0].items.len, per[1].items.len) | 1;
-        const m_tb = @max(per[2].items.len, per[3].items.len) | 1;
-        const hh: i32 = @as(i32, @intCast(m_lr - 1)) * @divTrunc(u, 2) + @divTrunc(u, 2);
-        const hw: i32 = @max(@as(i32, @intCast(m_tb - 1)) * @divTrunc(u, 2) + @divTrunc(u, 2), @divTrunc(3 * u, 4));
+        const half = @divTrunc(u, 2);
+        // The box reaches half a unit past the outer ports of its fullest
+        // side.
+        const hh: i32 = @as(i32, @intCast(@max(per[0].items.len, per[1].items.len, 1))) * half;
+        const hw: i32 = @max(@as(i32, @intCast(@max(per[2].items.len, per[3].items.len))) * half, @divTrunc(3 * u, 4));
         const lead: i32 = @divTrunc(u, 4);
         const terms = try a.alloc(Terminal, n);
         var ops: std.ArrayList(DrawOp) = .empty;
         try ops.append(a, .{ .polyline = try a.dupe(Pt, &.{ .{ .x = -hw, .y = -hh }, .{ .x = hw, .y = -hh }, .{ .x = hw, .y = hh }, .{ .x = -hw, .y = hh }, .{ .x = -hw, .y = -hh } }) });
         for (per, 0..) |list, si| {
             const side: netlist.PortSide = @fromBackingInt(@intCast(si));
-            const m = if (si < 2) m_lr else m_tb;
             for (list.items, 0..) |k, j| {
-                const along: i32 = (@as(i32, @intCast(centeredSlot(m, list.items.len, j))) - @as(i32, @intCast(m / 2))) * u;
+                // One unit apart about the side's middle, as people space a
+                // block's ports: neighbours stand a unit apart or less in
+                // 1,535 of 1,670 gaps of 5,263 hand-drawn schematics, the
+                // two ports of a side in 1,137 of 1,261 (two units in 13).
+                const along: i32 = (2 * @as(i32, @intCast(j)) - @as(i32, @intCast(list.items.len - 1))) * half;
                 const pin: Pt, const edge: Pt, const label: Pt = switch (side) {
                     .left => .{ .{ .x = -hw - lead, .y = along }, .{ .x = -hw, .y = along }, .{ .x = -hw + 6 + 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
                     .right => .{ .{ .x = hw + lead, .y = along }, .{ .x = hw, .y = along }, .{ .x = hw - 6 - 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
@@ -670,16 +677,6 @@ fn defaultSide(port: []const u8) netlist.PortSide {
     };
 }
 
-/// Slot k of `count` pins across `m` rows: centred, skipping the middle row
-/// when `count` is even, so a block's ports stand symmetric about its
-/// middle.
-fn centeredSlot(m: usize, count: usize, k: usize) usize {
-    const mid = m / 2;
-    const first = mid - count / 2;
-    const pos = first + k;
-    return if (count % 2 == 0 and pos >= mid) pos + 1 else pos;
-}
-
 /// The class name a device is looked up by: cktImg's vocabulary.
 pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
     const p = device.polarity(model_type) == .p;
@@ -838,11 +835,14 @@ test "library: a subcircuit block puts its ports where the layout's copies go" {
     const id = try lib.blockFor(&def);
     const c = lib.at(id);
     try testing.expectEqualStrings("block:opamp", c.name);
-    // Two inputs left, one unit either side of the middle row, the
-    // inverting one on top; out right in it.
+    // Oracle: the hand drawings. The two ports of a two-port side stand a
+    // unit apart or less in 1,137 of 1,261 sides of the blocks of 5,263
+    // hand-drawn schematics, two units apart (a row left empty between
+    // them, as these stood) in 13. Two inputs left, half a unit either side
+    // of the middle, the inverting one on top; out right on the middle.
     try testing.expectEqual(Side.left, c.side(0, .r0).?);
-    try testing.expectEqual(@as(i32, 40), c.terminals[0].at.y);
-    try testing.expectEqual(@as(i32, -40), c.terminals[1].at.y);
+    try testing.expectEqual(@as(i32, 20), c.terminals[0].at.y);
+    try testing.expectEqual(@as(i32, -20), c.terminals[1].at.y);
     try testing.expectEqual(Side.right, c.side(2, .r0).?);
     try testing.expectEqual(@as(i32, 0), c.terminals[2].at.y);
     try testing.expectEqual(Side.up, c.side(3, .r0).?);
@@ -853,6 +853,37 @@ test "library: a subcircuit block puts its ports where the layout's copies go" {
     defer lib2.deinit();
     const mine = try lib2.register(.{ .name = "opamp", .terminals = two });
     try testing.expectEqual(mine, try lib2.blockFor(&def));
+}
+
+test "library: a block's ports stand one unit apart about each side's middle" {
+    // Oracle: the hand drawings. Neighbouring ports of a block's side stand
+    // a unit apart or less in 1,535 of 1,670 gaps of 5,263 hand-drawn
+    // schematics; an even count left its middle row empty here, the two
+    // middle ports two units apart.
+    var lib = Library.init(testing.allocator);
+    defer lib.deinit();
+    const def: netlist.Subckt = .{
+        .name = "mux",
+        .ports = &.{ "d0", "d1", "d2", "d3", "out", "vdd", "vss", "vb1" },
+        .sides = &.{ null, null, null, null, null, null, null, null },
+        .order = &.{ 1000, 1001, 1002, 1003, 1004, 1005, 1006, 1007 },
+        .expand = false,
+        .body = "",
+    };
+    const c = lib.at(try lib.blockFor(&def));
+    // Four on the left, a unit apart, none on the middle; one on the right, on it.
+    for (0..4, [_]i32{ -60, -20, 20, 60 }) |k, y| {
+        try testing.expectEqual(Side.left, c.side(k, .r0).?);
+        try testing.expectEqual(y, c.terminals[k].at.y);
+    }
+    try testing.expectEqual(@as(i32, 0), c.terminals[4].at.y);
+    // One on top, on the middle; two below, half a unit either side of it.
+    try testing.expectEqual(@as(i32, 0), c.terminals[5].at.x);
+    try testing.expectEqual(@as(i32, -20), c.terminals[6].at.x);
+    try testing.expectEqual(@as(i32, 20), c.terminals[7].at.x);
+    // The box's edge half a unit past its outer ports, a top pin its lead
+    // (a quarter unit) above that.
+    try testing.expectEqual(@as(i32, -90), c.terminals[5].at.y);
 }
 
 test "library: a generated block has an output named vo on its right and its bias lines below" {

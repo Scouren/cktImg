@@ -817,6 +817,10 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
     // row instead of the side pin's row spends a jog more.
     // The block is held right of the stack (`order`), its pin toward the
     // junction: facing away, no wire reaches that length.
+    // The junction's net is on the block's lower input: its two inputs
+    // stand half a unit either side of its middle (library.8), so the
+    // upper one's row is the row of the follower's drain, a pin of another
+    // net, and no pin on it is level with the junction.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -831,12 +835,12 @@ test "sketch: a pin level with a column's junction is joined along its own row" 
         \\.ends
         \\CH x vss 1p
         \\M2 vdd net0 x vss nch
-        \\X1 vdd vss vin x net0 amp
+        \\X1 vdd vss x vin net0 amp
         \\*@ order m2 x1
         \\
     ;
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
-    const pins = [_]np.Pt{ pinOf(&p, "ch", 0), pinOf(&p, "m2", 2), pinOf(&p, "x1", 3) };
+    const pins = [_]np.Pt{ pinOf(&p, "ch", 0), pinOf(&p, "m2", 2), pinOf(&p, "x1", 2) };
     var lo = pins[0];
     var hi = pins[0];
     for (pins) |at| {
