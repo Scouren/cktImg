@@ -3,24 +3,43 @@
 //! netlist and roles. Out: each column's x, device columns at least two
 //! apart so a channel lies between neighbours.
 //!
-//! Mated columns are the core: one of each pair on the left, its mate
-//! mirrored on the right; a column the mates map to itself, a pair's tail,
-//! or a column wired to both halves stands on the axis, a pair's tail
-//! first and then by rank where several share a row (the rest go free). The left half's
-//! order is the one whose wired nets span least (rails, biases and nets
-//! driven from outside aside: they are symbols or labels; a bridge between
-//! two wired nets counts the gap between their columns), tried
-//! exhaustively up to `exhaustive_max` columns, else by moving one column
-//! at a time while that helps. A column with no mate goes to the side of
-//! the core's half it shares more wired nets with; one neither half pulls
-//! goes right of the core when it reaches an output, else left of it; each
-//! side is ordered the same way. With no core (no mated column, none on an axis) every column is
-//! ordered at once, first so that as few gates as can be stand left of the
-//! device that drives them (a chain of stages stands in the order the
-//! signal passes them, a mirror's reference left of its copies, and a loop
-//! is cut once), then by span; and the row is turned so that the signal
-//! enters on the left: the columns an input reaches left of those that
-//! drive an output.
+//! Human Rules:
+//! - columns.1 (unmeasured) Rails, biases and inputs pull no columns
+//!   together: they are drawn as symbols or labels, so only internal nets
+//!   and outputs count as wired. `wiredNets`
+//! - columns.2 (unmeasured) Mated columns are the core: one of each pair
+//!   on the left, its mate its mirror image on the right. `order`
+//! - columns.3 (choice) Of two mated columns, the one nearer, along current
+//!   paths, the lowest-ranked mated device stands left: something must
+//!   pick a side, and one reference keeps each half on one side.
+//!   `assignSides`
+//! - columns.4 (unmeasured) A column whose devices the symmetry maps to
+//!   themselves stands on the axis, as does a column wired to both halves
+//!   (a start-up device between them). `assignSides`
+//! - columns.5 (habit) Of two columns that would share the axis on one
+//!   row, a pair's tail keeps it. People: 91.9% of 347 such devices in
+//!   5,263 hand-drawn schematics stand between the pair's two. `order`
+//! - columns.6 (invariant) At most one column stands on the axis at any
+//!   row; the others, by rank, go free. `order`
+//! - columns.7 (habit) A column with no mate goes to the side of the
+//!   core's half it shares more wired nets with. People: 70.4% of 1,459
+//!   such columns in 5,263 hand-drawn schematics. `outputSide`
+//! - columns.8 (order: signal) A free column neither half pulls goes right
+//!   of the core when it has a pin on an output, else left. `outputSide`
+//! - columns.9 (unmeasured) A free column a wired net joins to a free
+//!   column going right goes right too, unless a half pulls it: a mirror's
+//!   two stand on one side. `outputSide`
+//! - columns.10 (unmeasured) Free columns stand outside the core, the
+//!   right ones from its right edge and the left ones up to its left edge,
+//!   each side in the order of span.1. `order`
+//! - columns.11 (order: signal) A circuit with no core (no mated column,
+//!   none on the axis) is one row of columns in the signal's way: span.2,
+//!   then span.1, then rank, and turned by span.3. `order`
+//! - columns.12 (choice) Each half or side tries every order up to
+//!   `exhaustive_max` (6) columns, else moves one column at a time up to
+//!   `move_reach` (12) places for `move_rounds` (16) passes; a tie keeps
+//!   the order tried first, the search starting from rank order (with no
+//!   core, the one nearer rank order): a bound on the work. `best`
 //!
 //! Contents:
 //! - `pub const Columns = struct { start: []const u32, devices: []const u32 }`, `Columns.count(c: Columns) u32`, `Columns.of(c: Columns, k: usize) []const u32`

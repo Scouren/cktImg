@@ -3,10 +3,25 @@
 //! columns' context (`columns.Ctx`) and each column's x. Out: a cost,
 //! lower the better; and whether the signal enters on the left.
 //!
-//! A wired net spans from its leftmost column to its rightmost, and a
-//! bridge between two wired nets adds the gap between their columns. With
-//! `flow` an order is judged first by the pins that stand left of the
-//! device that drives their net (`against`), then by span.
+//! Human Rules:
+//! - span.1 (unmeasured) Columns stand in the order that makes the wired
+//!   nets narrowest: each from its leftmost column to its rightmost, plus
+//!   the gap a flat two-pin device between two wired nets crosses. `span`
+//! - span.2 (order: signal) A pin stands right of the device that drives
+//!   its net: a gate after its driver, a load after its stage. Counted
+//!   before any width. `against`
+//!   Narrowing: only where `ctx.flow` is set, a circuit with no core (no
+//!   mated column, none on the axis; `columns.order`).
+//! - span.3 (order: signal) The columns that read an input stand, on
+//!   average, no further right than those that drive an output; else the
+//!   whole row is turned end for end. `flowsRight`
+//! - span.4 (habit) In a circuit of parts the signal enters at its
+//!   source, on the left. People: the part farther from the source stands
+//!   right of the nearer in 90.1% of 1,676 pairs in 5,263 hand-drawn
+//!   schematics. `flowsRight`
+//! - span.5 (choice) With no output named, a circuit of parts ends at
+//!   the middle of its columns: something must stand for the far end.
+//!   `flowsRight`
 //!
 //! Contents:
 //! - `pub fn span(ctx: Ctx, x: []const i32) !i64`

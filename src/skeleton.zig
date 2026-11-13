@@ -4,30 +4,45 @@
 //! at its bottom; horizontal: a bridge between columns); which side its
 //! gate faces; its x and y. Neighbouring device columns stand eight
 //! lattice columns apart and device rows two apart, so a channel lies
-//! between any two: taps, bridges and wires go there.
+//! between any two: taps, bridges and wires go there. Forms are
+//! `forms.zig`'s, mates `mates.zig`'s, rows `levels.zig`'s, column order
+//! `columns.zig`'s, flat parts `bridges.zig`'s, shelves `wrap.zig`'s.
 //!
-//! - (`forms.zig`) A device is vertical when it is a transistor, sits on a rail, or is in
-//!   series (alone with one other channel element on each of its nets);
-//!   a capacitor only on a rail. Anything else bridges, as does a two-pin
-//!   device between two nets the symmetry swaps (it straddles the axis).
-//! - Columns are the chains current flows down: one device's lower end and
-//!   the next one's upper end on a net. Where several meet, one link is
-//!   kept (a stack block's, hinted or recognized; else a transistor, a
-//!   chain that reaches a rail, the same type, then rank), mirrored by the
-//!   symmetry; nothing else links across a pair's tail, so a tail stands in
-//!   a column of its own.
-//! - Mates: the symmetry's, else each differential, cross-coupled or
-//!   two-member mirror pair's, carried up and down their columns; kept only
-//!   where each column's mates stand in one column, since columns mirror
-//!   whole.
-//! - Rows by longest path down the chains, mates and blocks held level where
-//!   that closes no cycle; transistors on ground drop to their type's lowest
-//!   such row.
-//! - Columns ordered by `columns.zig`, bridges set in the channels between
-//!   them by `bridges.zig`.
-//! - Gates: a differential pair's face out, a mirror's or a cross-coupled
-//!   pair's face each other, any other transistor's faces the rest of its
-//!   gate net.
+//! Human Rules:
+//! - skeleton.1 (order: potential) Upright devices stand in one column
+//!   when one's lower end and the other's upper end are one net, never
+//!   through a rail; a column is a chain current flows down. `link`
+//! - skeleton.2 (unmeasured) Where several devices meet on a net, a stack
+//!   block's two (hinted or recognized) share a column first. `choose`
+//! - skeleton.3 (unmeasured) No column runs through a pair: where the
+//!   devices above or below a net are two mates or a differential or
+//!   cross-coupled pair, nothing links across it, and the pair's tail
+//!   stands in a column of its own. `choose`
+//! - skeleton.4 (unmeasured) Else the device above is a transistor before
+//!   a part, then one whose column reaches a rail; the device below is of
+//!   the upper one's type first, then a transistor, then one whose column
+//!   reaches a rail; ties by rank. `choose`
+//! - skeleton.5 (invariant) The net the symmetry pairs with a net gets
+//!   the mirror image of its link. `link`
+//! - skeleton.6 (choice) Device columns stand 8 lattice columns apart and
+//!   device rows 2 apart: a channel between any two holds taps, wires and
+//!   seven bridge slots. `lay`
+//! - skeleton.7 (invariant) Mated upright devices stand mirror images
+//!   about one axis; a pair a line moves apart, or a device its own mate
+//!   whose column left the axis, is mated no more. `lay`
+//! - skeleton.8 (invariant) No two drawn devices share a cell.
+//!   `expectDistinctCells`
+//! - skeleton.9 (unmeasured) A transistor's gate faces the mean of the rest
+//!   of its gate net; on a rail or alone, away from the drawing's middle.
+//!   `gates`
+//! - skeleton.10 (unmeasured) A differential pair's gates face out. `gates`
+//! - skeleton.11 (unmeasured) The two of a mirror, bank or cross-coupled
+//!   pair face each other. `gates`
+//! - skeleton.12 (unmeasured) A mirror's or bank's of more than two all
+//!   face left, as along one gate line. `gates`
+//! - skeleton.13 (choice) A flat part `forms.crooked` stands upright
+//!   (forms.15) is placed by laying the whole drawing again, not moved
+//!   alone: it then follows every rule an upright part does. `place`
 //!
 //! Contents:
 //! - `pub const Form = enum(u8) { vertical, horizontal }`

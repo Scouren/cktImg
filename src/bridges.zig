@@ -3,19 +3,53 @@
 //! structure, and the vertical devices' cells and rows. Out: each bridge's
 //! cell.
 //!
-//! Two-pin bridges in series (through nets that join just the two of them,
-//! gates aside) share the slots between the nearest columns of the chain's
-//! two end nets, in order, at the first end's tap row (with no channel on
-//! either end, the row of the one gate an end is on), or under the drawing
-//! when a column between runs through that row; a chain whose tips stand
-//! on one column (or one end on none) stands beside it: toward the axis
-//! when an end net lies on it, else toward an input's side or away from the
-//! axis. Any other bridge (an op-amp) stands midway between the nearest
-//! columns of its first and its last net that is no rail: its input and
-//! its output, as a subcircuit lists its ports; with no column on its first
-//! and its output (by its port's name) on the gates of one column alone, it
-//! stands left of that column. A chain whose mate stands already mirrors it; taken
-//! slots move it outward.
+//! Human Rules:
+//! - bridges.1 (unmeasured) Flat two-pin parts in series, joined by nets
+//!   that hold just the two of them (gates aside), lie in one row as a
+//!   chain, in their order along the nets. `chainOf`
+//! - bridges.2 (unmeasured) Any other flat device (an op-amp, a part with
+//!   a side pin) is a chain of one whose ends are its first and its last
+//!   net that is no rail: its input and its output, as a subcircuit lists
+//!   its ports, not the supply its first port is often on. `chainOf`
+//! - bridges.3 (unmeasured) A chain lies evenly between two columns, its
+//!   first member nearest the first column, each half the other's mirror
+//!   image; what varies is the two columns and the row (bridges.4 to
+//!   bridges.12). `chainSlots`
+//! - bridges.4 (unmeasured) The two columns are the nearest pair of
+//!   distinct columns, one on each end net (ties: the leftmost), when the
+//!   gap holds the chain and no column stands between them, or no column
+//!   is on both end nets. `chainSlots`
+//! - bridges.5 (habit) Else a block with no column on its first net, its
+//!   output (by its port's name) on the gates of one column and nothing
+//!   else, stands left of that column, level with the gate. People: 346 of
+//!   487 blocks driving a gate in 5,263 hand-drawn schematics stand left
+//!   of it, 100 right. `chainSlots`
+//! - bridges.6 (unmeasured) Else the chain stands beside the column on both
+//!   end nets (or on either), one slot past its own, toward the axis when
+//!   an end net lies on the axis. `chainSlots`
+//! - bridges.7 (order: signal) Else, with an end on an input, left of that
+//!   column: what drives stands left of what reads. `chainSlots`
+//! - bridges.8 (unmeasured) Else away from the axis: right of the column
+//!   with no axis, or for a column on the axis. `chainSlots`
+//! - bridges.9 (unmeasured) Beside one column, the member whose end is on
+//!   the column stands next to it. `chainSlots`
+//! - bridges.10 (unmeasured) The chain's row is the tap row of its first
+//!   end that has one: the channel just below the lowest device ending on
+//!   the net from above, else just above the highest below. `chainSlots`
+//! - bridges.11 (habit) With no channel ending on either end net, the
+//!   chain takes the row of the one gate an end is on, its wire straight
+//!   into the gate (else a chain of one takes any pin's tap row). People:
+//!   597 of 1,198 such nets of 5,263 hand-drawn schematics have the flat
+//!   part level with the gate it joins. `chainSlots`
+//! - bridges.12 (book) A chain between two columns whose row a column
+//!   between them runs through lies under the drawing, a row past the
+//!   lowest devices, as the book draws a second stage's CMFB resistors
+//!   under the circuit; the code names no figure. `outside`
+//! - bridges.13 (unmeasured) A chain whose every member's mate stands
+//!   already is that chain's mirror image about the axis. `place`
+//! - bridges.14 (choice) Where a slot is taken, the whole chain moves out,
+//!   away from the axis (right with none), one lattice column at a time:
+//!   a cell holds one device. Chains are placed in rank order. `place`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`

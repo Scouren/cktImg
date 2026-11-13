@@ -2,19 +2,43 @@
 //! netlist, its structure, each device's mate, form and ends. Out: one level
 //! per device (unspecified for a device not drawn or not vertical).
 //!
-//! The deck's `row` and `above` lines (`rel`, admitted already) come first:
-//! their equalities and edges always stand, with the column links. A device
-//! stands above another when its lower end is the other's upper
-//! end; levels are the longest path down those, after holding mates and
-//! blocks level wherever that closes no cycle. Where devices stand above
-//! each other in a loop (a transmission gate's two), only their column's
-//! links count. Then each type's transistors
-//! on ground drop to that type's lowest level among them, as the book draws
-//! a second stage's current source beside the first stage's mirror, unless
-//! that breaks a line. A two-pin part on ground with nothing over it hangs
-//! under its net: a level below the lowest transistor the net is a gate of.
-//! A transistor whose gate alone hangs on the junction of two devices of
-//! one column takes a row between them, level with the junction.
+//! Human Rules:
+//! - levels.1 (order: potential) A device stands above another when its
+//!   lower end is the other's upper end, and each device's row is the
+//!   longest path down from the top; nothing stands on another through a
+//!   rail. `rows`
+//! - levels.2 (habit) A transistor whose gate is the only gate on the
+//!   junction of two devices of one column takes a row between them, its
+//!   gate level with the junction. People: 69% of 1,443 such gates in 5,263
+//!   hand-drawn schematics. `rows`
+//! - levels.3 (habit) Not when the lower device is a transistor of its type
+//!   on the same rail: it keeps its row. People: 65% of 184. `rows`
+//! - levels.4 (book) Nor when it is mated and the upper device is a
+//!   transistor of its type on the same rail, as the book draws a fully
+//!   differential second stage; the code names no figure. `rows`
+//! - levels.5 (choice) A deck's `row` line holds devices level and its
+//!   `above` line one over another, whatever else moves: the deck's word
+//!   wins. `rows`
+//! - levels.6 (choice) Where devices stand above each other in a loop (a
+//!   transmission gate's two), only their column's links count: a loop has
+//!   no longest path. `rows`
+//! - levels.7 (unmeasured) Mates stand level, where that sets no device
+//!   above itself. `rows`
+//! - levels.8 (unmeasured) The upright members of a block other than a
+//!   stack stand level, where that sets no device above itself. `rows`
+//! - levels.9 (book) Each type's transistors on ground drop to that type's
+//!   lowest row among them, as the book draws a second stage's current
+//!   source beside the first stage's mirror; the code names no figure. A
+//!   set held level drops only when every member stands on ground, and a
+//!   drop that breaks a `row` or `above` line is undone. `rows`
+//! - levels.10 (habit) A two-pin part on ground with nothing over it hangs
+//!   under its net: a row below the lowest transistor whose gate the net
+//!   drives, level with a device the net is the upper end of; mates hang
+//!   level; a hang that breaks a line is undone. People: 72% of 1,642 such
+//!   pins in 5,263 hand-drawn schematics are under the net; 27% here by
+//!   longest path alone. `rows`
+//!   Narrowing: a part with two pins on its card or a dependent source
+//!   (`isFoot`); a switch and a three-pin diode keep their row.
 //!
 //! Contents:
 //! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`

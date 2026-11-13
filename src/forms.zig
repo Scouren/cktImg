@@ -4,13 +4,67 @@
 //! for `crooked`, a laid skeleton. Out: `drawn`, `form`, `upper`, `lower`;
 //! the flat parts to stand upright after all.
 //!
-//! What current passes is a device's path, the two pins `device.of` names
-//! for its kind. The one device that table does not place is the book's
-//! ideal amplifier (`isAmplifier`), a box. A device is upright when current
-//! passes it on the way down: a transistor, a part on a rail, in series, or
-//! between a net nearer the supply and one nearer the ground. A flat part
-//! the skeleton could not set level with the pins it joins stands upright
-//! in a second lay (`crooked`).
+//! Human Rules:
+//! - forms.1 (choice) A card with no pins is not drawn: it has nothing to
+//!   draw. A driver (`sch.isDriver`) is not drawn either, by that file's
+//!   rule, unless a `driver` line says so. `classify`
+//! - forms.2 (book) The book's ideal amplifier, an `E` with its low output
+//!   on a ground and a gain of a thousand or more (`E1 out 0 inp inn 1e5`),
+//!   is drawn as a box, the op-amp's triangle with its inputs wired, not as
+//!   a part current passes. The code names no figure. `isAmplifier`
+//! - forms.3 (habit) A dependent source (every `G`, and an `E` that is no
+//!   ideal amplifier) is drawn with two terminals, its control pair no part
+//!   of where it stands. People: 414 of 414 in 5,263 hand-drawn
+//!   schematics. `isDependent`
+//! - forms.4 (unmeasured) A transistor stands upright. `classify`
+//! - forms.5 (unmeasured) A part with an end on a rail stands upright, a
+//!   capacitor too. `classify`
+//! - forms.6 (unmeasured) A part in series, each of its nets holding just
+//!   one other channel element, stands upright; not a capacitor.
+//!   `classify`
+//! - forms.7 (habit) A part on the way down (one end nearer the supply,
+//!   the other nearer the ground, counted through channel elements, never
+//!   through a gate or another rail) stands upright; not a capacitor.
+//!   People: 262 of 305 such resistors and 18 of 24 diodes in 5,263
+//!   hand-drawn schematics. `classify`
+//! - forms.8 (habit) A current source stands upright wherever it is.
+//!   People: 76 of 83 current sources wherever they are, in those
+//!   drawings. `classify`
+//! - forms.9 (habit) A dependent source stands upright wherever it is.
+//!   People: 398 of 414 in those drawings. `classify`
+//! - forms.10 (unmeasured) A capacitor stands upright only with an end on
+//!   a rail: in series or on the way down it lies flat. `classify`
+//! - forms.11 (unmeasured) A part between two nets the symmetry swaps
+//!   lies flat across the axis, whatever forms.5 to forms.9 say; a
+//!   transistor does not. `classify`
+//! - forms.12 (unmeasured) A device whose current path is shorted (a MOS
+//!   dummy, both ends on one net) lies flat, a transistor too. `classify`
+//! - forms.13 (order: potential) A transistor's upper end is set by its
+//!   type: an n-type's drain is its upper end, a p-type's source.
+//!   `ends`
+//! - forms.14 (order: potential) An upright part's upper end is its end on
+//!   the supply, else the end away from its end on ground, else the end
+//!   fewer channel elements from the supply (ties: its first pin). `ends`
+//! - forms.15 (habit) A flat part between two nets that both hold an
+//!   upright device's pin stands upright, and the drawing is laid again,
+//!   when not both nets have such a pin level with the part within a device
+//!   column: flat, its wire would turn a corner. People: the wire leaves
+//!   both pins of a flat part straight for 44.9% of 4,443 in 5,263
+//!   hand-drawn schematics (12.6% of the 6,171 laid flat here), and people
+//!   stand 55% to 62% of the parts between two such nets upright. `crooked`
+//!   Narrowing: only a part whose card names its two path pins alone
+//!   (`isTwoEnded`); one with a side pin (a control pair, a diode's third
+//!   pin) lies as a block does.
+//! - forms.16 (unmeasured) A flat part with a net no upright device is on
+//!   (an input's, an output's, a block's) stays flat. `crooked`
+//! - forms.17 (book) Two mated parts that meet (a pair of sense resistors
+//!   on the axis) lie across it, as the book draws them; the code names no
+//!   figure. `crooked`
+//! - forms.18 (unmeasured) In a circuit of parts, no transistor and no
+//!   block, no flat part is stood up: its series parts lie along its top
+//!   wire. `crooked`
+//!   Narrowing: a line (`T`, `O`, `U`), a `B` source and a coupling are no
+//!   block here (`isPartsOnly`).
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`

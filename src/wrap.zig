@@ -1,22 +1,30 @@
 //! Shelves (issue #8, stage 3): a row of device columns too wide for a page
-//! is wrapped into rows of columns, one under the other, as people draw a
-//! large circuit (their drawings of over 30 devices are 20 units wide at the
-//! median over 5,263 hand-drawn schematics; one row of columns was 37).
-//! In: each drawn device's cell and mate. Out: the cells, wrapped.
+//! is wrapped into rows of columns, one under the other. In: each drawn
+//! device's cell and mate. Out: the cells, wrapped, and each one's shelf.
 //!
-//! The row is cut between two columns, where the fewest nets pass and never
-//! between a device and its mate, so the mirrored core stays whole and
-//! keeps its x; every other shelf starts at the core's shelf's left edge.
-//! No cut parts the devices a `row` or `order` line names together, and a
-//! deck with `cell` or `at` lines is not wrapped: those are places of the
-//! drawing as it stands (a stay, `weak at`, aside: relaid, a deck wraps as
-//! it did). The shelves are read off the cells, rows `shelf_gap` apart, so
-//! the engine's own decisions pasted back give the shelves they came from;
-//! a shelf's rows that only another shelf's columns filled are closed up,
-//! so no two rows of one shelf stand that far apart.
-//! The shelf's width is the layout's (`config.Layout.shelf`, 8 columns; 0
-//! keeps one row); `*@ shelf <columns>` sets it for a deck, `*@ shelf off`
-//! keeps one row.
+//! Human Rules:
+//! - wrap.1 (habit) A row of more device columns than a page holds is cut
+//!   into shelves of equal width, one under the other. People: their
+//!   drawings of over 30 devices are 20 units wide at the median over 5,263
+//!   hand-drawn schematics; one row of columns was 37. The page is the
+//!   layout's (`config.Layout.shelf`, 8 columns, whose rule it is; 0 keeps
+//!   one row); `*@ shelf <columns>` sets it for a deck, `*@ shelf off`
+//!   keeps one row. `cut`
+//! - wrap.2 (unmeasured) Each cut goes between the two columns the fewest
+//!   nets but rails cross, within a third of a shelf of its equal-width
+//!   place (ties: the nearer). `cutCost`
+//! - wrap.3 (invariant) No cut parts a device from its mate: the mirrored
+//!   core stays whole on one shelf and keeps its x. `cutCost`
+//! - wrap.4 (unmeasured) Every shelf starts at the left edge of the core's
+//!   shelf, or of the first shelf when there is no core. `cut`
+//! - wrap.5 (choice) No cut parts the devices a `row` or `order` line
+//!   names together, and a deck with `cell` or strong `at` lines is not
+//!   wrapped: those are places of the drawing as it stands (relaid from a
+//!   `weak at` stay, a deck wraps as it did). `cut`
+//! - wrap.6 (choice) Shelves stand `shelf_gap` (6) lattice rows apart, and
+//!   a shelf's rows that only another shelf's columns filled are closed
+//!   up: the shelves are read off the cells, so the engine's own decisions
+//!   pasted back give the shelves they came from. `shelves`
 //!
 //! Contents:
 //! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
