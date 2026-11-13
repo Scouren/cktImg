@@ -60,6 +60,16 @@ fn expectWellFormed(p: *const np.Placed, lib: *const np.Library) !void {
     }
 }
 
+/// The net of `p` named `name`, and how many ground symbols stand on it.
+fn groundNet(p: *const np.Placed, lib: *const np.Library, name: []const u8) struct { u32, u32 } {
+    const net: u32 = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, name)) break @intCast(i);
+    } else unreachable;
+    var rails: u32 = 0;
+    for (p.dev_class, p.dev_pin0[0..p.deviceCount()]) |c, pin| rails += @intFromBool(lib.at(c).role == .ground_rail and p.pin_net[pin] == net);
+    return .{ net, rails };
+}
+
 const expectConnected = support.expectConnected;
 
 test "place: one call and the stages give the same drawing" {
@@ -352,4 +362,25 @@ test "placed: no wire touches another net's pin, wire end or label" {
         failed += k;
     }
     try testing.expectEqual(0, failed);
+}
+
+test "geom: a ground symbol carries no name; of two ground nets, the one that is not net 0 is named" {
+    // Oracle: the hand drawings. 0 of 16,717 ground symbols in 5,263
+    // hand-drawn schematics carry a name; of 436 drawings with two ground
+    // nets, 433 keep one as plain symbols and name the other.
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    var one = try placeText(lib, "One ground\nR1 in out 1k\nR2 out vss 1k\nC1 out vss 1p\n");
+    defer one.deinit();
+    const vss, const rails = groundNet(&one, lib, "vss");
+    try testing.expect(rails >= 1);
+    try testing.expect(!np.geom.namesRail(&one, lib, vss));
+
+    var two = try placeText(lib, "Two grounds\nR1 in out 1k\nR2 out vss 1k\nC1 out 0 1p\n");
+    defer two.deinit();
+    const vss2, const rails2 = groundNet(&two, lib, "vss");
+    const zero, const rails0 = groundNet(&two, lib, "0");
+    try testing.expect(rails2 >= 1 and rails0 >= 1);
+    try testing.expect(np.geom.namesRail(&two, lib, vss2));
+    try testing.expect(!np.geom.namesRail(&two, lib, zero));
 }

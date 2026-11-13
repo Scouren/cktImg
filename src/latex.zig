@@ -82,7 +82,7 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
             const lo, _ = p.pinRange(d);
             const role = lib.at(p.dev_class[d]).role;
             const name = p.net_name[p.pin_net[lo]];
-            if (role == .ground_rail and !geom.namesRail(name)) continue;
+            if (role == .ground_rail and !geom.namesRail(p, lib, p.pin_net[lo])) continue;
             const side: library.Side = switch (role) {
                 .power_rail => .up,
                 .ground_rail => .down,

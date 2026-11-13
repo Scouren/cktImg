@@ -16,11 +16,16 @@
 //! - geom.4 (unmeasured) A pin's net name stands on the side away from the
 //!   wire that meets it (a port whose wire leaves right is named on its
 //!   left); right when no wire meets it. `nameSide`
-//! - geom.5 (unmeasured) A ground rail on net "0" carries no name.
-//!   `namesRail`
+//! - geom.5 (habit) A ground rail carries no name: the symbol says ground.
+//!   Its name is written only to tell two grounds apart: in a drawing whose
+//!   ground rails stand on two nets or more, and then not on net "0".
+//!   People: 0 of 16,717 ground symbols in 5,263 hand-drawn schematics
+//!   carry a name; of 436 drawings with two ground nets, 433 keep one as
+//!   plain symbols and name the other. `namesRail`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
+const assert = std.debug.assert;
 const library = @import("library.zig");
 const placed_mod = @import("placed.zig");
 
@@ -142,7 +147,19 @@ pub fn nameSide(p: *const Placed, pin: u32) library.Side {
     return .right;
 }
 
-/// Whether a rail's net name is worth writing: not for the ground net "0".
-pub fn namesRail(net_name: []const u8) bool {
-    return !std.mem.eql(u8, net_name, "0");
+/// Whether a ground rail on `net` carries its name: only where the name
+/// tells two grounds apart, so not on the ground net "0", and not while
+/// every ground rail of `p` stands on `net`. Asserts `net` is a net of `p`.
+// People: 0 of 16,717 ground symbols in 5,263 hand-drawn schematics carry a
+// name; 433 of 436 drawings with two ground nets name all but one.
+// ponytail: a scan of the devices per rail; one set per drawing if a
+// renderer's profile ever shows it.
+pub fn namesRail(p: *const Placed, lib: *const Library, net: u32) bool {
+    assert(net < p.netCount());
+    assert(p.dev_pin0.len == p.deviceCount() + 1);
+    if (std.mem.eql(u8, p.net_name[net], "0")) return false;
+    for (p.dev_class, p.dev_pin0[0..p.deviceCount()]) |class, pin| {
+        if (lib.at(class).role == .ground_rail and p.pin_net[pin] != net) return true;
+    }
+    return false;
 }

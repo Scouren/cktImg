@@ -126,7 +126,7 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
         const at = p.pin_xy[lo];
         switch (class.role) {
             .power_rail => try pen.text(at, 0, -6, net, "middle", 12, ink, false),
-            .ground_rail => if (np.geom.namesRail(net)) try pen.text(at, 14, 10, net, "start", 11, name_ink, false),
+            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try pen.text(at, 14, 10, net, "start", 11, name_ink, false),
             .input_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
             .output_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
             .none => {},
