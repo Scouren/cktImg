@@ -452,6 +452,37 @@ test "lines: a net only a dependent source's control reads has nothing to name" 
     try expectState(r.verdict("*@ label in"), .rejected, .not_placeable);
 }
 
+test "lines: a rejected weak at line changes nothing" {
+    // Oracle: the verdict's own contract (`hints.State.rejected`: nothing
+    // changed). A stay naming a device the deck lacks is rejected, so the
+    // deck draws as it does without the line. It switched the drawing into
+    // a relay with no stay to hold, which lays the columns out by another
+    // path (found unifying how a weak `at` is read: the trigger read the
+    // deck's lines, not the places they gave).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck =
+        \\Two stages
+        \\.model nch nmos level=1
+        \\.model pch pmos level=1
+        \\M1 d1 inp s 0 nch
+        \\M2 d2 inn s 0 nch
+        \\M3 d1 d1 vdd vdd pch
+        \\M4 d2 d1 vdd vdd pch
+        \\M5 s vb 0 0 nch
+        \\M6 out d2 vdd vdd pch
+        \\M7 out vb 0 0 nch
+        \\C1 d2 out 1p
+        \\
+    ;
+    const plain = try run(f.arena(), f.lib, deck, "");
+    const r = try run(f.arena(), f.lib, deck, "*@ weak at nosuch 1 2\n");
+    try expectState(r.verdict("*@ weak at nosuch 1 2"), .rejected, .unknown_name);
+    for ([_][]const u8{ "m1", "m2", "m3", "m4", "m5", "m6", "m7", "c1" }) |name| {
+        try std.testing.expectEqual(plain.at(name), r.at(name));
+    }
+}
+
 test "lines: a malformed line, an unknown name or verb are rejected" {
     var f = try Fixture.init();
     defer f.deinit();

@@ -57,6 +57,7 @@ Added:
 
 Fixed:
 
+- A rejected or overridden `*@ weak at` line changes nothing (`src/sketch.zig`): the drawing is relaid when a weak line gave a place, where it was relaid whenever the deck held such a line, so a stay naming a device the deck lacks (`rejected unknown_name`) still laid the columns out by the relay's path and moved devices. No drawing or report of the 5,263 reference circuits or the 9,341 hinted decks changes.
 - A `label`, `wire` or `port` on a net whose only pin in the circuit is one the symbol does not draw (a dependent source's control pair, a body past the symbol's terminals) is `rejected not_placeable`, as on a net no drawn device touches (`src/report.zig`); it was `relaxed not_drawn` (`zig build fuzz`).
 - A `label` on a net a `via` or `route` pins is `dropped`, blocked by that line (`src/report.zig`): the pinned wire is no name, and the label was reported `relaxed not_drawn`, the verdict kept for the engine's own faults (`zig build fuzz`).
 - A port's stub is refused when its first step runs along its net's own wire, not only when its far end lands on it (`src/canvas.zig`): `port out top` on an output down a column drew the stub up the wire, past the pin above and into the device (`zig build fuzz`: a net in pieces).

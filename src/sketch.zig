@@ -124,10 +124,10 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         };
         // A drawing relaid: its stays anchor the lattice's lines, and only
         // what the deck's structure no longer puts there is laid again.
-        // Narrowing: a deck with a `weak at` line, even one rejected or
-        // overridden, is relaid; the general form asks for an `At.weak`.
-        const stays = for (nl.hints) |h| {
-            if (h.weak and h.verb == .at) break true;
+        // A stay is a place a `weak at` line gave: a line that is rejected
+        // or overridden gives none, and changes nothing.
+        const stays = for (ats) |a| {
+            if (a != null and a.?.weak) break true;
         } else false;
         if (along == null and stays) placed_all = try relay.place(gpa, s, sk, geo.xs, geo.ys, ats, at);
     }
