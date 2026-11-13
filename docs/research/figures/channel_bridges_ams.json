@@ -1,0 +1,107 @@
+{
+  "broader": {
+    "complementary_channel": {
+      "devices": 6,
+      "horizontal": 4,
+      "names": {
+        "horizontal": [
+          "amsnet-786:m1",
+          "amsnet-786:m2",
+          "amsnet-803:m1",
+          "amsnet-803:m2"
+        ],
+        "vertical": [
+          "amsnet-415:m1",
+          "amsnet-415:m2"
+        ]
+      },
+      "vertical": 2
+    },
+    "diode_connected_cached": {
+      "devices": 26,
+      "horizontal": 0,
+      "names": {
+        "horizontal": []
+      },
+      "vertical": 26
+    }
+  },
+  "corpus_sha256": "c0d304c90b355b63e2d69655f4a68d51e10b9910f907416dfa4c418c5393c725",
+  "drawings": 734,
+  "native_binary_sha256": null,
+  "oracle": "transformed source SVG channel lead vertices; cached centers only associate instances",
+  "script_sha256": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+  "selected": [],
+  "split": "source numeric ID modulo 5 == 0 is holdout; correlated variants may cross groups",
+  "summary": {
+    "always_on_transmission": {
+      "all": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      }
+    },
+    "antiparallel_diode_connected": {
+      "all": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      }
+    },
+    "base_emitter_short": {
+      "all": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      }
+    }
+  }
+}

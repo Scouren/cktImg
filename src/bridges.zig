@@ -84,9 +84,19 @@
 //!   the block downward.
 //!   No order is imposed on unrelated bias devices; explicit deck
 //!   instructions run afterward. `power_paths.controlBounds`, `power_paths.blockTarget`
+//! - bridges.20 (habit, bounded) A unique externally controlled ground
+//!   shunt uses a free column between its certified main MOS and coil.
+//!   All 353 source shunts fit that terminal interval; the 101 paired
+//!   source rows already agree with the existing row placement. Keep
+//!   that row and an already interior column. The placement choice is
+//!   the midpoint rounded toward the main switch, then the nearest free
+//!   interior column to that integer, toward the coil on a tie.
+//!   No free column, an existing mate or an admitted order edge
+//!   leaves the ordinary placement. Vertical row/above/order hints have
+//!   already run here; cell instructions still run afterward. `place`
 //!
 //! Contents:
-//! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
+//! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, mate: []const u32, order_pairs: []const [2]u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -117,11 +127,13 @@ const Spot = struct { pair: [2]i32, row: i32 };
 /// Places every drawn horizontal device, `order` (devices by rank) chain by
 /// chain, into a free cell of `x`, `y`; the vertical devices' cells are set,
 /// `rank` holds their rows and `axis2` is twice the x they mirror about.
-pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void {
+/// Unique converter shunts may use an interior column, preserving their
+/// rows, existing `mate` assignments and admitted `order_pairs` constraints.
+pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, mate: []const u32, order_pairs: []const [2]u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(x.len == n and y.len == n);
-    assert(order.len == n);
+    assert(order.len == n and mate.len == n);
     var taken: std.AutoHashMapUnmanaged([2]i32, void) = .empty;
     defer taken.deinit(gpa);
     for (0..n) |d| if (drawn[d] and form[d] == .vertical) try taken.put(gpa, .{ x[d], y[d] }, {});
@@ -193,6 +205,41 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
             x[b] = at[0];
             y[b] = at[1];
             placed[b] = true;
+        }
+    }
+    // The vertical rows and order constraints have already been applied.
+    // Keep those rows; use only an existing free interior column, without
+    // spreading the rest of the drawing or separating an existing mate.
+    for (order) |coil| {
+        if (c.edges.items(.kind)[coil] != .inductor) continue;
+        const members = power_paths.series(nl, roles, drawn, form, coil) orelse continue;
+        for (nl.path(EdgeId.from(coil)).?, 0..) |net, side| {
+            const d = power_paths.groundShunt(nl, roles, drawn, form, net) orelse continue;
+            if (mate[d] != none) continue;
+            const ordered = for (order_pairs) |edge| {
+                if (edge[0] == d or edge[1] == d) break true;
+            } else false;
+            if (ordered) continue;
+            const main = members[2 * side];
+            const lo = @min(x[main], x[coil]);
+            const hi = @max(x[main], x[coil]);
+            if (lo < x[d] and x[d] < hi) continue;
+            const span = hi - lo;
+            if (span < 2) continue;
+            const sign: i32 = if (x[coil] > x[main]) 1 else -1;
+            const middle = x[main] + @divTrunc(x[coil] - x[main], 2);
+            const column: ?i32 = for (0..@as(usize, @intCast(2 * span))) |step| {
+                const off: i32 = @intCast((step + 1) / 2);
+                const at = middle + sign * (if (step % 2 == 0) -off else off);
+                if (at <= lo or at >= hi or taken.contains(.{ at, y[d] })) continue;
+                break at;
+            } else null;
+            if (column) |at| {
+                const removed = taken.remove(.{ x[d], y[d] });
+                assert(removed);
+                try taken.put(gpa, .{ at, y[d] }, {});
+                x[d] = at;
+            }
         }
     }
     // All main paths now stand, regardless of the block's card/rank order.

@@ -582,13 +582,23 @@ source deck, human JSON and SVG. Custom controller glyphs can disagree with
 their cached port positions; they are excluded from this audit. That
 limitation does not affect these verified builtin D/S and coil endpoints.
 
-Frozen iteration-four native drawings satisfy the interval relation for
-only **14/353** selected devices, despite keeping all of them below the
-main path. This is proposed placement work, not an implemented result.
-The independent oracle is the terminal interval, preserved by horizontal
-reflection; a likely implementation can reserve an intermediate lattice
-column without requiring exact source spacing. Explicit placement/ordering
-instructions and mirror constraints must retain precedence. The script
+The implemented bridge postpass moves a unique shunt into an existing free
+interior column, preserving its row and any already interior column.
+It retains existing mates and admitted ordering constraints; cell hints
+still run afterward. All 353 source cases have a free interior column in
+the generated lattice. An adjacent-column reduction of AG1191 has none
+and keeps ordinary placement, a named boundary test. The full AG1191 DUT
+is the positive fixture. No global column expansion or new paired-row
+assignment is needed for this cohort.
+
+Frozen iteration four satisfied the actual terminal interval for only
+**14/353** selected devices. Iteration seven satisfies **353/353 before
+compaction** and **344/353 afterward**. The nine remaining misses are
+AG1247:M4, AG1256:M3, AG1278:M3, AG1281:M3, AG1286:M4, AG1287:M4,
+AG1290:M4, AG1356:MN1 and AG1455:M4. Each initially correct interval is
+lost during compaction; preserving those terminal orders is the next
+repair. The independent oracle is the terminal interval, invariant under
+horizontal reflection, rather than exact source spacing. The script
 stores every selected name, all excluded names, native JSON hashes and
 the 252 source SVG hashes. Repeated converter variants remain correlated
 evidence, and this relation alone does not establish full drawing quality.
@@ -624,4 +634,110 @@ for **238/359**; capacitor placement remains proposed work.
 ```sh
 python3 docs/research/figures/converter_terminals.py external/examples/analoggenie \
   /tmp/converter-terminals.json --native /tmp/cktimg-human-rules/all-ag-iteration6
+```
+
+## Controller direction is not determined by the outer circuit alone
+
+Actual SVG leads point upward in 67 of the 75 topology-selected controller
+instances. Eight point right: AG1354, AG1358, AG1366, AG1369, AG1372,
+AG1377, AG1393 and AG1396, each at X1. The cached terminal coordinates
+incorrectly suggest upward output alignment in all 75. For example,
+[AG1393](../../external/examples/analoggenie/ag-1393.svg) has a right-facing
+triangle whose output lead ends at (530,250), with a wire turning upward;
+its cached OUT is (470,150).
+
+[controller_glyphs.py](figures/controller_glyphs.py) can also emit exact
+outer-graph mappings between right- and upward-facing examples. Normalizing
+only the synonymous family labels `comp`, `cmp` and `comparator`, it finds
+these pairs: right AG1354 matches up AG1357 and AG1360; right AG1366 and
+AG1393 each match up AG1394 and AG1445; right AG1369 matches up AG1395.
+Every mapping preserves all outer devices and connections, MOS D/G/S/B
+roles, rail roles and the complete declared controller port names. The
+script checks the bijection and every labelled edge directly, and retains
+the mappings, graphs and source hashes without a third-party graph package.
+
+This establishes a limit for selectors based on outer connectivity and
+complete port roles. It does **not** claim identical full netlists: hidden
+controller implementations and component values are outside the comparison.
+No electrical condition justifying these direction exceptions has been
+established. All eight remain named mismatches for the upward habit; source
+IDs and family spelling are not direction selectors.
+
+```sh
+python3 -B docs/research/figures/controller_glyphs.py external/examples/analoggenie \
+  /tmp/controller-glyphs.json --topology
+```
+
+
+## Horizontal channels in two bounded bridge patterns
+
+The remaining transistor-axis mismatches include two small, distinct patterns.
+[channel_bridges.py](figures/channel_bridges.py) selects them from the final
+SPICE cell, independently of generated placement. It reads the actual two
+channel lead polylines and their SVG transforms, then checks them against the
+cached terminal endpoints. Cached rotation never determines the oracle's axis.
+All **32 selected channel endpoints** agree with the SVG ink. Unknown models,
+unsupported SVG transforms, ambiguous instances, or missing native devices fail.
+
+An **always-on transmission pair** has exactly two parallel MOS channels of
+opposite polarity, distinct non-rail channel nets, and gates outside those nets.
+The NMOS gate is on a supply and the PMOS gate is on a sink. All **8/8** selected
+source devices lie horizontally: [AG387 M1/M2](../../external/examples/analoggenie/ag-387.svg),
+[AG440 M5/M6](../../external/examples/analoggenie/ag-440.svg),
+[AG550 M5/M6](../../external/examples/analoggenie/ag-550.svg), and
+[AG987 M9/M10](../../external/examples/analoggenie/ag-987.svg). These four pairs
+also stack the NMOS above the PMOS with controls outward. The deterministic
+numeric-ID modulo-five split contains four devices in discovery and four in
+holdout. Existing capacitor-qualified transmission pairs remain a separate case.
+
+An **antiparallel diode-connected pair** has two same-polarity MOS or BJT
+channels on reversed endpoints; each gate/base is tied to its own drain/collector.
+Neither channel endpoint is a rail, and there is exactly one other parallel
+transistor of that kind. All **8/8** source channels are horizontal:
+[AG739 MD1/MD2](../../external/examples/analoggenie/ag-739.svg),
+[AG1048 M5/M6](../../external/examples/analoggenie/ag-1048.svg),
+[AG1052 M6/M7](../../external/examples/analoggenie/ag-1052.svg), and
+[AG1149 Q3/Q4](../../external/examples/analoggenie/ag-1149.svg). The six MOS
+are NMOS, the two BJTs NPN. All eight fall in the discovery partition; there is
+no held-out example. AG1149 offsets the two clamps horizontally, so the evidence
+supports horizontal channels without requiring every pair to share one column.
+
+The scope matters. Opposite polarity and shared endpoints alone select **42**
+AG devices, of which **26 are vertical** in the actual SVGs. For example,
+[AG175 M1/M2](../../external/examples/analoggenie/ag-175.svg) form a biased
+complementary gain stage. The analogous broad AMSNet cohort has four horizontal
+and two vertical devices; the vertical pair is AMSNet415 M1/M2. Every such name
+is retained in the inventories. Likewise, cached coordinates show **1,460 of
+1,469** off-rail diode-connected AG transistors upright; the eight antiparallel
+clamps account for eight of the nine horizontal cases. The remaining horizontal
+case is AG3103 M13 and is not admitted by either bridge predicate. Neither a
+same-polarity pair with unrelated controls nor an opposite-polarity pair of
+diodes supplies the new certificate. Rail-connected channels, incorrect control
+rails, additional parallel transistors, and explicit `upright` instructions must
+preserve the existing default or the caller's choice.
+
+The scan covers all **2,202 AG** and **734 AMSNet** drawings. AMSNet contains no
+member of either narrow cohort, so it supplies exclusion checks rather than
+independent positive evidence. These are small observational cohorts, not a
+claim about every electrically equivalent drawing. Base/emitter-shorted Q2 in
+AG1116 and AG1117 are also horizontal; the inventory retains those two devices
+as sparse research only, outside the proposed change.
+
+The checked-in [AG inventory](figures/channel_bridges_ag.json) and
+[AMSNet inventory](figures/channel_bridges_ams.json) include exact selected names,
+source deck/JSON/SVG hashes, actual channel endpoints, broader counterexample
+names, and split counts. The source triples hash to
+`f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07` (AG) and
+`c0d304c90b355b63e2d69655f4a68d51e10b9910f907416dfa4c418c5393c725` (AMSNet).
+Frozen iteration-six native binary
+`9fd18dffd77da9555f06aa82b9cbeb8a930fb911e728b0df89fbf5165d5295e1`
+draws all **16** selected devices vertically: **0/16** axis agreement. This is
+proposed work; source-derived placement tests belong to its subsequent
+red/green implementation cycle.
+
+```sh
+python3 docs/research/figures/channel_bridges.py external/examples/analoggenie \
+  /tmp/channel-bridges-ag.json --native /tmp/cktimg-human-rules/all-ag-iteration6
+python3 docs/research/figures/channel_bridges.py external/examples/amsnet \
+  /tmp/channel-bridges-ams.json
 ```

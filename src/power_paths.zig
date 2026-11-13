@@ -50,6 +50,12 @@
 //!   caller geometry and the actual symbol frame qualify the later pin
 //!   alignment. The eight source exceptions remain mismatches, with no
 //!   circuit-name guard. `blockTarget`, controller_glyphs.py, sketch.zig
+//! - power_paths.8 (habit, bounded) One externally controlled grounded
+//!   NMOS at a certified coil endpoint stands below the connection from
+//!   the main MOS to that coil. All 353 uniquely selected source shunts
+//!   lie within that terminal interval. Two eligible channels are
+//!   ambiguous: AG1383:M7 is an amplifier tail beside power shunt MN1.
+//!   Gate/body incidences and duplicates do not add channels. `groundShunt`
 //!
 //! Data: reads existing netlist paths/CSR, model types, drawn and rail rows;
 //! writes only the caller's forms. The placement queries read existing
@@ -68,6 +74,7 @@
 //! - `pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, coordinates: []const i32) ?[2]i32`
 //! - `pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool`
 //! - `pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[2]u32`
+//! - `pub fn groundShunt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, net: u32) ?u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -263,6 +270,26 @@ pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool,
             if (found) |old| if (old[0] != candidate[0] or old[1] != candidate[1]) return null;
             found = candidate;
         }
+    }
+    return found;
+}
+
+/// The unique upright grounded NMOS channel on `net` with distinct D/S/G
+/// and a control net touching MOS gates only. The caller supplies a net
+/// from a certified series coil. More than one eligible device returns
+/// null; repeated incidences of one device do not make it ambiguous.
+/// Reads existing rows only; returns a device index without allocation.
+pub fn groundShunt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, net: u32) ?u32 {
+    const c = &nl.graph;
+    assert(net < c.vertexCount() and roles.len == c.vertexCount());
+    assert(drawn.len == c.edgeCount() and form.len == drawn.len);
+    var found: ?u32 = null;
+    for (c.incident(VertexId.from(net))) |e| {
+        const d = e.index();
+        if (!drawn[d] or form[d] != .vertical or !groundedMos(nl, roles, e, net)) continue;
+        if (!gateOnly(nl, c.members(e)[1].index())) continue;
+        if (found) |old| if (old != d) return null;
+        found = d;
     }
     return found;
 }

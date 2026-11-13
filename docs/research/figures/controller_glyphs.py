@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """Converter controller topology against actual SVG output leads.
 
-Usage: controller_glyphs.py <examples-dir> <output.json>
+Usage: controller_glyphs.py <examples-dir> <output.json> [--topology]
 
 Selection reuses power_paths.py's netlist-only converter certificate. SVG
 triangle apices and their outgoing leads supply direction independently of
@@ -188,6 +188,105 @@ def audit(human, svg, card, main, output):
                 svg_output_gate_same_x=abs(end[0] - gate[0]) < .01)
 
 
+def outer_graph(text, row):
+    """Pin-labelled outer graph; hidden subcircuit implementations are excluded."""
+    words = [line.split() for line in text.lower().splitlines() if line.split()]
+    models = {w[1]: w[2] for w in words if w[0] == ".model"}
+    ports = {w[1]: w[2:] for w in words if w[0] == ".subckt"}
+    labels, edges = {}, collections.defaultdict(dict)
+    for card, w in power.MOS.read_cards(text).items():
+        kind = card[0]
+        if kind == "m":
+            family, pins, nets = models[w[5]], ["d", "g", "s", "b"], w[1:5]
+        elif kind == "x":
+            matched = [i for i, word in enumerate(w) if word in ports and i == len(ports[word]) + 1]
+            if len(matched) != 1:
+                raise ValueError(f"ambiguous graph subcircuit call: {w}")
+            i = matched[0]
+            family, pins, nets = w[i], ports[w[i]], w[1:i]
+            if family in ("comp", "cmp", "comparator"):
+                family = "comparator"
+        elif kind in "rcl":
+            family, pins, nets = kind, ["end", "end"], w[1:3]
+        else:
+            raise ValueError(f"unsupported outer-graph device: {w}")
+        device = "device:" + card
+        labels[device] = ("device", family, "main" if card == row["main"] else
+                          "controller" if card == row["card"] else "")
+        for pin, net in zip(pins, nets):
+            node = "net:" + net
+            labels[node] = ("net", power.MOS.rail(net) or "")
+            edges[device].setdefault(node, []).append(pin)
+            edges[node].setdefault(device, []).append(pin)
+    return labels, {a: {b: tuple(sorted(pins)) for b, pins in adjacent.items()}
+                    for a, adjacent in edges.items()}
+
+
+def graph_colors(graph):
+    labels, edges = graph
+    digest = lambda value: hashlib.sha256(repr(value).encode()).hexdigest()
+    colors = {node: digest(label) for node, label in labels.items()}
+    # Refinement only prunes candidates. The final edge-by-edge certificate
+    # below is exact and does not rely on hash equality as proof.
+    for _ in range(20):
+        colors = {node: digest((colors[node], sorted((pins, colors[other])
+                  for other, pins in edges[node].items()))) for node in labels}
+    return colors
+
+
+def graph_mapping(first, second):
+    left, le = first
+    right, re = second
+    if len(left) != len(right):
+        return None
+    lc, rc = graph_colors(first), graph_colors(second)
+    if collections.Counter(lc.values()) != collections.Counter(rc.values()):
+        return None
+    choices = {a: [b for b in right if lc[a] == rc[b] and left[a] == right[b]] for a in left}
+    order = sorted(left, key=lambda a: (len(choices[a]), -len(le[a]), a))
+    found, used = {}, set()
+
+    def visit(index):
+        if index == len(order):
+            return True
+        a = order[index]
+        for b in choices[a]:
+            if b in used or any(le[a].get(c) != re[b].get(d) for c, d in found.items()):
+                continue
+            found[a] = b
+            used.add(b)
+            if visit(index + 1):
+                return True
+            used.remove(b)
+            del found[a]
+        return False
+
+    if not visit(0):
+        return None
+    assert set(found) == set(left) and set(found.values()) == set(right)
+    assert all(left[a] == right[b] and {found[c]: pins for c, pins in le[a].items()} == re[b]
+               for a, b in found.items())
+    return found
+
+
+def topology_pairs(examples, rows):
+    graphs = {row["id"]: outer_graph((examples / (row["id"] + ".cir")).read_text(), row)
+              for row in rows}
+    matches = []
+    for right in rows:
+        if right["svg_output_direction"] != "right":
+            continue
+        for up in rows:
+            if up["svg_output_direction"] != "up":
+                continue
+            mapping = graph_mapping(graphs[right["id"]], graphs[up["id"]])
+            if mapping is not None:
+                matches.append(dict(right=right["id"], up=up["id"], mapping=mapping))
+    return dict(scope="outer connectivity, MOS pin roles, rail roles and all declared block port names; "
+                     "comp/cmp/comparator normalized; hidden bodies and component values excluded",
+                pairs=matches, graphs=graphs)
+
+
 def selfcheck():
     # Literal source geometry supplies direction; deliberately misplaced
     # cached pins cannot turn a right-facing triangle into an upward one.
@@ -207,12 +306,18 @@ def selfcheck():
         pass
     else:
         raise AssertionError("a missing opaque output lead was silently accepted")
+    left = ({"a": ("mos",), "b": ("net",)}, {"a": {"b": ("g",)}, "b": {"a": ("g",)}})
+    right = ({"x": ("net",), "y": ("mos",)}, {"x": {"y": ("g",)}, "y": {"x": ("g",)}})
+    assert graph_mapping(left, right) == {"a": "y", "b": "x"}
+    right[1]["x"]["y"] = right[1]["y"]["x"] = ("d",)
+    assert graph_mapping(left, right) is None
 
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("examples", type=Path)
     parser.add_argument("output", type=Path)
+    parser.add_argument("--topology", action="store_true", help="certify opposite-direction outer graphs")
     args = parser.parse_args()
     selfcheck()
     paths = sorted(args.examples.glob("*.human.json"))
@@ -260,6 +365,8 @@ def main():
                   upward_rule_mismatches=right, ambiguous_targets=excluded,
                   terminal_frame_mismatches=[r["id"] + ":" + r["card"] for r in rows if not r["terminal_matches"]],
                   selected=rows)
+    if args.topology:
+        result["outer_topology"] = topology_pairs(args.examples, rows)
     args.output.write_text(json.dumps(result, indent=2, sort_keys=True) + "\n")
     print(json.dumps({key: result[key] for key in ("drawings", "corpus_sha256", "summary", "upward_rule_mismatches")}, indent=2))
 

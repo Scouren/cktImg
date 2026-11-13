@@ -1,0 +1,672 @@
+{
+  "broader": {
+    "complementary_channel": {
+      "devices": 42,
+      "horizontal": 16,
+      "names": {
+        "horizontal": [
+          "ag-1097:m3",
+          "ag-1097:m4",
+          "ag-1097:m5",
+          "ag-1097:m6",
+          "ag-386:m1",
+          "ag-386:m2",
+          "ag-387:m1",
+          "ag-387:m2",
+          "ag-440:m5",
+          "ag-440:m6",
+          "ag-550:m5",
+          "ag-550:m6",
+          "ag-751:m1",
+          "ag-751:m2",
+          "ag-987:m10",
+          "ag-987:m9"
+        ],
+        "vertical": [
+          "ag-1094:m5",
+          "ag-1094:m6",
+          "ag-1094:m7",
+          "ag-1094:m8",
+          "ag-1120:m1",
+          "ag-1120:m10",
+          "ag-1120:m2",
+          "ag-1120:m5",
+          "ag-1120:m6",
+          "ag-1120:m9",
+          "ag-1121:mn3",
+          "ag-1121:mn4",
+          "ag-1121:mp1",
+          "ag-1121:mp2",
+          "ag-175:m1",
+          "ag-175:m2",
+          "ag-2202:m3",
+          "ag-2202:m5",
+          "ag-2205:m1",
+          "ag-2205:m5",
+          "ag-2210:m3",
+          "ag-2210:m5",
+          "ag-629:m19",
+          "ag-629:m23",
+          "ag-630:m19",
+          "ag-630:m23"
+        ]
+      },
+      "vertical": 26
+    },
+    "diode_connected_cached": {
+      "devices": 1469,
+      "horizontal": 9,
+      "names": {
+        "horizontal": [
+          "ag-1048:m5",
+          "ag-1048:m6",
+          "ag-1052:m6",
+          "ag-1052:m7",
+          "ag-1149:q3",
+          "ag-1149:q4",
+          "ag-3103:m13",
+          "ag-739:md1",
+          "ag-739:md2"
+        ]
+      },
+      "vertical": 1460
+    }
+  },
+  "corpus_sha256": "f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07",
+  "drawings": 2202,
+  "native_binary_sha256": "9fd18dffd77da9555f06aa82b9cbeb8a930fb911e728b0df89fbf5165d5295e1",
+  "oracle": "transformed source SVG channel lead vertices; cached centers only associate instances",
+  "script_sha256": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+  "selected": [
+    {
+      "card": "m5",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1048",
+      "mates": [
+        "m6"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+        ".json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+        ".svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          70.0,
+          70.0
+        ],
+        [
+          30.0,
+          70.0
+        ]
+      ]
+    },
+    {
+      "card": "m6",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1048",
+      "mates": [
+        "m5"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+        ".json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+        ".svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          30.0,
+          90.0
+        ],
+        [
+          70.0,
+          90.0
+        ]
+      ]
+    },
+    {
+      "card": "m6",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1052",
+      "mates": [
+        "m7"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+        ".json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+        ".svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          20.0,
+          -70.0
+        ],
+        [
+          -20.0,
+          -70.0
+        ]
+      ]
+    },
+    {
+      "card": "m7",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1052",
+      "mates": [
+        "m6"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+        ".json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+        ".svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          -20.0,
+          -30.0
+        ],
+        [
+          20.0,
+          -30.0
+        ]
+      ]
+    },
+    {
+      "card": "q2",
+      "families": [
+        "base_emitter_short"
+      ],
+      "id": "ag-1116",
+      "mates": [],
+      "native_axis": "vertical",
+      "polarity": "npn",
+      "source_sha256": {
+        ".cir": "42d500730fcb41d0ce1d1633001fc316d52c62f32f2085bb5cde4cfd81ee9616",
+        ".json": "f1b0026b58c7f4fecaf66b9b9b3517833e30a92a32f416ade42e13fed50998d6",
+        ".svg": "3543b3685631285a92a7fffd9b8b83880d687d0125e6c19a776fd46cfa2905c9"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          170.0,
+          200.0
+        ],
+        [
+          210.0,
+          200.0
+        ]
+      ]
+    },
+    {
+      "card": "q2",
+      "families": [
+        "base_emitter_short"
+      ],
+      "id": "ag-1117",
+      "mates": [],
+      "native_axis": "vertical",
+      "polarity": "npn",
+      "source_sha256": {
+        ".cir": "985ccfe279c1394a61b843f01f872a0139c94c297a79f6c2cb6fcbcaa2184d87",
+        ".json": "a15d6a5305619e826f3d96d391f45ab04d08a39857d71fa5a6108d9c989ff019",
+        ".svg": "0d0008120abc822f4c940b0c3434b57d12ea6f36fd17bef0141db6461d0f8dc8"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          -80.0,
+          0.0
+        ],
+        [
+          -120.0,
+          0.0
+        ]
+      ]
+    },
+    {
+      "card": "q3",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1149",
+      "mates": [
+        "q4"
+      ],
+      "native_axis": "vertical",
+      "polarity": "npn",
+      "source_sha256": {
+        ".cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+        ".json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+        ".svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          90.0,
+          50.0
+        ],
+        [
+          50.0,
+          50.0
+        ]
+      ]
+    },
+    {
+      "card": "q4",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-1149",
+      "mates": [
+        "q3"
+      ],
+      "native_axis": "vertical",
+      "polarity": "npn",
+      "source_sha256": {
+        ".cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+        ".json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+        ".svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          270.0,
+          80.0
+        ],
+        [
+          310.0,
+          80.0
+        ]
+      ]
+    },
+    {
+      "card": "m1",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-387",
+      "mates": [
+        "m2"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "a82d1b66f6d4534ec70b33d46762ae6942d037008eca49f2188ffd8115c4762f",
+        ".json": "fde0072db100f939d8c17608e1db9698b88d54618709afdbd60176478aa4c108",
+        ".svg": "791c25d87194e5480ae86db6f5af9ee19ad9f22769146948e2c18953bdbe5d91"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          20.0,
+          -20.0
+        ],
+        [
+          -20.0,
+          -20.0
+        ]
+      ]
+    },
+    {
+      "card": "m2",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-387",
+      "mates": [
+        "m1"
+      ],
+      "native_axis": "vertical",
+      "polarity": "pmos",
+      "source_sha256": {
+        ".cir": "a82d1b66f6d4534ec70b33d46762ae6942d037008eca49f2188ffd8115c4762f",
+        ".json": "fde0072db100f939d8c17608e1db9698b88d54618709afdbd60176478aa4c108",
+        ".svg": "791c25d87194e5480ae86db6f5af9ee19ad9f22769146948e2c18953bdbe5d91"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          -20.0,
+          20.0
+        ],
+        [
+          20.0,
+          20.0
+        ]
+      ]
+    },
+    {
+      "card": "m5",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-440",
+      "mates": [
+        "m6"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "09ca34af3ce1d69e9c79fc9ce6bed5cf3926f1b7768704c8f2d65a93bc02b356",
+        ".json": "bd218c54d86df0c1804446993a96b192f41b78d200d36e4e0555d4f7a739651f",
+        ".svg": "9dfe55f5c50ed398b32d4f68579a5946e036f8f4361fe5a09f087f0a9aa29d3c"
+      },
+      "split": "holdout",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          200.0,
+          220.0
+        ],
+        [
+          240.0,
+          220.0
+        ]
+      ]
+    },
+    {
+      "card": "m6",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-440",
+      "mates": [
+        "m5"
+      ],
+      "native_axis": "vertical",
+      "polarity": "pmos",
+      "source_sha256": {
+        ".cir": "09ca34af3ce1d69e9c79fc9ce6bed5cf3926f1b7768704c8f2d65a93bc02b356",
+        ".json": "bd218c54d86df0c1804446993a96b192f41b78d200d36e4e0555d4f7a739651f",
+        ".svg": "9dfe55f5c50ed398b32d4f68579a5946e036f8f4361fe5a09f087f0a9aa29d3c"
+      },
+      "split": "holdout",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          240.0,
+          240.0
+        ],
+        [
+          200.0,
+          240.0
+        ]
+      ]
+    },
+    {
+      "card": "m5",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-550",
+      "mates": [
+        "m6"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "c4497c091350ef204c83e75cb02ce0230c9dd4f675c231010b9cb52783636c01",
+        ".json": "632dab3913f22a6f2c7e099b274985fc581848e70bffda58c11c2bbc89e12a38",
+        ".svg": "b077034766c8f7f113988616353f2399180afff7bd859c4fe4b6058c73bb08d2"
+      },
+      "split": "holdout",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          100.0,
+          170.0
+        ],
+        [
+          140.0,
+          170.0
+        ]
+      ]
+    },
+    {
+      "card": "m6",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-550",
+      "mates": [
+        "m5"
+      ],
+      "native_axis": "vertical",
+      "polarity": "pmos",
+      "source_sha256": {
+        ".cir": "c4497c091350ef204c83e75cb02ce0230c9dd4f675c231010b9cb52783636c01",
+        ".json": "632dab3913f22a6f2c7e099b274985fc581848e70bffda58c11c2bbc89e12a38",
+        ".svg": "b077034766c8f7f113988616353f2399180afff7bd859c4fe4b6058c73bb08d2"
+      },
+      "split": "holdout",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          140.0,
+          190.0
+        ],
+        [
+          100.0,
+          190.0
+        ]
+      ]
+    },
+    {
+      "card": "md1",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-739",
+      "mates": [
+        "md2"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+        ".json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+        ".svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          80.0,
+          190.0
+        ],
+        [
+          120.0,
+          190.0
+        ]
+      ]
+    },
+    {
+      "card": "md2",
+      "families": [
+        "antiparallel_diode_connected"
+      ],
+      "id": "ag-739",
+      "mates": [
+        "md1"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+        ".json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+        ".svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          120.0,
+          170.0
+        ],
+        [
+          80.0,
+          170.0
+        ]
+      ]
+    },
+    {
+      "card": "m10",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-987",
+      "mates": [
+        "m9"
+      ],
+      "native_axis": "vertical",
+      "polarity": "pmos",
+      "source_sha256": {
+        ".cir": "d6b6aa14efe252c3c26ec21208cc064e42ec09d01d0d1150021fac78a983eccb",
+        ".json": "1e7abf5ae0ac6a97434aa90754be6956f5c1feaf5e71fac9da19a2d992c4adf3",
+        ".svg": "f0b9e988dc887c51a298836e5de12107cb83ae3d2c8cd511ed803737cca04169"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          300.0,
+          110.0
+        ],
+        [
+          260.0,
+          110.0
+        ]
+      ]
+    },
+    {
+      "card": "m9",
+      "families": [
+        "always_on_transmission"
+      ],
+      "id": "ag-987",
+      "mates": [
+        "m10"
+      ],
+      "native_axis": "vertical",
+      "polarity": "nmos",
+      "source_sha256": {
+        ".cir": "d6b6aa14efe252c3c26ec21208cc064e42ec09d01d0d1150021fac78a983eccb",
+        ".json": "1e7abf5ae0ac6a97434aa90754be6956f5c1feaf5e71fac9da19a2d992c4adf3",
+        ".svg": "f0b9e988dc887c51a298836e5de12107cb83ae3d2c8cd511ed803737cca04169"
+      },
+      "split": "discovery",
+      "svg_axis": "horizontal",
+      "svg_channel": [
+        [
+          300.0,
+          90.0
+        ],
+        [
+          260.0,
+          90.0
+        ]
+      ]
+    }
+  ],
+  "split": "source numeric ID modulo 5 == 0 is holdout; correlated variants may cross groups",
+  "summary": {
+    "always_on_transmission": {
+      "all": {
+        "circuits": 4,
+        "devices": 8,
+        "exceptions": [],
+        "horizontal": 8,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 2,
+        "devices": 4,
+        "exceptions": [],
+        "horizontal": 4,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 2,
+        "devices": 4,
+        "exceptions": [],
+        "horizontal": 4,
+        "native_horizontal": 0
+      }
+    },
+    "antiparallel_diode_connected": {
+      "all": {
+        "circuits": 4,
+        "devices": 8,
+        "exceptions": [],
+        "horizontal": 8,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 4,
+        "devices": 8,
+        "exceptions": [],
+        "horizontal": 8,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      }
+    },
+    "base_emitter_short": {
+      "all": {
+        "circuits": 2,
+        "devices": 2,
+        "exceptions": [],
+        "horizontal": 2,
+        "native_horizontal": 0
+      },
+      "discovery": {
+        "circuits": 2,
+        "devices": 2,
+        "exceptions": [],
+        "horizontal": 2,
+        "native_horizontal": 0
+      },
+      "holdout": {
+        "circuits": 0,
+        "devices": 0,
+        "exceptions": [],
+        "horizontal": 0,
+        "native_horizontal": 0
+      }
+    }
+  }
+}

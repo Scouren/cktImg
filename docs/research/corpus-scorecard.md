@@ -504,3 +504,70 @@ The plugin is 560,793 bytes, SHA-256
 `00c1df7ad2a5dcc0142808b01ff4b36bbf1c696032db67b072b87f3eba30c8bd`.
 The remaining shunt columns, group separation, terminal-side choices,
 rightward source exceptions and routing differences remain work.
+
+
+## Seventh measured pass: grounded converter shunts
+
+The frozen executable is
+`1d1a395380d1b7aed441630861190f25b51b7fa1c6c92d4aa4013e1b3a9561b2`.
+Exactly 240 of the 252 converter drawings change; every other AnalogGenie
+drawing and every AMSNet drawing remains byte-identical. The unique grounded
+shunt uses an available column between its certified main switch and coil,
+keeping its existing row. Existing mates and admitted ordering constraints
+retain precedence; adjacent main/coil columns keep the ordinary placement.
+No source IDs select production behavior.
+
+The actual connected terminal lies inside the main-to-coil interval for
+**344/353** selected shunts, up from **14/353**. Before compaction all 353
+satisfy it. Compaction loses the cross-row terminal order in nine cases:
+AG1247:M4, AG1256:M3, AG1278:M3, AG1281:M3, AG1286:M4, AG1287:M4,
+AG1290:M4, AG1356:MN1 and AG1455:M4. These remain explicit failures for the
+next compaction change; the source interval oracle has not been relaxed.
+All 252 main paths retain their shared row and order, all 365 selected
+ground shunts remain below them, and both 107 reservoir gate-direction
+checks remain correct. Controller output alignment stays 75/75; its eight
+actual source-direction exceptions remain. AG1356:M12 still fails strict
+vertical clearance, leaving 91/92 active-driver checks.
+
+| Measure | Sixth pass | Seventh pass |
+|---|---:|---:|
+| Crossings | 5,006 | 4,850 |
+| Bends | 24,526 | 24,136 |
+| Channel/part orientation, of 32,000 | 30,357 | 30,356 |
+| Gate direction, of 23,252 | 13,894 | 13,862 |
+| Left/right agreement, of 338,266 | 206,593 | 206,483 |
+| Above/below agreement, of 320,423 | 204,919 | 205,236 |
+| All scored relations, of 2,202 | 288 | 289 |
+
+AG1384 gains every scored relation; no complete match is lost. The sole
+physical orientation regression is AG1217:C1, its flying capacitor becoming
+horizontal while the source draws it vertically. Only four actual gate
+directions change: AG1217:M9, M10, M18 and M19, each toward the unreflected
+source direction. Holding the previous scorer reflection choices fixed
+gives 13,898 gate matches (+4); changed reflection choices in 15 drawings
+contribute -36, yielding the reported -32. These aggregate scores therefore
+need their retained per-device geometry for interpretation.
+
+Crossings increase in 31 named drawings despite the aggregate reduction:
+AG1265 +6; AG1411 +4; AG1202/1254/1272/1300/1338/1359 +3;
+AG1215/1294/1307/1329/1337/1343/1374/1375/1429 +2;
+AG1192/1193/1239/1255/1259/1274/1313/1321/1332/1346/1347/1356/1379/1412 +1.
+The exact output inventory retains these regressions alongside the gains.
+
+Grounded reservoir capacitors show a separate placement tradeoff: outside
+order changes from 335/359 to 330/359, while at-or-below placement improves
+from 238/359 to 243/359. Both results are identical before and after
+compaction. With shelving also disabled, all 359 already have the correct
+outside order; the remaining shelf grouping needs a separate rule.
+
+Both test configurations pass (296 without LaTeX, 297 with), as do 4,000
+fuzz cases, formatting, unchanged legacy style findings and the 31-drawing
+gallery. Source/native views were inspected for AG1191, 1363, 1383 and
+1401. All 252 converter decks round-trip through the release Schemify host
+with an exact inventory of 428 subcircuits. The 91 fixture names give 89
+equivalent decks and the same two capacity refusals; seven representative
+converter decks also pass the current host (11 exact subcircuits).
+The rebuilt plugin is 561,656 bytes, SHA-256
+`ff5ae7ad3d440dd433f96fa732eef879ac491ed1f44a5850e90c11e109b242d3`.
+The nine compaction losses, capacitor regression, shelf grouping, wire
+routing and remaining source mismatches prevent a claim of equivalence.
