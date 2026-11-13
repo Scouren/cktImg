@@ -408,6 +408,28 @@ test "skeleton: the axis is for a column whose current joins the halves: a refer
     try std.testing.expect(ref < @min(x[l.nl.device("m3").?.index()], x[l.nl.device("m4").?.index()]));
 }
 
+test "skeleton: a bias net current paths end on pulls its columns together: the capacitor on it stands beside the transistor's column" {
+    // Oracle: the hand drawings. Of the nets on exactly two columns in the
+    // 5,263 reference drawings, people stand the two next to each other
+    // for 1,719 of the 2,316 a current path ends on at both (74.2%), and
+    // for 103 of the 137 of those that are a bias or an input; a net of
+    // gates alone, 304 of 733 (a random order: 35%). `vb` is a bias the
+    // capacitor c and the coil l2 (under q1, in its column) end on: it
+    // pulled nothing, being no internal net, and l1 stood between (deck
+    // ar-6385 of the reference corpus).
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Oscillator core\n.model qnpn npn\nC vin vb 1p\nL1 vin net0 1n\nL2 net0 vb 1n\nQ1 vin vb net0 0 qnpn\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const x = l.sk.x;
+    const q1 = x[l.nl.device("q1").?.index()];
+    try std.testing.expectEqual(q1, x[l.nl.device("l2").?.index()]);
+    const c = x[l.nl.device("c").?.index()];
+    const l1 = x[l.nl.device("l1").?.index()];
+    try std.testing.expect(@abs(c - q1) < @abs(l1 - q1));
+}
+
 test "skeleton: a circuit of parts stands with its source on the left, whatever the order of its cards" {
     // Oracle: the hand drawings, and a metamorphic relation. Of two parts
     // at different distances from a circuit's one source, people draw the

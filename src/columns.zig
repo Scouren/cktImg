@@ -4,9 +4,14 @@
 //! apart so a channel lies between neighbours.
 //!
 //! Human Rules:
-//! - columns.1 (unmeasured) Rails, biases and inputs pull no columns
-//!   together: they are drawn as symbols or labels, so only internal nets
-//!   and outputs count as wired. `wiredNets`
+//! - columns.1 (habit) A net pulls its columns together when a column's
+//!   current path ends on it, whatever its role (an internal net or an
+//!   output always); a bias or an input only gates read, or a rail, pulls
+//!   none. People: of the nets on exactly two columns, the two stand next
+//!   to each other for 1,719 of 2,316 with a path's end on both (74.2%;
+//!   bias or input 103 of 137), 304 of 733 of gates alone (41.5%, a random
+//!   order 35%), 232 of 950 rails (24.4%), in 5,263 hand-drawn schematics.
+//!   `wiredNets`
 //! - columns.2 (unmeasured) Mated columns are the core: one of each pair
 //!   on the left, its mate its mirror image on the right. `order`
 //! - columns.3 (choice) Of two mated columns, the one nearer, along current
@@ -61,6 +66,7 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
+const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const order_cost = @import("span.zig");
 
@@ -143,7 +149,7 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
     const x = try gpa.alloc(i32, n);
     errdefer gpa.free(x);
     if (n == 0) return x;
-    const wired = try wiredNets(gpa, nl, roles);
+    const wired = try wiredNets(gpa, nl, roles, column_of);
     defer gpa.free(wired);
     const placed = try gpa.alloc(bool, n);
     defer gpa.free(placed);
@@ -247,12 +253,20 @@ pub fn order(gpa: Allocator, nl: *const Netlist, roles: []const Role, cols: Colu
 
 // ---- private ----
 
-/// Rails are symbols, and a net driven from outside (an input, a bias) is a
-/// terminal or a label at each of its pins: neither is a wire to shorten.
-fn wiredNets(gpa: Allocator, nl: *const Netlist, roles: []const Role) ![]bool {
-    assert(roles.len == nl.graph.vertexCount());
-    const wired = try gpa.alloc(bool, nl.graph.vertexCount());
+/// A net a column's current path ends on (a pin `device.carries`), whatever
+/// its role, or one between devices here (internal, an output); no rail.
+/// Current flows along it, so it is a wire people keep short; a bias or an
+/// input that only gates read is a label at each, and a rail a symbol.
+fn wiredNets(gpa: Allocator, nl: *const Netlist, roles: []const Role, column_of: []const u32) ![]bool {
+    const c = &nl.graph;
+    assert(roles.len == c.vertexCount());
+    assert(column_of.len == c.edgeCount());
+    const wired = try gpa.alloc(bool, c.vertexCount());
     for (roles, wired) |r, *w| w.* = r == .internal or r == .output;
+    const kinds = c.edges.items(.kind);
+    for (column_of, 0..) |k, d| if (k != none) for (c.members(EdgeId.from(d)), 0..) |net, pin| {
+        if (device.carries(kinds[d], pin) and !roles[net.index()].isRail()) wired[net.index()] = true;
+    };
     return wired;
 }
 
