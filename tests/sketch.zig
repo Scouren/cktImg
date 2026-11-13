@@ -1291,6 +1291,31 @@ test "sketch: a net's wire takes the track that crosses no other net's" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: a bias whose one wire would cross another net's ends in ports" {
+    // Oracle: the hand drawings. A bias's wire crosses no other net's in
+    // 3,926 of 4,080 wired bias nets (5,263 schematics); the person drew
+    // this Colpitts core (ar-6385) with no crossing. The engine's one wire
+    // for the base (`vb`, a bias by its name) crossed another net's.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const deck =
+        \\Colpitts
+        \\.model qnpn npn
+        \\C vc vb 1p
+        \\L1 vc net0 1n
+        \\L2 net0 vb 1n
+        \\Q1 vc vb net0 vss qnpn
+        \\
+    ;
+    const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
+    try std.testing.expectEqual(0, crossings(&p));
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: a part to ground with nothing over it hangs under the gate it joins" {
     // Oracle: the hand-drawn figure. A gate's resistor to ground is drawn
     // under the gate's net, its upper pin below the gate (72% of 1,642 such

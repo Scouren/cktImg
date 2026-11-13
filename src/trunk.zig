@@ -68,6 +68,10 @@
 //!   it or turns on one, and the wire branches off its pins. People:
 //!   87,922 of 93,770 pins of wired nets that are no rail (5,263
 //!   hand-drawn schematics). `corners`
+//! - trunk.14 (habit) A bias's wire crosses no other net's (a rail's
+//!   aside): a track that would is not taken, and a part no track fits
+//!   ends in ports (wires.13). People: 3,926 of 4,080 wired bias nets
+//!   (5,263 hand-drawn schematics). `cost`
 //!
 //! Contents:
 //! - `pub const End = enum { port, name }`
@@ -284,10 +288,13 @@ fn cost(c: *const Canvas, net: u32, pins: []const u32, lines: []const Line, unde
     // No cheaper than the track in hand: corners and crossings only add.
     if (total >= under) return total;
     total += @as(i64, c.len.bend_cost) * (corners(c.s, pins, lines) orelse return std.math.maxInt(i64));
+    // A bias ends in ports instead (trunk.14).
+    const bias = c.s.roles[net] == .bias;
     for (lines) |*l| {
         const pts = l.slice();
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| for (c.segs.items) |g| {
             if (g.net == net or !crosses(a, b, g.a, g.b)) continue;
+            if (bias and !c.rails[g.net]) return std.math.maxInt(i64);
             total += if (c.rails[g.net]) @divFloor(c.len.cross_cost, 4) else c.len.cross_cost;
         };
     }

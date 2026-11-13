@@ -123,10 +123,10 @@ const recorded = [decks.len][]const u8{
     "cmfb_two_stage x 70/74 y 64/64 rows 14+0-0 cols 4+0-0 sym 7/7 gates 8/8 labels +[] -[]",
     "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 5/6 labels +[g] -[]",
     "cascode_mirror x 6/6 y 8/8 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/4 labels +[] -[]",
-    // `vbias` wired, where the figure names it: its pins stand within reach
-    // of each other (wires.17), and people draw 1,818 of 2,208 bias nets in
-    // exactly the parts that reach names (5,263 hand-drawn schematics).
-    "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 5/5 labels +[] -[vbias]",
+    // `vbias` in ports, as the figure names it: its one wire would cross
+    // another net's, and people's bias wires cross none in 3,926 of 4,080
+    // nets (trunk.14; 5,263 hand-drawn schematics).
+    "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 5/5 labels +[] -[]",
     "beta_multiplier x 11/11 y 13/13 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/5 labels +[] -[]",
     "diff_pair_resistive x 8/8 y 8/8 rows 2+0-0 cols 2+0-0 sym 3/3 gates 2/2 labels +[] -[]",
     "telescopic_se x 0/0 y 6/6 rows 0+0-0 cols 6+0-0 sym 0/0 gates 4/4 labels +[] -[]",
