@@ -18,10 +18,14 @@
 //!   devices above or below a net are two mates or a differential or
 //!   cross-coupled pair, nothing links across it, and the pair's tail
 //!   stands in a column of its own. `choose`
-//! - skeleton.4 (unmeasured) Else the device above is a transistor before
-//!   a part, then one whose column reaches a rail; the device below is of
-//!   the upper one's type first, then a transistor, then one whose column
-//!   reaches a rail; ties by rank. `choose`
+//! - skeleton.4 (habit) Else the link follows the current: the device
+//!   below is of the upper one's type first; then, on either side, a
+//!   transistor before a part and a part direct current passes before a
+//!   capacitor, which hangs beside the column. People, on the nets where
+//!   one device meets several that differ on it, in 5,263 hand-drawn
+//!   schematics: the same type 278 of 291, a transistor 369 of 401, direct
+//!   current 749 of 778. Then one whose column reaches a rail, the engine's
+//!   tie-break (people: 261 of 465), then rank. `choose`
 //! - skeleton.5 (invariant) The net the symmetry pairs with a net gets
 //!   the mirror image of its link. `link`
 //! - skeleton.6 (choice) Device columns stand 8 lattice columns apart and
@@ -396,11 +400,18 @@ fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: [
     if (block) |b| return b;
     if (isPair(st, ups) or isPair(st, downs)) return null;
     const kinds = nl.graph.edges.items(.kind);
+    // Whom a device shares its column with where it meets several, in 5,263
+    // hand-drawn schematics: below, a transistor of its own type (278 of
+    // 291 nets whose candidates differ on it); on either side a transistor
+    // before a part (369 of 401), and a part direct current passes before
+    // a capacitor (749 of 778; 612 of 1,423 here while a load capacitor's
+    // way to ground and its name won it the link). One whose column reaches
+    // a rail is the engine's tie-break (people: 261 of 465), then rank.
     var u: u32 = none;
     var u_score: i64 = std.math.minInt(i64);
     for (ups) |d| {
         if (chain.below[d] != none) continue;
-        const s = @as(i64, @intFromBool(isTransistor(kinds[d]))) * 4 + @as(i64, @intFromBool(reachesRail(roles, upper, lower, chain, d, .up))) * 2;
+        const s = flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .up));
         const score = s * 1_000_000 - st.device_rank[d];
         if (score > u_score) {
             u_score = score;
@@ -414,8 +425,7 @@ fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: [
     for (downs) |d| {
         if (chain.above[d] != none or d == u) continue;
         const same = isTransistor(kinds[d]) and symmetry.polarity(nl.modelType(EdgeId.from(d))) == pol_u;
-        const s = @as(i64, @intFromBool(same)) * 8 + @as(i64, @intFromBool(isTransistor(kinds[d]))) * 4 +
-            @as(i64, @intFromBool(reachesRail(roles, upper, lower, chain, d, .down))) * 2;
+        const s = @as(i64, @intFromBool(same)) * 8 + flows(kinds[d]) * 2 + @intFromBool(reachesRail(roles, upper, lower, chain, d, .down));
         const score = s * 1_000_000 - st.device_rank[d];
         if (score > l_score) {
             l_score = score;
@@ -434,6 +444,13 @@ fn isPair(st: *const Structure, ds: []const u32) bool {
     if (ds.len != 2) return false;
     if (st.device_mate[ds[0]] == ds[1]) return true;
     return blockPartner(st, ds[0]) == ds[1];
+}
+
+/// How well a device of `kind` continues a column, the chain direct current
+/// flows down: a transistor (2), a part direct current passes (1), a
+/// capacitor (0).
+fn flows(kind: netlist.DeviceKind) i64 {
+    return @as(i64, @intFromBool(isTransistor(kind))) + @intFromBool(device.of(kind).dc);
 }
 
 /// Whether following `d`'s end up (or down) through single devices reaches

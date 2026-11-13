@@ -149,6 +149,28 @@ test "skeleton: a stack hint picks the link its column keeps" {
     }
 }
 
+test "skeleton: a column goes on through the part direct current passes, the capacitor beside it" {
+    // Oracle: how people draw it. Where one device meets a capacitor and a
+    // part direct current passes, the person's column goes on through the
+    // latter on 749 of 778 such nets of the 5,263 hand-drawn schematics;
+    // reference drawing ag-694 is the first deck (the degeneration resistor
+    // under the source, its bypass capacitor beside). The capacitor took
+    // the link once: it reaches ground too, and `cs` sorts before `rs`.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    for ([_]struct { deck: []const u8, in: []const u8, beside: []const u8 }{
+        .{ .deck = "bypassed degeneration\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 vo vi n0 0 nch\nRL vdd vo 1k\nCS n0 0 1p\nRS n0 0 1k\n", .in = "rs", .beside = "cs" },
+        .{ .deck = "bypassed load\n.model nch nmos level=1\nVDD vdd 0 1.8\nM1 vo vi 0 0 nch\nCL vdd vo 1p\nRL vdd vo 1k\n", .in = "rl", .beside = "cl" },
+    }) |case| {
+        const l = try lay(arena, case.deck);
+        errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+        const m1 = l.nl.device("m1").?.index();
+        try std.testing.expectEqual(l.sk.x[m1], l.sk.x[l.nl.device(case.in).?.index()]);
+        try std.testing.expect(l.sk.x[m1] != l.sk.x[l.nl.device(case.beside).?.index()]);
+    }
+}
+
 test "skeleton: a resistor on the way down stands upright under the emitter it leaves, a current source upright anywhere" {
     // Oracle: how people draw it. In 5,263 hand-drawn schematics 262 of the
     // 305 resistors with one net nearer the supply and the other nearer the
