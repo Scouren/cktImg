@@ -16,6 +16,43 @@
 //! .{ .layout = .{ .stack = 1.5 }, .rules = .{ .no_ground = .err }, .render = .{ .wire = "000000" } }
 //! ```
 //!
+//! Human Rules:
+//! - config.1 (habit) By default, two devices in series in one column
+//!   stand half a unit apart, and a rail symbol, or the trunk that pins
+//!   facing one way meet on, half a unit from its pin. People: the pitch
+//!   of 5,274 hand-drawn schematics, Analog Canvas gallery.
+//!   `Layout.stack`, `Layout.rail`, `Layout.tap`
+//! - config.2 (unmeasured) Neighbouring columns stand one unit apart.
+//!   `Layout.series`
+//! - config.3 (habit) A supply bar runs past its outer pins, its ends T's
+//!   and not corners. People: as half the hand drawings draw one (1,258 of
+//!   2,506 supply bars; the rest end on their outer pins).
+//!   `Layout.rail_past`
+//! - config.4 (unmeasured) An input or output port, and a net label,
+//!   stands half a unit from its pin. `Layout.terminal`, `Layout.label`
+//! - config.5 (choice) A wire keeps a quarter unit from another net's wire
+//!   or point: the router's room, so two nets never read as one.
+//!   `Layout.clearance`
+//! - config.6 (choice) A bend costs the router one unit of wire, a
+//!   crossing of another net's wire two: weights that trade length for
+//!   fewer bends and crossings. `Layout.bend_cost`, `Layout.cross_cost`
+//! - config.7 (unmeasured) A drawing is closed up: its empty room taken
+//!   out toward the mirror axis and the top, down to the lengths above.
+//!   `Layout.compact`
+//! - config.8 (habit) One internal net's wire crosses at most three wires
+//!   of other nets (rails aside); a net crossing more is joined by name,
+//!   its near pins still wired. People: seldom draw more than two; three
+//!   writes about as many names as they do (10,492 against their 11,371
+//!   over 5,263 hand-drawn schematics; two writes 12,241).
+//!   `Layout.cross_max`
+//! - config.9 (habit) A row of the drawing holds eight device columns
+//!   before it wraps into rows of columns, one under the other, unless a
+//!   `*@ shelf` line says otherwise. People: drawn so, 5,263 reference
+//!   circuits are as wide as their hand drawings at the median.
+//!   `Layout.shelf`
+//! - config.10 (choice) Wires are drawn blue (`1565c0`) 1.5 pt wide,
+//!   symbols 1.2 pt: the TikZ emitter's own style. `Render`
+//!
 //! Contents:
 //! - `pub const Layout = struct`, `pub const Render = struct`
 //! - `pub const Config = struct`, `Config.default`

@@ -1,5 +1,34 @@
 //! ngspice netlist → bipartite hypergraph of devices + list of analyses.
 //!
+//! Human Rules:
+//! - netlist.1 (choice) An `X` of a subcircuit the deck defines is drawn
+//!   as one block, its pins the instance's nets and what is inside hidden:
+//!   the definition is its author's unit. `addInstance`
+//! - netlist.2 (choice) A block whose definition says `*@ expand`, or that
+//!   a top-level `*@ expand <instance>` line names, is drawn as its
+//!   devices instead; an instance inside it expands or stays a block by its
+//!   own definition. `addInstance`
+//! - netlist.3 (invariant) An expanded instance's devices and nets carry
+//!   the names ngspice gives them: device `r1` of `x1` is `r.x1.r1`, its
+//!   net `a` is `x1.a`, its ports are the instance's nets, and ground
+//!   (`0`, `gnd`) stays the deck's. `Frame`
+//! - netlist.4 (choice) An `X` whose master the deck never defines and
+//!   whose name holds the word `nfet`, `pfet`, `nmos` or `pmos` (four
+//!   nodes), `res` or `cap` (two or three) is drawn as that device, not as
+//!   a block: the deck has no definition, and the PDK's name is all it
+//!   says. `pdkPrimitive`
+//! - netlist.5 (choice) An `X` of any other master the deck never defines
+//!   is drawn as a block with ports `p1`..`pN`: nothing says more.
+//!   `defineOpaque`
+//! - netlist.6 (choice) A definition's `*@ left`, `right`, `top` or
+//!   `bottom` line puts the ports it names on that side of the block, in
+//!   the lines' order (top to bottom, left to right); the rest follow in
+//!   port order, on the side `library.defaultSide` gives them.
+//!   `directive`
+//! - netlist.7 (choice) A `*@ kind <dev> nmos|pmos|npn|pnp|res|cap|block`
+//!   line draws a device as that kind when its pin count fits the kind's
+//!   card, the preferred line last. `kindLine`
+//!
 //! No tokenizer/parser split. A SPICE netlist is line-oriented and flat:
 //! every card is one logical line, its kind is known from the first byte,
 //! and the output is appended to arrays, never built into a tree. So:
@@ -29,28 +58,16 @@
 //!
 //! ## Subcircuits
 //!
-//! A `.subckt` is a **block**: an `X` instance of it is one device of kind
-//! `subckt`, its pins the instance's nets, and what is inside stays hidden.
-//! Comment directives in the definition's body change that:
+//! A definition's `*@` lines, read by `directive`:
 //!
 //!     .subckt opamp inp inn out vdd vss
-//!     *@ expand           draw its devices instead of a block
-//!     *@ left inp inn     the block's shape: which ports sit on which side,
-//!     *@ right out        in order (top to bottom, left to right)
+//!     *@ expand
+//!     *@ left inp inn
+//!     *@ right out
 //!     *@ top vdd
 //!     *@ bottom vss
 //!     ...
 //!     .ends
-//!
-//! An expanded instance is flattened as ngspice names it: device `r1` of `x1`
-//! becomes `r.x1.r1`, internal net `a` becomes `x1.a`, the ports map to the
-//! instance's nets, and ground (`0`, `gnd`) stays global. Instances inside an
-//! expanded body expand or stay blocks by their own definitions.
-//!
-//! An `X` whose master the deck never defines is not an error. A PDK
-//! primitive is read as the device it names (`sky130_fd_pr__nfet_01v8` is a
-//! MOS, `…res…`/`…cap…` a resistor or capacitor; see `pdkPrimitive`); any
-//! other master is a block with ports `p1`..`pN`.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

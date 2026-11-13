@@ -6,9 +6,21 @@
 //!     *@ above m9 iss m7         m9 above iss above m7
 //!     *@ face m3 g left          m3's gate on its left
 //!
-//! A line is strong, or with `weak` a stay; either is honoured or reported
-//! (`Verdict`), never dropped in silence. Each stage applies the lines it
-//! owns and says what became of each; `report` gathers the verdicts.
+//! Each stage applies the lines it owns and says what became of each;
+//! `report` gathers the verdicts. What each verb draws is the rule of the
+//! stage that owns it.
+//!
+//! Human Rules:
+//! - hints.1 (invariant) A `*@` line is drawn as it says, or the report
+//!   says it was relaxed, dropped or rejected and why; none is dropped in
+//!   silence. `Verdict`
+//! - hints.2 (choice) A strong line outranks a stay (`weak`), and a later
+//!   line an earlier one of the same strength: a deck is edited by adding
+//!   a line. `admitOrder`, `applyOrder`
+//! - hints.3 (invariant) Lines that set an order (one thing above or left
+//!   of another) are drawn only while they close no cycle; the line that
+//!   would is dropped, naming the stronger lines it conflicts with.
+//!   `acyclic`, `conflict`
 //!
 //! Contents:
 //! - `Verb`, `Verb.grouping(v: Verb) bool`, `Verb.rung(v: Verb) u8`, `Verb.head(v: Verb, strength: enum { strong, weak }) []const u8`, `Verb.side(v: Verb, comptime T: type, word: []const u8) ?T`

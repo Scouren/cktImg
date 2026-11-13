@@ -1,6 +1,9 @@
 //! Schematic review rules: what a team considers wrong with a drawing, and
 //! how badly. The `.rules` table of `lint.zon`.
 //!
+//! Human Rules: none of its own; it reports where a drawing breaks the
+//! review rules a team sets in `lint.zon`, and draws nothing.
+//!
 //! Immediate mode, as in cktImg: `check` takes the data and a rule table (a
 //! value — one severity per rule) and returns findings; there is nothing to
 //! construct or keep in sync. It reads only `Placed` and the library, so a

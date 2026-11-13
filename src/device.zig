@@ -2,18 +2,36 @@
 //! is to its card and to a drawing. In: a device kind, a card's letter, a
 //! model type. Out: which of its pins do what.
 //!
-//! A device is a **current path** with side pins, or a box. Its path is the
-//! two pins its current passes through. A drawing's rows order potential,
-//! supply above ground: a path stands upright with its ends on two rows, or
-//! lies flat between two columns. Its side pins read a net and pass no
-//! current: the **gate** a drawing turns left or right, a switch's or a
-//! controlled source's **control** pair, a body. A drawing's columns order
-//! signal: what drives a net stands left of what reads it. A box (a block,
-//! a line) has no path, and its ports go by their names
-//! (`library.portRole`).
-//!
-//! The table is `of`: one row per kind, its card as ngspice reads it
-//! (manual, ch. 2 to 11), pins counted from 0.
+//! Human Rules:
+//! - device.1 (invariant) A device's pins are its SPICE card's, in card
+//!   order: the two its current passes through (its **path**), a gate or
+//!   base, a body, a **control** pair (ngspice manual, ch. 2 to 11).
+//!   `of`
+//! - device.2 (invariant) A gate, a body and a control pair pass no
+//!   current: no current path of the drawing runs through them. `carries`
+//! - device.3 (order: potential) A device with a path stands upright with
+//!   its two ends on two rows, or lies flat between two columns. `of`
+//! - device.4 (unmeasured) A transistor's gate (a base) leaves its path
+//!   sideways: on an upright one it points left or right. `of`
+//! - device.5 (order: signal) A device whose path its gate, its control
+//!   pair or a named source's current sets stands right of what drives
+//!   that control. `reads`
+//!   Narrowing: a source a named source sets (F, H) is left out, as a
+//!   part is; the general form admits it.
+//! - device.6 (order: potential) A source that feeds a load stands with
+//!   its low end down: a voltage source's minus, the pin a current source
+//!   draws from. `lowEnd`
+//! - device.7 (order: potential) An upright transistor has the end of its
+//!   path nearer the supply on top: a p-type's source (its emitter), an
+//!   n-type's drain (its collector). `sourceUp`
+//! - device.8 (choice) A transistor whose `.model` card gives no type is
+//!   p-type when its model's name holds `pmos`, `pfet`, `pnp`, `pjf` or
+//!   `pch` or starts with `p`, n-type likewise: the name is all the deck
+//!   says. `polarity`
+//! - device.9 (choice) A block, a transmission line (T, O, U), a B source
+//!   and a coupling (K) have no path, so none stands between two rows:
+//!   the table gives them none, and a block's ports go by their names
+//!   (`library.portRole`). `of`
 //!
 //! Contents:
 //! - `pub const DeviceKind = enum(u8)`, `pub const Pins = struct`, `pub const max_nodes`

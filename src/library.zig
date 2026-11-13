@@ -13,8 +13,8 @@
 //! `unit`, pin end to pin end); an auxiliary terminal (a gate, a base) sits off
 //! it. A pin faces the side its anchor lies on — the larger of |x| and |y|
 //! decides. The layout's horizontal form of a device is this frame as drawn;
-//! its vertical form is the frame turned a quarter to the left (`Orient.left`),
-//! which puts a MOSFET's drain up, its gate left and its source down.
+//! its vertical form is the frame turned a quarter to the left (`Orient.left`,
+//! schematic.14).
 //!
 //! ## Append-only
 //!
@@ -22,6 +22,45 @@
 //! registration with the same terminals returns the existing id, and one with
 //! different terminals is refused. Placed schematics hold ids, so an id that
 //! moved would silently redraw old output.
+//!
+//! Human Rules:
+//! - library.1 (choice) A device whose kind has no registered symbol is
+//!   drawn as a labelled box, its pins alternating left and right down
+//!   it: something must draw it, and lint reports it. `classFor`
+//! - library.2 (invariant) A transistor is drawn as the symbol of its type:
+//!   `pmos` or `nmos`, `pnp` or `npn`, `pjfet` or `njfet` (device.8).
+//!   `className`
+//! - library.3 (choice) A block is drawn as the caller's symbol of its
+//!   subcircuit's name, else as a generated box with its ports on its
+//!   sides: a real symbol (an op-amp's) is the caller's to give.
+//!   `blockFor`
+//! - library.4 (order: potential) A generated block's supply port
+//!   (`vdd…`, `vcc…`, `avdd…`, `dvdd…`, `vpp…`) stands on top, its ground
+//!   (`gnd…`, `vss…`, `vee…`, `agnd…`, `dgnd…`, `0`) at the bottom, where
+//!   no `*@` line of its definition places it (netlist.6). `defaultSide`
+//!   Narrowing: the side's reader takes some spellings by their start
+//!   where the net's reader takes them whole (`vpp…`, `gnd…`, `agnd…`),
+//!   and takes `v+` and `v-` not at all: they stay left. `spellings`
+//! - library.5 (habit) A generated block's bias line `vb`, `vb1`, `vb2`…
+//!   comes in from below; a `vbias` port stays left. People: `vb1` to
+//!   `vb3` in 399 of 618 ports of 5,263 hand-drawn schematics, left in 61.
+//!   `defaultSide`
+//! - library.6 (habit) A generated block's output (`out…`, `vout…`, `vo`,
+//!   `o`, `vop`, `von`, `vo+`, `vo-`) leaves on the right; every other
+//!   port enters on the left. People: of the blocks in 5,263 reference
+//!   schematics a port named `vo` stands right in 71% (17), `out` in 82%
+//!   (1,026). `defaultSide`
+//! - library.7 (habit) An amplifier block's inverting input stands above
+//!   its non-inverting one, where no `*@` line of its definition places
+//!   either. People: 76% of 221 in the op-amp circuits of 5,263
+//!   hand-drawn schematics, 72% of 530 beside transistors. `blockFor`
+//!   Narrowing: only between two left ports named as `portRole` reads
+//!   them; `vin` is the inverting input only beside a non-inverting one;
+//!   only a port's role reads a name in any case (`named`).
+//! - library.8 (unmeasured) A generated block's ports on a side stand one
+//!   unit apart, centred and symmetric about its middle, the middle row
+//!   left empty when the side has an even count. `blockFor`,
+//!   `centeredSlot`
 //!
 //! Contents (the geometry and `Class`; what follows them is not listed yet):
 //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`

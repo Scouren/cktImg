@@ -4,6 +4,61 @@
 //! stages that place and wire are `structure.zig`, `skeleton.zig` and
 //! `sketch.zig`, and `placed.zig` exports the result.
 //!
+//! Human Rules:
+//! - schematic.1 (unmeasured) A net named `vdd…`, `vcc…`, `avdd…`,
+//!   `dvdd…`, `vpp` or `v+` is a supply, drawn with a supply symbol (R1).
+//!   `roleFromName`
+//! - schematic.2 (unmeasured) Net 0, and a net named `gnd`, `vss`, `vee`,
+//!   `agnd`, `dgnd`, `vssa`, `gnda` or `v-`, is a ground, drawn with a
+//!   ground symbol (R1). `guessRoles`
+//! - schematic.3 (unmeasured) A net named `vb…` or `bias…` is a bias line,
+//!   drawn as a port with its name (R1). `roleFromName`
+//! - schematic.4 (unmeasured) A net named `vin…`, `in…` or `vref…` is an
+//!   input port; one named `vout…`, `out…` or `vo` an output port (R1).
+//!   `roleFromName`
+//! - schematic.5 (habit) A `vref…` net a transistor's drain or collector
+//!   makes is an output port, not an input. People: 557 of 595 such nets
+//!   with no drain get an input port (docs/ALGORITHM.md §1; no count in
+//!   the code). `guessRoles`
+//! - schematic.6 (unmeasured) An unnamed net a voltage source drives from
+//!   ground is an input port when the source carries a signal (`ac`,
+//!   `sin`, `pulse`, `pwl`, `exp`, `sffm`, `am`, `trnoise`, `trrandom`),
+//!   else a bias port, unless a `*@ driver <src> inline` line keeps the
+//!   source in the circuit (R2). `guessRoles`, `isSignalSource`
+//! - schematic.7 (habit) A circuit of parts (no transistor) with no pin on
+//!   a ground stands on one bottom wire drawn with no ground symbol: the
+//!   internal net of two pins or more that most two-pin cards end on
+//!   (second pins less first pins; a voltage source's minus and the pin a
+//!   current source draws from count double), then the one with the most
+//!   pins, then by name; unless a `*@ role <net> ground` line names the
+//!   ground. People: 172 of 191 connected pieces in 5,263 hand-drawn
+//!   schematics, and that score names the wire in 77.9%. `reference`,
+//!   `isReference`
+//!   Narrowing: only an independent source's low end counts double; the
+//!   table names a controlled source's too.
+//! - schematic.8 (choice) A `*@ role <net> <role>` line sets that net's
+//!   role over every guess, the preferred line last: the deck's author
+//!   knows what the net is. `guessRoles`
+//! - schematic.9 (unmeasured) A voltage source from ground to a supply,
+//!   input or bias net is not drawn in the circuit: the net's terminal
+//!   symbols stand for it there, and it is drawn apart (R3). `isDriver`
+//! - schematic.10 (unmeasured) An `E` that is a dependent source, not an
+//!   amplifier, is drawn as the library's two-pin `vcvs` symbol, where it
+//!   has one. `initDevices`
+//! - schematic.11 (choice) A `*@ class <dev> <class>` line draws a device
+//!   as that class only when the class has as many terminals as the one
+//!   it replaces: every pin drawn before stays drawn. `initDevices`
+//! - schematic.12 (unmeasured) A device's row line passes through the
+//!   middle of its left and right pins, its column line through the middle
+//!   of its upper and lower pins: with several on a side, the middle one's
+//!   line, pin or not. `settleDevices`
+//! - schematic.13 (unmeasured) A controlled source's minus output on
+//!   ground, like a MOS body, is part of the symbol and gets no wire.
+//!   `referencePin`
+//! - schematic.14 (unmeasured) An upright device is its symbol turned a
+//!   quarter left, then flipped as the layout asks: unflipped, a MOSFET's
+//!   drain is up, its gate left, its source down. `form`
+//!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
 //! - `pub const Circuit`, `pub const DeviceKind`, `pub const Side`, `pub const Library`, `pub const ClassId`, `pub const Orient`, `pub const Pt`

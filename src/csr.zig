@@ -1,5 +1,8 @@
 //! Data-oriented bipartite hypergraph.
 //!
+//! Human Rules: none of its own; a container of nets and devices that
+//! serves every stage's rules.
+//!
 //! A hypergraph H = (V, E) is stored as its bipartite incidence graph:
 //! one side holds vertices, the other holds hyperedges, and an incidence
 //! (e, v) says "vertex v is a member of hyperedge e".

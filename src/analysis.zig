@@ -1,6 +1,9 @@
 //! Every analysis ngspice accepts as a dot-command, with the parameters it
 //! needs besides the devices themselves.
 //!
+//! Human Rules: none of its own; it holds what a deck asks a simulator,
+//! which no drawing shows.
+//!
 //! Source of truth: ngspice `src/spicelib/parser/inp2dot.c` (master, 2026)
 //! and the ngspice manual, chapter "Analyses". Syntax in each doc comment
 //! uses `<...>` for optional fields.
