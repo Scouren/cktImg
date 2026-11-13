@@ -56,6 +56,10 @@
 //! - trunk.8 (unmeasured) A pin comes to its trunk straight when it faces
 //!   it; out half a unit and along when it faces sideways; round its own
 //!   device, through the channel on its right, when it faces away.
+//!   Only when every original track fails for a named part, retry its
+//!   sideways-pin rows without artificial half-unit approach vertices.
+//!   AG2365 then keeps a proper foreign-wire crossing. Existing tracks,
+//!   ports, departure checks and forbidden contacts retain precedence.
 //!   `wayTo`
 //! - trunk.9 (choice) A net of at most 12 pins may run its trunk upright,
 //!   where that costs less: down the column of a pin facing up or down,
@@ -141,6 +145,9 @@ const Lay = enum {
     level,
     /// An upright trunk: `level` mirrored about the diagonal.
     upright,
+    /// Last resort for a named part: sideways pins already on the row
+    /// contribute their actual points, with no artificial approach split.
+    row,
 };
 
 /// A net with no symbol of its own: one column's pins joined in order, or
@@ -200,12 +207,14 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     // line first (a mirror's, as the book draws it), then every pin on its
     // own way to the trunk; then an upright trunk, where it costs less
     // still.
-    const lays: []const Lay = if (column) &.{.column} else &.{ .rungs, .level, .upright };
+    const lays: []const Lay = if (column) &.{.column} else &.{ .rungs, .level, .upright, .row };
     for (lays) |lay| {
+        if (lay == .row and (end != .name or fewest != std.math.maxInt(i64))) continue;
         const among = switch (lay) {
             .column => taps[0..1],
             .rungs, .level => tracks[0 .. level + 6],
             .upright => uprights,
+            .row => tracks[0..level],
         };
         const rows = lay == .rungs or lay == .level;
         // Whether a row a tap out from the pins has room.
@@ -482,6 +491,7 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
             .column => .of(&.{at.transposed()}),
             .upright => wayTo(at.transposed(), sides[p].transposed(), t, gap),
             .rungs, .level => wayTo(at, sides[p], t, gap),
+            .row => if (at.y == t and sides[p].isHorizontal()) .of(&.{at}) else wayTo(at, sides[p], t, gap),
         };
         // A pin on the trunk already needs no line of its own.
         if (line.len >= 2) try lines.append(gpa, line);
@@ -601,7 +611,8 @@ fn sameX(s: *const Schematic, pins: []const u32) bool {
 /// The way from `at`, a pin facing `side`, to the trunk at `y_t`: straight
 /// when it faces it, out a half gap and down or up when it faces sideways,
 /// round its own device through the channel on its right when it faces
-/// away.
+/// away. The named-part row fallback in trunkLines supplies its own
+/// on-row endpoint; original candidates keep these half-gap approaches.
 fn wayTo(at: Pt, side: Side, y_t: i32, gap: i32) Line {
     var line: Line = .of(&.{at});
     const half = @divFloor(gap, 2);
@@ -625,6 +636,10 @@ fn wayTo(at: Pt, side: Side, y_t: i32, gap: i32) Line {
     }
     assert(line.len >= 1);
     return line;
+}
+
+test {
+    _ = @import("trunk_row_test.zig");
 }
 
 test "trunk: opposed pins keep their straight rung when the trunk needs a later row" {

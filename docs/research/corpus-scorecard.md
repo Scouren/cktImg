@@ -1101,3 +1101,105 @@ three named VX losses from pass15: an actual round trace shows separate
 physical parts' crossings being added together before all pins become
 labels. The unsigned reference and center-tapped symbol studies remain
 queued separately.
+
+## Seventeenth measured pass: crossing budgets for physical wire parts
+
+The frozen executable is
+`cb0acd3ffc56619b5f008e1487a08f093e42aee54945b02a46422a8f20ace9d0`.
+The [physical-part study](thin-parts.md) changes only eligibility for further
+thinning of a net already drawn in named parts: at least one connected part
+must exceed two nonrail crossings. Disconnected parts no longer pool that
+budget. Automatic nets retain their whole-net budget; total crossings still
+rank eligible nets, with the existing canonical tie order, mirror handling
+and explicit-style protections. Literal contact, ordering and allocation
+failure tests check those boundaries independently.
+
+Retaining another net's wire exposed an existing routing defect in AG2365.
+An artificial half-gap endpoint landed on a foreign wire even though the
+complete gate interval would make a legal proper crossing. The
+[same-row study](thin-row.md) retains actual routing-round traces and the
+rejected candidate's vertices. A bounded fallback now tries unsplit on-row
+approaches only after every original candidate fails, and only for a named
+part. Existing legal candidates and required ports retain precedence.
+The complete source regression passes both compaction modes; the final
+AG2365 drawing is byte-identical to pass16. The broader initial rewrite was
+rejected after it changed otherwise valid routes and lost a required port.
+
+All **2,936** drawings render with the same two source issues and no native
+findings. Geometry changes in **34 AG and one AMS** drawings; reports change
+in 33 and one. Device positions, axes, physical gate directions, block flow
+and every scored structural relation are unchanged. The partial all-relation
+sets remain **289/2,202 AG and 243/734 AMS**. The stable native interval audit
+gains five straight intervals and loses none. Whole-drawing crossings rise
+from **4,892 to 4,982 AG** and **200 to 203 AMS**; bends rise from
+**20,538 to 20,677 AG** and **1,538 to 1,545 AMS**. This is a measured policy
+tradeoff, not improvement on every readability measure.
+
+The [physical-connectivity audit](thin-connectivity.md) compares actual
+named device-pin pairs in changed nets, including bent connections and
+non-gate terminals. Labels and foreign-net ink never join its components.
+It records **307 newly connected pairs and 19 newly disconnected pairs**.
+Every changed pair has verified source terminal bindings and actual SVG
+lead and conductor evidence; none remains unsupported. Of the new joins,
+203 match source continuity and 104 join pieces the source keeps physically
+separate. Of the lost joins, three match source separation and 16 break
+source-continuous pairs. Source agreement therefore improves for **206
+pairs and worsens for 120**, a net gain of 86 correlated observations.
+Joining a component changes many pairs at once; these are not independent
+examples or a whole-corpus source-agreement rate.
+
+The tradeoff also occurs inside the motivating examples. Each of AG2309,
+AG2318 and AG2319 recovers its specific straight gate line, but its full
+changed net has **three source-agreeing joins and eight source-disagreeing
+joins**. Across the 34 circuits with any connectivity transition, 20 have
+positive pair-agreement deltas, 12 negative and two equal. The 104 excess
+joins span 23 AG circuits and 24 nets; every such net also gains at least
+one source-supported connection. The exact source partitions, including
+their labels, remain evidence for a separate grouping rule.
+
+The 16 lost source connections remain explicitly named: **AG1170:Q-**
+loses M4.D–M8.D; **AG2486:VX** loses all six pairs among M16.D, M17.D,
+M18.D and M18.G; **AG2571:VOUT** loses C2.2's connections to M1.D, M2.S
+and R2.1; **AG989:net4** loses all six pairs among CC.2, M11.D, M4.D and
+M6.G. AG1170's old connection was two independently named stubs meeting;
+the retained I+ wire prevents that meeting. The other cases involve
+competing crossing budgets, whole-part label fallback or a corridor freed
+by earlier thinning. No single safe grouping exception follows from these
+cases. The durable inventories distinguish these missing joins from the
+104 excess joins and require exact mismatch names, including review of an
+unexpected resolution. Electrical identity does not erase these visual
+source disagreements.
+
+Every earlier named power, grounded-capacitor, controller, reservoir and
+input-branch cohort remains correct. All 145 converter groups preserve
+their 22 universal geometric relations, seven continuous local trees and
+zero crossings in their 21 tree pairs. Auxiliary-bus continuity and geometry
+are unchanged, including the exact 107 joined and 38 disconnected names.
+The separate unresolved AG2376/2452 grouping cases and intentionally
+disconnected AG2274/1411 controls retain their recorded states.
+
+An isolated plugin size change replaces the `layout.Line` stable sort with
+heap sort under the unchanged comparator, which orders all four value
+fields. Equal keys are identical values. The measured plugin saving is
+**8,140 bytes**, from 564,407 to 556,267 at that intermediate snapshot.
+Exact Schemify payload comparisons retain **82 fixtures, 142 files and
+281,139 payload bytes**; the native executable is unchanged by the sort.
+This output-invariant change is separate from the routing policy.
+
+Validation passes **394 tests without LaTeX and 395 with it**, 4,000 fuzz
+cases, global formatting and changed-file style checks with the same 30
+baseline findings (five API and 25 plugin-layout findings). All 31 gallery
+SVG names and hashes match pass16. The frozen source traces, native mismatch
+markers and earlier cohort inventories replay exactly. Real release-host
+Schemify round trips retain 98 fixture comparisons and the two named
+capacity refusals; all 35 changed decks yield 40 exact subcircuits. The
+35 changed drawings reproduce identical geometry and reports with one and
+four jobs, including an independent replay. The current-host changed-deck
+run is pending at this documentation snapshot. Source and native views of AG2318
+confirm the repaired gate interval and the still different whole layout.
+
+The final plugin is **556,416 bytes**, SHA-256
+`3ac32d22402e31a27805988b8456b405bb45c3d80380a6fe53c8dd6cf8deb9a4`,
+6,784 bytes below the strict cap. Repeated native and plugin builds are
+byte-identical. This checkpoint improves a bounded policy while retaining
+the exact source mismatches; it does not establish human equivalence.

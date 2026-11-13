@@ -581,7 +581,7 @@ fn merged(a: Allocator, segs: []const Seg) Allocator.Error![]const Seg {
             .{ .vertical = true, .at = s[0], .lo = s[1], .hi = s[3] });
     }
     const ls = lines.items;
-    mem.sort(Line, ls, {}, lineLess);
+    std.sort.heap(Line, ls, {}, lineLess);
     var out: ArrayList(Seg) = try .initCapacity(a, ls.len);
     var cuts: ArrayList(i32) = .empty;
     var k: usize = 0;
