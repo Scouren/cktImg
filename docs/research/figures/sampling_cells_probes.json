@@ -1,0 +1,4993 @@
+{
+  "baseline_replay": "Every generated JSON and report matched frozen files byte-for-byte.",
+  "binary_sha256": "424fd0d921790e0235d0d5c711c93592d56d251bf749bccfa776355b94d39fa4",
+  "limitation": "No MOS form changes; bridge rejects transistors. A later classifier/group-placement experiment remains necessary.",
+  "probe": "capacitor_bridge_only",
+  "runs": [
+    {
+      "after_metrics": {
+        "bends": 10,
+        "crossings": 1,
+        "labelled": []
+      },
+      "baseline_json_sha256": "c553cff0e4e4b806ff7943571268169247a67c1bc1eaf4715f0e99f0a4f4b6f6",
+      "baseline_report_sha256": "047bee9573e82e8a7d07ffdd5be77cec2586c8c14eb1a792640e7990bd2ff3fe",
+      "before_metrics": {
+        "bends": 9,
+        "crossings": 1,
+        "labelled": []
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3177",
+      "probe_deck_sha256": "e6ba4486f9c886e45d4ac3d63a1ec422ea54413c342adb4f390a8b4f1bc7fb25",
+      "probe_json_sha256": "d3aba60922e26475c8831ed96289a38823e26247f05c652b0036a5498f6f9ce1",
+      "probe_report_sha256": "38e811b84e31f2f3e8a9e160917d3a0716a4b12849722059b8e3131589762cf9",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 9,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "48c7ae7bb1bcd696bad486181dcc48931451832842c276bf38e503fecd9cece0"
+    },
+    {
+      "after_metrics": {
+        "bends": 9,
+        "crossings": 1,
+        "labelled": []
+      },
+      "baseline_json_sha256": "b81e4c6b8e485abf8847aee6b8539794d8d4ef35f50274b2f4d6a9db1e02baa0",
+      "baseline_report_sha256": "1e50008aa29b3e1419fd2d5265b60bb9e941a78165d3ff94f175b71fd90305c1",
+      "before_metrics": {
+        "bends": 9,
+        "crossings": 1,
+        "labelled": []
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3190",
+      "probe_deck_sha256": "e1decd6a891fec32d412c7d44a6f36edf2d726284dac0bedfa665be0104a57f3",
+      "probe_json_sha256": "c2aa8d6a1b6068a59fd2e49cf1a27977495361191e8f5c368ba9afe3b929866c",
+      "probe_report_sha256": "82c36d9302501a2f65f35d1e26dad5b7b9f6858ea3f98367cdce6ea72eff50ab",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 9,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "774ca97ba71e1838ef099dfe5e209c302d91993cc52df12c648b3ff97c380808"
+    },
+    {
+      "after_metrics": {
+        "bends": 19,
+        "crossings": 5,
+        "labelled": [
+          "net0",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "4f9922592a6b53d91ecd005c3ed932c676589d7a3ac7a517f61d0bd8036bed18",
+      "baseline_report_sha256": "bbbaec1f57cb9591af60676c14c93d5bd4a4c0d3f1b11da25d79c62807ca15b0",
+      "before_metrics": {
+        "bends": 19,
+        "crossings": 3,
+        "labelled": [
+          "net0",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3214",
+      "probe_deck_sha256": "cb876060fb8dd6783cc5dcd31e400fab902dffaecd50a2e355975747247e0e53",
+      "probe_json_sha256": "ce11330300615db128aaa239c210be4bf61f5d3bfcfb3eba9e14b2d04de7a76e",
+      "probe_report_sha256": "9faaf10b2bf2dbd6d97cc9c921ba22026b536396e96dfcadc78fc7b2fb88eb32",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 21,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "3ffcb6b082e2f6b649b19c124ed4dfc34abd2cc009a208bc9766ac98b8b3dcf7"
+    },
+    {
+      "after_metrics": {
+        "bends": 27,
+        "crossings": 3,
+        "labelled": [
+          "net7",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "4bd302fb226c23dcbf8a13260bad626a3ad515b6df6a21260885d08e1a3544ff",
+      "baseline_report_sha256": "5ca11a294eb33c3f7e636b298b8a2a637ea351b10e11892079303300ca888084",
+      "before_metrics": {
+        "bends": 28,
+        "crossings": 6,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3227",
+      "probe_deck_sha256": "ac11eb91dadd7632d9923a11443b49d8347ba92047a5949d707d248cb7d0869b",
+      "probe_json_sha256": "881d1df50cd93e5d1d1b5d7ace7238b84f99b38a59fe901fb7797e8ac4fb4b67",
+      "probe_report_sha256": "f9a2a3aeb39c5fa197bb1bf9afa9c7e0889bb94e80a513fbd764c30c6e289a23",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 26,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "e18f1f740c216c487411015550fef43a93a73dba8c0300cd966332334040e535"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 3,
+        "labelled": [
+          "net2",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "baseline_json_sha256": "6296cfe28c7fcc3b9873e31c073642434c3fe28c6fadfa58eba8d3aee180f4d1",
+      "baseline_report_sha256": "f1d23ab36af06883947612c805bab63d35354059d19578afa630fd41b3a3b85a",
+      "before_metrics": {
+        "bends": 21,
+        "crossings": 3,
+        "labelled": [
+          "net2",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3242",
+      "probe_deck_sha256": "e02ca92ba168c4498a5006b4071326d943e252ea3f4e573c6f6ab0db91025095",
+      "probe_json_sha256": "b6872da50ef93980a88a58885f04cac4ed68f7045b94f4225945d28095bc926f",
+      "probe_report_sha256": "a7a89949d554fe0b08454196f7e94f422f8af8bbd5d3df14f6ba651f472ce2f7",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 25,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "4399eb0815b02a4091dab07727f218133b631579b89aadf4a87c00b3b8fc9c54"
+    },
+    {
+      "after_metrics": {
+        "bends": 26,
+        "crossings": 3,
+        "labelled": [
+          "net5",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "baseline_json_sha256": "014324edd61be3f07b9b2f031a738c56ace7e9955fc39c770b1d0060b579cbf7",
+      "baseline_report_sha256": "0f6f7af9e269326897765650b352735381367447f1494fdc7d5d9e1f2d2bcce2",
+      "before_metrics": {
+        "bends": 26,
+        "crossings": 3,
+        "labelled": [
+          "net5",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3249",
+      "probe_deck_sha256": "36c94e3e5f3909c0a0b84fc77d991523686c75baddd944fab02be1cbffb74a7d",
+      "probe_json_sha256": "5bb01c34b90570df5e1336634d0b5e993f7fb34db17a585a460f60a5e34d2518",
+      "probe_report_sha256": "2e1e0997b9080b825ae5e24047da3bff65b06102b450ba2ea3608e204b5ad473",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "ba218e7806c1f83cb224790f312dbc9f4a6ff363477bd4524eeaa21e8d97563e"
+    },
+    {
+      "after_metrics": {
+        "bends": 22,
+        "crossings": 4,
+        "labelled": [
+          "net6",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "adc7b67cfef1570bdd5550d984a536ac28a524a680981129bec743f78788848f",
+      "baseline_report_sha256": "c7e247e0406f4706b4e6c5e996ca984ecf901e294e186ebfe389a3dfc754c0f0",
+      "before_metrics": {
+        "bends": 22,
+        "crossings": 4,
+        "labelled": [
+          "net6",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3254",
+      "probe_deck_sha256": "090382e17a852f3f87f9087d5b3d193c1ed32297142e4b76b5f379c281b03561",
+      "probe_json_sha256": "8f82279acd72c34b82b30c5ee552de75fd3a6a1afbf84521768ef0e620e1b104",
+      "probe_report_sha256": "8b92a23b86a5fe9fb3d299bd4ab638559c791ce91758e352d4e6826c0877e990",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 26,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "0f817c33e8538f7276ae76c0431ea6c8ef5221e9f4019985ed3ffa025d6f9af2"
+    },
+    {
+      "after_metrics": {
+        "bends": 27,
+        "crossings": 3,
+        "labelled": [
+          "net2",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "1f31f94e1d987f1be96409d26b87c434f17c982113e6b02b38b94027bd28efb7",
+      "baseline_report_sha256": "3123f1b32f94c07a40da04fb314e5598711d2fdbe013f43ec64d7341d8bb9bf3",
+      "before_metrics": {
+        "bends": 27,
+        "crossings": 3,
+        "labelled": [
+          "net2",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3257",
+      "probe_deck_sha256": "75daf0a47736d6e3ef10452262216956dea1c61bfa96980610fb0a0a26e2cfb6",
+      "probe_json_sha256": "5b699ba2e7dfacf27f7893e55bb6145c2abf7031700fb08948e5e4c1832eb0b8",
+      "probe_report_sha256": "937c3975b31233da19e068cb32781e7bf12f916fc83b3974d5eca09914a53be6",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "4dd7d0551e20543fbe61d8d2381161ed93153841048fbc99940f751764aac0c3"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 5,
+        "labelled": [
+          "vx",
+          "vdd",
+          "vb2",
+          "vb1"
+        ]
+      },
+      "baseline_json_sha256": "9d1d2f4903cf07c642f41512b13e0f1c71d58755e45f7daabe8794ad0f8f4a6c",
+      "baseline_report_sha256": "9c57d908a17898e88305fa82854a1dc6e6f2cfe8c52ec9511a3df2ad7bdde342",
+      "before_metrics": {
+        "bends": 22,
+        "crossings": 5,
+        "labelled": [
+          "vx",
+          "vdd",
+          "vb2",
+          "vb1"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3259",
+      "probe_deck_sha256": "f96b91745485456f5877dc099d2659bad806ff823339fc30679df5c06a000eec",
+      "probe_json_sha256": "ba230b48fd51ba0b53cb9ff1f378b32e87fb045e8f7bf9b2df7ee1374c402787",
+      "probe_report_sha256": "d407ec5ae71cef059d4b15beef0bc81887ac5ea8e51cfd64e9ae3913651ccfdc",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 26,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "328a565059d9c01ab3684b4c6ebf0bf8417ed44d0c11433765686855bd40319b"
+    },
+    {
+      "after_metrics": {
+        "bends": 8,
+        "crossings": 2,
+        "labelled": []
+      },
+      "baseline_json_sha256": "81f3b14575b4a0b1fc3cb0015c9aad1fb61c432b8c17381948a3692d5a154b42",
+      "baseline_report_sha256": "9b62f49de5c555c21c301b7574a6fb477d319dec410adbfb8cbb59c3566c3a8f",
+      "before_metrics": {
+        "bends": 7,
+        "crossings": 1,
+        "labelled": []
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3265",
+      "probe_deck_sha256": "682018f0d37ff49fc9552317d1cc34277a54295892e3f414f61b6d0f8105897d",
+      "probe_json_sha256": "07d11e957b428e0f22adbc37d56c113caabd77ff1e0efb41be6bd8e75bbbb7f5",
+      "probe_report_sha256": "f9f859f420702cae6292b01b91ae222a0e31ffa9fe0e2e3c939885182333d5ce",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 9,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "68d307b2f9246108096d37ef6c2458dd5df5c2c468eef70b45d704cdd7c1d674"
+    },
+    {
+      "after_metrics": {
+        "bends": 22,
+        "crossings": 4,
+        "labelled": [
+          "net4",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "4b8c0ef7e4c9681fff0da951cfec76a647fa75d398814a34da94aa57e7bbc8e9",
+      "baseline_report_sha256": "8f9010e5775d683ac6fb68239904c3d46c2419a65959f3e49a9f78c3923fa9bb",
+      "before_metrics": {
+        "bends": 24,
+        "crossings": 1,
+        "labelled": [
+          "net4",
+          "net7",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": false,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3275",
+      "probe_deck_sha256": "8229e54698a0081026d8f12daeb6f4a05858959a7a9ceae8aa0e1e23cb2784cf",
+      "probe_json_sha256": "cedaea0c34937115149ba58796abac0ad54489f5a9a85eb1611ed60ad9eb8b9b",
+      "probe_report_sha256": "0f758d516274a64b20ce12ee3aef51b8628f3bcfd50250417dca7af7c9208435",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "3e64c3458cd2636d0b8f288506807b7374acc8b9eb968a350051b82b9b1d5093"
+    },
+    {
+      "after_metrics": {
+        "bends": 25,
+        "crossings": 6,
+        "labelled": [
+          "net6",
+          "vdd",
+          "net4"
+        ]
+      },
+      "baseline_json_sha256": "66df298accfec89bf6e5cd3bb795f0762ca30f70c97f10cfb69f81d0db2f5d3c",
+      "baseline_report_sha256": "b2afb19dab30daa001cbdcb30bba273c774b907842392cf062f54e837b6ed3b3",
+      "before_metrics": {
+        "bends": 26,
+        "crossings": 2,
+        "labelled": [
+          "net6",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3282",
+      "probe_deck_sha256": "48fe2b84a3232fa8bffa6ef94801ec3dc34ec7ad4c49b442113c98dc58187a92",
+      "probe_json_sha256": "44be4260f88b1d9078ba232600992047198641ea14002a249ae89c7519d4947e",
+      "probe_report_sha256": "df0b8b6982bcf5d6b2ca63f26e8c2d7da33e2d836598090f00780d1c0a3f4ecc",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 23,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "9dbdfdc0efca1fcbf1898287f6b3f5c4ed93842c247869d08805ddeeb4c4b9ac"
+    },
+    {
+      "after_metrics": {
+        "bends": 10,
+        "crossings": 4,
+        "labelled": []
+      },
+      "baseline_json_sha256": "9f972e94cd7d36d20ec101285115b45b83e716c6e844b876f3f21aa426344661",
+      "baseline_report_sha256": "1de3b86251e479a0d7657ca0c7ae8ff3db42ebf4c3957d2359d501cb6907a025",
+      "before_metrics": {
+        "bends": 13,
+        "crossings": 3,
+        "labelled": []
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": false,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3286",
+      "probe_deck_sha256": "38860f1bf0b03ff9d1c8327e91371eeb154349721f54d972f965e69ae1a03b9f",
+      "probe_json_sha256": "2af1e913aa9b254707a1f314aff3faa5e532ea28855560c0b7391547affb361f",
+      "probe_report_sha256": "8e7b6aa9f4105c65954e7f6618d19ec156aedc8a4cd0cb114499876f31e13b8a",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 9,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "8cdf601076a485347af0f21494b5a959f0a0c5d88c10d0665b6e5cfc297a93c9"
+    },
+    {
+      "after_metrics": {
+        "bends": 20,
+        "crossings": 3,
+        "labelled": [
+          "net0",
+          "vy",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "baseline_json_sha256": "ab0505219365b1b1def3c2034b77a3dbcb726e516f4fdfc04ebfee06a5e42e14",
+      "baseline_report_sha256": "8f1d0f6534e5b2c8a6331938b6b39a823d102511ee530deb6ab95d2e716800c7",
+      "before_metrics": {
+        "bends": 19,
+        "crossings": 3,
+        "labelled": [
+          "net0",
+          "vy",
+          "vdd",
+          "vb2"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3296",
+      "probe_deck_sha256": "f6acb57e46a47118b8815b5bcccf1e36cb7af139cff299c438eba88f77293532",
+      "probe_json_sha256": "4f24f51a34be751f3eb0cff481969ec0065074d72fe25eb597870f8e9b00c92d",
+      "probe_report_sha256": "6b2b43acc9cffc68175ce49c989b6c92cd4a95743582cb888611c6efbcecd750",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 26,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "5ac1e540d5fe59dbd2371ac03361b2978b7404971648db61c69cfa3e7f79d513"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 0,
+        "labelled": [
+          "net3",
+          "vx",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "2d859761cb08406518d9b6c7c1054358bb75402821fa44dab55745e22f3bedc4",
+      "baseline_report_sha256": "38454e0dafb2545b4fe6eb8de82e4ce3179abc8e95c57bf38c2e4b4497746d85",
+      "before_metrics": {
+        "bends": 20,
+        "crossings": 0,
+        "labelled": [
+          "net3",
+          "vx",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3303",
+      "probe_deck_sha256": "12431098ffd177348822b96896001e2194c977fd890b6d250f09f3d1bcb73cfd",
+      "probe_json_sha256": "c6e264b2a64ef34f1602567725be07bc5d331fc7d0bd79672a0a3e0404f26184",
+      "probe_report_sha256": "c2fa260e5feae8c99f0b00cd9f5b25ea57af241e19b3cd8df2371ea1129bef55",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 25,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "bc078569ff841182f492d47c54cabd06d5ae75f05a84a84155bda244a6598c39"
+    },
+    {
+      "after_metrics": {
+        "bends": 20,
+        "crossings": 1,
+        "labelled": [
+          "net5",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "5fcf64a6b81a86f8e602bff4111236d0a6673d7731d6cc65bdb63fbc5042fcf6",
+      "baseline_report_sha256": "be8fe97e16a9da5c89e25d8e5df01426eb88419b2dc66a2bbdba60e941249294",
+      "before_metrics": {
+        "bends": 17,
+        "crossings": 1,
+        "labelled": [
+          "net5",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3308",
+      "probe_deck_sha256": "b52353a7d03cbeb9e93f57f4b896b2fbc02f73a1f974096806d330ec4d6bf29d",
+      "probe_json_sha256": "bbce05c6c9f67ecd15e448db9fa4e0010e3f5580603413ce6a631ccda1f3a27d",
+      "probe_report_sha256": "e0cfe2dddfed0613e6ec5c90331d6b67acda2ac0f142e8708857e0fa65708431",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 19,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "cb2dd18a85fab1d95797131a8439c8d47d6d04413760c69503f95bedd0f253a1"
+    },
+    {
+      "after_metrics": {
+        "bends": 17,
+        "crossings": 1,
+        "labelled": [
+          "net2",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "b249a8bfcbb3de42c5e91d466b95a3075f02389ef62ed7c6a581320a0811c157",
+      "baseline_report_sha256": "89787fd43449106b2f43def2d8814f2d5208d242c381d7aba9c33f965ffe520b",
+      "before_metrics": {
+        "bends": 14,
+        "crossings": 1,
+        "labelled": [
+          "net2",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3309",
+      "probe_deck_sha256": "e3c5a4138e20a8854ef6c98e564dda4f86cbaf320a55f0dd6a09d2396ce5ffe4",
+      "probe_json_sha256": "76b23bbca1a5a333c708cef78cef7cb05055c68e17d3578e166de0e4ce73c66d",
+      "probe_report_sha256": "9776bf014ac1185d5f19d1e668b5694b46021cd9ba5f33a7e70eb878637b405b",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 20,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "672935f65df4f8b80fb05ce3c45986db1a49312490a34851f35da02607f385c3"
+    },
+    {
+      "after_metrics": {
+        "bends": 20,
+        "crossings": 3,
+        "labelled": [
+          "vci",
+          "vdd",
+          "net0"
+        ]
+      },
+      "baseline_json_sha256": "6edb552979868f356913fcde065f62231acdbde7cc3f2af943acd3f6e3e79d7a",
+      "baseline_report_sha256": "69dc5142b25e03ef4cecdafd9e8efb22ee01449954e6a9f4c7401de9afe075a7",
+      "before_metrics": {
+        "bends": 18,
+        "crossings": 3,
+        "labelled": [
+          "vdd",
+          "net0"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": false,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3314",
+      "probe_deck_sha256": "b7af51e984906baf562bb028cfc0435cd041a727b02ee87b5aa839266bf11606",
+      "probe_json_sha256": "8accd4ef9e2d0e159b2a6b2dbb7eeeeb4279a40fb8e5ac1844eb90ab6ef0ed61",
+      "probe_report_sha256": "df7c9f5259487ee91a5f0d7f18feb86d5e6a98beb1e9814d68cefe15ead7ffce",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 25,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "9698e02f5d18d0000283c138ecfbfa968095c09bb359d5ec2ae28bf1bd6fb083"
+    },
+    {
+      "after_metrics": {
+        "bends": 12,
+        "crossings": 3,
+        "labelled": [
+          "vdd",
+          "vx"
+        ]
+      },
+      "baseline_json_sha256": "06f7013a2be4b01ed4ac597412cf18a0e19b7cee8554e75a0b0290ef48a9195d",
+      "baseline_report_sha256": "124780c18faa145a8340d4528cc87c88c013ff882a5ac8ae73f30ccf47dc3830",
+      "before_metrics": {
+        "bends": 15,
+        "crossings": 3,
+        "labelled": [
+          "vdd",
+          "vx"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3318",
+      "probe_deck_sha256": "d22eb351bfc0ced7294227325172f926ef256083c03cf0de14c8ecaf40b11620",
+      "probe_json_sha256": "7fcf455de7809143eaf9645c510df69a9c5c05f45cb8054f03ce488633adc3a8",
+      "probe_report_sha256": "4cb97cc5d6088245789f221f3bc91e0f00db989e66de145f5e5bdc5a158b6183",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 22,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "03a7f311d6a84382d37657eb8170f43bdd3f0d7e3b2b01897200b2429835c88a"
+    },
+    {
+      "after_metrics": {
+        "bends": 13,
+        "crossings": 2,
+        "labelled": [
+          "net0",
+          "vx",
+          "vb1"
+        ]
+      },
+      "baseline_json_sha256": "ad1826b3dec93003eefe59f7925075432211faf8a6672d90d41c42e32f518db6",
+      "baseline_report_sha256": "04a73ce4f95b5c50cfb94174cc317244829395a9d73d016aa1204ae31dbf79df",
+      "before_metrics": {
+        "bends": 19,
+        "crossings": 1,
+        "labelled": [
+          "net0",
+          "vx"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3323",
+      "probe_deck_sha256": "3150080c4aee1502097b65b9b1d101d8962df184df205143771b93ab4155c7ae",
+      "probe_json_sha256": "0cd6659dfdb3ef5356a101830f272980bdc2543e24261e86b4cc485e8233bace",
+      "probe_report_sha256": "37a74e3e37bf3edf8f11fbc8eecdf62d2b99ee766a5f6983d87829750794f249",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 22,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "3a67ea247689499deda097f2f50da3423c83d4caaa571e2e4a59153ffaad9877"
+    },
+    {
+      "after_metrics": {
+        "bends": 22,
+        "crossings": 4,
+        "labelled": [
+          "net4",
+          "vb1"
+        ]
+      },
+      "baseline_json_sha256": "26cdc409ab5fa84419ff6c022e41eaa28162ecbf8381c76db5f3e06d74f29735",
+      "baseline_report_sha256": "37d1d5814cf3ce9b8cb085a810907d98ecbb037d6e2dcc231105f4070ac132a0",
+      "before_metrics": {
+        "bends": 17,
+        "crossings": 3,
+        "labelled": [
+          "net4",
+          "vb1"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3328",
+      "probe_deck_sha256": "3bce04ae1d19fde657db73d3a0edfacf63603b4013a4e08f13d5d7ea8e64283e",
+      "probe_json_sha256": "4043e15fb93a4d2da93bd3d2a0c4c6a3ab69c61d10a83a5da4daf9c34cc6211d",
+      "probe_report_sha256": "f804d38447d88cfe854f59ec7385ea19034db8449b86be1c1f526c5a7bf1d32f",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "34e9ff79e6f3620b2e9fb98024b66d8484434892ac9778bbe0ca74ffff56fe0f"
+    },
+    {
+      "after_metrics": {
+        "bends": 12,
+        "crossings": 3,
+        "labelled": [
+          "net4",
+          "net0"
+        ]
+      },
+      "baseline_json_sha256": "c05b18098b8a9f87dcf1759f2bee3fca843640ddccb560dc3799109e2549f02f",
+      "baseline_report_sha256": "f7ba6360c2bf1fd44b1862fc11e843bb2e6a18317a8301f92a7e9653bcb187ea",
+      "before_metrics": {
+        "bends": 10,
+        "crossings": 1,
+        "labelled": [
+          "net4",
+          "net0"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3332",
+      "probe_deck_sha256": "1921584c2daf0178df53d9f1d7743616f6354f7d610434241274c986407c2c2f",
+      "probe_json_sha256": "6faa2b39171d8a17782d89dc2f3516867c638f34aa9821276c5aecd1b1676249",
+      "probe_report_sha256": "89a9f826e450dde4b15a8a2a080fb8a3a6a6237e4c8556c043fa0f32b816e78a",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 21,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "9889cee10168016220210fabcb0e3dbf63aece9a057c0d99eeeb871f80cd81de"
+    },
+    {
+      "after_metrics": {
+        "bends": 19,
+        "crossings": 5,
+        "labelled": [
+          "net1",
+          "vdd",
+          "vx"
+        ]
+      },
+      "baseline_json_sha256": "19fdd263548f161ba7998739a9c6dec899ac57eec921afeb2aeaf47d52be81e5",
+      "baseline_report_sha256": "b8690dced7241ded72f3bc81d28777f016deb19016e17d7668d73facb9f35555",
+      "before_metrics": {
+        "bends": 19,
+        "crossings": 5,
+        "labelled": [
+          "net1",
+          "vdd",
+          "vb1",
+          "vx"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3337",
+      "probe_deck_sha256": "4bdfa07f87cb6246915ae698a1ca7493eaf71ffb7f0093df4683c2d1a3121123",
+      "probe_json_sha256": "d820d0b0a213a1dcca06742b533036a3664d8f47c3acd65e1db0c89b4d38ed21",
+      "probe_report_sha256": "6353eecf21ef994cd96c7dffdb60cdd993682fb6014eccb450450a4028541480",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "1ff8459bbf62316502dafeee53bb2d20a36d44a7bd5cc873bc65f879193d58f1"
+    },
+    {
+      "after_metrics": {
+        "bends": 14,
+        "crossings": 1,
+        "labelled": [
+          "net6",
+          "vci",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "bd5ea4065ce06122b956b4b74c4725c23b6782bc1864d78e358a2bfd59b14bed",
+      "baseline_report_sha256": "e5eb98dd92cd17d30802529a221a34b82b6c008b53597f7f377ab1d71bb2ba67",
+      "before_metrics": {
+        "bends": 13,
+        "crossings": 1,
+        "labelled": [
+          "net6",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": false,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3340",
+      "probe_deck_sha256": "fd6bb499d927fd3cff10f079d48afdb4a674f96f9c7768c96106ed60e9a61ec0",
+      "probe_json_sha256": "7287c036b74be946949874987f00202d45028ebcc583f23380b9f0d404bb241b",
+      "probe_report_sha256": "365038b09d0bd71252a5b5a0ef74766d7c4388dab16e5bf5ecceff74e40f5f0a",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 22,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "ce27383018ef6fc3d277ef7e0d1b3ae68957f5546472bb18731beda593db2766"
+    },
+    {
+      "after_metrics": {
+        "bends": 12,
+        "crossings": 1,
+        "labelled": [
+          "net3"
+        ]
+      },
+      "baseline_json_sha256": "b2dbec1233a032c66e446e967f87ad7d0a44e311c9ae2b6e1174a77364df3160",
+      "baseline_report_sha256": "11d3c22279f1d8cb2fa7ed3788887a8e1a9bab67605b70e4b01cddcf32b73c82",
+      "before_metrics": {
+        "bends": 11,
+        "crossings": 1,
+        "labelled": [
+          "net3"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3342",
+      "probe_deck_sha256": "c1812c635fabf757262b60cf51def22ae960330b8a2480599ea9a8f7b7a13468",
+      "probe_json_sha256": "43ce49fbb30b9efb3edc3002d028affc5b8e29e80a125b72a1cff40c1acc6bf9",
+      "probe_report_sha256": "1292d2ea47a0ca172702a70212b1b62f668af3c88439c1d5c7c55824a848f29f",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 20,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "02754c89d48b50148efcd5ff8badecfa8d9b3a123f97ce5c0221065077f72a81"
+    },
+    {
+      "after_metrics": {
+        "bends": 15,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "6f0c9181b8a0fd8c4f74062cd8d9b01e1d4f7a82956b165fcf9850ce435ad282",
+      "baseline_report_sha256": "effa719109a39786fb38de95926b679cf851701c9a49a040bf036108e2e0d028",
+      "before_metrics": {
+        "bends": 16,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3349",
+      "probe_deck_sha256": "1ef5c0dd4978241d5d0bcfe7860e19a01698a9550cad02d219d9e5358175d385",
+      "probe_json_sha256": "c80f0e1da8c025d521ef92b26f428812517f7e26d9d411f5c0a6cd09109fe01d",
+      "probe_report_sha256": "1244e415e36af9f0f1ae8794ec8a65c08701c1f3ff39bc3524e24b38aa8bbd64",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "0544a706a47515e30fd72db09b89f071bf9ffe6daf9af207dc5f1738d5c3ad96"
+    },
+    {
+      "after_metrics": {
+        "bends": 16,
+        "crossings": 2,
+        "labelled": [
+          "vx",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "cd8071b2b56df54db6690554afe31ec5e4e4f976643ba539b8ab20fb132fe0b3",
+      "baseline_report_sha256": "0a946269029550212241d1b6f310dbc8b5b1284249659b7ae66b3e8920816ad4",
+      "before_metrics": {
+        "bends": 20,
+        "crossings": 2,
+        "labelled": [
+          "vx",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3352",
+      "probe_deck_sha256": "61beebb76306813f93f455061de648bec62dcc4526521a13908f13754b09a185",
+      "probe_json_sha256": "cb17720c1e56df0e12ec3f338bc59f5c255b63253b029e64a1efb1f017b2256a",
+      "probe_report_sha256": "132bc79afdf4e7df8bee6128d83ff148ea87504773913c8363c6f878f7608b1c",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "c8729117be77020e19dd5e4351938bf1f9e6384b926d22228ed80ece55b944d4"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "e986d5329b01bd575a6b29db12b39bd23ceced7e480610dd1519c1386a16bda1",
+      "baseline_report_sha256": "a79e7960c8bf4762cc07b1116cb90fc01ad13fca5be6675b0b8d98b8c4ceb3cb",
+      "before_metrics": {
+        "bends": 21,
+        "crossings": 3,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3369",
+      "probe_deck_sha256": "21087fac857f144552e9c0b03585b2a83e44b0626fd69c545449d2c99f3b4592",
+      "probe_json_sha256": "91a4e8aeeeb5660da27d84a072346351371053a410df6946adbb9dff2d69eb38",
+      "probe_report_sha256": "6441ecb4ed92bb3dd1a20e6effc504edaa295692b6b7352e8aa41e5f247e73e2",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "b106ad80f2e802fdc934c50de4a76a7d6c27e8cfdc554372ae54587a03c8f7e6"
+    },
+    {
+      "after_metrics": {
+        "bends": 18,
+        "crossings": 3,
+        "labelled": [
+          "net1",
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "9ef952273fd85be41543f3cf2d27444970135920b0c724f79035a7b5c30fe6d0",
+      "baseline_report_sha256": "40951f8007084dec52ba528c1eacbd376e689eadaa75f5d842d3011082955177",
+      "before_metrics": {
+        "bends": 18,
+        "crossings": 2,
+        "labelled": [
+          "net1",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3370",
+      "probe_deck_sha256": "c407f5ac1adad71d748d245defb2c6bbae6b729a0e923a0d4a50cb0677a6489a",
+      "probe_json_sha256": "04d69799fa354308e5a81cf9ee4fb32234e35b637b41e446311d74ebb788c6dd",
+      "probe_report_sha256": "26d2648b6d48f961c9c34be3530e5e0de6dcd1de382874038855987a0723542b",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 21,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "57eb3ebde2323a538514978f8da762fcf8ec89fbe7fe66689d2dc7dd311ce403"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 4,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "56cdd284477f3433ea358519e3c1546ba27e9ceec9cbb9f64c2f42a82f2d0518",
+      "baseline_report_sha256": "1f475aff019e10a6508c64b7d691f2e4d1a326a5bb1d0f20fb0343022fc1cb7d",
+      "before_metrics": {
+        "bends": 18,
+        "crossings": 4,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3375",
+      "probe_deck_sha256": "18e54ca435cea4b5db818fb8bd90394afdc32cab1e137f9352f997400d763f41",
+      "probe_json_sha256": "300ad5665b7f88d5d25efbea765bcb97e2d1af6cf889879255c0c4431809c19b",
+      "probe_report_sha256": "982a790ee891b795a706bd2adc117d81121434703eac447d6b025baf193382cc",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 24,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "478663f799b08d6fb24547bff21ae60c90a358a8947a50c75727ef118ea96c5d"
+    },
+    {
+      "after_metrics": {
+        "bends": 18,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "f9f63e3245bade376362384c3179e04fd08512d41531c236337926fd0d7d882c",
+      "baseline_report_sha256": "806df28628d4fd6dfc8ae654b71784cee6880d0e4bf08cb4f0f5060e92810646",
+      "before_metrics": {
+        "bends": 18,
+        "crossings": 3,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3395",
+      "probe_deck_sha256": "5fef545e7b91ea6cc675212d18e1e5d38c7520aa8865e82d7f1913eefcee84ca",
+      "probe_json_sha256": "7808f80e51bf4fffed21b09528ac38b3fdd50357868725c06b19bd6bf7fa0381",
+      "probe_report_sha256": "cc9e64ecf3af3075597b41a20a966d4cba087a82b416824b8820afa2e8505d04",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 26,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "0aa4f6c91962be75f159be93eb2f1c32fa633a3fdd00ed78e7146ed57a088395"
+    },
+    {
+      "after_metrics": {
+        "bends": 21,
+        "crossings": 3,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "0575d7d85a50f2445096a40d9ee22d80500687730a90f508a08fa562293a1582",
+      "baseline_report_sha256": "2bcdf37a54a864f8380a761b44f143f1a36d6c01aa88402f36a2604f2183097f",
+      "before_metrics": {
+        "bends": 17,
+        "crossings": 3,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3400",
+      "probe_deck_sha256": "1177806e5a5e4f849d4541b8f332a61e7ef15d6a6b1852c12e04240ef294767e",
+      "probe_json_sha256": "76f1d4a4f4e68953d024b42288066eef0d4c90373140f9a7ea0900d58b8aa8a4",
+      "probe_report_sha256": "e8c1e064518a43fd82855c5783632435def5141fe170248e2e33678ca6c69a9f",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 23,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "b7655e9ad81e0e4da2cb6e28c1011cdbf30c1ab1f807b8318a1dc71d0ba397a9"
+    },
+    {
+      "after_metrics": {
+        "bends": 20,
+        "crossings": 7,
+        "labelled": [
+          "net9",
+          "vb2",
+          "vdd",
+          "net5"
+        ]
+      },
+      "baseline_json_sha256": "f410a35279475d1c178b282ec733061f4e30ae9c1289357cfaf910fa45e5aff3",
+      "baseline_report_sha256": "9f319860dfd52f709e9ba29c2679717d4962298cec2f907a24a108eee0e24d66",
+      "before_metrics": {
+        "bends": 20,
+        "crossings": 7,
+        "labelled": [
+          "net9",
+          "vb2",
+          "vdd",
+          "net5"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-3435",
+      "probe_deck_sha256": "277319a6511ee426e7ae10610b590212c6d2bf6ca0eca829a02cca53e44aeebb",
+      "probe_json_sha256": "f4385405ec5a1b570fcada9c17e79b99e7483fa4616424ebea737864b9f1ffc3",
+      "probe_report_sha256": "5fc4b57e81bf7fe925347f2e5dc49467041bc431c8f890918651795b86f9604d",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 27,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "a656eee82531e7b6613652f96bb78ce5fea4276ac1d981f6d2481ce5f0a937da"
+    },
+    {
+      "after_metrics": {
+        "bends": 14,
+        "crossings": 4,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "baseline_json_sha256": "dfda89ccbc95b1df4c204390834a05d7b57f38610b931d1957badb150f8748df",
+      "baseline_report_sha256": "a6ef2ecdd464a5283cfc798051e2f4e6a938e45e442b8d505228f162725d7929",
+      "before_metrics": {
+        "bends": 14,
+        "crossings": 6,
+        "labelled": [
+          "net1",
+          "vdd"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "cm",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge cm"
+      ],
+      "id": "ag-788",
+      "probe_deck_sha256": "cdcafe8d87970f5514b8dd767d195ea9e9a2bd3743c72e66d58b7561b47804a9",
+      "probe_json_sha256": "5f056249d9d700ebf918a595bf0734f4f9cb8ca07bc62ce7754a5bd9640bf93a",
+      "probe_report_sha256": "313f0c5447a8ec45a84776ab0ac6effefe6074b52ec78e6e8f396b5810121ee4",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge cm"
+        }
+      ],
+      "source_sha256": "3c0181edc89af2a0e20c158588a29c9786b993bd2f5e5aa1f78c5f19ab76a302"
+    },
+    {
+      "after_metrics": {
+        "bends": 7,
+        "crossings": 0,
+        "labelled": []
+      },
+      "baseline_json_sha256": "4bbd64de45fbde0460cd698bf80c1a067e7d860dcd96f3e6065c65b660f4cf9b",
+      "baseline_report_sha256": "719a8a77fd63473d2e318d8a126229defa95ca30de608b557f20c281062157ec",
+      "before_metrics": {
+        "bends": 6,
+        "crossings": 0,
+        "labelled": []
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": true,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c1",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": true,
+            "shunt_gates_outward": [
+              true,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              true,
+              true
+            ],
+            "shunts_same_row": true,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": true
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c1"
+      ],
+      "id": "ag-790",
+      "probe_deck_sha256": "2427eee74223b55cec210f5dc2227f3ecf46e497d962c0f2e23dbf7dc54b08d2",
+      "probe_json_sha256": "63bb8a1a841eca619a12e898b8f28a0fa292fff150e11a45dde2a5d99cc2fde7",
+      "probe_report_sha256": "46b1126d9ab16cd15668041abec2f0c0ec58451f54bf859a72acecf6459b766d",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 9,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        }
+      ],
+      "source_sha256": "4dbdd86161ffba6578fb59aeff4c91b022dabddb0e20bb1f0206daf8fd15b9d4"
+    },
+    {
+      "after_metrics": {
+        "bends": 12,
+        "crossings": 4,
+        "labelled": [
+          "net5"
+        ]
+      },
+      "baseline_json_sha256": "170cce71166faf7b0d5d4641a0e425f9a5290deb19242f7010a65783279a0d54",
+      "baseline_report_sha256": "a0d6acdba5fd226fd5f3c6167828dbbe5d48a510dd34118259c4c040c3ce625f",
+      "before_metrics": {
+        "bends": 18,
+        "crossings": 6,
+        "labelled": [
+          "net5"
+        ]
+      },
+      "cells": [
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              true,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": false,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c3",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              false,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": false
+          }
+        },
+        {
+          "after": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              true,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "before": {
+            "capacitor_between": false,
+            "capacitor_horizontal": false,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              true,
+              false
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              false
+            ],
+            "shunts_inside": [
+              false,
+              false
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              false,
+              false
+            ],
+            "signal_horizontal": [
+              false,
+              false
+            ],
+            "signal_same_row": false
+          },
+          "cap": "c3b",
+          "family": "four_switch",
+          "source": {
+            "capacitor_between": true,
+            "capacitor_horizontal": true,
+            "capacitor_on_signal_row": false,
+            "shunt_gates_outward": [
+              false,
+              true
+            ],
+            "shunt_vertical": [
+              true,
+              true
+            ],
+            "shunts_below": [
+              true,
+              true
+            ],
+            "shunts_inside": [
+              false,
+              true
+            ],
+            "shunts_same_row": false,
+            "signal_gates_above": [
+              true,
+              true
+            ],
+            "signal_horizontal": [
+              true,
+              true
+            ],
+            "signal_same_row": false
+          }
+        }
+      ],
+      "hints": [
+        "*@ bridge c3 c3b"
+      ],
+      "id": "ag-794",
+      "probe_deck_sha256": "2be8bbc53da78ddcc12f3c8204c5b76bf85506798dfa9e8fc84413b6f84c4d63",
+      "probe_json_sha256": "9691dcd1edd9659be3b78bd1ad22b440312f174c427c7ab8583371e56d3ab200",
+      "probe_report_sha256": "a4b7744ca6011ad0029f2f5206544cf9bd64caab25976bb83ebb2b49841526f8",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 23,
+          "state": "honoured",
+          "text": "*@ bridge c3 c3b"
+        }
+      ],
+      "source_sha256": "56f7741560d033ef2cd4abe4e84da104fe70e604ff4dc6ecfd895e6a1c41b867"
+    }
+  ],
+  "script_sha256": "a39bfd0de19c7d05eaf729a7ccac1334f61ccc1ac21440ae206dff467981bd89",
+  "study_sha256": "39728a4ea7709b65c7190c67c377d3696ba307f4717140b75cd12e3640f9aa2a",
+  "totals": {
+    "after": {
+      "bends": 632,
+      "crossings": 104
+    },
+    "before": {
+      "bends": 631,
+      "crossings": 97
+    }
+  }
+}
