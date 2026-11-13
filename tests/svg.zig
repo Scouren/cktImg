@@ -125,12 +125,23 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
         const net = p.net_name[p.pin_net[lo]];
         const at = p.pin_xy[lo];
         switch (class.role) {
-            .power_rail => try pen.text(at, 0, -6, net, "middle", 12, ink, false),
-            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try pen.text(at, 14, 10, net, "start", 11, name_ink, false),
+            .power_rail => try railName(pen, at, np.geom.railSide(p, lo), net, 12, ink),
+            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try railName(pen, at, np.geom.railSide(p, lo), net, 11, name_ink),
             .input_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
             .output_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
             .none => {},
         }
+    }
+}
+
+/// A rail's net name on `side` of its symbol: past an end of its bar (9
+/// units either way of the pin), or over or under the symbol.
+fn railName(pen: *const Pen, at: Pt, side: np.Side, name: []const u8, size: f32, color: []const u8) !void {
+    switch (side) {
+        .right => try pen.text(at, 19, 4, name, "start", size, color, false),
+        .left => try pen.text(at, -19, 4, name, "end", size, color, false),
+        .up => try pen.text(at, 0, -6, name, "middle", size, color, false),
+        .down => try pen.text(at, 0, 22, name, "middle", size, color, false),
     }
 }
 

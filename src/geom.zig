@@ -28,12 +28,19 @@
 //!   People: 0 of 16,717 ground symbols in 5,263 hand-drawn schematics
 //!   carry a name; of 436 drawings with two ground nets, 433 keep one as
 //!   plain symbols and name the other. `namesRail`
+//! - geom.6 (habit) A rail's net name stands on the first side of its
+//!   symbol, right, left, above, below, that no wire of its net leaves:
+//!   beside the bar of a rail on the end of a wire, above one standing on a
+//!   bar's run. People: 4,531 of 6,169 supply names in 5,263 hand-drawn
+//!   schematics stand beside the symbol's bar (73.4%, a tendency), 1,511
+//!   above it. `railSide`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const library = @import("library.zig");
 const placed_mod = @import("placed.zig");
+const checks = @import("checks.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -172,6 +179,21 @@ pub fn nameSide(p: *const Placed, pin: u32) library.Side {
         for (ends) |e| {
             if (e[0].eql(at)) return (Side.of(e[1].sub(at)) orelse continue).opposite();
         }
+    }
+    return .right;
+}
+
+/// The side a rail's net name goes on: the first of right, left, above,
+/// below that no wire of the rail's net leaves its pin `pin`. So beside the
+/// bar of a rail on the end of a wire, and above one standing on a bar's
+/// run. Asserts the pin is on a net.
+// People: 4,531 of 6,169 supply names in 5,263 hand-drawn schematics stand
+// beside the symbol's bar (a tendency), 1,511 above it.
+pub fn railSide(p: *const Placed, pin: u32) Side {
+    assert(p.pin_net[pin] != placed_mod.no_net);
+    const taken = checks.ways(p, p.pin_net[pin], p.pin_xy[pin]);
+    for ([_]Side{ .right, .left, .up, .down }) |s| {
+        if (taken & @as(u4, 1) << @backingInt(s) == 0) return s;
     }
     return .right;
 }

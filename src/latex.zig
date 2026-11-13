@@ -17,8 +17,12 @@
 //! - latex.3 (choice) An op-amp is drawn as CircuiTikZ's only when nothing
 //!   is wired to its reference pin, which that symbol lacks; else from its
 //!   strokes. `writeComponent`
-//! - latex.4 (unmeasured) A power rail's net name stands above it, a ground
-//!   rail's below, a port's on the side away from its wire. `write`
+//! - latex.4 (habit) A rail's net name and a port's stand where `geom`
+//!   puts them (geom.6, geom.4): a rail's beside its bar, or above it on a
+//!   bar's run; a port's on the side away from its wire. People: 4,531 of
+//!   6,169 supply names in 5,263 hand-drawn schematics stand beside the bar
+//!   (a tendency), and 13,814 of 15,521 port names away from the wire.
+//!   `write`
 //!
 //! The one emitter inside the library, as in cktImg: a paper figure is a
 //! user-facing feature, so it comes from the library a user links, not a
@@ -77,24 +81,25 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
             try escape(w, p.dev_name[d]);
             try w.writeAll("}};\n");
         } else if (lib.at(p.dev_class[d]).role != .none) {
-            // A rail or port the layout added: its net's name beside the pin,
-            // away from its wire.
+            // A rail or port the layout added: its net's name beside the
+            // symbol, where `geom` puts it, past the symbol's box.
             const lo, _ = p.pinRange(d);
             const role = lib.at(p.dev_class[d]).role;
             const name = p.net_name[p.pin_net[lo]];
             if (role == .ground_rail and !geom.namesRail(p, lib, p.pin_net[lo])) continue;
             const side: library.Side = switch (role) {
-                .power_rail => .up,
-                .ground_rail => .down,
+                .power_rail, .ground_rail => geom.railSide(p, lo),
                 else => geom.nameSide(p, lo),
             };
+            const at = p.pin_xy[lo];
+            const box = p.deviceRect(lib, d);
             const nudge: Pt = switch (side) {
-                .right => .{ .x = 5, .y = 0 },
-                .left => .{ .x = -5, .y = 0 },
+                .right => .{ .x = box.max.x - at.x + 2, .y = 0 },
+                .left => .{ .x = box.min.x - at.x - 2, .y = 0 },
                 .up => .{ .x = 0, .y = -3 },
                 .down => .{ .x = 0, .y = 8 },
             };
-            try writeNetName(w, p.pin_xy[lo].add(nudge), side, name);
+            try writeNetName(w, at.add(nudge), side, name);
         }
     }
     for (p.junctions) |j| {

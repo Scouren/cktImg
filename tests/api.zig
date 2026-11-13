@@ -70,6 +70,17 @@ fn groundNet(p: *const np.Placed, lib: *const np.Library, name: []const u8) stru
     return .{ net, rails };
 }
 
+/// The pin of `p`'s one supply symbol.
+fn supplyPin(p: *const np.Placed, lib: *const np.Library) u32 {
+    var found: ?u32 = null;
+    for (p.dev_class, p.dev_pin0[0..p.deviceCount()]) |c, pin| {
+        if (lib.at(c).role != .power_rail) continue;
+        std.debug.assert(found == null);
+        found = pin;
+    }
+    return found.?;
+}
+
 const expectConnected = support.expectConnected;
 
 test "place: one call and the stages give the same drawing" {
@@ -411,4 +422,30 @@ test "geom: a device's name stands on a side of its symbol no pin of it stands o
     const over = try np.geom.refdesAnchors(gpa, &flat, lib);
     defer gpa.free(over);
     try testing.expect(np.geom.refdesRect(over[r1], "r1").max.y <= flat.deviceRect(lib, r1).min.y);
+}
+
+test "geom: a supply's name stands beside its bar, and above it where the wire runs on both ways" {
+    // Oracle: the hand drawings. 4,531 of 6,169 supply names in 5,263
+    // hand-drawn schematics stand beside the symbol's bar (2,957 of 4,576
+    // supply symbols, 1,574 of 1,593 bars named at an end), 1,511 above it.
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    const bit = struct {
+        fn of(s: np.Side) u4 {
+            return @as(u4, 1) << @backingInt(s);
+        }
+    }.of;
+    // One pin on the supply: its symbol ends the pin's stub.
+    var one = try placeText(lib, "One supply pin\n.model nch nmos\nM1 out in 0 0 nch\nR1 vdd out 1k\n");
+    defer one.deinit();
+    const pin = supplyPin(&one, lib);
+    try testing.expectEqual(bit(.down), np.checks.ways(&one, one.pin_net[pin], one.pin_xy[pin]));
+    try testing.expectEqual(np.Side.right, np.geom.railSide(&one, pin));
+    // Three pins on one bar: the symbol stands on the bar's run.
+    var bar = try placeText(lib, "Supply bar\n.model nch nmos\nM1 a in 0 0 nch\nR1 vdd a 1k\nM2 b a 0 0 nch\nR2 vdd b 1k\nM3 out b 0 0 nch\nR3 vdd out 1k\n");
+    defer bar.deinit();
+    const on = supplyPin(&bar, lib);
+    const ways = np.checks.ways(&bar, bar.pin_net[on], bar.pin_xy[on]);
+    try testing.expectEqual(bit(.left) | bit(.right), ways & (bit(.left) | bit(.right) | bit(.up)));
+    try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, on));
 }
