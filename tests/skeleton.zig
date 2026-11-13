@@ -383,6 +383,31 @@ test "skeleton: a pair's mirror runs up its two columns through devices of one t
     try std.testing.expectEqual(y[l.nl.device("m3").?.index()], y[l.nl.device("m6").?.index()]);
 }
 
+test "skeleton: the axis is for a column whose current joins the halves: a reference that only drives their gates stands left of them" {
+    // Oracle: the hand drawings. Of the devices the symmetry maps to
+    // themselves, or that are wired to both halves, people stand one
+    // between the two of a pair when its current path meets theirs (1,297
+    // of 1,630 in the 5,263 reference drawings; 183 of 204 tails), and
+    // elsewhere when it meets them through gates alone (148 of 180 stand
+    // outside the pair) or not at all. The loads' reference `mb` drives
+    // both loads' gates and nothing flows from it to either half: it stood
+    // on the axis once, over the tail, because the symmetry maps it to
+    // itself. Free, it is placed as any column: left of what it drives.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Loads on a reference\n.model nch nmos level=1\n.model pch pmos level=1\nVDD vdd 0 1.8\n" ++
+        "MT p vb 0 0 nch\nM1 a in1 p 0 nch\nM2 b in2 p 0 nch\nM3 a nb vdd vdd pch\nM4 b nb vdd vdd pch\nMB nb nb vdd vdd pch\nIB nb 0 10u\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const x = l.sk.x;
+    const m1 = x[l.nl.device("m1").?.index()];
+    const m2 = x[l.nl.device("m2").?.index()];
+    const tail = x[l.nl.device("mt").?.index()];
+    const ref = x[l.nl.device("mb").?.index()];
+    try std.testing.expectEqual(m1 + m2, 2 * tail);
+    try std.testing.expect(ref < @min(x[l.nl.device("m3").?.index()], x[l.nl.device("m4").?.index()]));
+}
+
 test "skeleton: a circuit of parts stands with its source on the left, whatever the order of its cards" {
     // Oracle: the hand drawings, and a metamorphic relation. Of two parts
     // at different distances from a circuit's one source, people draw the

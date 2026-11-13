@@ -13,9 +13,16 @@
 //!   paths, the lowest-ranked mated device stands in one half and its mate
 //!   in the other: one reference keeps each half whole. Which half stands
 //!   left is the row's to say (columns.13). `assignSides`
-//! - columns.4 (unmeasured) A column whose devices the symmetry maps to
-//!   themselves stands on the axis, as does a column wired to both halves
-//!   (a start-up device between them). `assignSides`
+//! - columns.4 (habit) A column whose current path meets a path of each
+//!   half stands on the axis (a pair's tail, a start-up device between
+//!   the halves); one that meets them through gates alone (a reference
+//!   that biases both, a stage that reads both), or that the symmetry
+//!   merely maps to itself, is a free column of the row. People: 1,297 of
+//!   1,630 devices whose path meets both of a mated pair's stand between
+//!   the two (183 of 204 tails; a tendency for the rest, 830 of 1,117);
+//!   of 418 that meet the halves through gates, through mated parts or
+//!   not at all, 311 stand off the axis (148 of the 180 through gates
+//!   outside the pair), in 5,263 hand-drawn schematics. `joinsBoth`
 //! - columns.5 (habit) Of two columns that would share the axis on one
 //!   row, a pair's tail keeps it. People: 91.9% of 347 such devices in
 //!   5,263 hand-drawn schematics stand between the pair's two. `order`
@@ -268,8 +275,8 @@ fn columnMate(ctx: Ctx, mate: []const u32, k: usize) u32 {
 
 /// Mated columns: the one nearer the reference device in the half called
 /// left, its mate in the right one (the row may stand the core either way
-/// round). Unmated columns whose devices are their own mates, or wired to
-/// both halves, on the axis. Everything else is free.
+/// round). Unmated columns whose current joins both halves, on the axis.
+/// Everything else is free.
 fn assignSides(ctx: Ctx, mate: []const u32, col_mate: []u32, side: []Side) !void {
     const n = ctx.cols.count();
     @memset(side, .free);
@@ -300,15 +307,12 @@ fn assignSides(ctx: Ctx, mate: []const u32, col_mate: []u32, side: []Side) !void
             side[m] = if (left) .right else .left;
         }
     }
+    // On the axis: a column whose current path meets a path of each half
+    // (people: 1,297 of 1,630 such devices stand between the two of a pair
+    // they join, 183 of 204 tails; of 418 the engine stood there that meet
+    // the halves through gates, or not at all, 311 stand elsewhere).
     for (0..n) |k| {
-        if (side[k] != .free) continue;
-        var own = false;
-        var others = false;
-        for (ctx.cols.of(k)) |d| {
-            if (mate[d] == d) own = true;
-            if (mate[d] != none and mate[d] != d) others = true;
-        }
-        if ((own and !others) or (ref != none and wiredToBoth(ctx, side, k))) side[k] = .axis;
+        if (side[k] == .free and joinsBoth(ctx, side, k)) side[k] = .axis;
     }
     for (side, 0..) |s, k| if (s == .left) assert(side[col_mate[k]] == .right);
 }
@@ -361,22 +365,31 @@ fn closest(ctx: Ctx, dist: []const u32, k: usize) u32 {
     return m;
 }
 
-/// A free column on a wired net of a left column and one of a right column:
-/// a start-up device between two mirrored halves.
-fn wiredToBoth(ctx: Ctx, side: []const Side, k: usize) bool {
+/// Whether free column `k` joins the two halves by current: a channel end
+/// of its on a wired net a left column ends on, and one (on that net or
+/// another) a right column ends on. A tail, a start-up device between the
+/// halves; not a column that only drives or reads their gates.
+fn joinsBoth(ctx: Ctx, side: []const Side, k: usize) bool {
+    const c = &ctx.nl.graph;
     assert(side.len == ctx.cols.count());
-    var l = false;
-    var r = false;
-    for (ctx.cols.of(k)) |d| for (ctx.nl.graph.members(EdgeId.from(d))) |net| {
-        if (!ctx.wired[net.index()]) continue;
-        for (ctx.nl.graph.incident(net)) |e| {
-            const c = ctx.column_of[e.index()];
-            if (c == none or c == k) continue;
-            l = l or side[c] == .left;
-            r = r or side[c] == .right;
+    var met = [2]bool{ false, false };
+    for (ctx.cols.of(k)) |d| for (c.members(EdgeId.from(d)), 0..) |net, pin| {
+        if (!order_cost.isChannelPin(ctx, d, pin) or !ctx.wired[net.index()]) continue;
+        for (c.incident(net)) |e| {
+            const j = ctx.column_of[e.index()];
+            if (j == none or (side[j] != .left and side[j] != .right)) continue;
+            if (endsOn(ctx, e.index(), net.index())) met[@intFromBool(side[j] == .right)] = true;
         }
     };
-    return l and r;
+    return met[0] and met[1];
+}
+
+/// Whether a channel end of device `d` is on `net`.
+fn endsOn(ctx: Ctx, d: u32, net: u32) bool {
+    for (ctx.nl.graph.members(EdgeId.from(d)), 0..) |on, pin| {
+        if (on.index() == net and order_cost.isChannelPin(ctx, d, pin)) return true;
+    }
+    return false;
 }
 
 /// Whether column `k` holds a pair's tail: a device with a channel end on a
@@ -390,13 +403,7 @@ fn isTail(ctx: Ctx, mate: []const u32, k: u32) bool {
             const m = mate[a];
             if (a == d or m == none or m == a or m == d) continue;
             // Both of the pair end on the net.
-            const ends = for ([_]u32{ a, m }) |v| {
-                const on = for (c.members(EdgeId.from(v)), 0..) |n2, p2| {
-                    if (n2.index() == net.index() and order_cost.isChannelPin(ctx, v, p2)) break true;
-                } else false;
-                if (!on) break false;
-            } else true;
-            if (ends) return true;
+            if (endsOn(ctx, a, net.index()) and endsOn(ctx, m, net.index())) return true;
         }
     };
     return false;
