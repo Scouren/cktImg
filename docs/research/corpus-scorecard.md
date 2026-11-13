@@ -375,3 +375,50 @@ capacity refusals. The rebuilt plugin is 557,714 bytes, below 563,200, with
 SHA-256 `1bca2e98eb09f5673744e661860aba38fe5a7470bd8efcd9a37a7db0bb33883f`.
 The remaining disagreements and the unscored features above prevent a claim
 of equivalence to the human drawings.
+
+## Fifth measured pass: reservoir controls and single-input symbols
+
+The frozen native executable has SHA-256
+`81fe3d0b22f52f4e2fc7f0c86a92d1fbc08b51174471e75529add43f272c083e`.
+All 2,202 AnalogGenie and 734 AMSNet drawings render with the same exact
+source-limit inventory and no native or wire-metric findings. AMSNet
+geometry is byte-identical to the fourth pass. AnalogGenie changes 108
+geometry hashes and loses no previously complete scored match.
+
+The two-reservoir predicate now faces all 107 external main-switch gates
+down, matching their source drawings; all 107 actively driven mates still
+agree. The input-bus family remains outside this external-control rule.
+All 252 main paths retain their row/order and all 365 selected ground
+shunts remain below them. Block-output horizontal alignment remains 0/75.
+One active-driver terminal, AG1356:M12, now stands level with the coil
+instead of strictly below it, leaving 91/92 strict driver checks. This
+spacing regression remains recorded rather than changing the oracle.
+
+| Measure | Fourth pass | Fifth pass |
+|---|---:|---:|
+| Crossings | 5,136 | 5,002 |
+| Bends | 24,545 | 24,658 |
+| Gate direction agreement, of 23,252 | 13,787 | 13,894 |
+| Left/right agreement, of 338,266 | 206,588 | 206,587 |
+| Above/below agreement, of 320,423 | 204,991 | 205,021 |
+| All scored relations, of 2,202 | 288 | 288 |
+
+No circuit gains crossings in this pass. Orientation agreement remains
+30,357/32,000 and terminal signal-flow agreement remains 491/683. These
+metrics do not measure the newly corrected glyphs: an independent SVG
+check verifies all 47 selected single-input triangles and polarity marks,
+up from zero; all ordered bindings remain correct. AG1370's paired-input
+`comp` is independently checked as well. Their upward orientation in the
+source remains a separate placement task.
+
+Validation passes 280 tests without LaTeX and 281 with it, 4,000 fuzz
+cases, formatting and the gallery. Exact fixture-name inventories cover
+89 equivalent fixture decks and the same two capacity refusals. All 48
+selected symbol decks round-trip through the release Schemify host; six
+representative decks also pass the current host, whose two import aliases
+produce identical cells and equivalent exports. The plugin rebuild is
+558,123 bytes, SHA-256
+`5b471ad81cdf561002cb188fd44d1df978de0160e69380c8f6674aafa46035b1`.
+Source/native views were inspected for AG1363, 1401, 1370, 1432 and 1356.
+The remaining local-group, orientation, spacing and routing differences
+still prevent a claim of equivalence.

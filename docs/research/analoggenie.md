@@ -480,16 +480,16 @@ OUT with a supply; its triangle is unsigned. None needs an invented second
 input terminal.
 
 [single_input_amplifiers.py](figures/single_input_amplifiers.py) selects
-only the known `opamp`, `icm_opamp_vdd_vss`, `comparator` and
+only the known `opamp`, `icm_opamp_vdd_vss`, `comparator`, `comp` and
 `icm_ideal_comparator_vdd` families, with exactly one signed/unsigned input,
 one output and unique optional supply, ground and VB1/VB2/VB3 roles.
 The independent oracle reads the closed triangular SVG path and the line
 segments strictly inside it: one horizontal line is minus, crossing
 horizontal/vertical lines are plus, and no interior mark is unsigned.
 
-All **39/39** selected AnalogGenie source glyphs are triangular and all
-**39/39** signs match the declared input: 28 negative, one positive and
-ten unsigned. There are 32 discovery and seven modulo-five holdout cases;
+All **47/47** selected AnalogGenie source glyphs are triangular and all
+**47/47** signs match the declared input: 35 negative, one positive and
+eleven unsigned. There are 40 discovery and seven modulo-five holdout cases;
 AMSNet contains none. The script includes each source ID, complete port
 list, asset ID and source hashes. Hashing all human JSON, SPICE and SVG
 triples gives AnalogGenie
@@ -497,8 +497,44 @@ triples gives AnalogGenie
 and AMSNet
 `c0d304c90b355b63e2d69655f4a68d51e10b9910f907416dfa4c418c5393c725`.
 
-Unknown controls remain explicit exclusions: ag-1355/1357/1360/1389 have
-VX, ag-1372/1373/1384 have TAIL, and ag-1405 has VB4. A missing input,
+The exact `comp` alias contributes ag-1363/1364/1366/1369/1427/1437/1442
+with INN and ag-1446 with unsigned IN. The complete two-input alias in
+[ag-1370](../../external/examples/analoggenie/ag-1370.svg) also has a
+triangle: its three interior line segments form a minus at (-40,12) and
+a plus at (40,12), matching INN and INP. It retains the existing two-input
+contract and is outside the single-input count.
+
+Unknown controls remain explicit exclusions: ag-1354/1355/1357/1360/1386/1389
+have VX, ag-1372/1373/1377/1384 have TAIL, ag-1396 has VB4/VB5, ag-1405 has
+VB4, ag-1420 has IB and ag-1433 has VBN. A missing input,
 duplicate input or bias role, extra unknown control and unfamiliar family
 are selector negatives. Reordering declared ports preserves recognition;
 electrical pin count and order still come from that declaration.
+
+The native SVG audit now finds the triangle and matching polarity in
+**47/47** selected drawings, up from **0/47** in the frozen previous
+binary. Both versions preserve all **47/47** ordered port lists and net
+bindings. AG1370 separately changes from a box to a triangle with both
+signs, retaining its seven ordered pins and connections. The new native
+binary SHA-256 is
+`81fe3d0b22f52f4e2fc7f0c86a92d1fbc08b51174471e75529add43f272c083e`;
+the previous binary is
+`9052da1b689bb4a5386b8c11d3e4bfc57af4b470262818ca0c5b146bfc5f2db3`.
+The script's `--native-dir` option reads each selected ID's rendered SVG
+and JSON, checking the closed triangle, interior polarity text and the
+original SPICE terminal bindings. An unexpected additional triangle fails
+this cohort's one-controller check.
+
+The rebuilt plugin passes real Schemify import/netlist/`spicecmp` round
+trips for all **48** selected source decks (the 47 single-input cases plus
+AG1370) on v1.0.1: **97** named subcircuits are equivalent, with no refusals.
+The current host also passes ag-1401/1432/1422/1363/1370/1446: all **12**
+named subcircuits, covering the three input polarities and the single/paired
+`comp` alias. Expected and observed subcircuit name lists match exactly.
+This run uses module SHA-256
+`5b471ad81cdf561002cb188fd44d1df978de0160e69380c8f6674aafa46035b1`.
+
+These are glyph and electrical checks, not full drawing equivalence.
+For example, the generated AG1401 controller still points right while
+the source triangle points upward toward its switch gate. Controller
+placement and the surrounding branch rows remain separate layout work.

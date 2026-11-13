@@ -85,7 +85,8 @@
 //!   qualifying converter controls face their drivers (75 block outputs,
 //!   18 two-drain and 14 four-drain networks). Source terminal coordinates
 //!   qualify that observation; distinct lattice rows are the placement
-//!   proxy here. External controls abstain, and sketch.20 takes priority.
+//!   proxy here. External controls use power_paths.6 where qualified;
+//!   others abstain, and sketch.20 takes priority.
 //!   Across all flat MOS, 139/142 qualifying sources agree; ag-809:m10,
 //!   ag-813:m7 and ag-3103:m12 keep upward labelled controls from separate
 //!   drawing groups. This habit does not yet recognize those local groups.
@@ -106,6 +107,7 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const opamp = @import("opamp.zig");
 const transmission = @import("transmission.zig");
+const power_paths = @import("power_paths.zig");
 const wires = @import("wires.zig");
 const netlines = @import("netlines.zig");
 const pinned = @import("pinned.zig");
@@ -372,8 +374,9 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton) void {
     sch.settleDevices(s, c);
 }
 
-/// A flat MOS gate's side: a parallel pair's exterior first, otherwise
-/// unanimous active drivers on strictly different rows. Reads existing
+/// A flat MOS gate's side: a parallel pair's exterior first, a certified
+/// reservoir path's external gate down, otherwise unanimous active
+/// drivers on strictly different rows. Reads existing
 /// CSR incidences and cells once per device; no storage survives the call.
 fn controlSide(nl: *const Netlist, roles: []const Role, sk: *const Skeleton, d: u32) ?Side {
     const c = &nl.graph;
@@ -387,6 +390,7 @@ fn controlSide(nl: *const Netlist, roles: []const Role, sk: *const Skeleton, d: 
     }
     const pins = c.members(EdgeId.from(d));
     if (pins[0] == pins[2] or pins[1] == pins[0] or pins[1] == pins[2] or roles[pins[1].index()].isRail()) return null;
+    if (power_paths.externalReservoirGate(nl, roles, sk.drawn, sk.form, d)) return .down;
     var side: ?Side = null;
     for (c.incident(pins[1])) |e| {
         const v = e.index();

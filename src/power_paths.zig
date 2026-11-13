@@ -33,6 +33,12 @@
 //!   and 92 such drivers in the selected source drawings. A bias channel
 //!   merely touching the coil has no such order: 110 of 140 nonselected
 //!   PMOS there stand level with or above the path. `controlBounds`
+//! - power_paths.6 (habit, bounded) A main switch with gate-only external
+//!   control faces down when both outer ends of its unique series path
+//!   have capacitors to ground. All 107 such controls face down in the
+//!   source drawings, including AG1363:MP3. The input-bus family has 159
+//!   downward and 131 upward main gates, so one reservoir or an external
+//!   gate alone does not decide. `externalReservoirGate`
 //!
 //! Data: reads existing netlist paths/CSR, model types, drawn and rail rows;
 //! writes only the caller's forms. The placement queries read existing
@@ -49,6 +55,7 @@
 //! - `pub fn inductor(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) bool`
 //! - `pub fn series(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32`
 //! - `pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, coordinates: []const i32) ?[2]i32`
+//! - `pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -193,6 +200,28 @@ pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const boo
         }
     }
     return if (bounds[0] <= bounds[1]) bounds else null;
+}
+
+/// Whether `d` is a main switch whose external control faces down on a
+/// unique flat path between two capacitors to ground. Gate-only controls
+/// exclude active drivers; a single reservoir does not select this habit.
+/// Reads existing paths and bounded CSR rows, with no allocation.
+pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool {
+    const c = &nl.graph;
+    assert(d < c.edgeCount() and form.len == c.edgeCount());
+    assert(roles.len == c.vertexCount() and drawn.len == c.edgeCount());
+    if (c.edges.items(.kind)[d] != .mosfet) return false;
+    const gate = c.members(EdgeId.from(d))[1].index();
+    if (roles[gate].isRail() or !gateOnly(nl, gate)) return false;
+    const members = series(nl, roles, drawn, form, d) orelse return false;
+    for ([_]u32{ members[0], members[2] }, nl.path(EdgeId.from(members[1])).?) |main, inner| {
+        const e = EdgeId.from(main);
+        const ends = nl.path(e).?;
+        assert(ends[0] == inner or ends[1] == inner);
+        const outer = ends[@intFromBool(ends[0] == inner)];
+        if (!capacitor(nl, roles, drawn, outer, c.members(e)[1].index(), inner, true)) return false;
+    }
+    return true;
 }
 
 // ---- private ----

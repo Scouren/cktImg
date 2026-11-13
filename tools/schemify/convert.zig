@@ -196,21 +196,27 @@ const testing = std.testing;
 test "named block glyphs preserve X semantics and semantic ports through Schemify" {
     // Oracle: source AG807/1044/438 show a signed triangle, an inversion bubble
     // and XOR. SPICE's X card keeps its definition and positional port order.
-    const cases = [_]struct { []const u8, []const u8, []const u8 }{
-        .{ "icm_opamp_vdd_vss", "VDD VSS VIP VIN VOUT", "poly " },
-        .{ "opamp", "VDD VSS VIP VIN VOUT VB1 VB2 VB3", "poly " },
-        .{ "opamp_differential", "VDD VSS VIP VIN VOP VON", "poly " },
-        .{ "inverter", "VDD VSS A Y", "circle " },
-        .{ "xor_gate", "VDD VSS A B Y", "poly " },
+    const cases = [_]struct { []const u8, []const u8, []const u8, []const u8, []const u8 }{
+        .{ "icm_opamp_vdd_vss", "VDD VSS VIP VIN VOUT", "poly ", "VIN", "VOUT" },
+        .{ "opamp", "VDD VSS VIP VIN VOUT VB1 VB2 VB3", "poly ", "VIN", "VOUT" },
+        .{ "opamp_differential", "VDD VSS VIP VIN VOP VON", "poly ", "VIN", "VOP" },
+        .{ "inverter", "VDD VSS A Y", "circle ", "A", "Y" },
+        .{ "xor_gate", "VDD VSS A B Y", "poly ", "A", "Y" },
+        // Source AG1401/1432/1422: one declared input, with -, + or no sign.
+        .{ "opamp", "VDD VSS VB1 OUT INN VB2 VB3", "poly ", "INN", "OUT" },
+        .{ "opamp", "VB3 INN OUT VB1 VDD VB2 VSS", "poly ", "INN", "OUT" },
+        .{ "comparator", "VDD VSS VB1 INP OUT", "poly ", "INP", "OUT" },
+        .{ "comparator", "VDD VSS IN OUT", "poly ", "IN", "OUT" },
+        .{ "comp", "VDD VSS VB1 VB2 INN OUT", "poly ", "INN", "OUT" },
+        .{ "comp", "VDD VSS IN OUT", "poly ", "IN", "OUT" },
+        .{ "comp", "VDD VSS VB2 INN INP VB1 OUT", "poly ", "INN", "OUT" },
     };
     for (cases) |row| {
         var arena: std.heap.ArenaAllocator = .init(testing.allocator);
         defer arena.deinit();
         const a = arena.allocator();
-        const amp = mem.eql(u8, row[0], "icm_opamp_vdd_vss") or mem.eql(u8, row[0], "opamp");
-        const differential = mem.eql(u8, row[0], "opamp_differential");
-        const output = if (amp) "VOUT" else if (differential) "VOP" else "Y";
-        const input = if (amp or differential) "VIN" else "A";
+        const input = row[3];
+        const output = row[4];
         const text = try a.print("* glyph\n.subckt {s} {s}\nR1 VDD VSS 1meg\n.ends\nX1 {s} {s}\nRL {s} 0 1k\nCF {s} {s} 1p\n", .{ row[0], row[1], row[1], row[0], output, output, input });
         var c = try Converter.init(testing.allocator, a, "glyph.sp", text);
         defer c.deinit();
@@ -248,6 +254,9 @@ test "block glyphs keep explicit sides, ambiguous definitions and project symbol
         "* hints\n.subckt inverter VDD VSS A Y\n*@ right A\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out inverter\n",
         "* unknown\n.subckt inverter VDD VSS A Y ENABLE\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out ctl inverter\n",
         "* directions\n.subckt inverter VDD VSS A Y\n*.PININFO A:O Y:I\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out inverter\n",
+        "* unknown control\n.subckt comp VDD VSS INN OUT VX\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out ctl comp\n",
+        "* unknown tail\n.subckt comp VDD VSS INN TAIL OUT\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in ctl out comp\n",
+        "* single input hint\n.subckt comp VDD VSS INN OUT\n*@ right INN\nR1 VDD VSS 1meg\n.ends\nX1 vdd 0 in out comp\n",
     };
     for (sources, 0..) |src, k| {
         var arena: std.heap.ArenaAllocator = .init(testing.allocator);

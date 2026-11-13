@@ -20,6 +20,12 @@
 //!   including AG1561/1661/1700/2223). Bias pins remain separate below the
 //!   body; an unknown control such as AG1677's VA still keeps a box.
 //!   `identify`, `draw`
+//! - block_symbols.5 (choice) Known opamp/comparator families, including
+//!   `comp`, may declare one input: 47/47 source glyphs retain a triangle
+//!   with the matching minus, plus or unsigned input (AG1401/1432/1422).
+//!   A complete single-input contract creates no missing second pin.
+//!   Unknown controls, duplicate roles and mixed input contracts stay boxes.
+//!   `identify`, `draw`
 //!
 //! Cold, bounded work: at most eight ports, once per registered symbol.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
@@ -55,7 +61,7 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
     const aliases = [_]struct { names: []const u8, shape: Shape }{
         .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier", .shape = .amplifier },
         .{ .names = "opamp_differential", .shape = .differential_amplifier },
-        .{ .names = "comparator icm_ideal_comparator_vdd", .shape = .comparator },
+        .{ .names = "comparator comp icm_ideal_comparator_vdd", .shape = .comparator },
         .{ .names = "buffer buf", .shape = .buffer },
         .{ .names = "inverter inv", .shape = .inverter },
         .{ .names = "and_gate and", .shape = .and_gate },
@@ -81,8 +87,9 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
         seen[@backingInt(Role.output)];
     if (!outputs) return .box;
     const differential = shape == .differential_amplifier or shape == .comparator or (shape == .amplifier and !oneOf(name, "voltage_amplifier"));
+    const inputs = @as(u8, @intFromBool(seen[@backingInt(Role.positive)])) + @as(u8, @intFromBool(seen[@backingInt(Role.negative)])) + @as(u8, @intFromBool(seen[@backingInt(Role.input)]));
     const valid = if (differential)
-        seen[@backingInt(Role.positive)] and seen[@backingInt(Role.negative)] and !seen[@backingInt(Role.input)]
+        (seen[@backingInt(Role.positive)] and seen[@backingInt(Role.negative)] and !seen[@backingInt(Role.input)]) or (shape != .differential_amplifier and inputs == 1)
     else if (twoInputs(shape))
         seen[@backingInt(Role.input)] and seen[@backingInt(Role.second)]
     else

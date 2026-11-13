@@ -137,6 +137,23 @@ fn expectControlsBelow(src: []const u8, coil_name: []const u8, channels: []const
     try testing.expectEqual(0, try support.shorts(testing.allocator, &p, true));
 }
 
+fn expectGate(src: []const u8, name: []const u8, side: np.Side) !void {
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    var p = try np.place(testing.allocator, &.default, lib, &.{src}, null);
+    defer p.deinit();
+    const d = np.checks.deviceIn(&p, name).?;
+    const pin0 = p.dev_pin0[d];
+    const drain = p.pin_xy[pin0];
+    const gate = p.pin_xy[pin0 + 1];
+    const source = p.pin_xy[pin0 + 2];
+    try testing.expectEqual(drain.y, source.y);
+    try testing.expectEqual(side == .down, gate.y > drain.y);
+    try testing.expectEqual(side, lib.at(p.dev_class[d]).side(1, p.dev_orient[d]).?);
+    try support.expectConnected(&p, lib);
+    try testing.expectEqual(0, try support.shorts(testing.allocator, &p, true));
+}
+
 test "power paths: reservoir switches lie along an inductor and ground shunts stand upright" {
     // Oracle: AG1363 MP3/LRX/MP2 form a horizontal power path between
     // CSTO and CL; MN1/MN2 stand upright below it. AG1383 keeps that
@@ -313,4 +330,31 @@ test "power paths: a caller's upright instruction overrides the converter habit"
     // Oracle: the caller's explicit deck instruction takes precedence over
     // a human habit, even for AG1363's otherwise horizontal reservoir switch.
     try expectForms(reservoirs ++ "*@ upright mp2\n", &.{"mp3"}, &.{ "mp2", "mn1", "mn2", "mctrl" });
+}
+
+test "power paths: a two-reservoir path's external control faces down" {
+    // Oracle: AG1363 MP3's gate is below its channel, as are all 107
+    // external main controls where both outer channel ends have ground
+    // capacitors. The other 107 main gates have active drivers below.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    try expectGate(reservoirs, "mp3", .down);
+    try expectGate(try reversed(arena.allocator(), reservoirs), "mp3", .down);
+    // Swapping the channel's card order preserves its two outer reservoirs.
+    const swapped = try std.mem.replaceOwned(u8, arena.allocator(), reservoirs, "MP3 left phase1 stored stored pch", "MP3 stored phase1 left stored pch");
+    try expectGate(swapped, "mp3", .down);
+}
+
+test "power paths: the external-control direction does not extend to input-bus branches" {
+    // Oracle: AG1250's M2/M3/M4 have gates above their channels. The
+    // related 145 input-bus paths have 159 downward and 131 upward main
+    // gates, so an external gate or one reservoir alone cannot decide.
+    try expectGate(flying, "m2", .up);
+    try expectGate(flying, "m3", .up);
+    try expectGate(flying, "m4", .up);
+}
+
+test "power paths: an explicit turn overrides the two-reservoir gate habit" {
+    // Oracle: r0 puts the library PMOS gate up, as requested by the caller.
+    try expectGate(reservoirs ++ "*@ at mp3 -10 -10 r0\n", "mp3", .up);
 }

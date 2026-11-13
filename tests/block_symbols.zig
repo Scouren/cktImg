@@ -86,6 +86,22 @@ test "block glyphs: side directives and caller symbols win; ambiguous contracts 
         "t\n.subckt opamp V+ V- VIP VIN VOUT\n.ends\n",
         "t\n.subckt opamp_differential VDD VSS VIP VIN VOP VON VB\n.ends\n",
         "t\n.subckt opamp_differential VDD VIP VIN VOP OUTP\n.ends\n",
+        "t\n.subckt opamp VDD VSS OUT\n.ends\n",
+        "t\n.subckt opamp VDD VSS IN INN OUT\n.ends\n",
+        "t\n.subckt comparator VDD INP OUT TAIL\n.ends\n",
+        "t\n.subckt comparator VDD IN OUT VX\n.ends\n",
+        "t\n.subckt opamp VDD INN OUT VB4\n.ends\n",
+        "t\n.subckt opamp VDD INN OUT VB VB1\n.ends\n",
+        "t\n.subckt opamp_differential VDD INN VOP VON\n.ends\n",
+        "t\n.subckt voltage_amplifier VDD INN OUT\n.ends\n",
+        "t\n.subckt arbitrary_amplifier VDD INN OUT\n.ends\n",
+        "t\n.subckt opamp VDD VSS INN OUT\n*@ right INN\n.ends\n",
+        "t\n.subckt comp VDD INN OUT VX\n.ends\n",
+        "t\n.subckt comp VDD INN OUT TAIL\n.ends\n",
+        "t\n.subckt comp VDD INN OUT VB4 VB5\n.ends\n",
+        "t\n.subckt comp VDD INN OUT IB\n.ends\n",
+        "t\n.subckt comp VDD INN OUT VBN\n.ends\n",
+        "t\n.subckt comp VDD INN IN OUT\n.ends\n",
     };
     for (decks, 0..) |text, k| {
         var nl = try np.netlist.parse(testing.allocator, &.{text}, null);
@@ -96,10 +112,87 @@ test "block glyphs: side directives and caller symbols win; ambiguous contracts 
         try testing.expect(!diagonal(c));
         try testing.expectEqual(nl.defs[0].ports.len, c.terminals.len);
         if (k == 0) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
+        if (std.mem.indexOf(u8, text, "*@ right INN") != null) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
         var own: np.Library = .init(testing.allocator);
         defer own.deinit();
         const custom = try own.register(.{ .name = nl.defs[0].name, .terminals = &.{.{ .name = "p", .at = .zero }} });
         try testing.expectEqual(custom, try own.blockFor(&nl.defs[0]));
+    }
+}
+
+test "block glyphs: complete single-input amplifier contracts preserve their one input and polarity" {
+    // Oracle: 47/47 selected source SVGs have triangles and matching signs:
+    // AG1401 INN is minus, AG1432 INP is plus, AG1422 IN is unsigned.
+    // Reordered ports retain identity; aliases retain the same contract.
+    const cases = [_]struct { []const u8, []const u8, []const u8, []const u8 }{
+        .{ "opamp", "VDD VSS VB1 OUT INN VB2 VB3", "inn", "-" },
+        .{ "opamp", "VB3 INN OUT VB1 VDD VB2 VSS", "inn", "-" },
+        .{ "comparator", "VDD VSS VB1 INP OUT", "inp", "+" },
+        .{ "comparator", "VDD VSS IN OUT", "in", "" },
+        .{ "opamp", "VIN OUT", "vin", "" },
+        .{ "opamp", "INN OUT", "inn", "-" },
+        .{ "icm_opamp_vdd_vss", "VSS OUT VDD INP", "inp", "+" },
+        .{ "icm_ideal_comparator_vdd", "OUT IN VDD", "in", "" },
+    };
+    const gpa = testing.allocator;
+    for (cases) |row| {
+        const text = try std.fmt.allocPrint(gpa, "glyph\n.subckt {s} {s}\n.ends\n", .{ row[0], row[1] });
+        defer gpa.free(text);
+        var nl = try np.netlist.parse(gpa, &.{text}, null);
+        defer nl.deinit(gpa);
+        var lib = np.Library.init(gpa);
+        defer lib.deinit();
+        const def = &nl.defs[0];
+        const c = lib.at(try lib.blockFor(def));
+        try testing.expect(c.draw[0] == .polyline);
+        try testing.expectEqual(4, c.draw[0].polyline.len);
+        try testing.expect(diagonal(c));
+        try testing.expectEqual(def.ports.len, c.terminals.len);
+        var signs: usize = 0;
+        for (c.draw) |op| if (op == .text and (std.mem.eql(u8, op.text.s, "+") or std.mem.eql(u8, op.text.s, "-"))) {
+            signs += 1;
+            try testing.expectEqualStrings(row[3], op.text.s);
+        };
+        try testing.expectEqual(@as(usize, @intFromBool(row[3].len != 0)), signs);
+        for (def.ports, c.terminals, 0..) |name, terminal, i| {
+            try testing.expectEqualStrings(name, terminal.name);
+            try testing.expect(!terminal.hidden);
+            if (std.mem.eql(u8, name, row[2])) try testing.expectEqual(np.Side.left, c.side(i, .r0).?);
+            if (std.mem.eql(u8, name, "out")) try testing.expectEqual(np.Side.right, c.side(i, .r0).?);
+            for (c.terminals[i + 1 ..]) |other| try testing.expect(!std.meta.eql(terminal.at, other.at));
+        }
+        var own = np.Library.init(gpa);
+        defer own.deinit();
+        const custom = try own.register(.{ .name = def.name, .terminals = &.{.{ .name = "p", .at = .zero }} });
+        try testing.expectEqual(custom, try own.blockFor(def));
+    }
+}
+
+test "block glyphs: the complete comp alias retains single and paired signed inputs" {
+    // Oracle: AG1363/1446 use one signed/unsigned input; AG1370 has both
+    // signs. All nine complete comp contracts have triangular source bodies.
+    const gpa = testing.allocator;
+    for ([_]struct { []const u8, usize }{
+        .{ "VDD VSS VB1 VB2 INN OUT", 1 },
+        .{ "OUT VB2 INN VSS VDD VB1", 1 },
+        .{ "VDD VSS IN OUT", 0 },
+        .{ "VDD VSS VB2 INN INP VB1 OUT", 2 },
+    }) |row| {
+        const text = try std.fmt.allocPrint(gpa, "glyph\n.subckt comp {s}\n.ends\n", .{row[0]});
+        defer gpa.free(text);
+        var nl = try np.netlist.parse(gpa, &.{text}, null);
+        defer nl.deinit(gpa);
+        var lib = np.Library.init(gpa);
+        defer lib.deinit();
+        const c = lib.at(try lib.blockFor(&nl.defs[0]));
+        try testing.expect(diagonal(c));
+        try testing.expectEqual(nl.defs[0].ports.len, c.terminals.len);
+        var signs: usize = 0;
+        for (c.draw) |op| if (op == .text) {
+            signs += @intFromBool(std.mem.eql(u8, op.text.s, "+") or std.mem.eql(u8, op.text.s, "-"));
+        };
+        try testing.expectEqual(row[1], signs);
+        for (nl.defs[0].ports, c.terminals) |name, pin| try testing.expectEqualStrings(name, pin.name);
     }
 }
 

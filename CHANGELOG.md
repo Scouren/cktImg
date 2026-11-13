@@ -6,6 +6,8 @@ One line per change, citing its issue or pull request. Numbers are measured.
 
 AnalogGenie pattern study (#8):
 
+- Engine: face external main-switch gates downward only on certified converter paths with grounded capacitors at both outer ends; all 107 selected source controls agree (#8).
+- Engine and Schemify: draw complete single-input amplifier/comparator contracts and the validated `comp` alias as triangles with their actual polarity; all 47 selected one-input source glyphs and their ordered bindings match (#8).
 - Engine: preserve certified converter paths and their control devices through shelf wrapping; orient flat MOS gates toward unanimous active drivers, retaining transmission-pair and explicit-placement precedence (#8).
 - Engine: place two-part switched-capacitor feedback cells as local rectangles with outward return gates; a direct feedback capacitor selects the straight-branch arrangement instead (#8).
 - Engine: place externally controlled switched-capacitor amplifier networks along their signal, normalize MOS channel geometry from the caller's symbol and break traversal ties by canonical name; oversized custom frames retain lattice placement (#8).
