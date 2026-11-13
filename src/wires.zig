@@ -24,11 +24,17 @@
 //! - wires.5 (choice) A rail's bar stands one rail stub (`rail`) past the
 //!   outermost of its pins facing it: the outermost pin meets it on the
 //!   stub its symbol would have had. `bar`
-//! - wires.6 (unmeasured) A rail's bar carries one symbol on each unbroken
-//!   run of it, at the run's middle stub. `bar`
-//! - wires.7 (habit) A supply bar's run of two stubs or more goes on
-//!   `rail` past its outer pins, where that fits. People: 1,258 of 2,506
-//!   supply bars (`config.Layout.rail_past`). `bar`
+//! - wires.6 (habit) A rail's bar that ends on its outer pins carries one
+//!   symbol on each unbroken run of it, at the run's middle stub. People:
+//!   1,083 of 1,140 supply bars carrying a symbol end on their outer pins.
+//!   `bar`
+//! - wires.7 (habit) A supply bar's run of two stubs or more is instead a
+//!   named rail, where both ends fit: it goes on `rail` past its outer pins,
+//!   carries no symbol, and its name stands at its right end; never a
+//!   symbol and a run past both. People: 1,255 of 1,370 named bars run past
+//!   both ends, the name at the right end in 1,252 of 1,256; no person
+//!   draws a symbol on a bar that runs past (0 of 730). `rail_past` off,
+//!   every bar is wires.6's (`config.Layout.rail_past`). `bar`
 //!   Narrowing: a supply's bar only; a ground drawn as a bar ends on its
 //!   outer pins.
 //! - wires.8 (unmeasured) No other net's wire crosses a rail's bar or its
@@ -428,8 +434,9 @@ fn terminal(c: *Canvas, p: u32) !void {
 
 /// Rail pins facing `out` (up for a supply, down for ground): stubs to a
 /// bar a gap past the outermost, one symbol on each unbroken run of the bar
-/// at its middle stub; a supply's run of two or more stubs goes on
-/// `len.past` beyond its outer ones where that fits. Any other pin: a symbol of its own. `plain`, the bar
+/// at its middle stub; a supply's run of two or more stubs instead goes on
+/// `len.past` beyond its outer ones where both fit, named at its right end.
+/// Any other pin: a symbol of its own. `plain`, the bar
 /// is a wire and carries no symbol: where it is in pieces, each run and
 /// each pin off it carries the net's name instead.
 fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
@@ -496,16 +503,27 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
             break :blk true;
         };
         if (joined) continue;
-        // A supply's bar runs on past its outer pins, as a rail does.
+        defer run = i + 1;
+        // A supply's bar is either a named rail running on past its outer
+        // pins, its name at the right end (people 1,255 of 1,370; the name
+        // right 1,252 of 1,256), or a bar carrying the symbol and ending on
+        // them (1,083 of 1,140): never both.
         const x_lo = pinAt(s, on_bar.items[run]).x;
-        if (out == .up and !plain and c.len.past > 0 and x_lo != pinAt(s, q).x) {
-            for ([_][2]i32{ .{ x_lo, x_lo - c.len.past }, .{ pinAt(s, q).x, pinAt(s, q).x + c.len.past } }) |e| {
-                if (try c.commit(net, &.{ .{ .x = e[0], .y = y_bar }, .{ .x = e[1], .y = y_bar } })) c.wall();
+        const x_hi = pinAt(s, q).x;
+        if (out == .up and !plain and c.len.past > 0 and x_lo != x_hi) {
+            const cp = c.save();
+            if (try c.commit(net, &.{ .{ .x = x_lo - c.len.past, .y = y_bar }, .{ .x = x_lo, .y = y_bar } })) {
+                c.wall();
+                if (try c.commit(net, &.{ .{ .x = x_hi, .y = y_bar }, .{ .x = x_hi + c.len.past, .y = y_bar } })) {
+                    c.wall();
+                    try c.leaf(.label, net, .{ .x = x_hi + c.len.past, .y = y_bar }, .left);
+                    continue;
+                }
             }
+            c.restore(cp);
         }
         const mid = pinAt(s, on_bar.items[(run + i) / 2]);
         if (plain) try mids.append(gpa, .{ .x = mid.x, .y = y_bar }) else try c.leaf(.terminal, net, .{ .x = mid.x, .y = y_bar }, out.opposite());
-        run = i + 1;
     }
     // A plain bar in one piece is the whole net: a wire, nothing to name.
     if (pieces + mids.items.len < 2) return;

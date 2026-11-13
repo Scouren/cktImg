@@ -28,15 +28,11 @@
 //! - config.2 (habit) Neighbouring columns stand one unit apart or more.
 //!   People: 30,907 of 35,678 neighbouring columns (86.6%), 1.75 units at
 //!   the median. `Layout.series`
-//! - config.3 (habit) A supply bar runs past its outer pins, its ends T's
-//!   and not corners. People: a bar drawn as a named line, with no symbol,
-//!   runs past both ends in 1,255 of 1,370; a bar of wire that carries the
-//!   supply's symbol ends on its outer pins in 1,083 of 1,140 (2,510
-//!   supply bars of 5,263 hand-drawn schematics). `Layout.rail_past`
-//!   Mixed: the bar drawn here carries the symbol (wires.6) and runs past,
-//!   which no hand-drawn bar with a symbol between its ends does (0 of
-//!   730). Ended on its pins (`rail_past` off) it draws 5,050 corners more
-//!   and 2,476 units of wire less over 5,263 circuits.
+//! - config.3 (habit) A supply bar is one of the two forms people draw:
+//!   by default a named rail running past its outer pins, its ends T's and
+//!   not corners, no symbol on it (people 1,255 of 1,370 named bars); off,
+//!   a bar carrying its symbol and ending on its outer pins (1,083 of 1,140
+//!   bars with a symbol). `Layout.rail_past`
 //! - config.4 (habit) An input or output port, and a net label, stands
 //!   half a unit from its pin. People: 15,113 of 16,816 ports stand half a
 //!   unit or more from the pin or wire they join (three quarters at the
@@ -106,9 +102,10 @@ pub const Layout = struct {
     // People: a named bar with no symbol runs past both ends in 1,255 of
     // 1,370; a bar of wire carrying the supply's symbol ends on its outer
     // pins in 1,083 of 1,140.
-    /// Whether a supply bar runs on `rail` past its outer pins, its ends
-    /// T's and not corners: a rail, as half the hand drawings draw one
-    /// (1,260 of 2,510 supply bars; the rest end on their outer pins).
+    /// Which of people's two supply bars is drawn: on, a named rail running
+    /// `rail` past its outer pins, no symbol on it (1,255 of 1,370 named
+    /// bars); off, a bar carrying its symbol and ending on its outer pins
+    /// (1,083 of 1,140 bars with a symbol).
     rail_past: bool = true,
     // People: 15,113 of 16,816 ports stand this far or more from the pin
     // or wire they join (three quarters of a unit at the median).

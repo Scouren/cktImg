@@ -1036,7 +1036,9 @@ test "sketch: a net between two shelves is joined by name, a shelf's own nets by
     for (p.net_name, 0..) |name, net| {
         var names: usize = 0;
         for (p.labels) |l| names += @intFromBool(l.net == net);
-        if (names == 0) continue;
+        // A supply bar is a named rail (people 1,255 of 1,370): its name
+        // joins nothing.
+        if (names == 0 or std.mem.eql(u8, name, "vdd")) continue;
         named += 1;
         try std.testing.expectEqualStrings("n6", name);
     }
@@ -1324,7 +1326,9 @@ test "sketch: a shelf with rows of the whole left empty in it is still one shelf
         "M2 n2 n1 0 0 nch\nR2 vdd n2 1k\nM3 n3 n2 0 0 nch\nR3 vdd n3 1k\nM4 n4 n3 0 0 nch\nR4 vdd n4 1k\n" ++
         "M5 n5 n4 0 0 nch\nR5 vdd n5 1k\nM6 n6 n5 0 0 nch\nR6 vdd n6 1k\nM7 n7 n6 0 0 nch\nR7 vdd n7 1k\nM8 n8 n7 0 0 nch\nR8 vdd n8 1k\n";
     const p = try draw(arena_state.allocator(), lib, &.{deck}, .{});
-    for (p.labels) |l| try std.testing.expectEqualStrings("n4", p.net_name[l.net]);
+    // The supply's bar is a named rail (people 1,255 of 1,370): its name
+    // joins nothing.
+    for (p.labels) |l| if (!std.mem.eql(u8, p.net_name[l.net], "vdd")) try std.testing.expectEqualStrings("n4", p.net_name[l.net]);
     try std.testing.expect(p.labels.len > 0);
     try support.expectConnected(&p, lib);
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
@@ -1447,12 +1451,12 @@ test "sketch: an op-amp circuit is drawn along its signal: inverting input on to
     try std.testing.expectEqual(pinOf(&steered, "rl", 0).y, pinOf(&steered, "rl", 1).y);
 }
 
-test "sketch: a supply bar runs on past its outer pins, so its ends are T's; rail_past = false ends it on them" {
-    // Oracle: the hand drawings. Of 2,506 supply bars joining two or more
-    // pins in the 5,263 reference drawings, 1,258 run half a unit past both
-    // outer pins (a rail), 1,185 end on them; no bar here did, and its two
-    // end corners were 5,030 of the engine's 34,354 corners where the
-    // people's supply wires turn 2,323.
+test "sketch: a supply bar is a named rail running past its outer pins; rail_past = false, a bar with its symbol ending on them" {
+    // Oracle: the hand drawings. Of 1,370 named supply bars (no symbol on
+    // them) in the 5,263 reference drawings, 1,255 run past both outer
+    // pins, the name at the right end in 1,252 of 1,256; of 1,140 bars
+    // carrying the symbol, 1,083 end on their outer pins. No person draws
+    // the symbol on a bar that runs past (0 of 730): the engine did.
     const gpa = std.testing.allocator;
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -1504,6 +1508,19 @@ test "sketch: a supply bar runs on past its outer pins, so its ends are T's; rai
     const e3 = pinOf(&ended, "r3", 0).x;
     try std.testing.expectEqual([2]i32{ @min(e1, e3), @max(e1, e3) }, extent(&ended, netOf(&ended, "vdd")));
     try std.testing.expectEqual(2, bends(&ended, netOf(&ended, "vdd")));
+    // The symbols on the bar's line and the names at its right end.
+    const marks = struct {
+        fn f(q: *const np.Placed, l: *const np.Library, net: usize, y: i32, left: i32, right: i32) [2]usize {
+            var n: [2]usize = .{ 0, 0 };
+            for (q.dev_name, q.dev_class, q.dev_pos) |name, class, at| {
+                n[0] += @intFromBool(name.len == 0 and class == l.findRole(.power_rail).? and at.y == y and at.x >= left and at.x <= right);
+            }
+            for (q.labels) |lb| n[1] += @intFromBool(lb.net == net and lb.at.y == y and lb.at.x == right);
+            return n;
+        }
+    }.f;
+    try std.testing.expectEqual([2]usize{ 0, 1 }, marks(&p, lib, vdd, pinOf(&p, "r1", 0).y - rail, @min(x1, x3) - rail, @max(x1, x3) + rail));
+    try std.testing.expectEqual([2]usize{ 1, 0 }, marks(&ended, lib, netOf(&ended, "vdd"), pinOf(&ended, "r1", 0).y - rail, @min(e1, e3), @max(e1, e3)));
 }
 
 test "sketch: a rail symbol stands on a two-pin part's end, and a stub out from a transistor's" {
