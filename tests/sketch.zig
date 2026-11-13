@@ -1108,7 +1108,6 @@ test "sketch: a net's mirror mate is drawn as the mirror image of its wire, what
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
-
 test "sketch: a bias gate line carries a port hanging from its middle, not a written name" {
     // Oracle: the hand drawings. Of 264 bias nets of two facing gates in
     // the 5,263 reference drawings, 197 carry a port symbol; the engine
