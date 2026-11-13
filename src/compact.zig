@@ -36,9 +36,14 @@
 //!   on the quarter-unit grid stays on it. `Graph.raise`
 //! - compact.8 (invariant) Nothing moves away from the anchor: the drawing
 //!   as it stands satisfies every constraint. `Graph.solve`
+//! - compact.9 (invariant) Caller-supplied coordinate inequalities keep
+//!   the smaller of a quarter unit and their existing positive gap. They name
+//!   terminal orders across distant rows or columns without teaching the
+//!   compactor circuit topology. Equal coordinates already share a track.
+//!   `pass`
 //!
 //! Contents:
-//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocator.Error!void`
+//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32, orders: [2][]const [2]i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -255,8 +260,12 @@ const Graph = struct {
 /// along y), `len.tap` the
 /// least length of a wire between two symbols, bends or junctions, and
 /// `len.clearance` the least room between any other two things; a gap
-/// already smaller is kept as it is. `gpa` backs the work.
-pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocator.Error!void {
+/// already smaller is kept as it is. `orders[0]` and `orders[1]` are
+/// additional increasing coordinate pairs on x and y, respectively, in
+/// the drawing before either pass. Asserts each pair is strictly ordered.
+/// `gpa` backs temporary work; allocation failure may leave x compacted.
+/// The caller retains and owns both order slices.
+pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32, orders: [2][]const [2]i32) Allocator.Error!void {
     assert(s.xy.len == s.nodes.len);
     for ([_]u1{ 0, 1 }) |ax| {
         var arena_state: std.heap.ArenaAllocator = .init(gpa);
@@ -264,7 +273,7 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, len: Lengths, axis2: ?i32) Allocat
         const arena = arena_state.allocator();
         // Read again for y: the x pass moved everything.
         const d = try read(arena, s, len);
-        try pass(arena, s, &d, len, ax, if (ax == 0) axis2 else null);
+        try pass(arena, s, &d, len, ax, if (ax == 0) axis2 else null, orders[ax]);
     }
 }
 
@@ -344,17 +353,21 @@ fn read(arena: Allocator, s: *const Schematic, len: Lengths) Allocator.Error!Dra
 
 /// One axis: `ax` 0 moves x toward `fold2` (twice the axis; null for the
 /// least x), 1 moves y toward the least y.
-fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1, fold2: ?i32) Allocator.Error!void {
+fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1, fold2: ?i32, orders: []const [2]i32) Allocator.Error!void {
     // Tracks: every distance from the anchor along the axis, once, in order.
     var coords: std.ArrayList(i32) = .empty;
     for (d.feats.items) |f| try coords.appendSlice(arena, &.{ along(f.r.min, ax), along(f.r.max, ax) });
     for (d.ties.items) |t| try coords.appendSlice(arena, &.{ along(t[0], ax), along(t[1], ax) });
     for (s.xy) |p| try coords.append(arena, along(pt(p), ax));
     for (s.routes.items) |r| for (r.pts[0..r.len]) |p| try coords.append(arena, along(pt(p), ax));
+    for (orders) |pair| {
+        assert(pair[0] < pair[1]);
+        try coords.appendSlice(arena, &pair);
+    }
     if (coords.items.len == 0) return;
     const anchor2 = fold2 orelse 2 * std.mem.min(i32, coords.items);
     for (coords.items) |*c| c.* = @intCast(@abs(2 * c.* - anchor2));
-    std.mem.sort(i32, coords.items, {}, std.sort.asc(i32));
+    std.sort.heap(i32, coords.items, {}, std.sort.asc(i32));
     var n: usize = 1;
     for (coords.items[1..]) |c| if (c != coords.items[n - 1]) {
         coords.items[n] = c;
@@ -364,6 +377,7 @@ fn pass(arena: Allocator, s: *Schematic, d: *const Drawing, len: Lengths, ax: u1
 
     for (d.ties.items) |t| g.tie(along(t[0], ax), along(t[1], ax));
     g.settle();
+    for (orders) |pair| try g.keep(arena, pair[0], pair[1], @divExact(g.quantum, 2));
 
     // Things that would touch sliding past each other keep their order.
     const feats = d.feats.items;

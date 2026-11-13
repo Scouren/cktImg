@@ -72,6 +72,7 @@
 //! - `pub fn inductor(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) bool`
 //! - `pub fn series(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32`
 //! - `pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, coordinates: []const i32) ?[2]i32`
+//! - `pub fn control(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, d: u32) bool`
 //! - `pub fn externalReservoirGate(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) bool`
 //! - `pub fn blockTarget(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[2]u32`
 //! - `pub fn groundShunt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, net: u32) ?u32`
@@ -201,25 +202,40 @@ pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const boo
     assert(coordinates.len == c.edgeCount() and form.len == coordinates.len and drawn.len == coordinates.len);
     assert(c.edges.items(.kind)[members[1]] == .inductor and roles.len == c.vertexCount());
     var bounds: [2]i32 = .{ std.math.maxInt(i32), std.math.minInt(i32) };
-    for (nl.path(EdgeId.from(members[1])).?) |net| for (c.incident(VertexId.from(net))) |e| {
+    const ends = nl.path(EdgeId.from(members[1])).?;
+    const nets = [_]u32{ ends[0], ends[1], c.members(EdgeId.from(members[0]))[1].index(), c.members(EdgeId.from(members[2]))[1].index() };
+    for (nets) |net| for (c.incident(VertexId.from(net))) |e| {
         const d = e.index();
-        if (!drawn[d] or form[d] != .vertical or !groundedMos(nl, roles, e, net)) continue;
-        if (!gateOnly(nl, c.members(e)[1].index())) continue;
+        if (!control(nl, roles, drawn, form, members, d)) continue;
         bounds[0] = @min(bounds[0], coordinates[d]);
         bounds[1] = @max(bounds[1], coordinates[d]);
     };
+    return if (bounds[0] <= bounds[1]) bounds else null;
+}
+
+/// Whether `d` is an upright external-gate grounded NMOS shunt or a MOS
+/// channel driving either main gate in the certified series `members`.
+/// Every eligible shunt counts, including ambiguous endpoint choices;
+/// uniqueness is a separate requirement of `groundShunt` for x placement.
+/// Asserts `d` and the group are existing device indices and all input
+/// rows span their graph tables. Reads existing rows without allocation.
+pub fn control(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, d: u32) bool {
+    const c = &nl.graph;
+    assert(d < c.edgeCount());
+    assert(drawn.len == c.edgeCount());
+    assert(form.len == drawn.len);
+    assert(roles.len == c.vertexCount());
+    if (!drawn[d] or form[d] != .vertical or c.edges.items(.kind)[d] != .mosfet) return false;
+    const e = EdgeId.from(d);
+    const ends = nl.path(e).?;
     for ([_]u32{ members[0], members[2] }) |main| {
         const gate = c.members(EdgeId.from(main))[1].index();
-        for (c.incident(VertexId.from(gate))) |e| {
-            const d = e.index();
-            if (!drawn[d] or form[d] != .vertical or c.edges.items(.kind)[d] != .mosfet) continue;
-            const ends = nl.path(e).?;
-            if (ends[0] != gate and ends[1] != gate) continue;
-            bounds[0] = @min(bounds[0], coordinates[d]);
-            bounds[1] = @max(bounds[1], coordinates[d]);
-        }
+        if (ends[0] == gate or ends[1] == gate) return true;
     }
-    return if (bounds[0] <= bounds[1]) bounds else null;
+    for (nl.path(EdgeId.from(members[1])).?) |net| {
+        if (groundedMos(nl, roles, e, net) and gateOnly(nl, c.members(e)[1].index())) return true;
+    }
+    return false;
 }
 
 /// Whether `d` is a main switch whose external control faces down on a

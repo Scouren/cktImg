@@ -123,7 +123,7 @@ const hints = @import("hints.zig");
 const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
-const compact = @import("compact.zig");
+const power_compact = @import("power_compact.zig");
 const thin = @import("thin.zig");
 const relay = @import("relay.zig");
 const config = @import("config.zig");
@@ -234,7 +234,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         var own = lines;
         own.routes = &.{};
         try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, &xy);
-        try compact.squeeze(gpa, s, len, try drawnAxis2(gpa, s, sk));
+        try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk));
         const boxes = try deviceBoxes(gpa, s, nl, sk);
         defer gpa.free(boxes);
         const clear = clear: for (boxes, 0..) |a, i| {

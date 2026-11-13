@@ -467,7 +467,7 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
         hi.* = @max(hi.*, end.x);
     }
     // The trunk in pieces between the ends, so every joint is a wire's end.
-    std.mem.sort(i32, ends.items, {}, std.sort.asc(i32));
+    std.sort.heap(i32, ends.items, {}, std.sort.asc(i32));
     for (ends.items[0 .. ends.items.len - 1], ends.items[1..]) |a, b| {
         if (a != b) try lines.append(gpa, .of(&.{ .{ .x = a, .y = y }, .{ .x = b, .y = y } }));
     }

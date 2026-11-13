@@ -592,7 +592,7 @@ fn merged(a: Allocator, segs: []const Seg) Allocator.Error![]const Seg {
         while (end < ls.len and ls[end].vertical == vertical and ls[end].at == at) end += 1;
         cuts.clearRetainingCapacity();
         for (ls[k..end]) |l| try cuts.appendSlice(a, &.{ l.lo, l.hi });
-        mem.sort(i32, cuts.items, {}, std.sort.asc(i32));
+        std.sort.heap(i32, cuts.items, {}, std.sort.asc(i32));
         // Sweep the union of the intervals; emit the pieces between consecutive cuts.
         var lo = ls[k].lo;
         var hi = ls[k].hi;

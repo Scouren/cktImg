@@ -505,6 +505,7 @@ test {
     _ = @import("power_paths.zig");
     _ = @import("power_blocks.zig");
     _ = @import("power_shunts.zig");
+    _ = @import("power_compact.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
 }

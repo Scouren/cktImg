@@ -505,7 +505,7 @@ fn otherWire(g: Grid, w: Wire, clear: i32, kind: Cross) void {
 }
 
 fn sortedUnique(gpa: Allocator, items: []i32) ![]i32 {
-    std.mem.sort(i32, items, {}, std.sort.asc(i32));
+    std.sort.heap(i32, items, {}, std.sort.asc(i32));
     var k: usize = 0;
     for (items) |v| {
         if (k > 0 and v == items[k - 1]) continue;

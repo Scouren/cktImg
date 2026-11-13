@@ -571,3 +571,54 @@ The rebuilt plugin is 561,656 bytes, SHA-256
 `ff5ae7ad3d440dd433f96fa732eef879ac491ed1f44a5850e90c11e109b242d3`.
 The nine compaction losses, capacitor regression, shelf grouping, wire
 routing and remaining source mismatches prevent a claim of equivalence.
+
+## Eighth measured pass: preserve terminal order during compaction
+
+The frozen executable is
+`9c67912a0f95c3bc334db7a981a26b756bf6502cd103d5789f134ec4f3f15874`.
+The generic compactor now accepts increasing coordinate pairs. A separate
+converter pass supplies only relations already true between actual settled
+terminals: the upper D/S of an upright control stays below the flat power
+path, and a unique shunt stays between its connected main and coil pins.
+An explicit `at`, missing/hidden channel terminal or nonflat main path
+prevents the relevant request. Shifted custom symbols use their transformed
+terminals; symbol centers do not substitute for them.
+
+All **353/353** selected shunts now remain within the source-derived interval,
+up from 344. All **92/92** active drivers remain strictly below the main path,
+up from 91. The other certified checks remain unchanged: 252 main paths,
+365 shunts below, both 107 reservoir gate directions, and 75 controller
+output alignments. The eight source controller-direction exceptions remain.
+Only AG1247, 1256, 1278, 1281, 1286, 1287, 1290, 1356, 1429 and 1455
+change geometry; every other AG drawing and all 734 AMSNet drawings retain
+identical bytes. The small terminal clearances are below the structural
+scorer's tolerance: every aggregate relation score remains unchanged,
+including 289/2,202 all-relation matches. Per-drawing wire metrics also
+remain unchanged: 4,850 crossings and 24,136 bends in total. These independent
+terminal checks catch errors that the aggregate score does not distinguish.
+
+The first plugin build was 564,625 bytes, above its 563,200-byte limit.
+Replacing eight bare ascending `i32` sorts with heap sort reduces it to
+557,105 bytes, a measured saving of 7,520 bytes. Equal integers have no
+separate identity; keyed sorts remain unchanged. All geometry and report
+hashes across 2,202 AG and 734 AMSNet drawings are identical before and
+after this isolated substitution. This is a size result, not a speed claim.
+The resulting plugin SHA-256 is
+`8b26c6879b3de883329d2efe3bc973e290aa4fa605dedef95c66b22cab83515a`.
+
+Reservoir capacitors still satisfy outside placement in 330/359 cases and
+at-or-below placement in 243/359. Their group must survive shelf wrapping
+and compaction; that work remains separate. The
+[capacitive cross-coupling study](capacitive-cross-coupling.md) likewise
+records a coherent source group and rejected isolated-rotation prototypes.
+Neither study establishes full schematic equivalence.
+
+Validation passes 300 tests without LaTeX and 301 with it, 4,000 randomized
+connectivity/hint/card-order cases, global Zig formatting, and unchanged
+legacy style diagnostics. The 31-drawing gallery and source/native views of
+AG1247, 1356 and 1429 were inspected. All 252 converter decks round-trip
+through the release Schemify host with the same exact 428 subcircuits.
+All 91 fixture names retain 89 equivalent decks, 98 comparisons and the
+same two named capacity refusals. Four changed converter decks also pass
+the current host with seven exact subcircuits. The repeated plugin build
+matches byte for byte.

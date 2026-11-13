@@ -77,7 +77,7 @@ pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
         rows[count] = y[d];
         count += 1;
     };
-    std.mem.sort(i32, rows[0..count], {}, std.sort.asc(i32));
+    std.sort.heap(i32, rows[0..count], {}, std.sort.asc(i32));
     for (0..n) |d| {
         shelf[d] = 0;
         if (!drawn[d]) continue;
@@ -116,7 +116,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
     var xs: std.ArrayList(i32) = .empty;
     defer xs.deinit(gpa);
     for (0..n) |d| if (drawn[d] and form[d] == .vertical) try xs.append(gpa, x[d]);
-    std.mem.sort(i32, xs.items, {}, std.sort.asc(i32));
+    std.sort.heap(i32, xs.items, {}, std.sort.asc(i32));
     var cols: usize = 0;
     for (xs.items) |v| if (cols == 0 or xs.items[cols - 1] != v) {
         xs.items[cols] = v;
@@ -170,7 +170,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
             rows[held] = y[d];
             held += 1;
         };
-        std.mem.sort(i32, rows[0..held], {}, std.sort.asc(i32));
+        std.sort.heap(i32, rows[0..held], {}, std.sort.asc(i32));
         // Per device, how far up it moves: the room closed above its row.
         for (0..n) |d| {
             if (!drawn[d] or shelfOf(starts.items, x[d]) != s) continue;

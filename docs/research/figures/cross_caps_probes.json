@@ -1,0 +1,1934 @@
+{
+  "baseline": [
+    {
+      "id": "ag-1108",
+      "metrics": {
+        "bends": 17,
+        "crossings": 13,
+        "labelled": [
+          "net3"
+        ]
+      }
+    },
+    {
+      "id": "ag-1114",
+      "metrics": {
+        "bends": 13,
+        "crossings": 1,
+        "labelled": [
+          "net9",
+          "net1",
+          "net3",
+          "net0",
+          "vcc",
+          "p",
+          "net5"
+        ]
+      }
+    },
+    {
+      "id": "ag-1131",
+      "metrics": {
+        "bends": 21,
+        "crossings": 2,
+        "labelled": [
+          "net4"
+        ]
+      }
+    },
+    {
+      "id": "ag-1136",
+      "metrics": {
+        "bends": 15,
+        "crossings": 6,
+        "labelled": [
+          "vdd"
+        ]
+      }
+    },
+    {
+      "id": "ag-1169",
+      "metrics": {
+        "bends": 11,
+        "crossings": 1,
+        "labelled": [
+          "net1",
+          "net0",
+          "net6",
+          "net5",
+          "net8",
+          "net4"
+        ]
+      }
+    },
+    {
+      "id": "ag-538",
+      "metrics": {
+        "bends": 8,
+        "crossings": 4,
+        "labelled": [
+          "vdd"
+        ]
+      }
+    }
+  ],
+  "binary_sha256": "1d1a395380d1b7aed441630861190f25b51b7fa1c6c92d4aa4013e1b3a9561b2",
+  "corpus_sha256": "f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07",
+  "names": [
+    "ag-1108",
+    "ag-1114",
+    "ag-1131",
+    "ag-1136",
+    "ag-1169",
+    "ag-538"
+  ],
+  "replay": "Insert recorded hints immediately before the final .ends of each recorded source, then run cktimg-json --report report.json deck.cir output.json. All recorded hints were honoured.",
+  "runs": [
+    {
+      "generated_json_sha256": "0a0dcc779644d7f44b31ade31d21abfc8e55044fb56481cf2ccdcd6469f3d392",
+      "hints": [
+        "*@ bridge cnp1l cnp1r cpn2l cpn2r cpn3l cpn3r"
+      ],
+      "id": "ag-1108",
+      "metrics": {
+        "bends": 30,
+        "crossings": 6,
+        "labelled": [
+          "g2p",
+          "g2n",
+          "g3p"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "c8a6a585904b7a3deb8a8f20ecc82f465e136f1094de1ad260d2b348162ef822",
+      "report_sha256": "2bbad29f516ceef55bb8186b5c165c9ffe680bf14d52da4a68990f0579bd3da9",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge cnp1l cnp1r cpn2l cpn2r cpn3l cpn3r"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "cnp1l",
+            "cnp1r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "mp1",
+            "mp4"
+          ]
+        },
+        {
+          "caps": [
+            "cpn2l",
+            "cpn2r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 1,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "mp2",
+            "mp5"
+          ]
+        },
+        {
+          "caps": [
+            "cpn3l",
+            "cpn3r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "mp3",
+            "mp6"
+          ]
+        }
+      ],
+      "source_sha256": "8b82b7a7da066490810dd7207734be2f2b17b6800010cb8ca1721ed006b5a45e"
+    },
+    {
+      "generated_json_sha256": "7c4100614f5af11f8696ae9b446a0816a61036ec8cd5c1adc304fdde73af0d83",
+      "hints": [
+        "*@ bridge cnp1l",
+        "*@ bridge cnp1r",
+        "*@ bridge cpn2l",
+        "*@ bridge cpn2r",
+        "*@ bridge cpn3l",
+        "*@ bridge cpn3r",
+        "*@ cell cnp1l -3 3",
+        "*@ cell cnp1r 3 3",
+        "*@ cell cpn2l -3 1",
+        "*@ cell cpn2r 3 1",
+        "*@ cell cpn3l -3 -1",
+        "*@ cell cpn3r 3 -1"
+      ],
+      "id": "ag-1108",
+      "metrics": {
+        "bends": 33,
+        "crossings": 5,
+        "labelled": [
+          "g2p",
+          "g2n",
+          "g3p"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "32017afa2a955adf60ca9c7d6aa1243866caa91aab7b1a384f8fc5ec85a6f5aa",
+      "report_sha256": "e32c2767e8926a65c38a2a245e1b6482386b07b1040e1a76c5cdc6f768555a24",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge cnp1l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 29,
+          "state": "honoured",
+          "text": "*@ bridge cnp1r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 30,
+          "state": "honoured",
+          "text": "*@ bridge cpn2l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 31,
+          "state": "honoured",
+          "text": "*@ bridge cpn2r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 32,
+          "state": "honoured",
+          "text": "*@ bridge cpn3l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 33,
+          "state": "honoured",
+          "text": "*@ bridge cpn3r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 34,
+          "state": "honoured",
+          "text": "*@ cell cnp1l -3 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 35,
+          "state": "honoured",
+          "text": "*@ cell cnp1r 3 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 36,
+          "state": "honoured",
+          "text": "*@ cell cpn2l -3 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 37,
+          "state": "honoured",
+          "text": "*@ cell cpn2r 3 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 38,
+          "state": "honoured",
+          "text": "*@ cell cpn3l -3 -1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 39,
+          "state": "honoured",
+          "text": "*@ cell cpn3r 3 -1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "cnp1l",
+            "cnp1r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp1",
+            "mp4"
+          ]
+        },
+        {
+          "caps": [
+            "cpn2l",
+            "cpn2r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp2",
+            "mp5"
+          ]
+        },
+        {
+          "caps": [
+            "cpn3l",
+            "cpn3r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp3",
+            "mp6"
+          ]
+        }
+      ],
+      "source_sha256": "8b82b7a7da066490810dd7207734be2f2b17b6800010cb8ca1721ed006b5a45e"
+    },
+    {
+      "generated_json_sha256": "22e0865c110b279a0f5609aad8d99d951c6484c0277e3ca3658caa0ad3a94cdc",
+      "hints": [
+        "*@ bridge cnp1l",
+        "*@ bridge cnp1r",
+        "*@ bridge cpn2l",
+        "*@ bridge cpn2r",
+        "*@ bridge cpn3l",
+        "*@ bridge cpn3r",
+        "*@ wire RFinp",
+        "*@ wire RFinn",
+        "*@ wire G2p",
+        "*@ wire G2n",
+        "*@ wire G3p",
+        "*@ wire G3n",
+        "*@ cell cnp1l -3 3",
+        "*@ cell cnp1r 3 3",
+        "*@ cell cpn2l -3 1",
+        "*@ cell cpn2r 3 1",
+        "*@ cell cpn3l -3 -1",
+        "*@ cell cpn3r 3 -1"
+      ],
+      "id": "ag-1108",
+      "metrics": {
+        "bends": 42,
+        "crossings": 16,
+        "labelled": [
+          "vd1",
+          "vd2",
+          "vg2"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "46fc6b052cda708b9aebed73f2fffe9279304c4ab6f7185a6e491f45c81faca1",
+      "report_sha256": "919ba6ab7891abcfac3358c36aeff4505a9ea6288b64466ea87de36fcbb9c79b",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge cnp1l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 29,
+          "state": "honoured",
+          "text": "*@ bridge cnp1r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 30,
+          "state": "honoured",
+          "text": "*@ bridge cpn2l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 31,
+          "state": "honoured",
+          "text": "*@ bridge cpn2r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 32,
+          "state": "honoured",
+          "text": "*@ bridge cpn3l"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 33,
+          "state": "honoured",
+          "text": "*@ bridge cpn3r"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 34,
+          "state": "honoured",
+          "text": "*@ wire rfinp"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 35,
+          "state": "honoured",
+          "text": "*@ wire rfinn"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 36,
+          "state": "honoured",
+          "text": "*@ wire g2p"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 37,
+          "state": "honoured",
+          "text": "*@ wire g2n"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 38,
+          "state": "honoured",
+          "text": "*@ wire g3p"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 39,
+          "state": "honoured",
+          "text": "*@ wire g3n"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 40,
+          "state": "honoured",
+          "text": "*@ cell cnp1l -3 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 41,
+          "state": "honoured",
+          "text": "*@ cell cnp1r 3 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 42,
+          "state": "honoured",
+          "text": "*@ cell cpn2l -3 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 43,
+          "state": "honoured",
+          "text": "*@ cell cpn2r 3 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 44,
+          "state": "honoured",
+          "text": "*@ cell cpn3l -3 -1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 45,
+          "state": "honoured",
+          "text": "*@ cell cpn3r 3 -1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "cnp1l",
+            "cnp1r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp1",
+            "mp4"
+          ]
+        },
+        {
+          "caps": [
+            "cpn2l",
+            "cpn2r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp2",
+            "mp5"
+          ]
+        },
+        {
+          "caps": [
+            "cpn3l",
+            "cpn3r"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "mp3",
+            "mp6"
+          ]
+        }
+      ],
+      "source_sha256": "8b82b7a7da066490810dd7207734be2f2b17b6800010cb8ca1721ed006b5a45e"
+    },
+    {
+      "generated_json_sha256": "7b8339ea3df947873929e01322718bcced4f478d8e9a8bff2288a7b3f0b1e2bb",
+      "hints": [
+        "*@ bridge ccp1 ccp2"
+      ],
+      "id": "ag-1114",
+      "metrics": {
+        "bends": 31,
+        "crossings": 8,
+        "labelled": [
+          "net1",
+          "vcc"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "f1a4db65307b17a5b79f494c7d59a29292edde2ed6dcbdabd35b71b5e842c22a",
+      "report_sha256": "3e93b486d63dc622eceed5e0f46e5aa8fdb09abaf708873c620c599cac361a08",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 27,
+          "state": "honoured",
+          "text": "*@ bridge ccp1 ccp2"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "ccp1",
+            "ccp2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "q1",
+            "q2"
+          ]
+        }
+      ],
+      "source_sha256": "0fdc8b26f9d2ad198499cab5b7f19e66344066658a9f661abdf5357c0841b241"
+    },
+    {
+      "generated_json_sha256": "528ee7355b1974d9bb86a9279191508d220533460025b24be3dc0dd44eb3aaad",
+      "hints": [
+        "*@ bridge ccp1",
+        "*@ bridge ccp2",
+        "*@ cell ccp1 -7 3",
+        "*@ cell ccp2 7 3"
+      ],
+      "id": "ag-1114",
+      "metrics": {
+        "bends": 27,
+        "crossings": 4,
+        "labelled": [
+          "net7",
+          "net1",
+          "vcc"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "cbd31939d218a5ee571041cec3618fcaec5d3a4b72dd0cf5813c73f064eac4b5",
+      "report_sha256": "cc338e074eb5d4eca58f9e391cc3d48b23dfb8cfd54cd23f75967fe3f280c784",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 27,
+          "state": "honoured",
+          "text": "*@ bridge ccp1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge ccp2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 29,
+          "state": "honoured",
+          "text": "*@ cell ccp1 -7 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 30,
+          "state": "honoured",
+          "text": "*@ cell ccp2 7 3"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "ccp1",
+            "ccp2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "q1",
+            "q2"
+          ]
+        }
+      ],
+      "source_sha256": "0fdc8b26f9d2ad198499cab5b7f19e66344066658a9f661abdf5357c0841b241"
+    },
+    {
+      "generated_json_sha256": "af85d0ddc671c62a11ae37c02b560433e3713b5495e17806c4f50a4b0ed4d4f1",
+      "hints": [
+        "*@ bridge ccp1",
+        "*@ bridge ccp2",
+        "*@ face q1 b right",
+        "*@ face q2 b left",
+        "*@ wire net3",
+        "*@ wire net7",
+        "*@ cell ccp1 -7 3",
+        "*@ cell ccp2 7 3"
+      ],
+      "id": "ag-1114",
+      "metrics": {
+        "bends": 34,
+        "crossings": 8,
+        "labelled": [
+          "vcc"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "49519251811bd3db3a23646129c032511d67b123781787aa8ef546ecf559b0a3",
+      "report_sha256": "175021a7a16ef56682c570504ed6e8dedcca719fca2d88f59be27b23efd17409",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 27,
+          "state": "honoured",
+          "text": "*@ bridge ccp1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 28,
+          "state": "honoured",
+          "text": "*@ bridge ccp2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 29,
+          "state": "honoured",
+          "text": "*@ face q1 b right"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 30,
+          "state": "honoured",
+          "text": "*@ face q2 b left"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 31,
+          "state": "honoured",
+          "text": "*@ wire net3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 32,
+          "state": "honoured",
+          "text": "*@ wire net7"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 33,
+          "state": "honoured",
+          "text": "*@ cell ccp1 -7 3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 34,
+          "state": "honoured",
+          "text": "*@ cell ccp2 7 3"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "ccp1",
+            "ccp2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "q1",
+            "q2"
+          ]
+        }
+      ],
+      "source_sha256": "0fdc8b26f9d2ad198499cab5b7f19e66344066658a9f661abdf5357c0841b241"
+    },
+    {
+      "generated_json_sha256": "73d1103166408e424ca60a2b2e08f87d91012837548068ec189e77e0b9a9181f",
+      "hints": [
+        "*@ bridge c3 c4"
+      ],
+      "id": "ag-1131",
+      "metrics": {
+        "bends": 23,
+        "crossings": 5,
+        "labelled": [
+          "net3",
+          "vgbias"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "866d19ed8cb2b5e8a6e0eecfc0af056f0b00fd344f7b4c6bc70260787936406b",
+      "report_sha256": "16c1fa04aac09804aadfa7f2ac0da2215a8187bb78a71c6c3e09e45fa9e7132a",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c3 c4"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c3",
+            "c4"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "c9651d2253ef579e4149f767337539f01608090abd2fde9a6c555fbbaca0a6cb"
+    },
+    {
+      "generated_json_sha256": "069d5d1fc2f9a8b6328a15ddee0a7895a514b4ad038e7d27ab86efc5dd538a00",
+      "hints": [
+        "*@ bridge c3",
+        "*@ bridge c4",
+        "*@ cell c3 -7 -1",
+        "*@ cell c4 7 -1"
+      ],
+      "id": "ag-1131",
+      "metrics": {
+        "bends": 27,
+        "crossings": 5,
+        "labelled": [
+          "net0",
+          "net1",
+          "vgbias"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "c3f643177a4d828238687d8726e321b82c8dfd863741a5f82891dd3d1034cd56",
+      "report_sha256": "b55be0a302455f33db748528545f30b495d5e2bd9d6716ffe49c4068a73b62bf",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c4"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ cell c3 -7 -1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ cell c4 7 -1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c3",
+            "c4"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "c9651d2253ef579e4149f767337539f01608090abd2fde9a6c555fbbaca0a6cb"
+    },
+    {
+      "generated_json_sha256": "a6ad513c90d66f87664cad7fb951227d6644f8a4c5c54596c6405e7fdd6c0b53",
+      "hints": [
+        "*@ bridge c3",
+        "*@ bridge c4",
+        "*@ face m1 g right",
+        "*@ face m2 g left",
+        "*@ wire net1",
+        "*@ wire net0",
+        "*@ cell c3 -7 -1",
+        "*@ cell c4 7 -1"
+      ],
+      "id": "ag-1131",
+      "metrics": {
+        "bends": 27,
+        "crossings": 7,
+        "labelled": [
+          "net2",
+          "vgbias"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "b25f4ad470919d903b1324809b9452e4d0ded412ddab7ced327aa5d70f6b82d9",
+      "report_sha256": "8de59b0b731e820ffd905c5f4a5ecd5e7eb253f70f3066646b579cb5b08734b9",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c4"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ face m1 g right"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ face m2 g left"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ wire net1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 18,
+          "state": "honoured",
+          "text": "*@ wire net0"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 19,
+          "state": "honoured",
+          "text": "*@ cell c3 -7 -1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 20,
+          "state": "honoured",
+          "text": "*@ cell c4 7 -1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c3",
+            "c4"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "c9651d2253ef579e4149f767337539f01608090abd2fde9a6c555fbbaca0a6cb"
+    },
+    {
+      "generated_json_sha256": "1510f2921daf82068bce7be35eb32b9542366fd32c5d0b6bfd6496634d4a7386",
+      "hints": [
+        "*@ bridge c2 c3"
+      ],
+      "id": "ag-1136",
+      "metrics": {
+        "bends": 11,
+        "crossings": 5,
+        "labelled": [
+          "v2",
+          "vdd"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "a9a1a5912af7a14d73e9fd2f33772466e7e86954b8598ec39de2db6910c263e3",
+      "report_sha256": "39f4330695113150a3ca52290c3ebb95cc669d4fa1d0b6f41734e2736b393cd6",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c2 c3"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c2",
+            "c3"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": false,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "m3",
+            "m4"
+          ]
+        }
+      ],
+      "source_sha256": "4c058f181a33c0d7c9d3cdfb80b5eda46ba0b869c7479a6ba074c1e9d0efa5a5"
+    },
+    {
+      "generated_json_sha256": "6e828b351057ce47f15df941ca71b702fcefb6f4957eec2e3b550c28484b96d1",
+      "hints": [
+        "*@ bridge c2",
+        "*@ bridge c3",
+        "*@ cell c2 -7 1",
+        "*@ cell c3 7 1"
+      ],
+      "id": "ag-1136",
+      "metrics": {
+        "bends": 12,
+        "crossings": 3,
+        "labelled": [
+          "v1",
+          "net0",
+          "vdd"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "451040332edcff70547dd41639bab82016190d0217890b161592efa38ab25ef7",
+      "report_sha256": "846d9eb884c9cec75fe51469d23d6d4b9104fb4629c07120c12bd6f1ede564f0",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ bridge c3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ cell c2 -7 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ cell c3 7 1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c2",
+            "c3"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m3",
+            "m4"
+          ]
+        }
+      ],
+      "source_sha256": "4c058f181a33c0d7c9d3cdfb80b5eda46ba0b869c7479a6ba074c1e9d0efa5a5"
+    },
+    {
+      "generated_json_sha256": "06c4ec3a03cde8f4ec93bb94a03eafb79925d89763c0ee8ca6d596823e254350",
+      "hints": [
+        "*@ bridge c2",
+        "*@ bridge c3",
+        "*@ face m3 g right",
+        "*@ face m4 g left",
+        "*@ wire net1",
+        "*@ wire net0",
+        "*@ cell c2 -7 1",
+        "*@ cell c3 7 1"
+      ],
+      "id": "ag-1136",
+      "metrics": {
+        "bends": 17,
+        "crossings": 8,
+        "labelled": [
+          "v1",
+          "vdd"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "ed93642b2470781fd1a933b9f92c24cf76c42e9ef1e1c32fdf22e62f6f591d36",
+      "report_sha256": "daa3eb74c811d7d36686993c10595a48930295aeba98fd2c4ea9f9dc83cc3982",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ bridge c3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ face m3 g right"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ face m4 g left"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 18,
+          "state": "honoured",
+          "text": "*@ wire net1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 19,
+          "state": "honoured",
+          "text": "*@ wire net0"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 20,
+          "state": "honoured",
+          "text": "*@ cell c2 -7 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 21,
+          "state": "honoured",
+          "text": "*@ cell c3 7 1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c2",
+            "c3"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m3",
+            "m4"
+          ]
+        }
+      ],
+      "source_sha256": "4c058f181a33c0d7c9d3cdfb80b5eda46ba0b869c7479a6ba074c1e9d0efa5a5"
+    },
+    {
+      "generated_json_sha256": "ef3ef064186a42a8a3faea49936037f338dce8a0639cb6c3e3b417458e45191e",
+      "hints": [
+        "*@ bridge c1 c2"
+      ],
+      "id": "ag-1169",
+      "metrics": {
+        "bends": 15,
+        "crossings": 4,
+        "labelled": [
+          "net1",
+          "net0",
+          "net6",
+          "net5",
+          "net8",
+          "net4"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "58545562a2b7918e1770437407c4c6ad5bde78bee7e8567337686b750d6f9ecf",
+      "report_sha256": "a038d54b08c0bd36bbdbb3039d0beb76a475bcc23be5114044b573c2aeac7434",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 42,
+          "state": "honoured",
+          "text": "*@ bridge c1 c2"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": false,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "cf93ede9dd3384308461dc5fab3c2dcc21beab3450a6573efbd3aea7da75c48b"
+    },
+    {
+      "generated_json_sha256": "debd1bee973bfad85409234a3453839fdd54a28cf3189188ffe2d45fbc112c7d",
+      "hints": [
+        "*@ bridge c1",
+        "*@ bridge c2",
+        "*@ cell c1 5 17",
+        "*@ cell c2 19 17"
+      ],
+      "id": "ag-1169",
+      "metrics": {
+        "bends": 15,
+        "crossings": 7,
+        "labelled": [
+          "net3",
+          "net1",
+          "net0",
+          "net2",
+          "vdd",
+          "net6",
+          "vbuf",
+          "net8"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "041891b7634f4e51c09486d21505033b544574cea35d1d2408f7ffadba8aedba",
+      "report_sha256": "322444605017df5be621878f03f06ec662cd9d59b79fecc1493724a6450a13d6",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 42,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 43,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 44,
+          "state": "honoured",
+          "text": "*@ cell c1 5 17"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 45,
+          "state": "honoured",
+          "text": "*@ cell c2 19 17"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": false,
+            "gates_inward": 1,
+            "horizontal": 2,
+            "inside_columns": false,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "cf93ede9dd3384308461dc5fab3c2dcc21beab3450a6573efbd3aea7da75c48b"
+    },
+    {
+      "generated_json_sha256": "41cb0ee3fbf95ff457d49aa74bf1f5e68794e5e728cb4f6ce787513f199ed73a",
+      "hints": [
+        "*@ bridge c1",
+        "*@ bridge c2",
+        "*@ face m1 g right",
+        "*@ face m2 g left",
+        "*@ wire net2",
+        "*@ wire net3",
+        "*@ cell c1 5 17",
+        "*@ cell c2 19 17"
+      ],
+      "id": "ag-1169",
+      "metrics": {
+        "bends": 22,
+        "crossings": 8,
+        "labelled": [
+          "net1",
+          "net0",
+          "vdd",
+          "net6",
+          "vbuf",
+          "net8"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "370447b966ef43c4400fafff2b13c512d8e2208bb2cdb2c7c3a105d5f907e9f3",
+      "report_sha256": "8fd91ddc348c506521aac07b0b331ab6f77b5fa980a4ce563c321b54359c0bbc",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 42,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 43,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 44,
+          "state": "honoured",
+          "text": "*@ face m1 g right"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 45,
+          "state": "honoured",
+          "text": "*@ face m2 g left"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 46,
+          "state": "honoured",
+          "text": "*@ wire net2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 47,
+          "state": "honoured",
+          "text": "*@ wire net3"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 48,
+          "state": "honoured",
+          "text": "*@ cell c1 5 17"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 49,
+          "state": "honoured",
+          "text": "*@ cell c2 19 17"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": false,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": false,
+            "near_own_drain": false,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "cf93ede9dd3384308461dc5fab3c2dcc21beab3450a6573efbd3aea7da75c48b"
+    },
+    {
+      "generated_json_sha256": "9ae49ef26593d28e2f7276ff064fb93756659d03d6afbd825e9a638e6087b483",
+      "hints": [
+        "*@ bridge c1 c2"
+      ],
+      "id": "ag-538",
+      "metrics": {
+        "bends": 8,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "probe": "horizontal_only",
+      "probe_deck_sha256": "7231ed6f12302ee7c799fc286f981b9d844b927779bb71b484f3b19acdba2d7b",
+      "report_sha256": "fd8883a06e3f9b1bb217c9fe603adc143d554d448aea806332f8a4845b44af72",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c1 c2"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "4fcf352dc5dfd32263da4d78227623225cca42901d09147c0cc45add3d70a622"
+    },
+    {
+      "generated_json_sha256": "9ae49ef26593d28e2f7276ff064fb93756659d03d6afbd825e9a638e6087b483",
+      "hints": [
+        "*@ bridge c1",
+        "*@ bridge c2",
+        "*@ cell c1 15 1",
+        "*@ cell c2 -15 1"
+      ],
+      "id": "ag-538",
+      "metrics": {
+        "bends": 8,
+        "crossings": 2,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "probe": "paired_cells",
+      "probe_deck_sha256": "b1372fcbf4a5d75dea37994e098b9c8453d659a8e3dce08345b2e8b797fa5e77",
+      "report_sha256": "1e304dcc044b2e20fb8df2cb51e4e94b7b7e44052de3cd98fee48145f4e718af",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ cell c1 15 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ cell c2 -15 1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 0,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "4fcf352dc5dfd32263da4d78227623225cca42901d09147c0cc45add3d70a622"
+    },
+    {
+      "generated_json_sha256": "61e84fc05063f82df41de29d7fe82b9ef8bedfc417c94a936f47d309772e1d2e",
+      "hints": [
+        "*@ bridge c1",
+        "*@ bridge c2",
+        "*@ face m1 g left",
+        "*@ face m2 g right",
+        "*@ wire net2",
+        "*@ wire net4",
+        "*@ cell c1 15 1",
+        "*@ cell c2 -15 1"
+      ],
+      "id": "ag-538",
+      "metrics": {
+        "bends": 6,
+        "crossings": 1,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "probe": "paired_cells_faces_wires",
+      "probe_deck_sha256": "0316afae4fd73e1069f8b2fcd7e77de77d57395ddcb4e8e738c7e97794211e6e",
+      "report_sha256": "00be4c8ef7046129cabc4ff9541d81081776c2d4dc854d697c9fe6955198d5a0",
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 13,
+          "state": "honoured",
+          "text": "*@ bridge c1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 14,
+          "state": "honoured",
+          "text": "*@ bridge c2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 15,
+          "state": "honoured",
+          "text": "*@ face m1 g left"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 16,
+          "state": "honoured",
+          "text": "*@ face m2 g right"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 17,
+          "state": "honoured",
+          "text": "*@ wire net2"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 18,
+          "state": "honoured",
+          "text": "*@ wire net4"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 19,
+          "state": "honoured",
+          "text": "*@ cell c1 15 1"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 20,
+          "state": "honoured",
+          "text": "*@ cell c2 -15 1"
+        }
+      ],
+      "settled_groups": [
+        {
+          "caps": [
+            "c1",
+            "c2"
+          ],
+          "settled_relations": {
+            "above_drains": true,
+            "gates_inward": 2,
+            "horizontal": 2,
+            "inside_columns": true,
+            "near_own_drain": true,
+            "same_row": true
+          },
+          "transistors": [
+            "m1",
+            "m2"
+          ]
+        }
+      ],
+      "source_sha256": "4fcf352dc5dfd32263da4d78227623225cca42901d09147c0cc45add3d70a622"
+    }
+  ],
+  "seed_replay": "Append recorded at and route hints immediately before final .ends of paired_cells_faces_wires deck. Geometry rejection emits no route. Source label-cut case AG1108 deliberately excluded.",
+  "seed_routes": [
+    {
+      "ats": [
+        "*@ at c1 5 2.5000 R270",
+        "*@ at c2 3.5000 7.5000 MR270",
+        "*@ at ccp1 8 5 MR0",
+        "*@ at ccp2 19.7500 5 R0",
+        "*@ at cvar1 10 5 MR0",
+        "*@ at cvar2 17.7500 5 R0",
+        "*@ at d1 26 0.5000 MR270",
+        "*@ at d2 2 7.5000 MR270",
+        "*@ at m1 2 2.5000 MR270",
+        "*@ at q1 6 7.5000 MR90",
+        "*@ at q2 21.7500 7.5000 R270",
+        "*@ at q3 21.7500 2.5000 R270",
+        "*@ at q4 6 2.5000 MR90",
+        "*@ at q5 12.5000 9.5000 R270",
+        "*@ at q6 2 9.5000 MR90",
+        "*@ at q7 5 0.5000 R270",
+        "*@ at r1 15.7500 5 MR0",
+        "*@ at r2 12.2500 5 R0",
+        "*@ at r3 2 11 MR270",
+        "*@ at r4 12.5000 11 MR270",
+        "*@ at rb1 24.7500 0.5000 MR270",
+        "*@ at rb2 24.7500 2.5000 MR270",
+        "*@ at rbias 2 0.5000 MR270",
+        "*@ at x1 23.7500 5 R0"
+      ],
+      "id": "ag-1114",
+      "metrics": {
+        "bends": 34,
+        "crossings": 8,
+        "labelled": [
+          "vcc"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 59,
+          "state": "dropped",
+          "text": "*@ route net7 8.5,5 14,5 14,7.5 21.25,7.5"
+        },
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 60,
+          "state": "dropped",
+          "text": "*@ route net3 19.25,5 16.5,5 16.5,6.25 11.25,6.25 11.25,7.5 6.5,7.5"
+        }
+      ],
+      "routes": [
+        "*@ route net7 8.5,5 14,5 14,7.5 21.25,7.5",
+        "*@ route net3 19.25,5 16.5,5 16.5,6.25 11.25,6.25 11.25,7.5 6.5,7.5"
+      ]
+    },
+    {
+      "ats": [
+        "*@ at c1 6.7500 1.5000 MR0",
+        "*@ at c2 16.2500 1.5000 MR0",
+        "*@ at c3 4.7500 1.5000 R0",
+        "*@ at c4 18.2500 1.5000 R0",
+        "*@ at c5 11.5000 5.2500 MR270",
+        "*@ at i1 20 5.2500 MR270",
+        "*@ at m1 3.5000 3.5000 MR90",
+        "*@ at m2 19.5000 3.5000 R270",
+        "*@ at r1 8.7500 1.5000 MR0",
+        "*@ at r2 14.2500 1.5000 R0",
+        "*@ at x1 11.5000 1.5000 R0"
+      ],
+      "id": "ag-1131",
+      "metrics": {
+        "bends": 27,
+        "crossings": 7,
+        "labelled": [
+          "net2",
+          "vgbias"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 32,
+          "state": "dropped",
+          "text": "*@ route net0 5.25,1.5 11.5,1.5 11.5,3.5 19,3.5"
+        },
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 33,
+          "state": "dropped",
+          "text": "*@ route net1 17.75,1.5 14.5,1.5 14.5,2.5 8.5,2.5 8.5,3.5 4,3.5"
+        }
+      ],
+      "routes": [
+        "*@ route net0 5.25,1.5 11.5,1.5 11.5,3.5 19,3.5",
+        "*@ route net1 17.75,1.5 14.5,1.5 14.5,2.5 8.5,2.5 8.5,3.5 4,3.5"
+      ]
+    },
+    {
+      "ats": [
+        "*@ at c1 9.5000 1.5000 R0",
+        "*@ at c2 13 1.5000 R0",
+        "*@ at c3 16 1.5000 MR0",
+        "*@ at ctail 14.5000 4.2500 MR270",
+        "*@ at ibias 19 4.2500 MR270",
+        "*@ at l1 3.5000 1.5000 R0",
+        "*@ at m1 11 0.5000 R90",
+        "*@ at m2 18 0.5000 MR270",
+        "*@ at m3 11 2.5000 MR90",
+        "*@ at m4 18 2.5000 R270",
+        "*@ at r1 5.5000 1.5000 R0",
+        "*@ at r2 7.5000 1.5000 MR0"
+      ],
+      "id": "ag-1136",
+      "metrics": {
+        "bends": 18,
+        "crossings": 4,
+        "labelled": [
+          "v1",
+          "vdd"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 34,
+          "state": "honoured",
+          "text": "*@ route net0 13.5,1.5 14.5,1.5 14.5,2.5 17.5,2.5"
+        },
+        {
+          "blocked_by": [],
+          "code": "ok",
+          "line": 35,
+          "state": "honoured",
+          "text": "*@ route net1 15.5,1.5 15,1.5 15,2 14,2 14,2.5 11.5,2.5"
+        }
+      ],
+      "routes": [
+        "*@ route net0 13.5,1.5 14.5,1.5 14.5,2.5 17.5,2.5",
+        "*@ route net1 15.5,1.5 15,1.5 15,2 14,2 14,2.5 11.5,2.5"
+      ]
+    },
+    {
+      "cap_controls": [
+        [
+          1170,
+          410
+        ],
+        [
+          1260,
+          410
+        ]
+      ],
+      "gates": [
+        [
+          540,
+          280
+        ],
+        [
+          690,
+          280
+        ]
+      ],
+      "id": "ag-1169",
+      "status": "rejected_geometry"
+    },
+    {
+      "ats": [
+        "*@ at c1 11 1.5000 MR0",
+        "*@ at c2 5 1.5000 MR0",
+        "*@ at ct 8 4.5000 MR270",
+        "*@ at in 6.5000 4.5000 MR270",
+        "*@ at iss 9.5000 4.5000 MR270",
+        "*@ at l1 13 0.5000 MR270",
+        "*@ at l2 3 0.5000 MR270",
+        "*@ at m1 13 2.5000 R270",
+        "*@ at m2 3 2.5000 MR90",
+        "*@ at r1 9 1.5000 MR0",
+        "*@ at r2 7 1.5000 R0"
+      ],
+      "id": "ag-538",
+      "metrics": {
+        "bends": 6,
+        "crossings": 1,
+        "labelled": [
+          "vdd"
+        ]
+      },
+      "requests": [
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 32,
+          "state": "dropped",
+          "text": "*@ route net2 5.5,1.5 8,1.5 8,2.5 12.5,2.5"
+        },
+        {
+          "blocked_by": [],
+          "code": "guarantee",
+          "line": 33,
+          "state": "dropped",
+          "text": "*@ route net4 10.5,1.5 9.25,1.5 9.25,2 6.75,2 6.75,2.5 3.5,2.5"
+        }
+      ],
+      "routes": [
+        "*@ route net2 5.5,1.5 8,1.5 8,2.5 12.5,2.5",
+        "*@ route net4 10.5,1.5 9.25,1.5 9.25,2 6.75,2 6.75,2.5 3.5,2.5"
+      ]
+    }
+  ],
+  "status": "rejected prototypes; no production rule",
+  "summary": {
+    "baseline": {
+      "bends": 85,
+      "crossings": 27
+    },
+    "horizontal_only": {
+      "bends": 118,
+      "crossings": 30
+    },
+    "paired_cells": {
+      "bends": 122,
+      "crossings": 26
+    },
+    "paired_cells_faces_wires": {
+      "bends": 148,
+      "crossings": 48
+    }
+  }
+}

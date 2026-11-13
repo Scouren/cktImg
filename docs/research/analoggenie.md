@@ -741,3 +741,22 @@ python3 docs/research/figures/channel_bridges.py external/examples/analoggenie \
 python3 docs/research/figures/channel_bridges.py external/examples/amsnet \
   /tmp/channel-bridges-ams.json
 ```
+
+## Keeping a learned relation through later transforms
+
+The seventh pass placed all 353 unique converter shunts inside their
+connected main-to-coil terminal intervals, but generic compaction lost nine
+of those relations. It also let AG1356:M12's upper channel terminal become
+level with the power row. The eighth pass preserves already-true terminal
+inequalities through the generic compaction graph. Both final checks now
+pass, 353/353 intervals and 92/92 drivers strictly below. An offset, tall
+custom M12 regression verifies that the rule follows D/S rather than the
+device origin. Explicit caller geometry remains authoritative.
+
+The [capacitive cross-coupling study](capacitive-cross-coupling.md) finds
+another instance of this problem: a source-derived capacitor pair can be
+placed correctly, then separated by the shelf pass. Its eight source pairs
+also use a joint crossover, with distinct continuous-wire and labelled-wire
+cases. The study records actual SVG evidence, counterexamples and rejected
+prototypes. It remains proposed work; a capacitor-axis change alone is
+insufficient.

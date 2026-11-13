@@ -254,7 +254,7 @@ fn spineAndImage(c: *Canvas, net: u32, pins: []const u32, from: usize, axis: i32
     defer c.gpa.free(half);
     for (half) |g| for ([_]Pt{ g.a, g.b }) |e| if (e.x == axis) try spine.append(c.gpa, e.y);
     assert(spine.items.len >= 1);
-    std.mem.sort(i32, spine.items, {}, std.sort.asc(i32));
+    std.sort.heap(i32, spine.items, {}, std.sort.asc(i32));
     const top = spine.items[0];
     const bottom = spine.items[spine.items.len - 1];
     // A pin on the axis faces along the spine from its end.
