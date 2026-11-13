@@ -45,6 +45,13 @@
 //!   row needs no separate rung; that does not rule out a rung on the
 //!   remaining bounded tracks. AMS401's source resistor/gate approach
 //!   stays straight while a lower trunk reaches its feedback capacitor.
+//!   Keep a midpoint that passes corner, obstacle and free-end checks;
+//!   otherwise cost both adjacent quarter-unit taps, strictly inside the
+//!   pair, through the same checks. AG981/984/986 have straight source
+//!   gate lines whose native midpoint meets another wire. Alternatives
+//!   keep the first on an exact cost tie; reflection is not universal.
+//!   A displaced full-row tap leaves the original half rows available;
+//!   only an accepted midpoint with any required free end rules them out.
 //!   `trunkLines`, `draw`
 //! - trunk.8 (unmeasured) A pin comes to its trunk straight when it faces
 //!   it; out half a unit and along when it faces sideways; round its own
@@ -206,27 +213,36 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
         for (among, 0..) |track, k| {
             const tap_row = rows and k >= level and k < level + 2;
             if (rows and k >= level + 2 and k < level + 4 and tapped) continue;
-            tried.clearRetainingCapacity();
-            var t_lo: i32 = std.math.maxInt(i32);
-            var t_hi: i32 = std.math.minInt(i32);
-            const drawn = try trunkLines(c.gpa, s, pins, track, c.len.unit, lay, &tried, &t_lo, &t_hi);
-            if (lay == .rungs and !drawn) continue;
-            // A tap row is costed in full: whether it has room is asked
-            // even when another track is cheaper.
-            const count = cost(c, net, pins, tried.items, if (tap_row) std.math.maxInt(i64) else fewest);
-            if (!tap_row and count >= fewest) continue;
-            if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
-            tapped = tapped or tap_row;
-            if (count >= fewest) continue;
-            // An upright trunk has no end to mark: its ends are not read.
-            const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
-            if (needs_end and t_free == null) continue;
-            std.mem.swap(std.ArrayList(Line), &lines, &tried);
-            lo = t_lo;
-            hi = t_hi;
-            y_t = track;
-            free = t_free;
-            fewest = count;
+            const q: i32 = @max(1, @divFloor(c.len.unit, 4));
+            const offsets = [_]i32{ 0, -q, q };
+            for (offsets[0..if (lay == .rungs) 3 else 1]) |tap_dx| {
+                tried.clearRetainingCapacity();
+                var t_lo: i32 = std.math.maxInt(i32);
+                var t_hi: i32 = std.math.minInt(i32);
+                const drawn = try trunkLines(c.gpa, s, pins, track, c.len.unit, lay, tap_dx, &tried, &t_lo, &t_hi);
+                if (lay == .rungs and !drawn) {
+                    if (tap_dx == 0) break;
+                    continue;
+                }
+                // Rungs need full corner checks even when too costly:
+                // cost pruning alone must not replace a legal midpoint.
+                const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else fewest);
+                if (lay != .rungs and !tap_row and count >= fewest) continue;
+                if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
+                // An upright trunk has no end to mark: its ends are not read.
+                const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
+                if (needs_end and t_free == null) continue;
+                tapped = tapped or (tap_row and tap_dx == 0);
+                if (count < fewest) {
+                    std.mem.swap(std.ArrayList(Line), &lines, &tried);
+                    lo = t_lo;
+                    hi = t_hi;
+                    y_t = track;
+                    free = t_free;
+                    fewest = count;
+                }
+                if (tap_dx == 0) break;
+            }
         }
     }
     // No track fits; or an input or a bias has room at neither end of any,
@@ -397,9 +413,13 @@ fn uprightColumns(s: *const Schematic, pins: []const u32, half: i32, middle2: i3
 /// `upright`), into the empty `lines`: each pin brought to the trunk and the
 /// trunk across them; `lo`, `hi` its ends along it. A `column` stands at its
 /// pins' x whatever `t`, `lo` and `hi` that x. Whether a gate line was drawn
-/// (`rungs` only).
-fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, gap: i32, lay: Lay, lines: *std.ArrayList(Line), lo: *i32, hi: *i32) !bool {
+/// (`rungs` only). `tap_dx` shifts each paired midpoint by at most one
+/// quarter unit; false if any shifted tap would reach a pin or pass it.
+fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, gap: i32, lay: Lay, tap_dx: i32, lines: *std.ArrayList(Line), lo: *i32, hi: *i32) !bool {
     assert(lines.items.len == 0);
+    const q: i32 = @max(1, @divFloor(gap, 4));
+    assert(tap_dx >= -q and tap_dx <= q);
+    assert(lay == .rungs or tap_dx == 0);
     var ends: std.ArrayList(i32) = .empty;
     defer ends.deinit(gpa);
     const paired = try gpa.alloc(bool, pins.len);
@@ -407,7 +427,6 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
     @memset(paired, false);
     const sides = s.pins.items(.side);
     if (lay == .rungs) {
-        const q = @max(1, @divFloor(gap, 4));
         // From the right, then the top: the pin nearest one facing back
         // takes it, whatever the order of the cards.
         const from_right = try gpa.alloc(usize, pins.len);
@@ -437,8 +456,10 @@ fn trunkLines(gpa: Allocator, s: *const Schematic, pins: []const u32, t: i32, ga
             const j = best orelse continue;
             const b = pinAt(s, pins[j]);
             // The middle, on the quarter-unit grid; a line too short has none.
-            const mid: Pt = .{ .x = a.x + @divFloor(@divFloor(b.x - a.x, 2), q) * q, .y = a.y };
+            var mid: Pt = .{ .x = a.x + @divFloor(@divFloor(b.x - a.x, 2), q) * q, .y = a.y };
             if (mid.x == a.x) continue;
+            mid.x += tap_dx;
+            if (mid.x <= a.x or mid.x >= b.x) return false;
             paired[i] = true;
             paired[j] = true;
             try lines.append(gpa, .of(&.{ a, mid }));
@@ -636,4 +657,8 @@ test "trunk: opposed pins keep their straight rung when the trunk needs a later 
     // A continuous U detour through a lower trunk cannot satisfy it.
     for (20..81) |x| try std.testing.expect(c.onNet(0, .{ .x = @intCast(x), .y = 100 }));
     for (terminals) |at| try std.testing.expect(c.onNet(0, at));
+}
+
+test {
+    _ = @import("trunk_taps_test.zig");
 }

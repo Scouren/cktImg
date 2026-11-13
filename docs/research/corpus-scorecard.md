@@ -978,3 +978,68 @@ The plugin is **562,476 bytes**, SHA-256
 `57c454b7b074610a81e90e248b5576479f0bb5a485f4693a2dba4869460245b7`,
 724 bytes below its strict 550 KiB cap. Repeated native and plugin builds
 are byte-identical.
+
+## Fifteenth measured pass: alternatives to a blocked gate junction
+
+The frozen executable is
+`0bb2a942947e5d2a602a2cb23695c56ef4da90f43e8521ff8b0a3976757738cb`.
+The [tap study](trunk-taps.md) extends the bounded rung search: preserve a
+legal midpoint, otherwise try its two adjacent quarter-unit junctions.
+Every candidate still passes the existing corner, obstacle and required
+port checks. Displaced full-height candidates leave half-height tracks
+available. The complete AG981, AG984 and AG986 regressions recover their
+source's straight gate wires with compaction both off and on. Literal
+blocked, unobstructed, rejected and required-port scenes independently
+check the rule; the required-port regression caught a defect in the first
+implementation and passed on iteration14.
+
+The stable named native interval audit gains one output-glyph interval and
+26 other intervals, and loses four other intervals. AMS intervals do not
+change. Actual source ink identifies **AG2309, AG2318 and AG2319:VX** as
+new straight-line regressions, and **AG2452:VZ** as a new physical continuity
+regression between different source rows. All four now split into labels.
+Honoured explicit wire requests restore them; a high global crossing
+budget restores only AG2452. The three VX nets were already cut between
+shelves, whose separate thinning budget remains two. Replaying their old
+trees against the new other-net ink adds one crossing each, from two to
+three. This overlay is evidence for investigation, not a trace of the
+thinning loop. **AG2376:net0** remains unchanged and unresolved. The exact
+new losses and diagnostic probes are retained in the tap inventory.
+
+All **2,956** drawings render with the same two source issues and no native
+findings. Geometry changes in 103 AG and nine AMS drawings; reports change
+in 67 and six. AG crossings rise from **4,884 to 4,895**, while bends fall
+from **20,611 to 20,540**. AMS crossings rise from **199 to 200**, while
+bends fall from **1,547 to 1,538**. Crossings worsen in 21 AG and one AMS
+drawings, improve in 13 AG drawings, and otherwise remain equal. Bends
+worsen in 12 AG drawings and improve in 37 AG and three AMS drawings.
+No device axis, physical gate direction or block flow changes. The exact
+partial all-relation sets remain **289/2,202 AG and 243/734 AMS**. Neither
+that score nor electrical identity establishes human schematic equivalence.
+
+Independent replays preserve every earlier named cohort: 252 main paths,
+365 shunts below, 353 unique intervals, all four grounded-capacitor
+relations on 359 devices, 92 driver orders, 75 controller alignments, both
+107-case reservoir policies and all 22 input branches. All 145 converter
+groups retain exactly the previous 22 universal geometric relations,
+seven continuous local trees and zero proper crossings in their 21 tree
+pairs. Their auxiliary-bus geometry and 107 joined/38 disconnected names
+are unchanged. Whole-converter crossings rise from 523 to 526 (AG1249 and
+AG1302), and bends from 2,282 to 2,284 (AG1249).
+
+Validation passes **370 tests without LaTeX and 371 with it**, 4,000 fuzz
+cases, global formatting and style checks with the same five legacy API
+findings. All 31 gallery SVGs are byte-identical. All 112 changed drawings
+produce identical geometry and reports with one and four jobs. Real
+Schemify round trips retain the exact 98 fixture comparisons and two
+capacity refusals, 22 input comparisons and 428 converter comparisons.
+Eight repaired/unresolved tap decks produce nine exact subcircuits through
+both the release and current hosts. Source/native views of AG986 and
+AG2309 show the local improvement and remaining labels and placement gaps.
+
+The plugin is **562,718 bytes**, SHA-256
+`a37e5f03bf97f3940458aa1287ec774c7412eb1aa23c47e898714a1aacb98dec`,
+482 bytes below the strict cap. Repeated native and plugin builds are
+byte-identical. The next isolated symbol change covers 39 complete
+source-backed A1/EA1/AEA amplifier contracts; the named thinning losses
+remain a separate routing investigation.
