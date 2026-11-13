@@ -20,6 +20,40 @@ and `Placed.init` in one call. Its lengths and the router's costs are the
 unit is the symbol set's `unit`, pin end to pin end of a two-pin symbol.
 Every symbol's shape is the caller's library (`library.zig`).
 
+**The formulation.** Three things hold across every stage, and each stage's
+rules are stated through them.
+
+- *The device model* (`device.zig`). A device is a current **path** with
+  side pins, or a box. One table says, for each kind, the two pins of its
+  path, its gate, its control pair, whether its ends are told apart, whether
+  it is a source, and its card (letter, node counts, model). No stage tests a
+  kind for what its pins do: it reads the table. The one device the table
+  cannot hold is the book's ideal amplifier, an `E` with its low output on a
+  ground and a gain of a thousand or more: a path by its kind, a box in the
+  drawing (`forms.isAmplifier`), because that depends on a net's role and a
+  value.
+- *Two orders.* A drawing's **rows order potential**: the supply above the
+  ground, a path's upper end the end nearer the supply. Its **columns order
+  signal**: what drives a net stands left of what reads it, inputs enter on
+  the left, outputs leave on the right.
+- *One owner per fact.* A net's role class (`schematic.Role.isRail`,
+  `isPort`), a name's reading (`library.named`, one table for a net's role,
+  a port's side and a port's role), a line's verdict (`hints.Verdict.of`), a
+  side word (`hints.Verb.side`), a card's path (`Netlist.path`), a stub with
+  something at its end (`Canvas.stub`): each is written once and read
+  everywhere else.
+
+**Human Rules.** Every file of `src/` opens with a `Human Rules:` list: each
+rule that file makes true of a drawing, named `<file>.<n>` (`levels.3`,
+`bridges.4`), with what it rests on: `order: potential` or `order: signal`
+(an instance of one of the two orders), `habit` (a count from hand
+drawings, quoted), `book` (a textbook figure or a paper), `invariant` (true
+by construction), `choice` (the engine's own: a tie-break, a bound, a
+default) or `unmeasured` (a claim about how a drawing should look with no
+count behind it). Where the code is narrower than its rule, a `Narrowing:`
+line under the rule says how. A rule that changes changes there, in the
+same commit as its code. The sections below tell the same rules as prose.
+
 ## 0. Terms
 
 **Input.** The circuit hypergraph: vertices are **nets**, hyperedges are
@@ -53,7 +87,7 @@ polylines per net. `Placed` exports it (§5).
 |----|---------|------|---------|------|
 | R1 | a net's name | `gnd vss vee agnd dgnd vssa gnda v-` and net 0 → sink; `vdd* vcc* avdd* dvdd* vpp v+` → supply; `vb* bias*` → bias; `vin* in* vref*` → input (a `vref*` a transistor's drain or collector makes → output: people give 557 of 595 such nets with no drain an input port); `vout* out* vo` → output; otherwise internal | `R1 vdd vin 1k …` | R1 |
 | R2 | an internal net joined to the sink by a V source | the source has `ac`, `sin`, `pulse`, `pwl`, `exp`, `sffm`, `am`, `trnoise` or `trrandom` → input; otherwise → bias. A source a `*@ driver <src> inline` line draws in the circuit is passed: it drives no terminal net | `Vs a 0 ac 1` / `Vb b 0 dc 0.5` | R2 |
-| R3 | a V source from a supply, input or bias net to the sink; or a device with no pin | not in the circuit: the net's terminal symbols stand for it there. A driver is still drawn, apart (§5) | `Vdd vdd 0 1.8` | R3 |
+| R3 | a V source from a supply, input or bias net to the sink (a device with no pin is not drawn either: `forms.classify`) | not in the circuit: the net's terminal symbols stand for it there. A driver is still drawn, apart (§5) | `Vdd vdd 0 1.8` | R3 |
 
 A circuit of parts (no transistor) with no pin on a sink still stands on a
 **reference**: the internal net of two pins or more that most two-pin cards
@@ -507,8 +541,8 @@ is all one part is named at every pin. A cut net whose parts still cross
 more than two wires is named at every pin the next time round. A rail's wires are not counted (a
 gate line crosses the longer stubs up to the supply bar, as the book draws it),
 and a rail, a port and a net a `wire` line names keep their wires. The
-default of 6 names about as many nets as the reference drawings do; 2 is
-their own limit and draws a third of the crossings, with twice the names.
+default of 3 writes about as many names as the reference drawings do; 2 is
+their own limit and draws fewer crossings, with more names.
 
 **Relaying** (`relay.zig`, when the deck has `weak at` stays: a previous
 drawing's places, which `cktimg-json --from` reads out of its JSON). The
@@ -641,7 +675,7 @@ cell, every cell the Schemify import hands the engine, 150 random netlists
   that ends on it, a label the wire it lies on, the net's labels and port
   and rail symbols joined by name);
 - **dots exactly where a net's wires meet**: three or more arms, or a net
-  crossing itself, and nowhere else (`support.dots`, which counts the arms
+  crossing itself, and nowhere else (`checks.dots`, which counts the arms
   itself);
   these three are `checks.find`, which `cktimg-json --report` lists;
 - **no wire touches another net's point** (a pin, a MOS body, a wire's end or
