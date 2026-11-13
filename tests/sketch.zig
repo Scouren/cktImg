@@ -984,6 +984,42 @@ test "sketch: a mirror's facing gates are joined by one straight gate line" {
     try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
 }
 
+test "sketch: a bias gate line carries a port hanging from its middle, not a written name" {
+    // Oracle: the hand drawings. Of 264 bias nets of two facing gates in
+    // the 5,263 reference drawings, 197 carry a port symbol; the engine
+    // wrote the net's name at the middle of all 529 of its own.
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const p = try draw(arena_state.allocator(), lib, &.{
+        \\Two current sources on one bias
+        \\.model pch pmos
+        \\M1 a vb vdd vdd pch
+        \\M2 b vb vdd vdd pch
+        \\R1 a 0 1k
+        \\R2 b 0 1k
+        \\
+    }, .{});
+    const g1 = pinOf(&p, "m1", 1);
+    const g2 = pinOf(&p, "m2", 1);
+    try std.testing.expectEqual(g1.y, g2.y);
+    const net = for (p.net_name, 0..) |n, i| {
+        if (std.mem.eql(u8, n, "vb")) break i;
+    } else unreachable;
+    for (p.labels) |lb| try std.testing.expect(lb.net != net);
+    var hanging: usize = 0;
+    for (p.dev_name, p.dev_class, 0..) |n, class, d| {
+        if (n.len != 0 or class != lib.findRole(.input_port).? or p.pin_net[p.pinRange(d)[0]] != net) continue;
+        const at = p.pin_xy[p.pinRange(d)[0]];
+        hanging += @intFromBool(at.x == @divFloor(g1.x + g2.x, 2) and at.y != g1.y);
+    }
+    try std.testing.expectEqual(1, hanging);
+    try support.expectConnected(&p, lib);
+    try std.testing.expectEqual(0, try support.shorts(gpa, &p, true));
+}
+
 test "sketch: two blocks stacked in one column stand clear, no pin of one on a pin of the other" {
     // Oracle: the geometry itself. A block with its pins on one side is
     // taller than its pins reach up or down (nothing): the lattice gave its

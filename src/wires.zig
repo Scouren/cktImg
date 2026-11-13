@@ -51,10 +51,11 @@
 //!   schematics, 3,612 of 8,921 at a transistor's path end. `terminal`
 //!   Narrowing: no name's stub is tried before the pin, as
 //!   `Canvas.labelAt` would.
-//! - wires.11 (unmeasured) A bias net of two gates facing each other on
-//!   one row is one straight gate line between them, named at its middle
-//!   (at its first pin when another net's wire crosses the middle).
-//!   `ported`
+//! - wires.11 (habit) A bias net of two gates facing each other on one row
+//!   is one straight gate line between them, a port symbol hanging from
+//!   its middle, never a written name (a name at its first pin only when no
+//!   stub fits at the middle). People: a port symbol on 197 of 264 such
+//!   gate lines in 5,263 hand-drawn schematics. `ported`
 //! - wires.12 (habit) An input's or a bias's pins standing near each other
 //!   (the box round them no more than 6 units around half) are one wire
 //!   with one port at a free end. People wire 87% of their inputs of two
@@ -549,9 +550,11 @@ fn ported(c: *Canvas, net: u32, pins: []const u32) !void {
         const sb = s.pins.items(.side)[pins[1]];
         const facing = a.y == b.y and ((a.x < b.x and sa == .right and sb == .left) or (b.x < a.x and sb == .right and sa == .left));
         if (facing and try c.commit(net, &.{ a, b })) {
-            // Named at its middle, unless another net's wire crosses there.
+            // A port hanging from its middle, never a written name (people
+            // 197 of 264); a name at its first pin when no stub fits there.
             const mid: Pt = .{ .x = @divFloor(a.x + b.x, 2), .y = a.y };
-            if (c.fits(net, mid, mid)) try c.leaf(.label, net, mid, .down) else try c.labelAt(pins[0]);
+            for ([_]Side{ .down, .up }) |t| if (try c.stub(.terminal, net, mid, t, c.len.terminal)) return;
+            try c.labelAt(pins[0]);
             return;
         }
     }
