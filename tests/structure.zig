@@ -109,6 +109,23 @@ test "structure: each golden figure's symmetry and blocks" {
     try std.testing.expectEqual(0, wrong);
 }
 
+test "structure: one gate net's groups are listed in the device table's order of kinds" {
+    // Oracle: the device table (src/device.zig, `DeviceKind`): a BJT comes
+    // before a MOSFET there, and no other list of transistor kinds exists.
+    // The blocks were listed MOSFETs first; either order draws the 5,263
+    // reference circuits and the fixtures alike.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var nl = try np.netlist.parse(arena, &.{"Two kinds on one line\n.model nch nmos level=1\n.model qn npn\nVdd vdd 0 1.8\n" ++
+        "M1 a g 0 0 nch\nM2 b g 0 0 nch\nQ1 c g 0 qn\nQ2 d g 0 qn\nR1 vdd a 1k\nR2 vdd b 1k\nR3 vdd c 1k\nR4 vdd d 1k\n"}, null);
+    const s = try structure.analyze(arena, arena, &nl, try np.guessRoles(arena, &nl));
+    const kinds = nl.graph.edges.items(.kind);
+    try std.testing.expectEqual(2, s.block_kind.len);
+    try std.testing.expectEqual(.bjt, kinds[s.members(0)[0]]);
+    try std.testing.expectEqual(.mosfet, kinds[s.members(1)[0]]);
+}
+
 test "structure: the order of the cards changes nothing" {
     var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
     defer arena_state.deinit();

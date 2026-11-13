@@ -54,12 +54,14 @@
 //!   with the next one's upper end on a net that is not a rail, are drawn
 //!   as one block, a stack, top to bottom. Massier, Graeb and Schlichtmann
 //!   (Cites). `blocks`
-//! - structure.12 (unmeasured) A transistor is in at most one of a
+//! - structure.12 (habit) A transistor is in at most one of a
 //!   cross-coupled pair, a differential pair and a mirror or bank, taken in
-//!   that order; a stack may share it. `blocks`
-//!   Narrowing: of one gate net's groups of a polarity, MOSFETs' are
-//!   listed first; the device table's own order has them last
-//!   (`transistors`).
+//!   that order; a stack may share it. People: of 93 twos that are both a
+//!   cross-coupled and a differential pair (a latch on a tail), 88 turn
+//!   their gates toward each other, as a cross-coupled pair's; of 190
+//!   transistors of a pair that stand level with the pair's other or with
+//!   another transistor on their gate net, not both, 153 stand with the
+//!   pair's (5,263 hand drawings). `blocks`
 //!
 //! Contents:
 //! - `pub const none: u32`
@@ -149,14 +151,6 @@ pub const Structure = struct {
         return s.block_devices[s.block_start[b]..s.block_start[b + 1]];
     }
 };
-
-/// The device table's transistors, in the order one gate net's groups of a
-/// polarity are listed. Narrowing: MOSFETs first; the table's own order
-/// (`DeviceKind`'s) has them last.
-const transistors = [_]DeviceKind{ .mosfet, .bjt, .jfet, .mesfet };
-comptime {
-    for (std.enums.values(DeviceKind)) |k| assert(device.isTransistor(k) == (std.mem.indexOfScalar(DeviceKind, &transistors, k) != null));
-}
 
 /// The nets of a transistor's path (`drain` and `source`, its two ends in
 /// card order) and of its gate.
@@ -332,6 +326,10 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     const recognize = !hinted.off;
 
     // Cross-coupled pairs: a's gate is b's drain and b's gate a's drain.
+    // Before differential pairs: of 93 twos that are both, people turn 88
+    // gate to gate. Both before gate groups: of 190 transistors of a pair
+    // level with the pair's other or a gate-net neighbour, not both, 153
+    // stand with the pair's.
     if (recognize) for (by_rank) |a| {
         const fa = transistor(nl, a) orelse continue;
         if (taken[a] or isRail(roles[fa.drain]) or isRail(roles[fa.gate]) or fa.drain == fa.gate) continue;
@@ -379,7 +377,8 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     defer group.deinit(gpa);
     if (recognize) for (nets_by_rank) |n| {
         if (isRail(roles[n])) continue;
-        for ([_]Polarity{ .n, .p, .other }) |pol| for (transistors) |kind| {
+        for ([_]Polarity{ .n, .p, .other }) |pol| for (std.enums.values(DeviceKind)) |kind| {
+            if (!device.isTransistor(kind)) continue;
             group.clearRetainingCapacity();
             var diode = false;
             for (by_rank) |d| {
