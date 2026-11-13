@@ -461,7 +461,7 @@ fn isPair(st: *const Structure, ds: []const u32) bool {
 /// flows down: a transistor (2), a part direct current passes (1), a
 /// capacitor (0).
 fn flows(kind: netlist.DeviceKind) i64 {
-    return @as(i64, @intFromBool(isTransistor(kind))) + @intFromBool(device.of(kind).dc);
+    return @as(i64, @intFromBool(isTransistor(kind))) + @intFromBool(device.of(kind).dc != .blocks);
 }
 
 /// Whether following `d`'s end up (or down) through single devices reaches
