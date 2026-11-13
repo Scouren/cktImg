@@ -52,13 +52,18 @@
 //!   left. `defaultSide`
 //! - library.6 (habit) A generated block's output (`out…`, `vout…`, `vo`,
 //!   `o`, `vop`, `von`, `vo+`, `vo-`) leaves on the right; every other
-//!   port enters on the left. People: of the blocks in 5,263 reference
-//!   schematics a port named `vo` stands right in 71% (17), `out` in 82%
-//!   (1,026). `defaultSide`
+//!   port enters on the left. People: an output on the right in 960 of
+//!   the 1,110 such ports of the blocks of 5,263 hand-drawn schematics and
+//!   an input on the left in 1,741 of 1,887, in the symbol's own frame
+//!   (905 and 1,665 as drawn); `vo` on the right in 12 of 17.
+//!   `defaultSide`
 //! - library.7 (habit) An amplifier block's inverting input stands above
 //!   its non-inverting one, where no `*@` line of its definition places
-//!   either. People: 76% of 221 in the op-amp circuits of 5,263
-//!   hand-drawn schematics, 72% of 530 beside transistors. `blockFor`
+//!   either. People: a tendency, 448 of the 678 blocks of 5,263
+//!   hand-drawn schematics with both inputs on one upright side as drawn
+//!   (152 of 179 where the output is fed back to the inverting input
+//!   alone, 287 of 489 otherwise); a block's symbol cannot tell, the
+//!   feedback is the circuit's. `blockFor`
 //!   Narrowing: only between two left ports named as `portRole` reads
 //!   them; `vin` is the inverting input only beside a non-inverting one;
 //!   only a port's role reads a name in any case (`named`).
@@ -486,10 +491,10 @@ pub const Library = struct {
             }
         }.lt);
         for (order) |k| try per[@backingInt(def.sides[k] orelse defaultSide(def.ports[k]))].append(a, k);
-        // An amplifier's inverting input above the other, as people draw
-        // one (76% of 221 in the op-amp circuits of 5,263 hand-drawn
-        // schematics, 72% of 530 beside transistors), where no directive
-        // of the definition places either.
+        // An amplifier's inverting input above the other, as people tend
+        // to draw one (448 of 678 blocks with both inputs on one upright
+        // side in 5,263 hand-drawn schematics), where no directive of the
+        // definition places either.
         const lefts = per[@backingInt(netlist.PortSide.left)].items;
         for (lefts, 0..) |upper, i| for (lefts[i + 1 ..]) |*lower| {
             if (def.sides[upper] != null or def.sides[lower.*] != null) continue;
@@ -684,6 +689,10 @@ pub fn named(name: []const u8, reader: Reader) ?Named {
 /// order potential (a supply above, a ground below), columns order signal
 /// (an output leaves right, the rest enters left).
 fn defaultSide(port: []const u8) netlist.PortSide {
+    // People, in a block symbol's own frame (5,263 hand-drawn schematics):
+    // a supply on top in 833 of 1,003 ports, a ground below in 328 of 328,
+    // an output on the right in 960 of 1,110, an input on the left in
+    // 1,741 of 1,887.
     return switch (named(port, .side) orelse return .left) {
         .supply => .top,
         // A bias line comes in from below, as people tend to draw a block's:

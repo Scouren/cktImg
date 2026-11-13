@@ -18,40 +18,60 @@
 //!
 //! Human Rules:
 //! - config.1 (habit) By default, two devices in series in one column
-//!   stand half a unit apart, and a rail symbol, or the trunk that pins
-//!   facing one way meet on, half a unit from its pin. People: the pitch
-//!   of 5,274 hand-drawn schematics, Analog Canvas gallery.
-//!   `Layout.stack`, `Layout.rail`, `Layout.tap`
-//! - config.2 (unmeasured) Neighbouring columns stand one unit apart.
-//!   `Layout.series`
+//!   stand half a unit apart or more, and the trunk that pins facing one
+//!   way meet on half a unit from its pin. People: 18,863 of the 20,127
+//!   pairs in series in one column of 5,263 hand-drawn schematics stand
+//!   half a unit apart or more, half a unit the commonest gap (30.2%); a
+//!   pin's first piece of wire to a corner or a T is half a unit at the
+//!   median, and the commonest (38.5% of 90,607). `Layout.stack`,
+//!   `Layout.tap`
+//! - config.2 (habit) Neighbouring columns stand one unit apart or more.
+//!   People: 30,907 of 35,678 neighbouring columns (86.6%), 1.75 units at
+//!   the median. `Layout.series`
 //! - config.3 (habit) A supply bar runs past its outer pins, its ends T's
-//!   and not corners. People: as half the hand drawings draw one (1,258 of
-//!   2,506 supply bars; the rest end on their outer pins).
-//!   `Layout.rail_past`
-//! - config.4 (unmeasured) An input or output port, and a net label,
-//!   stands half a unit from its pin. `Layout.terminal`, `Layout.label`
+//!   and not corners. People: a bar drawn as a named line, with no symbol,
+//!   runs past both ends in 1,255 of 1,370; a bar of wire that carries the
+//!   supply's symbol ends on its outer pins in 1,083 of 1,140 (2,510
+//!   supply bars of 5,263 hand-drawn schematics). `Layout.rail_past`
+//!   Mixed: the bar drawn here carries the symbol (wires.6) and runs past,
+//!   which no hand-drawn bar with a symbol between its ends does (0 of
+//!   730). Ended on its pins (`rail_past` off) it draws 5,050 corners more
+//!   and 2,476 units of wire less over 5,263 circuits.
+//! - config.4 (habit) An input or output port, and a net label, stands
+//!   half a unit from its pin. People: 15,113 of 16,816 ports stand half a
+//!   unit or more from the pin or wire they join (three quarters at the
+//!   median); their net labels name no net, so a label's distance is not
+//!   in the hand drawings. `Layout.terminal`, `Layout.label`
 //! - config.5 (choice) A wire keeps a quarter unit from another net's wire
 //!   or point: the router's room, so two nets never read as one.
 //!   `Layout.clearance`
 //! - config.6 (choice) A bend costs the router one unit of wire, a
 //!   crossing of another net's wire two: weights that trade length for
 //!   fewer bends and crossings. `Layout.bend_cost`, `Layout.cross_cost`
-//! - config.7 (unmeasured) A drawing is closed up: its empty room taken
-//!   out toward the mirror axis and the top, down to the lengths above.
+//! - config.7 (habit) A drawing is closed up: its empty room taken out
+//!   toward the mirror axis and the top, down to the lengths above.
+//!   People: nine in ten of their neighbouring columns stand 4.0 units
+//!   apart or less, and of their devices one under the other 3.5 (35,678
+//!   and 27,035 pairs); the engine's own stand 5.25 and 5.25.
 //!   `Layout.compact`
 //! - config.8 (habit) One internal net's wire crosses at most three wires
 //!   of other nets (rails aside); a net crossing more is joined by name,
-//!   its near pins still wired. People: seldom draw more than two; three
+//!   its near pins still wired. People: of the 4,567 wires that cross
+//!   another net's, 4,417 cross at most three (4,232 at most two); three
 //!   writes about as many names as they do (10,492 against their 11,371
 //!   over 5,263 hand-drawn schematics; two writes 12,241).
 //!   `Layout.cross_max`
 //! - config.9 (habit) A row of the drawing holds eight device columns
 //!   before it wraps into rows of columns, one under the other, unless a
-//!   `*@ shelf` line says otherwise. People: drawn so, 5,263 reference
-//!   circuits are as wide as their hand drawings at the median.
-//!   `Layout.shelf`
+//!   `*@ shelf` line says otherwise. People: 4,444 of 5,274 hand drawings
+//!   are at most eight columns wide; drawn so, 5,263 reference circuits
+//!   are as wide as their hand drawings at the median. `Layout.shelf`
 //! - config.10 (choice) Wires are drawn blue (`1565c0`) 1.5 pt wide,
 //!   symbols 1.2 pt: the TikZ emitter's own style. `Render`
+//! - config.11 (choice) A rail symbol stands half a unit from its pin.
+//!   People: on the pin itself in 10,885 of 18,313 rail symbols (6,883 of
+//!   8,367 on a two-pin part's end, 3,612 of 8,921 on a transistor's), half
+//!   a unit away in a third. `Layout.rail`
 //!
 //! Contents:
 //! - `pub const Layout = struct`, `pub const Render = struct`
@@ -66,26 +86,38 @@ const Zoir = std.zig.Zoir;
 const lint = @import("lint.zig");
 
 /// The drawing's lengths, in units, and the router's costs, in units of
-/// wire. The defaults are the pitch people draw at (half a unit between
-/// two devices in series, a wire and a rail symbol half a unit from their
-/// pin: 5,274 hand-drawn schematics, Analog Canvas gallery). A
-/// length moves nothing to another row or column: rows, columns and order
-/// are the layout's.
+/// wire. A default is a length people draw at or above, a rail symbol's
+/// aside (the counts are the Human Rules' above, from 5,263 hand-drawn
+/// schematics). A length moves nothing to another row or column: rows,
+/// columns and order are the layout's.
 pub const Layout = struct {
+    // People: 18,863 of 20,127 pairs in series in one column stand this
+    // far apart or more, and this far is the commonest (30.2%).
     /// Between neighbouring rows: the wire between two devices of one column.
     stack: f32 = 0.5,
+    // People: 30,907 of 35,678 neighbouring columns stand this far apart
+    // or more (1.75 units at the median).
     /// Between neighbouring columns.
     series: f32 = 1.0,
+    // People set a rail symbol on its pin in 10,885 of 18,313, this far
+    // from it in a third.
     /// A pin to its supply or ground symbol; the supply bar over its pins.
     rail: f32 = 0.5,
+    // People: a named bar with no symbol runs past both ends in 1,255 of
+    // 1,370; a bar of wire carrying the supply's symbol ends on its outer
+    // pins in 1,083 of 1,140.
     /// Whether a supply bar runs on `rail` past its outer pins, its ends
     /// T's and not corners: a rail, as half the hand drawings draw one
-    /// (1,258 of 2,506 supply bars; the rest end on their outer pins).
+    /// (1,260 of 2,510 supply bars; the rest end on their outer pins).
     rail_past: bool = true,
+    // People: 15,113 of 16,816 ports stand this far or more from the pin
+    // or wire they join (three quarters of a unit at the median).
     /// A pin to its input or output port.
     terminal: f32 = 0.5,
     /// A pin to its net label.
     label: f32 = 0.5,
+    // People: a pin's first piece of wire to a corner or a T is this long
+    // at the median and most often (38.5% of 90,607).
     /// Pins facing one way to the trunk that joins them.
     tap: f32 = 0.5,
     /// The router's room between a wire and another net's wire or point.
@@ -101,15 +133,16 @@ pub const Layout = struct {
     compact: bool = true,
     /// The most wires of other nets (rails aside) one internal net's wire
     /// may cross: a net crossing more is joined by name, its near pins
-    /// still wired (`thin.zig`). People seldom draw more than two; three
-    /// writes about as many names as they do (10,492 against their 11,371
-    /// over 5,263 hand-drawn schematics; two writes 12,241).
+    /// still wired (`thin.zig`). Of the 4,567 wires people draw across
+    /// another net's, 4,417 cross at most three; three writes about as many
+    /// names as they do (10,492 against their 11,371 over 5,263 hand-drawn
+    /// schematics; two writes 12,241).
     cross_max: u32 = 3,
     /// Device columns a row of the drawing holds before it wraps into rows
     /// of columns, one under the other (`wrap.zig`); 0 keeps one row. Eight
-    /// is a person's page: drawn so, 5,263 reference circuits are as wide
-    /// as their hand drawings at the median. A deck's `*@ shelf` line says
-    /// otherwise for that deck.
+    /// is a person's page: 4,444 of 5,274 hand drawings are no wider, and
+    /// drawn so 5,263 reference circuits are as wide as their hand drawings
+    /// at the median. A deck's `*@ shelf` line says otherwise for that deck.
     shelf: u32 = 8,
 };
 

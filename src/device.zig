@@ -11,13 +11,17 @@
 //!   current: no current path of the drawing runs through them. `carries`
 //! - device.3 (order: potential) A device with a path stands upright with
 //!   its two ends on two rows, or lies flat between two columns. `of`
-//! - device.4 (unmeasured) A transistor's gate (a base) leaves its path
-//!   sideways: on an upright one it points left or right. `of`
+//! - device.4 (habit) A transistor's gate (a base) leaves its path
+//!   sideways: on an upright one it points left or right. People: 28,715
+//!   of the 30,349 transistors of 5,263 hand-drawn schematics stand
+//!   upright, each with its gate left or right. `of`
 //! - device.5 (order: signal) A device whose path its gate, its control
 //!   pair or a named source's current sets stands right of what drives
 //!   that control. `reads`
 //!   Narrowing: a source a named source sets (F, H) is left out, as a
-//!   part is; the general form admits it.
+//!   part is; the general form admits it. The hand drawings cannot tell:
+//!   of their 50 such sources 2 stand in a drawing with the source they
+//!   name (one right of it, one left).
 //! - device.6 (order: potential) A source that feeds a load stands with
 //!   its low end down: a voltage source's minus, the pin a current source
 //!   draws from. `lowEnd`
@@ -31,7 +35,8 @@
 //! - device.9 (choice) A block, a transmission line (T, O, U), a B source
 //!   and a coupling (K) have no path, so none stands between two rows:
 //!   the table gives them none, and a block's ports go by their names
-//!   (`library.portRole`). `of`
+//!   (`library.portRole`). No hand drawing holds a `B` source to compare.
+//!   `of`
 //!
 //! Contents:
 //! - `pub const DeviceKind = enum(u8)`, `pub const Pins = struct`, `pub const max_nodes`
@@ -98,6 +103,8 @@ pub const Pins = struct {
     model: bool = false,
     /// The two pins its current passes through, in card order; null: a box.
     path: ?[2]u8 = null,
+    // People: 28,715 of 30,349 transistors stand upright, the gate left or
+    // right of each (5,263 hand-drawn schematics).
     /// The side pin a drawing turns left or right (a gate, a base).
     gate: ?u8 = null,
     /// A transistor's body or substrate pin, when its card names one.

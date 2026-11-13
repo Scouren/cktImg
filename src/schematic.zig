@@ -14,53 +14,78 @@
 //!   `agnd…`, `dgnd…` or `v-`, is a ground, drawn with a ground symbol
 //!   (R1). People: rail symbols and no port on 5,467 of the 5,535 nets so
 //!   named, a numbered one (`vss1`, `vee2`) in 10 of 10. `guessRoles`
-//! - schematic.3 (unmeasured) A net named `vb…` or `bias…` is a bias line,
-//!   drawn as a port with its name (R1). `roleFromName`
-//! - schematic.4 (unmeasured) A net named `vin…`, `in…` or `vref…` is an
+//! - schematic.3 (habit) A net named `vb…` or `bias…` is a bias line,
+//!   drawn as a port with its name (R1). People: a port on 2,926 of the
+//!   3,241 such nets with no transistor's drain or collector on them, in
+//!   5,263 hand-drawn schematics. `roleFromName`
+//!   Wider than people draw: a bias line a drain or collector makes is a
+//!   port here too, where of 1,138 such nets 834 carry no symbol (642 are
+//!   drawn in pieces joined by the written name, 192 as one wire) and 59
+//!   an input port. Read as inner nets and wired, they draw 557 crossings
+//!   and 1,966 corners more over 5,263 circuits: the pattern is the
+//!   written name, which is the wiring's to draw (wires.13).
+//! - schematic.4 (habit) A net named `vin…`, `in…` or `vref…` is an
 //!   input port; one named `vout…`, `out…` or `vo` an output port (R1).
+//!   People: a port and no output on 2,650 of the 2,677 nets named
+//!   `vin…` or `in…` and on 580 of the 627 named `vref…` with no drain on
+//!   them; a port and no input on 3,894 of the 3,935 named as an output.
 //!   `roleFromName`
 //! - schematic.5 (habit) A `vref…` net a transistor's drain or collector
-//!   makes is an output port, not an input. People: 557 of 595 such nets
-//!   with no drain get an input port (docs/ALGORITHM.md §1; no count in
-//!   the code). `guessRoles`
+//!   makes is an output port, not an input. People: none of the 11 such
+//!   nets carries an input port (4 an output port, 6 a plain one): too
+//!   few to be a rule of its own, kept for the reference a circuit makes.
+//!   `guessRoles`
 //! - schematic.6 (unmeasured) An unnamed net a voltage source drives from
 //!   ground is an input port when the source carries a signal (`ac`,
 //!   `sin`, `pulse`, `pwl`, `exp`, `sffm`, `am`, `trnoise`, `trrandom`),
 //!   else a bias port, unless a `*@ driver <src> inline` line keeps the
-//!   source in the circuit (R2). `guessRoles`, `isSignalSource`
+//!   source in the circuit (R2). The hand drawings hold no bench to test
+//!   it on: each is a cell (schematic.9). `guessRoles`, `isSignalSource`
 //! - schematic.7 (habit) A circuit of parts (no transistor) with no pin on
 //!   a ground stands on one bottom wire drawn with no ground symbol: the
 //!   internal net of two pins or more that most two-pin cards end on
 //!   (second pins less first pins; a voltage source's minus and the pin a
-//!   current source draws from count double), then the one with the most
-//!   pins, then by name; unless a `*@ role <net> ground` line names the
-//!   ground. People: 172 of 191 connected pieces in 5,263 hand-drawn
-//!   schematics, and that score names the wire in 77.9%. `reference`,
-//!   `isReference`
-//!   Narrowing: only an independent source's low end counts double; the
-//!   table names a controlled source's too.
+//!   current source draws from count double, a controlled source's ends
+//!   as a part's), then the one with the most pins, then by name; unless
+//!   a `*@ role <net> ground` line names the ground. People: 172 of 191
+//!   connected pieces in 5,263 hand-drawn schematics, and that score
+//!   names the wire in 77.9%; counting a controlled source's low end
+//!   double as well names it in 47 of the 63 circuits that hold one,
+//!   against 50. `reference`, `isReference`
 //! - schematic.8 (choice) A `*@ role <net> <role>` line sets that net's
 //!   role over every guess, the preferred line last: the deck's author
 //!   knows what the net is. `guessRoles`
 //! - schematic.9 (unmeasured) A voltage source from ground to a supply,
 //!   input or bias net is not drawn in the circuit: the net's terminal
-//!   symbols stand for it there, and it is drawn apart (R3). `isDriver`
-//! - schematic.10 (unmeasured) An `E` that is a dependent source, not an
+//!   symbols stand for it there, and it is drawn apart (R3). The hand
+//!   drawings hold no bench to test it on; in a cell people wire such a
+//!   source where it stands (1,017 of 1,018), which a `*@ driver <src>
+//!   inline` line asks for. `isDriver`
+//! - schematic.10 (habit) An `E` that is a dependent source, not an
 //!   amplifier, is drawn as the library's two-pin `vcvs` symbol, where it
-//!   has one. `initDevices`
+//!   has one. People: a two-pin source symbol for 37 of 37 `E` cards (464
+//!   of 464 with `G`, `F` and `H`) in 5,263 hand-drawn schematics, none of
+//!   which draws an `E` as an amplifier. `initDevices`
 //! - schematic.11 (choice) A `*@ class <dev> <class>` line draws a device
 //!   as that class only when the class has as many terminals as the one
 //!   it replaces: every pin drawn before stays drawn. `initDevices`
-//! - schematic.12 (unmeasured) A device's row line passes through the
-//!   middle of its left and right pins, its column line through the middle
-//!   of its upper and lower pins: with several on a side, the middle one's
-//!   line, pin or not. `settleDevices`
-//! - schematic.13 (unmeasured) A controlled source's minus output on
-//!   ground, like a MOS body, is part of the symbol and gets no wire.
-//!   `referencePin`
-//! - schematic.14 (unmeasured) An upright device is its symbol turned a
+//! - schematic.12 (habit) A device's row line passes through the middle
+//!   of its left and right pins, its column line through the middle of
+//!   its upper and lower pins: with several on a side, the middle one's
+//!   line, pin or not. So two pins facing each other stand on one line.
+//!   People: 6,581 of the 6,694 nets of two pins facing each other along
+//!   a row or a column in 5,263 hand-drawn schematics. `settleDevices`
+//! - schematic.13 (unmeasured) An amplifier symbol's reference terminal
+//!   on ground (the class marks it: a controlled source's minus output),
+//!   like a MOS body, is part of the symbol and gets no wire. The hand
+//!   drawings draw no `E` as an amplifier to test it on; a two-pin
+//!   source's minus on ground is a pin with its wire there, in 164 of
+//!   164, and here. `referencePin`
+//! - schematic.14 (choice) An upright device is its symbol turned a
 //!   quarter left, then flipped as the layout asks: unflipped, a MOSFET's
-//!   drain is up, its gate left, its source down. `form`
+//!   drain is up, its gate left, its source down. People: the gate left
+//!   of 17,977 of 28,715 upright transistors, right of the rest: a side
+//!   the layout chooses, not this form. `form`
 //!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
@@ -362,7 +387,8 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
         const e = EdgeId.from(d);
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
         // An `E` that is a dependent source, not the book's amplifier: the
-        // library's two-pin `vcvs`, where it has one.
+        // library's two-pin `vcvs`, where it has one. People: a two-pin
+        // source symbol for 37 of 37 `E` cards (464 of 464 with G, F, H).
         if (k == .vcvs and forms.isDependent(nl, roles, @intCast(d))) c.* = lib.find("vcvs") orelse c.*;
     }
     // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
@@ -413,6 +439,8 @@ pub fn settleDevices(s: *Schematic, circuit: *const Circuit.Graph) void {
         const c = s.lib.at(info.items(.class)[d]);
         // The middle of the up/down pins' x and of the left/right pins' y:
         // with several pins on a side, the middle one's line, pin or not.
+        // People: two pins facing each other stand on one line in 6,581 of
+        // 6,694 nets of two such pins.
         var lo: [2]i32 = .{ std.math.maxInt(i32), std.math.maxInt(i32) };
         var hi: [2]i32 = .{ std.math.minInt(i32), std.math.minInt(i32) };
         const members = circuit.members(EdgeId.from(d));
@@ -458,6 +486,8 @@ pub fn referencePin(s: *const Schematic, d: u32, pin: usize, net: u32) bool {
 /// The class as drawn is the horizontal form; the vertical form is it
 /// turned a quarter left.
 pub fn form(o: Orientation) Orient {
+    // The unflipped upright form has its gate left: where people draw it
+    // on 17,977 of 28,715 upright transistors, the layout's flip the rest.
     return if (o == .vertical) .left else .r0;
 }
 
@@ -473,6 +503,11 @@ fn baseSide(s: *const Schematic, d: u32, o: Orientation, pin: usize) ?Side {
 /// R1: a net's role by its name (`library.named`). A reference comes from
 /// outside, as an amplifier's inputs do.
 fn roleFromName(name: []const u8) Role {
+    // People, on the nets so named in 5,263 hand-drawn schematics: rail
+    // symbols and no port on 4,010 of 4,157 supplies and 5,467 of 5,535
+    // grounds; a port on 2,926 of 3,241 bias lines no drain makes; a port
+    // and no output on 2,650 of 2,677 inputs and 580 of 627 references; a
+    // port and no input on 3,894 of 3,935 outputs.
     return switch (library.named(name, .net) orelse return .internal) {
         .supply => .supply,
         .ground => .sink,
@@ -518,8 +553,9 @@ fn reference(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Role) Al
         // A card of just two pins, whatever its kind: wider than the device
         // table's parts (`device.isPart`) by a B source and a two-port
         // block, narrower by a part with a third pin (a body, a control
-        // pair). Narrowing: only an independent source's low end counts
-        // double; the table names a controlled source's too.
+        // pair). Only an independent source's low end counts double:
+        // counting a controlled source's too names the bottom wire people
+        // draw in 47 of the 63 circuits that hold one, against 50.
         if (pins.len != 2) continue;
         if (device.of(k).source == .independent) {
             score[pins[device.lowEnd(k)].index()] += 2;
