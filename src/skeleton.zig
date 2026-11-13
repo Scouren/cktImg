@@ -39,11 +39,15 @@
 //! - skeleton.9 (unmeasured) A transistor's gate faces the mean of the rest
 //!   of its gate net; on a rail or alone, away from the drawing's middle.
 //!   `gates`
-//! - skeleton.10 (unmeasured) A differential pair's gates face out. `gates`
-//! - skeleton.11 (unmeasured) The two of a mirror, bank or cross-coupled
-//!   pair face each other. `gates`
-//! - skeleton.12 (unmeasured) A mirror's or bank's of more than two all
-//!   face left, as along one gate line. `gates`
+//! - skeleton.10 (habit) A differential pair's gates face out. People:
+//!   1,396 of 1,579 pairs in 5,263 hand-drawn schematics. `gates`
+//! - skeleton.11 (habit) The two of a mirror or cross-coupled pair face
+//!   each other. People: 2,685 of 3,130 mirrors of two and 214 of 239
+//!   cross-coupled pairs. A bank's two do too here, a choice: people 962
+//!   of 1,968 (600 face out). A mirror or bank of three or more has no
+//!   rule of its own: skeleton.9 turns each gate (people turn all of one
+//!   left, the rule retired as skeleton.12, in 12 of 1,103 such mirrors
+//!   and 88 of 380 banks). `gates`
 //! - skeleton.13 (choice) A flat part `forms.crooked` stands upright
 //!   (forms.15) is placed by laying the whole drawing again, not moved
 //!   alone: it then follows every rule an upright part does. `place`
@@ -470,9 +474,8 @@ fn reachesRail(roles: []const Role, upper: []const u32, lower: []const u32, chai
 
 /// Every transistor's gate faces the rest of its gate net, or away from the
 /// middle when that is a rail or it has none; then a differential pair's
-/// face out, the two of a mirror, bank or cross-coupled pair face each
-/// other, and a larger mirror's or bank's all face left, as along one gate
-/// line.
+/// face out and the two of a mirror, bank or cross-coupled pair face each
+/// other.
 fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, x: []const i32, gate_right: []bool) void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -498,13 +501,14 @@ fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: [
         const own: i64 = 2 * @as(i64, x[d]);
         gate_right[d] = if (count > 0) @divFloor(2 * sum, count) > own else own > @as(i64, lo) + hi;
     }
+    // A block of two only: a larger mirror's or bank's gates face the rest
+    // of their net as any gate does. People turn all of one left in 12 of
+    // 1,103 mirrors of three or more and 88 of 380 banks (5,263 hand-drawn
+    // schematics); in 567 of those mirrors every gate faces one point
+    // inside the block.
     for (st.block_kind, 0..) |k, b| {
         const ms = st.members(b);
-        if (k == .stack) continue;
-        if (ms.len > 2) {
-            for (ms) |d| gate_right[d] = false;
-            continue;
-        }
+        if (k == .stack or ms.len != 2) continue;
         const a, const z = if (x[ms[0]] <= x[ms[1]]) .{ ms[0], ms[1] } else .{ ms[1], ms[0] };
         if (x[a] == x[z]) continue;
         gate_right[a] = k != .pair;

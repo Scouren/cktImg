@@ -23,9 +23,9 @@ const recorded = [golden.decks.len][]const u8{
     "strongarm x 49/49 y 38/46 rows 9+8-0 cols 6+0-0 sym 6/6 gates 7/7 labels +[] -[]",
     "gilbert x 34/36 y 28/29 rows 7+1-0 cols 0+2-0 sym 0/0 gates 4/6 labels +[] -[]",
     "cmfb_two_stage x 70/74 y 64/64 rows 14+0-0 cols 4+0-0 sym 7/7 gates 8/8 labels +[] -[]",
-    "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 5/6 labels +[] -[]",
+    "bandgap_ptat x 29/29 y 29/29 rows 7+0-0 cols 7+0-0 sym 0/0 gates 4/6 labels +[] -[]",
     "cascode_mirror x 6/6 y 8/8 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/4 labels +[] -[]",
-    "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 4/5 labels +[] -[]",
+    "wide_swing x 16/16 y 16/19 rows 2+3-0 cols 5+0-0 sym 0/0 gates 5/5 labels +[] -[]",
     "beta_multiplier x 11/11 y 13/13 rows 2+0-0 cols 4+0-0 sym 2/2 gates 4/5 labels +[] -[]",
     "diff_pair_resistive x 8/8 y 8/8 rows 2+0-0 cols 2+0-0 sym 3/3 gates 2/2 labels +[] -[]",
     "telescopic_se x 0/0 y 6/6 rows 0+0-0 cols 6+0-0 sym 0/0 gates 4/4 labels +[] -[]",
@@ -169,6 +169,29 @@ test "skeleton: a column goes on through the part direct current passes, the cap
         try std.testing.expectEqual(l.sk.x[m1], l.sk.x[l.nl.device(case.in).?.index()]);
         try std.testing.expect(l.sk.x[m1] != l.sk.x[l.nl.device(case.beside).?.index()]);
     }
+}
+
+test "skeleton: a mirror of three turns each gate to the rest of its gate line, not all of them left" {
+    // Oracle: how people draw it. Of 1,103 mirrors of three or more in the
+    // 5,263 hand-drawn schematics people turn every gate left in 12; in 567
+    // every gate faces one point inside the block. Reference drawing
+    // ar-6074 is the deck: the diode-connected reference on the left faces
+    // the two it feeds, and they face it. All three faced left here once,
+    // the reference away from its own gate line.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Two stages on one reference\n.model nch nmos level=1\n.model pch pmos level=1\nVDD vdd 0 1.8\nIREF vdd nb 200u\n" ++
+        "M1 n0 a n2 0 nch\nM2 n1 b n2 0 nch\nM3 n0 n0 vdd vdd pch\nM4 n1 n0 vdd vdd pch\nM5 n2 nb 0 0 nch\nM6 vo n1 vdd vdd pch\nM7 vo nb 0 0 nch\nM8 nb nb 0 0 nch\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const x = l.sk.x;
+    const ref = l.nl.device("m8").?.index();
+    const fed = [2]u32{ l.nl.device("m5").?.index(), l.nl.device("m7").?.index() };
+    // Three columns, the reference outside the two it feeds.
+    try std.testing.expect(x[ref] != x[fed[0]] and x[ref] != x[fed[1]] and x[fed[0]] != x[fed[1]]);
+    try std.testing.expect((x[ref] < x[fed[0]]) == (x[ref] < x[fed[1]]));
+    for (fed) |d| try std.testing.expectEqual(x[ref] > x[d], l.sk.gate_right[d]);
+    try std.testing.expectEqual(x[fed[0]] > x[ref], l.sk.gate_right[ref]);
 }
 
 test "skeleton: a resistor on the way down stands upright under the emitter it leaves, a current source upright anywhere" {
