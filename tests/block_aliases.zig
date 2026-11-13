@@ -111,11 +111,11 @@ test "amplifier aliases: actual source triangles retain signed inputs and declar
 
 test "amplifier aliases: whole family names and complete contracts bound recognition" {
     // Oracle: ZCD is an opaque block in AG1440/1457 despite the familiar
-    // input/output names. A1 is a generic cell name. Additional controls
+    // input/output names. AG1752's A1 with an extra Z is also a box. Controls
     // and duplicate roles cannot be removed to fit a triangle contract.
     const cases = [_]struct { []const u8, []const u8 }{
         .{ "zcd", "VDD VSS INN OUT" },
-        .{ "a1", "VDD VSS INP INN OUT" },
+        .{ "a1", "VDD VSS INP INN OUT Z" },
         .{ "amp10", "VDD VSS INP INN OUT" },
         .{ "my_cmp", "VDD VSS INP INN OUT" },
         .{ "ea", "VDD VSS INP INN OUT ENABLE" },

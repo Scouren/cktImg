@@ -808,7 +808,7 @@ round-trip through the release host with 428 exact subcircuits; six selected
 decks also pass the current host with 12 exact subcircuits.
 
 Seven bare-value sort substitutions reduce the initial over-limit plugin
-by 15,302 bytes. Full 2,956-drawing before/after comparisons prove identical
+by 15,302 bytes. Full 2,936-drawing before/after comparisons prove identical
 geometry, reports and scores for that isolated change; no speed claim is
 made. The final plugin is 559,658 bytes, SHA-256
 `def3d992a8eb6909712453b6cc8c76c4c08077e189406df9e8337008e37de570`.
@@ -862,7 +862,7 @@ electrical connectivity and no shorts. An older uncompact AG1316 known-gap
 marker failed on an unexpected improvement and was replaced by the same
 positive continuity assertion.
 
-All **2,956** corpus decks render with the same two named source issues and
+All **2,936** corpus decks render with the same two named source issues and
 no native findings. Geometry changes in 145 AnalogGenie drawings and reports
 in 144; every other AG result and all 734 AMSNet results remain byte-identical.
 No physical device axis, gate direction or block flow changes. The partial
@@ -923,7 +923,7 @@ falls back to labels under the existing crossing budget. AG2274 is already
 label-separated in its source; AG2544's source pair is on different rows.
 These named cases remain unresolved at this checkpoint.
 
-All **2,956** corpus drawings render with the same two source issues and no
+All **2,936** corpus drawings render with the same two source issues and no
 native findings. Geometry changes in 1,183 AG drawings and 132 AMS drawings;
 reports change in 878 and 96 respectively. AG crossings rise from **4,864
 to 4,884**, while bends fall from **23,435 to 20,611**. AMS crossings rise
@@ -1006,7 +1006,7 @@ three. This overlay is evidence for investigation, not a trace of the
 thinning loop. **AG2376:net0** remains unchanged and unresolved. The exact
 new losses and diagnostic probes are retained in the tap inventory.
 
-All **2,956** drawings render with the same two source issues and no native
+All **2,936** drawings render with the same two source issues and no native
 findings. Geometry changes in 103 AG and nine AMS drawings; reports change
 in 67 and six. AG crossings rise from **4,884 to 4,895**, while bends fall
 from **20,611 to 20,540**. AMS crossings rise from **199 to 200**, while
@@ -1043,3 +1043,61 @@ The plugin is **562,718 bytes**, SHA-256
 byte-identical. The next isolated symbol change covers 39 complete
 source-backed A1/EA1/AEA amplifier contracts; the named thinning losses
 remain a separate routing investigation.
+
+## Sixteenth measured pass: complete A1, EA1 and AEA amplifier contracts
+
+The frozen executable is
+`bc2600ab737626e56098dbf7c2c5610c720ddc9dd2feb65783e8f50759fc9fac`.
+The [remaining-amplifier study](remaining-amplifiers.md) adds three exact
+family names to the existing complete amplifier contract. It restores
+triangles in **39** source-backed instances: 37 A1, AG1233's EA1 and
+AG2423's single-negative-input AEA. Named signs, all declared electrical
+ports and their order remain intact. Unknown controls, duplicate roles,
+incomplete contracts and caller-supplied symbols retain their existing
+behavior. AG1752's additional Z terminal is an actual source box; its
+otherwise identical declaration appears as a triangle in AG1510. That
+counterexample continues to bound recognition.
+
+Exactly those **39 AG drawings** change, with 39 changed reports. Every
+other drawing and report is byte-identical, including all 734 AMS drawings.
+All **2,936** corpus drawings render with the same two source issues and
+no native findings. This corrects an earlier prose arithmetic error:
+2,202 AG plus 734 AMS is 2,936, not 2,956. The exact file inventories were
+always checked; no additional drawings were dropped or newly included.
+
+AG crossings fall from **4,895 to 4,892** and bends from **20,540 to 20,538**,
+entirely in AG2423. No other drawing's crossing or bend count changes.
+AMS retains 200 crossings and 1,538 bends. Device axes, physical gate
+directions and block flow are unchanged. The partial all-relation sets
+remain **289/2,202 AG and 243/734 AMS**. Glyph recognition improves, while
+source-specific placement, input order, bias positions and facing remain
+separate work. AG1708's source has its positive input above its negative;
+AG1233 points left; AG2423's sole input lies on its output row. The native
+defaults do not yet reproduce these choices.
+
+Every earlier named power, grounded-capacitor, controller, reservoir and
+input-branch cohort remains correct. All 145 converter groups preserve
+their 22 universal geometric relations, seven continuous local trees and
+zero crossings in their 21 tree pairs. Their total crossing and bend counts
+remain 526 and 2,284. The auxiliary bus preserves the exact 107 joined and
+38 disconnected names; AG1233's measured branch translates 40 units in x,
+and the other 144 branch measurements are unchanged.
+
+Validation passes **377 tests without LaTeX and 378 with it**, 4,000 fuzz
+cases, global formatting and changed-file style checks. All 31 gallery
+SVGs remain byte-identical. All 39 changed drawings reproduce identical
+geometry and reports with one and four jobs. Real Schemify round trips
+retain 98 fixture comparisons and the two named capacity refusals; the
+39 source decks yield 79 exact subcircuits. Six current-host decks yield
+13 exact subcircuits, including excluded AG1752 and AG1289 contracts.
+Actual source and final native views of AG1233, AG1464, AG1708 and AG2423
+confirm the glyph gains and the remaining layout differences.
+
+The plugin is **562,726 bytes**, SHA-256
+`cb8ddfc507833aba15480a38970357247c0c9190252ff8e518abcaf63e1a1922`,
+eight bytes larger and 474 bytes below the strict cap. Repeated native and
+plugin builds are byte-identical. The next routing step investigates the
+three named VX losses from pass15: an actual round trace shows separate
+physical parts' crossings being added together before all pins become
+labels. The unsigned reference and center-tapped symbol studies remain
+queued separately.

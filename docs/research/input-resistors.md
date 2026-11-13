@@ -237,7 +237,7 @@ capacity refusals, and all 252 converter decks retain 428 exact subcircuits.
 Eight selected decks also pass the current host with nine exact comparisons.
 All earlier measured converter cohorts remain correct.
 
-All 2,956 corpus drawings render with the same two source issues. The native
+All 2,936 corpus drawings render with the same two source issues. The native
 executable SHA-256 is
 `ad704dbbbd5b03b66167a64fb1842a8ad3d83bbfb2f8fb78ccaae0c2d5b336d2`.
 All 1,315 changed drawings reproduce identical JSON geometry and reports

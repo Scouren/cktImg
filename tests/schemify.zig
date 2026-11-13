@@ -49,6 +49,10 @@ fn blockOf(gpa: std.mem.Allocator, a: std.mem.Allocator, text: []const u8, p: []
     return null;
 }
 
+test {
+    _ = @import("remaining_amplifiers.zig");
+}
+
 test "every fixture converts, deterministically" {
     for (fixtures.plugin) |f| {
         var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);

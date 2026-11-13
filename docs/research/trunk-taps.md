@@ -157,7 +157,7 @@ python3 -B docs/research/figures/trunk_taps.py external/examples /tmp/trunk-taps
 ## Checkpoint validation
 
 An independent replay reproduces every inventory field, including all eight
-probes and the actual source leads and ink for the losses. All 2,956 corpus
+probes and the actual source leads and ink for the losses. All 2,936 corpus
 drawings render with the same two source issues and no native findings.
 The 112 changed drawings produce identical geometry and reports in serial
 and four-job runs. All earlier named input, converter and reservoir cohorts

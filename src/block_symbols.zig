@@ -29,7 +29,7 @@
 //! - block_symbols.6 (choice) Exact AMP/AMP1/CMP/EA family names with the
 //!   same complete port contract use triangles: all 24 selected source
 //!   glyphs agree (AG2553/2550/1367/1237). AMP1 is a whole name, not a
-//!   prefix. Generic A1 remains unrecognized; ZCD is a source box.
+//!   prefix. ZCD remains a source box.
 //!   Shape/sign evidence does not certify cached source pin coordinates.
 //!   docs/research/block-aliases.md; `identify`
 //! - block_symbols.7 (choice) Generic comp/comparator/CMP triangles are
@@ -38,6 +38,12 @@
 //!   box and AG1398's missing plus mark remain named disagreements; neither
 //!   creates an instance-specific rendering exception. Appearance does not
 //!   infer electrical function. figures/comparator_strokes.py; `identify`
+//! - block_symbols.8 (choice) Exact A1/EA1/AEA names use triangles only
+//!   with the same complete contract: all 39 selected source glyphs agree.
+//!   Named polarity survives declaration order; AG2423 has only a negative
+//!   input. Unknown controls remain boxed, including AG1752's extra Z.
+//!   Every declared port remains present despite omitted source VSS ink.
+//!   docs/research/remaining-amplifiers.md; `identify`, `draw`
 //!
 //! Cold, bounded work: at most eight ports, once per registered symbol.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
@@ -71,7 +77,7 @@ const ports_max = 8;
 pub fn identify(name: []const u8, ports: []const []const u8) Shape {
     if (ports.len < 2 or ports.len > ports_max) return .box;
     const aliases = [_]struct { names: []const u8, shape: Shape }{
-        .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier amp amp1 ea cmp comp comparator", .shape = .amplifier },
+        .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier amp amp1 ea cmp comp comparator a1 ea1 aea", .shape = .amplifier },
         .{ .names = "opamp_differential", .shape = .differential_amplifier },
         .{ .names = "icm_ideal_comparator_vdd", .shape = .comparator },
         .{ .names = "buffer buf", .shape = .buffer },
