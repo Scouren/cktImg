@@ -235,6 +235,28 @@ test "skeleton: a pair's tail stands between the pair's two, not the mirror refe
     try std.testing.expect(ref < @min(m1, m2) or ref > @max(m1, m2));
 }
 
+test "skeleton: two mirrors that nets join half to half stand side by side, not one inside the other" {
+    // Oracle: the hand drawings. Of 643 twos of mated pairs of columns
+    // that nets join half to half in the 5,263 reference drawings, people
+    // draw 406 each about its own axis and 174 about one. m1 and m2 (with
+    // m5, m6 over them) and m8 and m9 (m7 over m8) are such a two: m2's
+    // column drives m3, m3's ends on m9's, and a's and c's columns hang on
+    // one line. They stood nested about one axis, m9 m1 | m2 m8.
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const l = try lay(arena, "Two mirrors in a chain\n.model nch nmos level=1\n.model pch pmos level=1\nVdd vdd 0 1.8\nIb r 0 10u\n" ++
+        "M4 r r vdd vdd pch\nM5 a r vdd vdd pch\nM6 b r vdd vdd pch\nM7 c r vdd vdd pch\n" ++
+        "M1 a a 0 0 nch\nM2 b a 0 0 nch\nM8 c c 0 0 nch\nM9 y c 0 0 nch\nM3 vdd b y 0 nch\n");
+    errdefer std.debug.print("=> {s}\n", .{cells(arena, &l) catch ""});
+    const x = l.sk.x;
+    const m1 = x[l.nl.device("m1").?.index()];
+    const m2 = x[l.nl.device("m2").?.index()];
+    const m8 = x[l.nl.device("m8").?.index()];
+    const m9 = x[l.nl.device("m9").?.index()];
+    try std.testing.expect(@max(m1, m2) < @min(m8, m9) or @max(m8, m9) < @min(m1, m2));
+}
+
 test "skeleton: a circuit of parts stands with its source on the left, whatever the order of its cards" {
     // Oracle: the hand drawings, and a metamorphic relation. Of two parts
     // at different distances from a circuit's one source, people draw the

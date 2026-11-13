@@ -16,22 +16,19 @@
 //! - mates.5 (invariant) Columns mirror whole: a column's devices stand
 //!   mirrored only when all their images stand in one column whose images
 //!   stand in it. `mirrorable`
-//! - mates.6 (unmeasured) Two mated pairs of columns share one axis when
-//!   the circuit wires them half to half: a net (no rail, no bias) joins a
-//!   column of one to a column of the other, and another net joins their
-//!   two images (a pair and its folded branches, two pairs on the same
-//!   inputs). `oneAxis`
-//!   Narrowing: nets only; pairs joined half to half through bridges (a
-//!   coil each side) are not one cluster: tried on 5,263 reference
-//!   circuits, it drew 3 with fewer crossings and 10 with more.
-//! - mates.7 (choice) A drawing has one mirror axis: of clusters not wired
-//!   half to half, the largest holding a differential or cross-coupled pair
-//!   keeps its mates (the lowest rank on a tie), the rest stand free side
-//!   by side, and none keeps them when none holds such a pair: the
-//!   skeleton, the wires and the closing up carry one axis. `oneAxis`
+//! - mates.7 (habit) Two mated pairs of columns stand side by side, each
+//!   about its own axis, whatever joins them. People: 1,768 of 2,407 twos
+//!   of mated pairs of columns in circuits with no symmetry, 228 about one
+//!   axis; of the 643 that nets join half to half (a pair and its folded
+//!   branches, a chain of mirrors), 406 and 174. `oneAxis`
+//!   Narrowing: one pair of columns keeps its mirror, the largest holding
+//!   a differential or cross-coupled pair (the lowest rank on a tie; none
+//!   when none holds such a pair); the rest stand free, level by their
+//!   rows, not mirrored about axes of their own: the skeleton, the wires
+//!   and the closing up carry one axis.
 //!
 //! Contents:
-//! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32`
+//! - `pub fn find(gpa: Allocator, nl: *const Netlist, _: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -42,7 +39,6 @@ const skeleton = @import("skeleton.zig");
 const sch = @import("schematic.zig");
 
 const Netlist = netlist.Netlist;
-const VertexId = netlist.VertexId;
 const Role = sch.Role;
 const Structure = structure.Structure;
 const Form = skeleton.Form;
@@ -52,8 +48,8 @@ const none = structure.none;
 /// mirror's or bank's, carried up and down their two columns while the
 /// devices there are of one kind. Vertical devices only, and only where
 /// each column's mates stand in one column (`mirrorable`); block mates
-/// about one axis only (`oneAxis`).
-pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32 {
+/// about one axis only (`oneAxis`). The nets' roles are not read.
+pub fn find(gpa: Allocator, nl: *const Netlist, _: []const Role, st: *const Structure, drawn: []const bool, form: []const Form, column_of: []const u32, above: []const u32, below: []const u32, n_columns: usize) Allocator.Error![]u32 {
     const mate = try gpa.alloc(u32, column_of.len);
     errdefer gpa.free(mate);
     @memset(mate, none);
@@ -65,7 +61,7 @@ pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     };
     if (!exact) pairMates(nl, st, form, column_of, above, below, mate);
     try mirrorable(gpa, column_of, n_columns, mate);
-    if (!exact) try oneAxis(gpa, nl, roles, st, column_of, n_columns, mate);
+    if (!exact) try oneAxis(gpa, st, column_of, n_columns, mate);
     for (mate, 0..) |m, d| if (m != none) assert(mate[m] == d);
     return mate;
 }
@@ -105,78 +101,33 @@ fn pairMates(nl: *const Netlist, st: *const Structure, form: []const Form, colum
     };
 }
 
-/// One axis a drawing. Mated column pairs are one cluster when the circuit
-/// wires them half to half: a net (no rail, no bias) joins a column of one
-/// pair to a column of the other, and another net joins their two mates (a
-/// pair and its folded branches, two pairs on the same inputs). One net on
-/// all four says nothing of the halves: a supply under another name. Unjoined clusters would
-/// nest about one axis, each pair's two columns far apart: where there are
-/// several, the largest holding a differential or cross-coupled pair keeps
-/// its mates (the lowest rank on a tie) and the others lose theirs, so
-/// their columns stand free, side by side; none keeps them when none holds
-/// such a pair (mirrors along a chain of stages).
-// ponytail: one axis; a second symmetric cluster is drawn as free columns.
-// An axis per cluster needs the skeleton, the wires and the closing up to
-// carry several.
-fn oneAxis(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, column_of: []const u32, n_columns: usize, mate: []u32) !void {
-    const g = &nl.graph;
-    assert(roles.len == g.vertexCount());
+/// One axis a drawing. Each two mated columns are a cluster; where there
+/// are several, the largest holding a differential or cross-coupled pair
+/// keeps its mates (the lowest rank on a tie) and the others lose theirs,
+/// so their columns stand free, side by side; none keeps them when none
+/// holds such a pair (mirrors along a chain of stages).
+// ponytail: one axis; a second mated pair of columns is drawn as free
+// columns. An axis per pair needs the skeleton, the wires and the closing
+// up to carry several.
+fn oneAxis(gpa: Allocator, st: *const Structure, column_of: []const u32, n_columns: usize, mate: []u32) !void {
     assert(mate.len == column_of.len);
-    const image = try gpa.alloc(u32, 2 * n_columns);
-    defer gpa.free(image);
-    const root = image[n_columns..];
-    @memset(image[0..n_columns], none);
-    for (mate, 0..) |m, d| if (m != none and m != d) {
-        image[column_of[d]] = column_of[m];
-    };
-    // Per two mated columns: the first net joining them, and whether a
-    // second does.
-    // ponytail: nets only. Pairs joined half to half through bridges (a
-    // coil each side) are not one cluster: tried on 5,263 reference
-    // circuits, it drew 3 with fewer crossings and 10 with more.
-    const joined = try gpa.alloc(u32, n_columns * n_columns);
-    defer gpa.free(joined);
-    const twice = try gpa.alloc(bool, n_columns * n_columns);
-    defer gpa.free(twice);
-    @memset(joined, none);
-    @memset(twice, false);
-    for (roles, 0..) |r, net| {
-        if (r.isRail() or r == .bias) continue;
-        const on = g.incident(VertexId.from(@intCast(net)));
-        for (on) |e| for (on) |f| {
-            const u = column_of[e.index()];
-            const v = column_of[f.index()];
-            if (u == none or v == none or image[u] == none or image[v] == none) continue;
-            const at = u * n_columns + v;
-            if (joined[at] == none) joined[at] = @intCast(net) else if (joined[at] != net) twice[at] = true;
-        };
-    }
-    for (root, 0..) |*r, c| r.* = @intCast(c);
-    for (0..n_columns) |u| {
-        if (image[u] == none) continue;
-        unite(root, @intCast(u), image[u]);
-        for (0..u) |v| {
-            if (image[v] == none) continue;
-            const here = u * n_columns + v;
-            const there = image[u] * n_columns + image[v];
-            if (joined[here] == none or joined[there] == none) continue;
-            if (joined[here] != joined[there] or twice[here] or twice[there]) unite(root, @intCast(u), @intCast(v));
-        }
-    }
-    // Per cluster (at its root column): its mated devices, the least rank
-    // among them, and whether a pair's two are mates in it.
+    // Per two mated columns (at the lesser): their mated devices, the least
+    // rank among them, and whether a pair's two are mates in them. People:
+    // of 2,407 twos of mated pairs of columns in 5,263 hand drawings, 1,768
+    // stand each about its own axis and 228 share one, whatever joins them
+    // (nets half to half: 406 and 174 of 643).
     const Cluster = struct { devices: u32 = 0, rank: u32 = none, paired: bool = false };
     const clusters = try gpa.alloc(Cluster, n_columns);
     defer gpa.free(clusters);
     @memset(clusters, .{});
     for (mate, 0..) |m, d| if (m != none and m != d) {
-        const c = &clusters[top(root, column_of[d])];
+        const c = &clusters[@min(column_of[d], column_of[m])];
         c.devices += 1;
         c.rank = @min(c.rank, st.device_rank[d]);
     };
     for (st.block_kind, 0..) |k, b| {
         const ms = st.members(b);
-        if (k.ofTwo() and mate[ms[0]] == ms[1]) clusters[top(root, column_of[ms[0]])].paired = true;
+        if (k.ofTwo() and mate[ms[0]] == ms[1]) clusters[@min(column_of[ms[0]], column_of[ms[1]])].paired = true;
     }
     var count: usize = 0;
     var keep: u32 = none;
@@ -191,24 +142,8 @@ fn oneAxis(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const S
     if (count <= 1) return;
     if (!clusters[keep].paired) keep = none;
     for (mate, 0..) |*m, d| {
-        if (m.* != none and m.* != d and top(root, column_of[d]) != keep) m.* = none;
+        if (m.* != none and m.* != d and @min(column_of[d], column_of[m.*]) != keep) m.* = none;
     }
-}
-
-fn top(root: []const u32, c: u32) u32 {
-    var at = c;
-    var steps: usize = 0;
-    while (root[at] != at) : (steps += 1) {
-        assert(steps < root.len);
-        at = root[at];
-    }
-    return at;
-}
-
-fn unite(root: []u32, a: u32, b: u32) void {
-    const ra = top(root, a);
-    const rb = top(root, b);
-    root[@max(ra, rb)] = @min(ra, rb);
 }
 
 /// Drops the mates of every column whose members' mates do not all stand in
