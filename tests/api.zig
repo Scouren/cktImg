@@ -175,6 +175,29 @@ const with_block =
     \\Rg fb 0 1k
 ;
 
+test "blocks: a part to ground at the upper input stands upright beside its node, as at any node" {
+    // Oracle: how people draw it. In 5,263 hand-drawn schematics a part
+    // from an op-amp's node to a rail stands upright in 212 of 235
+    // (opamp_grow.5); at the upper input beside a lower input that carries
+    // a signal people stand 32 of 61, a coin flip, so that spot is no
+    // case of its own: `rsh` stands as any shunt does.
+    const gpa = testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    const deck = comptime with_block[0..std.mem.indexOf(u8, with_block, "X1 ").?] ++
+        "X1 a fb out vdd 0 opamp\nRin in a 1k\nRsh a 0 10k\nRf out fb 10k\nRg fb 0 1k\n";
+    var p = try placeText(lib, deck);
+    defer p.deinit();
+    try expectWellFormed(&p, lib);
+    const r = for (p.dev_name, 0..) |n, d| {
+        if (std.mem.eql(u8, n, "rsh")) break d;
+    } else return error.NoPart;
+    const lo, _ = p.pinRange(r);
+    const a = p.pin_xy[lo];
+    const b = p.pin_xy[lo + 1];
+    try testing.expect(@abs(a.y - b.y) > @abs(a.x - b.x));
+}
+
 test "blocks: a subcircuit is one block, its ports on the sides its directives say" {
     const gpa = testing.allocator;
     const lib = try support.library(gpa);

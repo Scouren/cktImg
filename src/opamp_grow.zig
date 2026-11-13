@@ -23,11 +23,11 @@
 //! - opamp_grow.5 (habit) From a pin's node leftward: parts to a rail
 //!   stand upright beside it, the first series part lies level with the
 //!   node, the rest stack away from the block; from the output rightward
-//!   the same. People: 45% (the first series part level with the node).
-//!   `grow`
-//! - opamp_grow.6 (unmeasured) On the upper input's net, when the lower
-//!   input carries a signal, a part to ground lies flat in the input's row
-//!   instead of hanging upright. `grow`
+//!   the same. People: 212 of 235 parts to a rail stand upright (90.2%),
+//!   at either input as at any node: of the 61 to ground at an upper
+//!   input beside a lower one that carries a signal, 32; the first series
+//!   part at a pin lies flat in 163 of 177 and level with the pin in 120
+//!   (67.8%, a tendency). `grow`
 //! - opamp_grow.7 (choice) Of a node's series parts, the one nearest a
 //!   block still to be placed goes first, then the larger tree, then the
 //!   earlier card: one order, whatever the circuit. `grow`
@@ -68,8 +68,8 @@ const far = 99;
 const Step = struct { part: u32, near: u32, far: u32 };
 
 /// How a part of a node's row is treated: one that leads on, one that
-/// joins a node of an earlier group, a rail part lying flat.
-const Tag = enum { deeper, link, flat };
+/// joins a node of an earlier group.
+const Tag = enum { deeper, link };
 
 /// Places every block and part: the blocks in signal order, each on a
 /// group of its own unless an earlier one reached it, then whatever no
@@ -305,7 +305,6 @@ fn block(p: *Placer, d: u32, x: i32, y0: i32, away: i32) Allocator.Error!void {
         const bare = p.on[net].items.len == 0 and p.out_of[net] == none;
         if (p.rail[net] or bare) try p.canvas().wires.append(p.arena, .{ .x0 = pin[i].x - 70, .y0 = pin[i].y - 20, .x1 = pin[i].x - 30, .y1 = pin[i].y + @as(i32, if (p.rail[net]) 75 else 20) });
     }
-    if (ins.len == 2 and !p.rail[b.pins[ins[1]].net] and b.pins[ins[1]].net != onet) p.flat_shunt[b.pins[ins[0]].net] = true;
     // An input's tree: the upper pin's side is over the block (-1), the
     // lower pin's under it; `row` its next feedback row on that side.
     const Tree = struct { net: u32, at: P, side: i32, row: i32 };
@@ -419,7 +418,6 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
     const a = p.arena;
     const owner_out: u32 = if (owner != none) p.blocks[owner].?.pins[p.blocks[owner].?.out].net else none;
     var shunts: std.ArrayList(Link) = .empty;
-    var flat: std.ArrayList(Link) = .empty;
     var closing: std.ArrayList(Link) = .empty;
     var links: std.ArrayList(Link) = .empty;
     var near: std.ArrayList(Link) = .empty;
@@ -428,10 +426,7 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
     for (p.on[net].items) |l| {
         if (p.placed[l.part]) continue;
         if (p.rail[l.other]) {
-            // On the upper input's net, beside a lower input that carries a
-            // signal, a part to ground lies flat.
-            const lies = at_pin and d == -1 and p.flat_shunt[net] and !p.rail_up[l.other];
-            try (if (lies) &flat else &shunts).append(a, l);
+            try shunts.append(a, l);
             continue;
         }
         if (p.pending[l.other]) continue;
@@ -485,7 +480,6 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
     var row: std.ArrayList(Item) = .empty;
     for (keyed) |k| try row.append(a, .{ .l = k.l, .tag = .deeper });
     for (links.items) |l| try row.append(a, .{ .l = l, .tag = .link });
-    for (flat.items) |l| try row.append(a, .{ .l = l, .tag = .flat });
     for (row.items) |it| {
         const l = it.l;
         if (p.placed[l.part]) continue;
@@ -497,8 +491,6 @@ fn grow(p: *Placer, net: u32, at: P, side: i32, d: i32, owner: u32, at_pin: bool
         if (c.y == at.y) try p.wire(at, .{ .x = edge, .y = at.y });
         j += 1;
         switch (it.tag) {
-            // Its ground symbol's spot.
-            .flat => try p.canvas().wires.append(a, .{ .x0 = c.x - 120, .y0 = c.y - 20, .x1 = c.x - 50, .y1 = c.y + 75 }),
             .link => if (p.anch_cv[l.other] != p.cv and p.canvas().link == null) {
                 p.canvas().link = .{ .x = c.x + d * 50, .net = l.other };
             },
