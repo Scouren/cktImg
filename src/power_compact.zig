@@ -23,11 +23,18 @@
 //!   relation; equality already shares a track. All 359 source reservoirs
 //!   agree, including two level signals. Shifted caller symbol frames
 //!   require the transformed signal pin, not the device center.
+//! - power_compact.5 (habit, bounded) A selected flying-capacitor loop
+//!   retains its actual cap interval, downward drops, lower return and
+//!   divider orders. All 145 source groups obey these inequalities.
+//!   Preserve only initially true relations; explicit origins and turned
+//!   or hidden channel leads abstain. When both diode ends already fit
+//!   between the cap columns, retaining those orders also keeps its center
+//!   inside. No exact lower-row equality or output-branch order is added.
 //!
 //! Data: existing netlist/CSR, skeleton and schematic rows in; temporary
 //! x/y pairs of i32 coordinates out. Both pair fields are read together.
-//! A group table has one slot per drawn coil; x has six slots per group,
-//! y two per group plus each coil-end/main-gate incident candidate. Each is
+//! A group table has one slot per drawn coil; x has thirteen slots per group,
+//! y twelve per group plus each coil-end/main-gate incident candidate. Each is
 //! sized once, freed on return, and collected serially in graph order.
 //! The compactor owns coordinate writes; this pass only submits orders.
 //!
@@ -46,6 +53,7 @@ const pinned = @import("pinned.zig");
 const canvas = @import("canvas.zig");
 const compact = @import("compact.zig");
 const power_paths = @import("power_paths.zig");
+const power_loops = @import("power_loops.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -78,11 +86,11 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
         if (ats[members[0]] != null or ats[members[1]] != null or ats[members[2]] != null) continue;
         groups[count] = members;
         count += 1;
-        y_capacity += 2;
+        y_capacity += 12;
         for (controlNets(nl, members)) |net| y_capacity += c.incident(VertexId.from(net)).len;
     }
     assert(count <= coil_capacity);
-    const x_capacity = 6 * count;
+    const x_capacity = 13 * count;
     const xs = try gpa.alloc([2]i32, x_capacity);
     defer gpa.free(xs);
     const ys = try gpa.alloc([2]i32, y_capacity);
@@ -145,6 +153,54 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
                 xs[nx] = .{ x, hi };
                 nx += 1;
             }
+        }
+        const loop = power_loops.find(nl, s.roles, sk.drawn, members[1]) orelse continue;
+        const d = loop.devices;
+        const nets = loop.nets;
+        var ends: [10][2]Pt = undefined;
+        const compatible = for (d, 0..) |part, i| {
+            if (ats[part] != null) break false;
+            ends[i] = channel(s, nl, part) orelse break false;
+            const vertical = i == 4 or i >= 6;
+            if (vertical and ends[i][0].x != ends[i][1].x) break false;
+            if (!vertical and ends[i][0].y != ends[i][1].y) break false;
+        } else true;
+        if (!compatible) continue;
+        const near = ends[0][@intFromBool(nl.path(EdgeId.from(d[0])).?[0] != nets[1])];
+        const coil_in = ends[1][@intFromBool(nl.path(EdgeId.from(d[1])).?[0] != nets[1])];
+        const outer = ends[2][@intFromBool(nl.path(EdgeId.from(d[2])).?[0] != nets[3])];
+        const bottom = ends[3][@intFromBool(nl.path(EdgeId.from(d[3])).?[0] != nets[4])];
+        const fly_up = @intFromBool(nl.path(EdgeId.from(d[4])).?[0] != nets[1]);
+        const out_up = @intFromBool(nl.path(EdgeId.from(d[6])).?[0] != nets[3]);
+        const upper_r = @intFromBool(nl.path(EdgeId.from(d[8])).?[0] != nets[3]);
+        const lower_r = @intFromBool(nl.path(EdgeId.from(d[9])).?[0] != nets[6]);
+        const fly = [2]Pt{ ends[4][fly_up], ends[4][1 - fly_up] };
+        const out = [2]Pt{ ends[6][out_up], ends[6][1 - out_up] };
+        const divider = [4]Pt{ ends[8][upper_r], ends[8][1 - upper_r], ends[9][lower_r], ends[9][1 - lower_r] };
+        if (fly[0].y >= fly[1].y or out[0].y >= out[1].y or divider[0].y >= divider[1].y or divider[2].y >= divider[3].y) continue;
+        const toward_right = outer.x > near.x;
+        for ([_][2]i32{
+            .{ near.x, fly[0].x },       .{ fly[0].x, coil_in.x },
+            .{ bottom.x, fly[0].x },     .{ outer.x, out[0].x },
+            .{ outer.x, divider[0].x },  .{ fly[0].x, ends[5][1].x },
+            .{ ends[5][0].x, out[0].x },
+        }) |pair| {
+            const a = pair[@intFromBool(!toward_right)];
+            const b = pair[@intFromBool(toward_right)];
+            if (a >= b) continue;
+            xs[nx] = .{ a, b };
+            nx += 1;
+        }
+        for ([_][2]i32{
+            .{ row, fly[0].y },              .{ fly[1].y, bottom.y },
+            .{ row, out[0].y },              .{ out[1].y, ends[5][0].y },
+            .{ fly[1].y, ends[5][0].y },     .{ divider[1].y, divider[2].y },
+            .{ divider[3].y, ends[5][0].y }, .{ row, bottom.y },
+            .{ row, ends[5][0].y },          .{ row, divider[0].y },
+        }) |pair| {
+            if (pair[0] >= pair[1]) continue;
+            ys[ny] = pair;
+            ny += 1;
         }
     }
     assert(nx <= x_capacity);

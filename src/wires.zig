@@ -99,9 +99,15 @@
 //! - wires.19 (choice) A net joined by name that is all one part is named
 //!   at every pin: it was cut because its one wire crossed too much.
 //!   `parts`
+//! - wires.20 (habit, bounded) After rails claim their room, a certified
+//!   converter loop connects its selected local terminals before ordinary
+//!   nets. Its outside pins retain the normal port/name/wire choice.
+//!   All 145 selected source loops have seven continuous local trees with
+//!   no crossing between them; power_loop_wires.1 names the source audit.
+//!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -113,6 +119,8 @@ const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const netlines = @import("netlines.zig");
 const trunk = @import("trunk.zig");
+const power_loops = @import("power_loops.zig");
+const power_loop_wires = @import("power_loop_wires.zig");
 const NetLines = netlines.NetLines;
 
 const Side = library.Side;
@@ -169,8 +177,9 @@ const Drawn = enum(u8) {
 /// in step with it), `len` the drawing's lengths, `hidden` the points of
 /// pins drawn on their symbol with no wire. Asserts `lines` is
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
-/// symbols chosen, no input styled as a wire.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines) Allocator.Error!void {
+/// symbols chosen, no input styled as a wire. `loops` holds requests
+/// collected before automatic thinning, after explicit net instructions.
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -223,11 +232,22 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const drawn = try gpa.alloc(bool, n_nets);
     defer gpa.free(drawn);
     @memset(drawn, false);
+    const mates: []u32 = if (loops.len != 0 and mirror != null) try gpa.dupe(u32, mirror.?.net_mate) else &.{};
+    defer gpa.free(mates);
+    const own_mirror: ?routes.Mirror = if (mates.len != 0) .{ .axis2 = mirror.?.axis2, .net_mate = mates } else mirror;
+    const anchors: []u32 = if (loops.len != 0) try gpa.alloc(u32, n_nets) else &.{};
+    defer gpa.free(anchors);
+    @memset(anchors, sch.none);
+    var seeded = loops.len == 0;
     for (order) |net| {
+        if (!seeded and !s.roles[net].isRail()) {
+            try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
+            seeded = true;
+        }
         const pins = pins_of[net].items;
         if (pins.len == 0 or drawn[net]) continue;
         drawn[net] = true;
-        const axis2: ?i32 = if (mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
+        const axis2: ?i32 = if (own_mirror) |m| (if (m.net_mate[net] == net) m.axis2 else null) else null;
         const style = lines.style[net];
         if (routed[net]) {
             // The router joins its other pins to the pinned wire.
@@ -260,6 +280,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 try named.append(gpa, net);
             },
             .wire => {
+                if (s.roles[net] == .output and try power_loop_wires.output(&c, net, pins, if (anchors.len != 0) anchors[net] else sch.none)) continue;
                 const from = c.segs.items.len;
                 const pin_from = s.pins.len;
                 if (!try patterned(&c, net, pins, axis2, style)) {
@@ -268,14 +289,14 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 }
                 // Its mirror mate as the mirror image of its wire (routes.2;
                 // people 1,070 of 1,112 pairs).
-                const m = mirror orelse continue;
+                const m = own_mirror orelse continue;
                 const mate = m.net_mate[net];
                 if (mate == sch.none or mate == net or drawn[mate] or routed[mate] or lines.style[mate] != style or Drawn.of(s.roles[mate]) != .wire) continue;
                 drawn[mate] = try mirrorMate(&c, net, mate, pins, pins_of[mate].items, from, pin_from, m.axis2);
             },
         }
     }
-    try routes.draw(&c, waiting.items, pins_of, mirror);
+    try routes.draw(&c, waiting.items, pins_of, own_mirror, anchors);
     try joinRouted(&c, routed, pins_of);
     // On its top-left pin, so card order changes nothing.
     for (named.items) |net| if (!s.labeled[net]) {

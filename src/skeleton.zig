@@ -85,6 +85,7 @@ const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
+const loop_place = @import("loop_place.zig");
 const config = @import("config.zig");
 
 const Netlist = netlist.Netlist;
@@ -296,9 +297,11 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     gates(nl, roles, st, mate, drawn, form, x, gate_right);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
+    var loop_spans = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
+    defer loop_spans.deinit(gpa);
     const shelf = try arena.alloc(u32, n);
     @memset(shelf, 0);
-    try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts);
+    try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts, loop_spans.items);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
     const axis2: ?i32 = if (mated and mirrored) -2 * origin[0] else null;

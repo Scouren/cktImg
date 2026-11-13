@@ -278,7 +278,7 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
         if (deck.netsOf(@intCast(d)).len > 0 and syms.family.items[s] == .box and mem.indexOfScalar(u32, boxes.items, s) == null)
             try boxes.append(a, s);
     }
-    mem.sort(u32, boxes.items, {}, std.sort.asc(u32));
+    std.sort.heap(u32, boxes.items, {}, std.sort.asc(u32));
     for (boxes.items) |s| {
         try text.print(a, ".subckt b{d}", .{s});
         for (syms.pins(s), 1..) |pin, k| {

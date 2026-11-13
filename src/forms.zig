@@ -95,6 +95,12 @@
 //! - forms.21 (habit) A recognized converter path lies horizontally
 //!   through its switches and inductor. `power_paths` owns the conditional
 //!   topology and evidence; its inductor keeps that form in `crooked`.
+//! - forms.22 (habit, bounded) A complete flying-capacitor converter loop
+//!   has two upright floating capacitors: input coil node above the lower
+//!   node, and output above negative. Its divider stands downward and its
+//!   return diode stays flat through `crooked`. All 145 selected source
+//!   drawings agree. `power_loops` owns the topology, ambiguities and
+//!   evidence; caller form/end instructions still run afterward.
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -115,6 +121,7 @@ const relations = @import("relations.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
 const power_paths = @import("power_paths.zig");
+const power_loops = @import("power_loops.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -125,6 +132,8 @@ const Structure = structure.Structure;
 const Form = skeleton.Form;
 const Skeleton = skeleton.Skeleton;
 const none = structure.none;
+const LoopMember = power_loops.Member;
+const LoopNet = power_loops.Net;
 
 /// Drawn: not a driver (unless a `driver` line says) and with pins. Vertical: a transistor, a two-pin
 /// device on a rail, one in series (each of its nets holds one other
@@ -220,6 +229,14 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         if (device.isTransistor(kinds[d]) or ((on_rail or series or down or source) and !straddles)) f.* = .vertical;
     }
     try power_paths.classify(gpa, nl, roles, drawn, form);
+    for (kinds, 0..) |kind, coil| {
+        if (kind != .inductor) continue;
+        const group = power_loops.find(nl, roles, drawn, @intCast(coil)) orelse continue;
+        for ([_]LoopMember{ .fly, .output_cap, .upper_r, .lower_r }) |member| {
+            form[group.devices[@backingInt(member)]] = .vertical;
+        }
+        form[group.devices[@backingInt(LoopMember.diode)]] = .horizontal;
+    }
 }
 
 /// Each upright device's path ends, the one nearer the supply `upper`: a
@@ -249,6 +266,22 @@ pub fn ends(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []co
         assert(upper[d] != none and lower[d] != none);
         assert(upper[d] != lower[d]);
     }
+    for (kinds, 0..) |kind, coil| {
+        if (kind != .inductor) continue;
+        const group = power_loops.find(nl, roles, drawn, @intCast(coil)) orelse continue;
+        const members = [_]LoopMember{ .fly, .output_cap, .upper_r, .lower_r };
+        const tops = [_]LoopNet{ .input_near, .output, .output, .feedback };
+        for (members, tops) |member, top| {
+            const d = group.devices[@backingInt(member)];
+            if (form[d] != .vertical) continue;
+            const net = group.nets[@backingInt(top)];
+            const path = nl.path(EdgeId.from(d)).?;
+            assert(path[0] == net or path[1] == net);
+            upper[d] = net;
+            lower[d] = path[@intFromBool(path[0] == net)];
+            assert(upper[d] != lower[d]);
+        }
+    }
 }
 
 /// Marks in `stood` the flat two-pin parts of `sk` that cannot be wired
@@ -275,6 +308,14 @@ pub fn crooked(nl: *const Netlist, roles: []const Role, st: *const Structure, sk
     for (0..c.edgeCount()) |d| {
         if (!sk.drawn[d] or sk.form[d] != .horizontal or !isTwoEnded(nl, @intCast(d))) continue;
         if (power_paths.inductor(nl, roles, sk.drawn, @intCast(d))) continue;
+        if (c.edges.items(.kind)[d] == .diode) {
+            const loop_return = for (c.edges.items(.kind), 0..) |kind, coil| {
+                if (kind != .inductor) continue;
+                const group = power_loops.find(nl, roles, sk.drawn, @intCast(coil)) orelse continue;
+                if (group.devices[@backingInt(LoopMember.diode)] == d) break true;
+            } else false;
+            if (loop_return) continue;
+        }
         const a = c.members(EdgeId.from(d))[0].index();
         const b = c.members(EdgeId.from(d))[1].index();
         if (a == b or isRail(roles[a]) or isRail(roles[b]) or st.net_mate[a] == b) continue;

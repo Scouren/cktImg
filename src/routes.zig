@@ -21,7 +21,8 @@
 //! - routes.3 (choice) A routed net grows from its topmost (then leftmost)
 //!   pin, the unjoined pin nearest a joined one next (the upper on a tie),
 //!   each by the cheapest path to the net's wires so far: one fixed order,
-//!   so card order chooses nothing. `join`
+//!   so card order chooses nothing. A prewired local tree instead receives
+//!   every outside pin; no unconnected pin starts a second tree. `join`
 //! - routes.4 (invariant) A net stays one net: a pin no path reaches
 //!   carries the net's name, and then so does its first pin. `finish`
 //! - routes.5 (unmeasured) An output's port leaves from the topmost of
@@ -30,7 +31,7 @@
 //!
 //! Contents:
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
-//! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void`
+//! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror, anchors: []const u32) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
 //! - `pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool`
@@ -56,7 +57,12 @@ const none = sch.none;
 pub const Mirror = struct { axis2: i32, net_mate: []const u32 };
 
 /// Draws the `waiting` nets, in order; a mate waiting too goes with its net.
-pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror) Allocator.Error!void {
+/// `anchors` is empty or one existing-tree pin per net (`none` otherwise).
+/// Each anchor must be the last pin in its reduced `pins_of` row; preceding
+/// pins attach to its wires. Such nets must have no mirror mate.
+pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror, anchors: []const u32) Allocator.Error!void {
+    assert(pins_of.len == c.s.net_name.len);
+    assert(anchors.len == 0 or anchors.len == pins_of.len);
     const gpa = c.gpa;
     const done = try gpa.alloc(bool, pins_of.len);
     defer gpa.free(done);
@@ -70,6 +76,12 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
         const pins = pins_of[net].items;
         assert(pins.len >= 2);
         const mate = if (mirror) |m| m.net_mate[net] else none;
+        if (anchors.len != 0 and anchors[net] != none) {
+            assert(mate == none);
+            assert(pins[pins.len - 1] == anchors[net]);
+            try attach(c, net, pins[0 .. pins.len - 1], anchors[net]);
+            continue;
+        }
         if (mate == net and try halves(c, net, pins, mirror.?)) {
             try finish(c, net, pins[0], &.{});
             continue;
@@ -93,7 +105,7 @@ pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32
     }
 }
 
-/// Joins each of `pins` to `net`'s wires drawn so far (a pinned route),
+/// Joins each of `pins` to `net`'s wires drawn so far,
 /// the nearest first; a pin no path reaches gets a name, as does `anchor`
 /// (a pin on those wires) so the names join them; then an output's port.
 pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void {

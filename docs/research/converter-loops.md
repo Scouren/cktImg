@@ -1,9 +1,10 @@
 # Flying-capacitor converter loops
 
-Research only. This study proposes a complete local group around the existing
-PMOS–inductor–PMOS path. No engine change, hint experiment, or Zig build was made.
-The oracle is actual transformed SVG lead and conductor ink, followed by the
-source's observed terminal relations. Native geometry is frozen iteration 9.
+The engine now recognizes a bounded local group around the existing
+PMOS–inductor–PMOS path. Its oracle is actual transformed SVG lead and
+conductor ink, followed by the source's observed terminal relations. The
+committed inventory retains the frozen iteration 9 baseline; measured
+iteration 12 results and remaining differences are reported separately below.
 
 ## Electrical certificate
 
@@ -26,8 +27,10 @@ input-bus branch. Exactly one grounded capacitor on `out`, and exactly one
 two-resistor `out → feedback → ground` divider, complete the certificate.
 Feedback is another distinct nonrail net. The diode's anode is on `negative`;
 the reversed case is unobserved and is excluded, not declared an invalid
-circuit. Ambiguous members, repeated loops, shared admitted members, and
-ambiguous output branches abstain. Gates and bodies never substitute for
+circuit. Ambiguous members, repeated loops, shared complete candidates, and
+ambiguous output branches abstain before diode-polarity scope filtering.
+Reversing a competing loop's diode cannot hide its shared output branches.
+Gates and bodies never substitute for
 channel endpoints, including when a body shares a channel net.
 
 No instance name, net spelling beyond the established rail vocabulary, value,
@@ -82,6 +85,28 @@ one of the 145 drawings.** Each source spanning tree is Manhattan. There are
 zero proper crossings between these seven local trees in all 145 drawings.
 This is not a claim about crossings against remote control/bias wiring.
 
+The selected input-bus tree has exactly one vertical column in every source.
+It lies strictly left of both selected switch terminals in **141/145**;
+AG1267, AG1280, AG1312 and AG1345 put it directly on their shared terminal
+column. The `source_bus_spine` field retains the actual two terminal x values,
+verified local tree column and clearance for each drawing, with exact names
+in the summary. This follows the verified spanning ink after cache-only
+segments are removed; it does not infer a bus from device centers or labels.
+A leftward gap is a common preference with a known fallback, not a universal
+constraint or an established topology selector for the four exceptions.
+
+Each selected loop also has one grounded NMOS shunt whose ground channel
+terminal lies **strictly above the diode return row in all 145 drawings**.
+The `source_shunt_return` field retains its exact card, ground pin/net,
+coordinates, diode row, and actual SVG glyph endpoints. These are **435
+additional verified D/G/S leads**, separate from the original 3,335 loop
+leads. Selection reuses the existing qualified grounded-shunt predicate;
+the measurement uses actual transformed shunt and diode ink. The method
+check fixes AG1191:M4.S at `(320,420)` and the diode at y=530, and rejects a
+one-unit corruption of that cached ground lead. This proves terminal order;
+it does not measure the ground-symbol extent or guarantee space for an
+arbitrary configured native rail stub.
+
 Native 9 continuity, without treating labels or ports as physical wires:
 
 | Local net | Continuous source | Continuous native |
@@ -135,66 +160,95 @@ These minority arrangements have no proven topology selector yet. Record
 their geometric invariants and leave equality, gate direction, and output
 branch ordering as choices until a broader group supplies their condition.
 
-## Existing failure and bounded production ownership
+## Production ownership and safety
 
-The existing `power_paths.classify` selects the lower input-bus PMOS and
-the main path, but it does not select the two floating caps as a group.
-`forms.classify` starts offrail caps flat; `forms.crooked` may stand them up
-from incidental upright neighbors. `forms.ends` then uses rail distance to
-choose their upper net. That does not encode either capacitor's loop role.
-The six upright native floating output caps all have the opposite vertical
-polarity to the source. A cap-axis change alone cannot establish the loop.
+`power_loops.find` returns ten device handles and seven semantic net handles
+in a temporary 68-byte value. It shares the existing series-path and input-bus
+predicates. Local alternatives and complete groups sharing any member are
+counted before diode-polarity or grounded-extension scope filters. No source
+ID or drawing coordinate participates in recognition. A grounded capacitor
+on either main gate or coil-end net is unobserved in all 145 selected source
+groups, so that extension abstains before forms change; it remains a valid
+circuit for the ordinary layout path.
 
-`bridges.place` owns only the three-part main chain, selected grounded
-shunts, and controller placement; lower PMOS/diode/caps remain independently
-placed. `wrap.cutCost` and `power_compact.squeeze` protect the main path,
-selected controls, and grounded reservoirs. They have no floating-loop
-certificate. `sketch.drawValid` cuts internal nets crossing shelves, and
-`thin.name` may cut expensive wires later. `wires` also splits a distant
-input/bias into ports: protecting the input bus is not equivalent to setting
-an internal net's style to `wire`. Native continuity results are consistent
-with these mechanisms; no instrumented per-circuit attribution was run.
+`forms` puts the two floating capacitors and divider upright, with their
+semantic upper ends, and keeps the selected diode flat. Caller form and end
+relations run afterward. `loop_place` runs after placement relations, cells,
+and faces have been admitted. Compatible groups reserve the main row, cap
+drops, lower return, divider, and existing grounded shunts. Honoured
+row/above/order/cell/face requests, mates, or incompatible forms/ends prevent
+that group placement. Existing output-branch order is retained as a choice;
+it is not claimed to reproduce the source's three ordering families.
 
-A proposed implementation should submit one bounded request through these
-owners, rather than add unrelated exceptions:
+Placement searches disjoint horizontal row bands, with one clear row above
+and below, because supply bars can reach the loop from distant columns.
+Separated controls can remain above or below. `wrap` protects only spans
+returned by successful group placement, and retains existing row gaps on the
+shelf containing such a span. Sparse device cells cannot describe occupied
+rail-stub space: closing those gaps placed control supply stubs directly on
+the proposed return in AG1222 and 16 other selected cases. The two complete
+DUT clearance regressions, AG1222 and AG1349, require local continuity and
+no shorts in both compaction modes without prescribing a control side.
+The band margin and whole-shelf gap retention are conservative default
+placement choices, not guarantees for arbitrary configured rail lengths.
 
-1. A topology owner, for example `power_loops`, queries existing netlist,
-   role, drawn, and form rows and returns only the selected member handles
-   and semantic ends. It establishes uniqueness before any coordinate
-   write. Keep the three-part path's existing owner and avoid persistent
-   per-incidence state or a second netlist representation.
-2. `forms` admits both floating caps upright and gives their semantic upper
-   ends: input coil node for flying cap, output for output cap. Lower MOS
-   and diode remain flat. `relations.forms` and `relations.ends` already
-   run afterward, so explicit form/face instructions retain precedence.
-3. `bridges` places the whole loop around its main chain before ordinary
-   bridge placement can consume its members. Reserve actual-size room for
-   the lower channel and diode, cap columns, and an output divider column.
-   Use the inequalities above; same-row/column preferences remain soft.
-   Gate direction stays with its existing semantic owner. Later cell,
-   row/order, mate, face, and origin instructions retain precedence; an
-   incompatible admitted relation disables the affected group certificate.
-4. `wrap` protects the accepted local group's span, not every device on its
-   nets. `power_compact` submits only already-true actual-terminal orders:
-   flying-cap interval and vertical bounds, lower row below main, diode
-   below cap ends, output cap/divider beyond output main. It preserves
-   equal tracks without inventing strict order, and abstains for conflicting
-   caller origins or turned/offset symbol frames.
-5. A local wiring request seeds the selected terminal subsets through
-   reserved Manhattan channels: input bus at the left, main path at top,
-   cap drops, diode return below, output/divider at right. Validate actual
-   pins, bodies, rail stubs and existing caller routes through `Canvas`.
-   Use its checkpoint/restore to commit the whole local plan or none, then
-   attach other pins through existing routing. The bus remains an input
-   with a port; do not relax `netlines`' public input-style contract. Honor
-   explicit label/route/via/first/port requests. A local group can protect
-   its successful seed from automatic shelf cuts and thinning without
-   exempting unrelated branches or raising a global crossing budget.
+`power_compact` submits only already-true actual-terminal inequalities for
+the capacitor intervals and drops, lower return, and output divider. Shifted
+or tall caller symbols use transformed pins. Equal coordinates already share
+a compaction track; explicit origins and incompatible frames abstain. The
+compactor measures the actual scaffold's bodies and wires, including rail
+stubs, before reducing their spacing.
 
-The source geometry is compatible with the existing Manhattan C ABI and
-canvas representation. No diagonal extension is needed here. A failure to
-reserve or safely route the whole request must remain visible, not be counted
-as source equivalence because the four axes happen to match.
+`power_loop_wires` maps the seven selected terminal subsets onto existing
+pins and seeds their Manhattan trees after rails. Each projected routing
+point must equal its actual transformed terminal. `Canvas` checks pins,
+bodies, rail stubs, and prior wires; checkpoint/restore commits the whole
+local plan or none. Explicit wiring styles, routes, vias, and first-net order
+retain precedence. A successful local tree survives automatic thinning, while
+outside pins continue through the ordinary router using its recorded anchor.
+An outside branch may still use a named connection, and an input retains its
+port. An output keeps its whole tree's outer boundary for port placement.
+A later group sharing a seeded net retains all its terminals for ordinary
+routing; one anchor cannot stand for two disconnected local trees.
+
+The native C ABI and existing Manhattan representation are unchanged.
+A failure to reserve or safely route a complete tree remains visible and
+cannot count as equivalence because the symbol axes happen to match.
+
+## Measured iteration 12 checkpoint
+
+The frozen wrap snapshot (`cktimg-json` SHA-256
+`8e4dcdd30bfa92280db56c117789ceebe851f5413ee56ac11926d9a449e3a03f`)
+retains the exact 145 selected and 107 excluded source groups. All **22
+universal terminal relations now hold in all 145**, and every circuit has
+**all seven local connections continuous**. Reconstructed spanning trees
+have **zero proper crossings between these seven local trees**. This does
+not certify remote control wiring or source-equivalent branch ordering.
+All 17 remaining pre-wrap-fix failures also pass with compaction both off
+and on after preserving the reserved shelf gaps.
+Its WASM artifact is **559,658 bytes**, SHA-256
+`def3d992a8eb6909712453b6cc8c76c4c08077e189406df9e8337008e37de570`.
+
+The same snapshot preserves the previous exact cohorts: 252 main chains,
+365 shunts below the main path, 353 unique shunts inside their terminal
+interval, 359 grounded reservoirs upright/outside/at-or-below with ground
+below, 92 active drivers below, and all 75 block-output relations. Both
+107-device reservoir gate-direction cohorts retain source agreement.
+
+For these same 145 circuits, whole-circuit metrics change from frozen
+iteration 9 to this snapshot: crossings **562 → 464**, bends **3,534 → 2,696**.
+Crossings improve in 71 circuits and worsen in 52; bends improve in 115 and
+worsen in 18. These totals include remote wiring. A lower total is not a
+claim that every source arrangement improved.
+
+Known differences remain named by the source inventory. In this snapshot,
+all 145 native input buses use the shared terminal column, while 141 source
+buses stand strictly to its left. Divider-between-main-and-floating-cap
+agreement is **55/145**, down from **77/145** in the baseline; grounded-cap
+ordering agreement is **138/145**, up from **128/145**. Source row offsets,
+lower-gate directions, and minority output-branch arrangements remain
+separate from the universal inequalities. The checkpoint establishes a
+bounded improvement, not complete handwritten equivalence.
 
 ## Reproduction and acceptance evidence
 
@@ -202,6 +256,8 @@ as source equivalence because the four axes happen to match.
 python3 -B docs/research/figures/converter_loops.py external/examples/analoggenie /tmp/loops-ag.json --native /tmp/cktimg-human-rules/all-ag-iteration9
 python3 -B docs/research/figures/converter_loops.py external/examples/amsnet /tmp/loops-ams.json
 python3 -B docs/research/figures/converter_loops_checks.py
+python3 -B docs/research/figures/converter_loops.py external/examples/analoggenie /tmp/loops-native12.json --native /tmp/cktimg-human-rules/all-ag-iteration12-wrap --native-crossings
+python3 -B docs/research/figures/converter_loops_checks.py --native-crossings
 ```
 
 Compare the first two outputs with the `analoggenie` and `amsnet` inventory
@@ -210,13 +266,33 @@ prefixed by its eight-byte little-endian length. Per-file SVG/native hashes
 cover the actual evidence. The executable and both versions' report hashes
 are retained under `baseline_metrics`.
 
-The research checks pass 21 named cases: an independent six-net fixture,
+`--native-crossings` requires `--native`. It adds each native selected tree
+under `native_connections.*.spanning_ink_segments` and all 21 named tree
+pairs under `native_local_crossings`. A disconnected group records `null`
+for crossings; it cannot count as a zero-crossing success. In the frozen
+iteration 9 replay, only AG1210 has a complete result and the other 144
+remain unknown. All 145 iteration 12 groups have complete results with
+empty proper-intersection lists. Native segments come from the engine's
+exported physical wire table; source segments are separately verified
+against SVG ink. Remote branches outside the selected spanning trees are
+not part of this crossing count. Without the flag, AG/AMS reports and the
+30-method output remain byte-identical to the committed baseline evidence.
+
+The research checks pass 30 named cases: an independent six-net fixture,
 capacitor/channel pin reversal and card-order invariance; duplicate loop
 members, coil/main/output/divider ambiguity, reversed diode, rail or shorted
-loop nets, wrong switch polarity, and conducting control exclusions; a real
-T-junction, disconnected wire pieces, an off-ink target, and corrupted source
-lead rejection. Channel reversal checks selector symmetry, not electrical
-equivalence of asymmetric MOS models.
+loop nets, wrong switch polarity, and conducting control exclusions; grounded
+main-branch abstention with retained evidence; a real T-junction, disconnected
+wire pieces, an off-ink target, and corrupted source lead rejection. Three
+literal bus cases distinguish a strictly left column from a shared terminal
+column and a column between unequal terminal x values. Channel reversal
+checks selector symmetry, not electrical equivalence of asymmetric MOS models.
+The added cases retain a reversed-diode shared competitor in ambiguity
+counting, verify the literal shunt-ground/return relation, and reject a
+corrupted cached shunt ground lead against actual SVG ink.
+The optional crossing checks add three literal cases: an interior crossing,
+an endpoint contact that is not a proper crossing, and an incomplete tree
+whose crossing result remains unknown. All **33** optional method checks pass.
 
 For baseline context, these same 145 circuits have crossings **510 → 562**
 and bends **3,425 → 3,534** from frozen iteration 8 to 9. Crossings worsen in
@@ -225,9 +301,12 @@ experiment or attribution of changes to one rule. No axis-only patch or
 `cell`/`at` probe was run: such hints change global placement admission and
 wrapping, so they would not isolate the proposed group algorithm.
 
-A future implementation needs red/green end-to-end geometry and continuity
-checks against the exact 145-member inventory, the 107 AG exclusions and
-zero AMS admissions, caller override cases, real shifted/large symbol frames,
-and crossing/bend results. Preserve the named source exceptions above. The
-hand-drawn oracle must check continuous local wires, not labels that preserve
+The implementation's red/green regressions cover complete source DUTs,
+actual terminal geometry and seven physical local trees, compaction/shelves,
+capacitor pin reversal and PMOS body aliasing, shifted/tall and skewed custom
+symbols, caller overrides, shared-net routing, output-port boundaries, and
+local rail clearance. Selector tests retain ambiguous and unsupported cases,
+including a shared competitor with a reversed diode. The source inventory
+still names every selected/excluded case and every minority relation.
+The oracle checks continuous local wires independently of labels that preserve
 only electrical net identity.

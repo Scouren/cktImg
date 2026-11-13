@@ -760,3 +760,57 @@ All 24 changed drawings produce identical geometry and report bytes in
 serial and four-job runs. The plugin is 558,473 bytes, SHA-256
 `446d9d89fb4f131c58e897fafe6e12ee2c5b86d5e39bf24baf4e6a1ed2ac5a21`,
 and its repeated build is byte-identical.
+
+## Twelfth measured pass: complete local converter loops
+
+The frozen executable is
+`8e4dcdd30bfa92280db56c117789ceebe851f5413ee56ac11926d9a449e3a03f`.
+The [converter-loop study](converter-loops.md) supplies actual SVG endpoints
+and conductor trees for 145 uniquely recognized flying-capacitor groups.
+The engine now places their switches, capacitors, diode and divider together,
+reserves room across shelving, and commits seven local wire trees atomically.
+Outside terminals attach to a recorded successful tree anchor. Explicit
+geometry and wiring instructions retain precedence; incompatible actual
+symbol pins or occupied routes make the local wire transaction abstain.
+
+All **145/145** groups satisfy the 22 universal source terminal relations.
+All seven selected local nets are physically continuous in **145/145**,
+versus one in the frozen baseline. Their reconstructed minimal trees have
+zero proper crossings with each other. This excludes remote control wires.
+Exact earlier cohorts remain correct: 252 main paths, 365 shunts below,
+353 unique shunts within their main-to-coil interval, 359 reservoir capacitor
+orders, 92 driver orders, 75 controller alignments, and both 107-case
+reservoir gate policies. Source-variable branch order and bus clearance
+remain differences, separately retained in the study.
+
+Exactly 145 AnalogGenie drawings change; the other 2,057 and all 734 AMSNet
+drawings remain byte-identical. All drawings render with the same two source
+issues and no native gate findings. Total AG crossings fall from 4,901 to
+4,802 and bends from 24,209 to 23,372. **52 drawings gain crossings**;
+these named regressions remain in the frozen comparison. Physical axis
+agreement improves for 245 devices with no axis regressions. Physical
+vertical gate direction improves for 549 devices and regresses for 513;
+one changed gate matches neither source direction. The regressions are
+outside the selected loop devices and shunts. Promoted forms affect column
+ordering before the existing gate-facing pass; AG1194's reordered
+MN1/MN2 pair confirms that mechanism against actual source leads. Physical
+block flow is unchanged. The partial all-relation score remains
+**289/2,202**, with no gained or lost names. This is not visual equivalence.
+
+Regressions reproduce remote split nets, hidden custom terminals, shared
+bus groups and rail collisions before the fixes. Both test configurations
+pass: 338 without LaTeX and 339 with it, together with 4,000 fuzz cases,
+formatting and unchanged legacy style findings. All 31 gallery SVGs remain
+byte-identical; representative gallery views and final AG1191, 1222, 1316
+and 1349 layouts were inspected. The full fixture suite retains 98 exact
+comparisons and the same two capacity refusals. All 252 converter decks
+round-trip through the release host with 428 exact subcircuits; six selected
+decks also pass the current host with 12 exact subcircuits.
+
+Seven bare-value sort substitutions reduce the initial over-limit plugin
+by 15,302 bytes. Full 2,956-drawing before/after comparisons prove identical
+geometry, reports and scores for that isolated change; no speed claim is
+made. The final plugin is 559,658 bytes, SHA-256
+`def3d992a8eb6909712453b6cc8c76c4c08077e189406df9e8337008e37de570`.
+Its repeated build is byte-identical. All 145 changed drawings also reproduce
+identical geometry and report bytes in serial and four-job runs.

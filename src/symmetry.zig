@@ -267,7 +267,7 @@ fn initialColours(gpa: Allocator, nl: *const Netlist, roles: []const Role, g: Gr
     // The distinct keys, sorted; a vertex's colour is its key's place.
     const distinct = try gpa.dupe(u64, key);
     defer gpa.free(distinct);
-    std.mem.sort(u64, distinct, {}, std.sort.asc(u64));
+    std.sort.heap(u64, distinct, {}, std.sort.asc(u64));
     var m: usize = 0;
     for (distinct, 0..) |k, i| {
         if (i > 0 and k == distinct[m - 1]) continue;
@@ -344,7 +344,7 @@ fn refine(gpa: Allocator, g: Graph, colour: []u32) !void {
         for (0..n) |v| {
             const r = sig[g.off[v]..g.off[v + 1]];
             for (r, g.off[v]..) |*x, k| x.* = @as(u64, g.label[k]) << 32 | colour[g.to[k]];
-            std.mem.sort(u64, r, {}, std.sort.asc(u64));
+            std.sort.heap(u64, r, {}, std.sort.asc(u64));
         }
         for (order, 0..) |*o, v| o.* = @intCast(v);
         const ctx: SigOrder = .{ .g = g, .colour = colour, .sig = sig };
@@ -461,8 +461,8 @@ fn preservesPins(gpa: Allocator, g: Graph, sigma: []const u32) !bool {
         theirs.clearRetainingCapacity();
         for (g.off[d]..g.off[d + 1]) |k| try mine.append(gpa, @as(u64, g.label[k]) << 32 | sigma[g.to[k]]);
         for (g.off[e]..g.off[e + 1]) |k| try theirs.append(gpa, @as(u64, g.label[k]) << 32 | g.to[k]);
-        std.mem.sort(u64, mine.items, {}, std.sort.asc(u64));
-        std.mem.sort(u64, theirs.items, {}, std.sort.asc(u64));
+        std.sort.heap(u64, mine.items, {}, std.sort.asc(u64));
+        std.sort.heap(u64, theirs.items, {}, std.sort.asc(u64));
         if (!std.mem.eql(u64, mine.items, theirs.items)) return false;
     }
     return true;

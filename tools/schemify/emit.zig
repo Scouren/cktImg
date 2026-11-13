@@ -191,7 +191,7 @@ const Writer = struct {
     fn finish(w: *Writer, name: []const u8, shared: bool) Allocator.Error!OutFile {
         const keys = try w.a.alloc(u64, w.recs.items.len);
         for (keys, w.recs.items) |*k, r| k.* = r.key;
-        mem.sort(u64, keys, {}, std.sort.asc(u64));
+        std.sort.heap(u64, keys, {}, std.sort.asc(u64));
         var out = w.header;
         var prev: []const u8 = "schemify";
         for (keys) |k| {

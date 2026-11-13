@@ -142,7 +142,7 @@ pub fn check(gpa: Allocator, p: *const Placed, lib: *const Library, rules: Rules
             if (std.mem.indexOfScalar(u32, seen.items, l.net) != null) continue;
             try seen.append(gpa, l.net);
         }
-        std.mem.sort(u32, seen.items, {}, std.sort.asc(u32));
+        std.sort.heap(u32, seen.items, {}, std.sort.asc(u32));
         for (seen.items) |n| try out.append(gpa, .{ .rule = .label_fallback, .severity = rules.label_fallback, .net = n });
     }
     return out.toOwnedSlice(gpa);

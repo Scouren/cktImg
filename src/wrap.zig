@@ -29,7 +29,8 @@
 //! - wrap.6 (choice) Shelves stand `shelf_gap` (6) lattice rows apart, and
 //!   a shelf's rows that only another shelf's columns filled are closed
 //!   up: the shelves are read off the cells, so the engine's own decisions
-//!   pasted back give the shelves they came from. `shelves`
+//!   pasted back give the shelves they came from. A shelf containing a
+//!   placed converter loop retains its reserved row gaps. `shelves`
 //! - wrap.7 (habit, bounded) A certified converter's main PMOS–coil–PMOS
 //!   path and its required grounded shunts and active gate drivers stay
 //!   on one shelf. A cut must not undo their channel order or put the
@@ -42,9 +43,20 @@
 //!   main switch away from the coil; separate shelves can reverse that x
 //!   order and put the capacitor above the path. Preserve existing cap
 //!   columns and admitted rows/mates. `cutCost`, `power_paths.reservoir`
+//! - wrap.9 (habit, bounded) A successfully placed flying-capacitor loop
+//!   stays on one shelf. All 145 selected source groups keep its seven
+//!   local nets continuous. The placement pass supplies only spans whose
+//!   members accepted the group layout; caller-constrained groups do not
+//!   acquire this protection. Preserve that shelf's existing row gaps:
+//!   sparse cell rows cannot reveal the supply stubs and bars occupying
+//!   reserved room beside the lower return. AG1222 and 16 other selected
+//!   cases lose their local tree when these gaps close before routing.
+//!   Keeping the whole shelf's gaps is a conservative placement choice;
+//!   later compaction measures actual ink and symbol clearance.
+//!   `loop_place.place`, `cut`, `cutCost`
 //!
 //! Contents:
-//! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void`
+//! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict, protected: []const [2]i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -75,11 +87,13 @@ const shelf_gap = 6;
 /// each device's mirror image, or `none`: a pair is never parted.
 /// Relation verdicts must already contain their admission results;
 /// honoured relation arguments must name drawn devices.
-pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict) Allocator.Error!void {
+/// No cut crosses an inclusive x interval in `protected`; shelves holding
+/// those intervals retain their existing row gaps.
+pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict, protected: []const [2]i32) Allocator.Error!void {
     const n = nl.graph.edgeCount();
     assert(drawn.len == n and form.len == n and mate.len == n);
     assert(x.len == n and y.len == n and shelf.len == n);
-    try cut(gpa, nl, roles, drawn, form, mate, columns, x, y, verdicts);
+    try cut(gpa, nl, roles, drawn, form, mate, columns, x, y, verdicts, protected);
     // Shelves are read off the cells, so cells a deck's lines pin (the
     // engine's own decisions pasted back) give the shelves they came from.
     const rows = try gpa.alloc(i32, n);
@@ -102,7 +116,7 @@ pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: [
 // ---- private ----
 
 /// Cuts the row of columns and moves each shelf under the one before.
-fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, verdicts: []?hints.Verdict) Allocator.Error!void {
+fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, verdicts: []?hints.Verdict, protected: []const [2]i32) Allocator.Error!void {
     const n = nl.graph.edgeCount();
     assert(verdicts.len == nl.hints.len);
     // The deck's `*@ shelf <columns|off>` lines, the preferred one last.
@@ -153,7 +167,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         var best: ?usize = null;
         var best_cost: u64 = std.math.maxInt(u64);
         for (@max(first + 1, ideal -| slack)..@min(cols, ideal + slack + 1)) |j| {
-            const cost = cutCost(nl, roles, drawn, form, mate, x, verdicts, col[first], col[j]) orelse continue;
+            const cost = cutCost(nl, roles, drawn, form, mate, x, verdicts, protected, col[first], col[j]) orelse continue;
             // Fewest nets cut, then nearest its place.
             const key = (@as(u64, cost) << 32) | @abs(@as(i64, @intCast(j)) - @as(i64, @intCast(ideal)));
             if (key < best_cost) {
@@ -177,6 +191,10 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
     const rows = try gpa.alloc(i32, n);
     defer gpa.free(rows);
     for (0..count) |s| {
+        const reserved = for (protected) |span| {
+            if (shelfOf(starts.items, span[0]) == s) break true;
+        } else false;
+        if (reserved) continue;
         var held: usize = 0;
         for (0..n) |d| if (drawn[d] and shelfOf(starts.items, x[d]) == s) {
             rows[held] = y[d];
@@ -248,10 +266,14 @@ fn shelfOf(starts: []const i32, x: i32) usize {
 /// cut would reverse an honoured `above` pair or part a device from its
 /// mate, an honoured `row`/`order` group, or a certified power path from its required
 /// controls (their existing row/order relation would no longer hold).
-fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []const i32, verdicts: []const ?hints.Verdict, from: i32, at: i32) ?u32 {
+fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, x: []const i32, verdicts: []const ?hints.Verdict, protected: []const [2]i32, from: i32, at: i32) ?u32 {
     const c = &nl.graph;
     assert(from < at);
     assert(verdicts.len == nl.hints.len);
+    for (protected) |span| {
+        assert(span[0] <= span[1]);
+        if (span[0] < at and span[1] >= at) return null;
+    }
     for (mate, 0..) |m, d| {
         if (m == none or !drawn[d] or !drawn[m]) continue;
         if ((x[d] < at) != (x[m] < at)) return null;

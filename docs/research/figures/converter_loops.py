@@ -2,6 +2,7 @@
 """Flying-capacitor converter loops: topology, actual ink and native geometry.
 
 Usage: converter_loops.py <examples-dir> <output.json> [--native <json-dir>]
+                         [--native-crossings]
 
 The existing unique PMOS/coil/PMOS path has an input-bus end and an output
 reservoir end. A second selected input-bus PMOS joins the lower flying-cap
@@ -15,8 +16,10 @@ Selection reads only the deck, including existing model/rail rules. Every
 studied lead is checked against actual SVG primitives; cached rotations
 are not an oracle. Actual conductor ink verifies source wires before
 continuity is measured. Names, exact exceptions and hashes are retained.
-This is research, not an implemented group or evidence of routing success.
-Related converter variants are correlated, including the numeric holdout.
+Optional native crossings retain selected spanning trees and their mutual
+proper intersections; a disconnected tree leaves crossings unknown. Default
+output preserves the frozen baseline inventory. Related converter variants
+are correlated, including the numeric holdout.
 """
 import argparse
 import collections
@@ -100,14 +103,30 @@ def select(text):
         group.update(grounded_candidates=caps, divider_candidates=dividers)
         if len(caps) != 1 or len(dividers) != 1:
             group["reason"] = "missing_or_ambiguous_output_branches"
-        elif not group["diode_anode_negative"]:
-            group["reason"] = "opposite_diode_polarity_unobserved"
         else:
             group.update(admitted=True, grounded_cap=caps[0], divider=dividers[0])
     owners = collections.Counter(name for row in groups if row["admitted"] for name in members(row))
     for row in groups:
         if row["admitted"] and any(owners[name] > 1 for name in members(row)):
             row.update(admitted=False, reason="overlapping_loop_groups")
+    for row in groups:
+        if row["admitted"] and not row["diode_anode_negative"]:
+            row.update(admitted=False, reason="opposite_diode_polarity_unobserved")
+    # Retain the exact absent/present branches before applying this scope
+    # bound. None occurs in the 145 source groups. A grounded capacitor on
+    # a main gate or either coil net is not an outer output reservoir, and
+    # the observed group gives no height rule for that extra branch.
+    for row in groups:
+        if not row["admitted"]:
+            continue
+        watched = {row["nets"][key] for key in ("input_near", "output_near")}
+        watched.update(cards[name][2] for name in row["main"])
+        branches = [dict(card=name, net=net, ground=other(name, net))
+                    for name, card in sorted(cards.items()) if name[0] == "c"
+                    for net in card[1:3] if net in watched and rail(other(name, net)) == "sink"]
+        row["grounded_main_branches"] = branches
+        if branches:
+            row.update(admitted=False, reason="grounded_main_branch_unobserved")
     return groups
 
 
@@ -193,6 +212,27 @@ def actual(root, device, coils):
     return dict(object=s["object"], terminals=points)
 
 
+def shunt_return(root, devices, row, shunts):
+    """Verified shunt ground leads relative to the verified diode channel.
+
+    This measures terminal clearance, not the ground symbol's ink extent
+    or the engine's configured rail stub. Neither follows from this fact.
+    """
+    diode_y = min(p[1] for p in row["source_glyphs"][row["diode"]]["terminals"].values())
+    result = []
+    for shunt in shunts:
+        device = devices[shunt["card"]]
+        verified = actual_glyph(root, device)
+        grounds = [pin for pin in ("D", "S") if power.MOS.rail(device["nets"][pin]) == "sink"]
+        if len(grounds) != 1:
+            raise ValueError("selected shunt has no unique ground channel lead")
+        ground = grounds[0]
+        point = verified["terminals"][ground]
+        result.append(dict(card=shunt["card"], ground_pin=ground, ground_net=device["nets"][ground],
+                           ground_xy=point, diode_y=diode_y, above=point[1] < diode_y, svg_glyph=verified))
+    return result
+
+
 def wire_tree(segments, targets):
     """Wire endpoints and T-junctions form a graph; labels never join pieces."""
     points = {tuple(p) for segment in segments for p in segment} | {tuple(p) for p in targets}
@@ -227,7 +267,7 @@ def wire_tree(segments, targets):
     return [[list(a), list(b)] for a, b in sorted(tree)]
 
 
-def connections(row, drawing, devices, ink=None, native=False):
+def connections(row, drawing, devices, ink=None, native=False, retain_tree=False):
     n = row["nets"]
     incoming, outgoing = row["main"]
     r1, r2 = row["divider"]["resistors"]
@@ -254,8 +294,36 @@ def connections(row, drawing, devices, ink=None, native=False):
         if not native:
             result[role]["verified_ink_segments"] = segments
             result[role]["cache_segments_without_ink"] = missing
+        if not native or retain_tree:
             result[role]["spanning_ink_segments"] = tree
     return result
+
+
+def local_crossings(connections):
+    """Named proper intersections between complete selected spanning trees.
+
+    A disconnected tree leaves the result unknown, never an empty success.
+    This excludes remote branches and is not a whole-circuit crossing count.
+    """
+    trees = {role: connection["spanning_ink_segments"] for role, connection in connections.items()}
+    if any(tree is None for tree in trees.values()):
+        return None
+    return {a + "/" + b: crossings(trees[a], trees[b]) for a, b in itertools.combinations(sorted(trees), 2)}
+
+
+def bus_spine(connection):
+    """The local bus tree's actual vertical column relative to its two pins."""
+    segments = connection["spanning_ink_segments"] or []
+    columns = sorted({a[0] for a, b in segments if a[0] == b[0] and a[1] != b[1]})
+    terminals = [target["xy"][0] for target in connection["targets"]]
+    relation = "disconnected" if not connection["continuous"] else "multiple_or_absent_columns"
+    clearance = None
+    if connection["continuous"] and len(columns) == 1:
+        clearance = min(terminals) - columns[0]
+        relation = ("strictly_left_of_both" if clearance > 0 else
+                    "on_shared_terminal_column" if all(x == columns[0] for x in terminals) else "other")
+    return dict(vertical_columns=columns, terminal_columns=terminals,
+                left_clearance=clearance, relation=relation)
 
 
 def summarize(rows):
@@ -271,6 +339,14 @@ def summarize(rows):
         result[field] = {key: dict(continuous=sum(r[field][key]["continuous"] for r in values),
                                    exceptions=[r["id"] + ":" + r[field][key]["net"] for r in values if not r[field][key]["continuous"]])
                          for key in values[0][field]} if values else {}
+    relations = sorted({r["source_bus_spine"]["relation"] for r in rows})
+    result["source_bus_spine"] = {relation: dict(count=sum(r["source_bus_spine"]["relation"] == relation for r in rows),
+                                                names=[r["id"] + ":" + r["coil"] for r in rows if r["source_bus_spine"]["relation"] == relation])
+                                    for relation in relations}
+    shunts = [(r["id"] + ":" + s["card"], s) for r in rows for s in r["source_shunt_return"]]
+    result["source_shunt_return"] = dict(names=[name for name, _ in shunts],
+                                          above=[name for name, s in shunts if s["above"]],
+                                          exceptions=[name for name, s in shunts if not s["above"]])
     return result
 
 
@@ -279,7 +355,11 @@ def main():
     parser.add_argument("examples", type=Path)
     parser.add_argument("output", type=Path)
     parser.add_argument("--native", type=Path)
+    parser.add_argument("--native-crossings", action="store_true",
+                        help="Retain native local spanning trees and named mutual proper intersections")
     args = parser.parse_args()
+    if args.native_crossings and not args.native:
+        parser.error("--native-crossings requires --native")
     paths = sorted(args.examples.glob("*.human.json"))
     if not paths:
         raise ValueError("no paired source drawings")
@@ -301,6 +381,7 @@ def main():
         if accepted:
             root = ET.parse(svg).getroot()
             coils, ink = list(glyphs(root)), conductor_ink(root)
+            selected_mos, coil_ends = power.classify(deck.read_text())
         for p in (hp, deck, svg):
             hashes[p.name] = hashlib.sha256(p.read_bytes()).hexdigest()
         native = None
@@ -319,17 +400,21 @@ def main():
             for name, verified in row["source_glyphs"].items():
                 devices[name]["terminals"].update(verified["terminals"])
             row["source_geometry"] = geometry(row, devices)
+            chain = power.chain(human, devices, selected_mos, row["coil"], coil_ends[row["coil"]])
+            shunts = power.controls(human, devices, selected_mos, [], coil_ends[row["coil"]], chain)[2]
+            row["source_shunt_return"] = shunt_return(root, devices, row, shunts)
             row["source_connections"] = connections(row, human, devices, ink)
-            connections_ = row["source_connections"]
-            row["source_local_crossings"] = ({a + "/" + b: crossings(connections_[a]["spanning_ink_segments"], connections_[b]["spanning_ink_segments"])
-                                               for a, b in itertools.combinations(sorted(connections_), 2)}
-                                              if all(v["continuous"] for v in connections_.values()) else None)
+            row["source_bus_spine"] = bus_spine(row["source_connections"]["bus"])
+            row["source_local_crossings"] = local_crossings(row["source_connections"])
             if native:
                 row["native_geometry"] = geometry(row, nd, True)
-                row["native_connections"] = connections(row, native, nd, native=True)
+                row["native_connections"] = connections(row, native, nd, native=True, retain_tree=args.native_crossings)
+                if args.native_crossings:
+                    row["native_local_crossings"] = local_crossings(row["native_connections"])
             selected.append(row)
     output = dict(corpus=args.examples.name, paired_circuits=len(paths), paired_sha256=paired.hexdigest(), summary=summarize(selected),
                   verified_terminals=sum(len(g["terminals"]) for r in selected for g in r["source_glyphs"].values()),
+                  verified_shunt_terminals=sum(len(s["svg_glyph"]["terminals"]) for r in selected for s in r["source_shunt_return"]),
                   selected=selected, excluded=excluded, source_sha256=hashes, native_sha256=native_hashes)
     args.output.write_text(json.dumps(output, indent=2, sort_keys=True) + "\n")
     print(json.dumps({k: output[k] for k in ("corpus", "paired_circuits", "verified_terminals")} | {"cells": len(selected), "excluded": len(excluded)}))

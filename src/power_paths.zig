@@ -76,6 +76,8 @@
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []Form) Allocator.Error!void`
 //! - `pub fn inductor(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) bool`
+//! - `pub fn seriesTopology(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) ?[3]u32`
+//! - `pub fn inputBus(nl: *const Netlist, roles: []const Role, drawn: []const bool, net: u32) bool`
 //! - `pub fn series(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32`
 //! - `pub fn controlBounds(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, coordinates: []const i32) ?[2]i32`
 //! - `pub fn control(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, members: [3]u32, d: u32) bool`
@@ -174,29 +176,18 @@ pub fn series(nl: *const Netlist, roles: []const Role, drawn: []const bool, form
     const c = &nl.graph;
     assert(d < c.edgeCount() and form.len == c.edgeCount());
     assert(roles.len == c.vertexCount() and drawn.len == c.edgeCount());
-    if (!drawn[d] or form[d] != .horizontal) return null;
-    const e = EdgeId.from(d);
-    var group: ?[3]u32 = null;
-    if (c.edges.items(.kind)[d] == .inductor) {
-        group = pairAt(nl, roles, drawn, form, d);
-    } else if (pmos(nl, roles, e)) {
-        for (nl.path(e).?) |net| for (c.incident(VertexId.from(net))) |coil| {
-            const candidate = pairAt(nl, roles, drawn, form, coil.index()) orelse continue;
-            if (candidate[0] != d and candidate[2] != d) continue;
-            if (group) |old| if (old[1] != candidate[1]) return null;
-            group = candidate;
-        };
-    }
-    const chosen = group orelse return null;
-    // A coil-first visit must reject ambiguity just as a MOS-first one does.
-    for ([_]u32{ chosen[0], chosen[2] }) |mos| for (nl.path(EdgeId.from(mos)).?) |net| {
-        for (c.incident(VertexId.from(net))) |coil| {
-            if (coil.index() == chosen[1]) continue;
-            const other = pairAt(nl, roles, drawn, form, coil.index()) orelse continue;
-            if (other[0] == mos or other[2] == mos) return null;
-        }
-    };
-    return chosen;
+    return seriesGiven(nl, roles, drawn, form, d);
+}
+
+/// The same selected main path without form filtering. Ambiguous coils
+/// and switches remain ambiguous even if a caller later turns one upright.
+/// `d` is an existing device; drawn and role rows span their graph tables.
+/// Reads existing CSR rows and returns only three handles, without allocation.
+pub fn seriesTopology(nl: *const Netlist, roles: []const Role, drawn: []const bool, d: u32) ?[3]u32 {
+    const c = &nl.graph;
+    assert(d < c.edgeCount() and drawn.len == c.edgeCount());
+    assert(roles.len == c.vertexCount());
+    return seriesGiven(nl, roles, drawn, null, d);
 }
 
 /// The minimum and maximum of `coordinates` among upright grounded
@@ -347,11 +338,59 @@ pub fn reservoir(nl: *const Netlist, roles: []const Role, drawn: []const bool, f
     return if (form[d] == .vertical) d else null;
 }
 
+/// Whether every drawn current path on `net` is a distinct-channel PMOS
+/// with gate-only control. Side pins do not count as paths. This predicate
+/// alone neither requires a path nor proves coil reachability; callers
+/// provide the incident main PMOS from their selected series certificate.
+/// All rows span their graph tables and `net` is an existing net.
+pub fn inputBus(nl: *const Netlist, roles: []const Role, drawn: []const bool, net: u32) bool {
+    const c = &nl.graph;
+    assert(net < c.vertexCount() and roles.len == c.vertexCount());
+    assert(drawn.len == c.edgeCount());
+    for (c.incident(VertexId.from(net))) |e| {
+        if (!drawn[e.index()]) continue;
+        const ends = nl.path(e) orelse continue;
+        if (ends[0] != net and ends[1] != net) continue;
+        if (!pmos(nl, roles, e) or !gateOnly(nl, @intCast(c.members(e)[1].index()))) return false;
+    }
+    // The caller's PMOS is a path on this bus and reaches the tested coil.
+    return true;
+}
+
 // ---- private ----
 
-fn pairAt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, d: u32) ?[3]u32 {
+fn seriesGiven(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: ?[]const Form, d: u32) ?[3]u32 {
     const c = &nl.graph;
-    if (form[d] != .horizontal or !inductor(nl, roles, drawn, d)) return null;
+    if (!drawn[d]) return null;
+    if (form) |fs| if (fs[d] != .horizontal) return null;
+    const e = EdgeId.from(d);
+    var group: ?[3]u32 = null;
+    if (c.edges.items(.kind)[d] == .inductor) {
+        group = pairAt(nl, roles, drawn, form, d);
+    } else if (pmos(nl, roles, e)) {
+        for (nl.path(e).?) |net| for (c.incident(VertexId.from(net))) |coil| {
+            const candidate = pairAt(nl, roles, drawn, form, coil.index()) orelse continue;
+            if (candidate[0] != d and candidate[2] != d) continue;
+            if (group) |old| if (old[1] != candidate[1]) return null;
+            group = candidate;
+        };
+    }
+    const chosen = group orelse return null;
+    // A coil-first visit must reject ambiguity just as a MOS-first one does.
+    for ([_]u32{ chosen[0], chosen[2] }) |mos| for (nl.path(EdgeId.from(mos)).?) |net| {
+        for (c.incident(VertexId.from(net))) |coil| {
+            if (coil.index() == chosen[1]) continue;
+            const other = pairAt(nl, roles, drawn, form, coil.index()) orelse continue;
+            if (other[0] == mos or other[2] == mos) return null;
+        }
+    };
+    return chosen;
+}
+
+fn pairAt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: ?[]const Form, d: u32) ?[3]u32 {
+    const c = &nl.graph;
+    if (form) |fs| if (fs[d] != .horizontal) return null;
+    if (!inductor(nl, roles, drawn, d)) return null;
     var pair: [3]u32 = .{ 0, d, 0 };
     for (nl.path(EdgeId.from(d)).?, 0..) |net, side| {
         var found: ?u32 = null;
@@ -366,7 +405,7 @@ fn pairAt(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []
             found = e.index();
         }
         const mos = found orelse return null;
-        if (form[mos] != .horizontal) return null;
+        if (form) |fs| if (fs[mos] != .horizontal) return null;
         pair[2 * side] = mos;
     }
     if (pair[0] == pair[2]) return null;
@@ -455,18 +494,6 @@ fn capacitor(nl: *const Netlist, roles: []const Role, drawn: []const bool, net: 
     return false;
 }
 
-fn inputBus(nl: *const Netlist, roles: []const Role, drawn: []const bool, net: u32) bool {
-    const c = &nl.graph;
-    for (c.incident(VertexId.from(net))) |e| {
-        if (!drawn[e.index()]) continue;
-        const ends = nl.path(e) orelse continue;
-        if (ends[0] != net and ends[1] != net) continue;
-        if (!pmos(nl, roles, e) or !gateOnly(nl, @intCast(c.members(e)[1].index()))) return false;
-    }
-    // The caller's PMOS is a path on this bus and reaches the tested coil.
-    return true;
-}
-
 test "power paths: a series certificate rejects parallel choices, shared coils, and upright members" {
     // Oracle: the graph's unique three-part path, named independently of
     // traversal order. Body aliases repeat incidences but not devices.
@@ -497,7 +524,12 @@ test "power paths: a series certificate rejects parallel choices, shared coils, 
             if (got) |parts| try std.testing.expectEqualSlices(u32, &want, &parts);
         }
         form[want[0]] = .vertical;
-        for (want) |d| try std.testing.expect(series(&nl, roles, drawn, form, d) == null);
+        for (want) |d| {
+            try std.testing.expect(series(&nl, roles, drawn, form, d) == null);
+            const topology = seriesTopology(&nl, roles, drawn, d);
+            try std.testing.expectEqual(case[1], topology != null);
+            if (topology) |parts| try std.testing.expectEqualSlices(u32, &want, &parts);
+        }
     }
 }
 
