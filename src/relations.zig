@@ -373,7 +373,8 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     const kinds = c.edges.items(.kind);
     const n = c.edgeCount();
     // The preferred line wins: applied last. Then mirror onto unnamed mates.
-    for (nl.hints, 0..) |h, i| {
+    for (try hints.applyOrder(arena, nl.hints)) |i| {
+        const h = nl.hints[i];
         if (h.verb != .face) continue;
         if (verdicts[i] != null) continue; // an end's, or rejected
         if (h.args.len != 3) {

@@ -173,6 +173,20 @@ test "lines: face turns a gate, and its mate turns the mirror way" {
     try std.testing.expect(r.pin(right, 1).x < r.at(right).x);
 }
 
+test "lines: a strong face line beats a later weak one" {
+    // Oracle: the line order contract of src/hints.zig (hints.2): a strong
+    // line outranks a stay (`weak`) wherever the two stand in the deck.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const base = try run(f.arena(), f.lib, ota, "");
+    // The pair's gates face out: the left one's to the left.
+    const left = if (base.at("m1").x < base.at("m2").x) "m1" else "m2";
+    try std.testing.expect(base.pin(left, 1).x < base.at(left).x);
+    const lines = try std.fmt.allocPrint(f.arena(), "*@ face {s} g right\n*@ weak face {s} g left\n", .{ left, left });
+    const r = try run(f.arena(), f.lib, ota, lines);
+    try std.testing.expect(r.pin(left, 1).x > r.at(left).x);
+}
+
 test "lines: order splits a column the engine would make, and keeps the sides it asks" {
     var f = try Fixture.init();
     defer f.deinit();
