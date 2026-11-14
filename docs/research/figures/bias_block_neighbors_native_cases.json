@@ -1,0 +1,220 @@
+{
+  "binary_sha256": {
+    "baseline": [
+      "7e30dbb2d84bb5a03d944729039048da5cfcae9e03af0bf5e54dc867a9801e41",
+      "7e30dbb2d84bb5a03d944729039048da5cfcae9e03af0bf5e54dc867a9801e41"
+    ],
+    "candidate": [
+      "b542f72061814938289649745b76ff44e3e6d78571d9cb6b605472796e5e22d6",
+      "b542f72061814938289649745b76ff44e3e6d78571d9cb6b605472796e5e22d6"
+    ]
+  },
+  "changes": {
+    "drawings": [
+      "ag-2421",
+      "ag-2422",
+      "ag-2436",
+      "ag-2441",
+      "ag-2443",
+      "ag-2444",
+      "ag-2447"
+    ],
+    "local_class_geometry": [],
+    "reports": [
+      "ag-2421",
+      "ag-2422",
+      "ag-2436",
+      "ag-2441",
+      "ag-2443",
+      "ag-2444",
+      "ag-2447"
+    ]
+  },
+  "dependency_sha256": {
+    "bias_block_neighbors.py": "71c05e92dc56e87fa240ff6501d1d9489aeb610aa56c1864969ed644306e97b5",
+    "bias_block_neighbors_native.py": "d187c5d546a87d6cca72907aea35ac489cb97cdfdda7cd0d2457403cff979eb4",
+    "biased_amplifiers.py": "3893d6c882f516da8182ccf5392f8edd0bd3138e54038b284a88f8c186ca3409",
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "block_aliases_native.py": "4b46a908e9b093d7ad3d8b65335dab494c049a6378d1037d70426e375e4c760f",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "channel_bridges.py": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "driven_banks.py": "68c7cc9e75767a2e2f249ada60f2345b40adc472e37c9c6d629dafe29b1120be",
+    "driven_banks_native.py": "a36fa157e1c37d1139b20f0a83051162d9674a12e311ccfde4d0f75a39f2cb90",
+    "input_resistor_legs.py": "5660823e09293ed82ac57d5b9835dff0005c357d6ac55a09c13b4cb8bec40612",
+    "input_resistors.py": "46d3dfae5fae8fd7874519a84f5b9a36292c7b37a343583a0a847dd95233fea5",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "power_paths.py": "179c721073ac9b18b8cff2985075326706c71bffc661d291a170275e3d648528",
+    "reference_amplifiers.py": "a0c97f5446e4820701a9c3e578035443e4111af37fdc96b352cd65c7da3e2502",
+    "remaining_amplifiers.py": "4b727e43ec6ffd7f1786385df86e8604fb353633982a7cbc458d77e2d2f4b9bb",
+    "remaining_amplifiers_native.py": "91378e98e22c16f684c17a2bbe1a6724f32e3bc9ef57990857031a4f768988e3",
+    "sampling_cells.py": "cf705df907cc88ab5e644a1de6c1e0d3c5297f971703a6e7376946834bbf2325",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a",
+    "thin_connectivity.py": "bdf216eb76714d0d2f6f3a0ce870f2c976fc0e68efb9959a9c842821b44886db",
+    "trunk_rungs.py": "c1a0a572481fb87e5f03960f3285cb944d16ecbb84d6c3d2f6f1e10364422fae"
+  },
+  "evidence_sha256": "4c7c54549ec82f8f7570bc04282d37dd43c016520cd7cd5151157c855a7226b7",
+  "method_checks": [
+    "actual_own_body_leads_bindings_and_bias_ink",
+    "body_winding_does_not_change_outward_lead_certificate",
+    "wrong_bias_binding_rejected",
+    "wrong_other_port_binding_rejected",
+    "reordered_ports_rejected",
+    "missing_own_lead_rejected",
+    "lead_crosses_own_body_rejected",
+    "orphan_body_lead_rejected",
+    "off_axis_rejected",
+    "negative_gap_rejected",
+    "same_facing_rejected",
+    "body_not_strictly_outward_rejected",
+    "zero_gap_is_permitted",
+    "native_ink_bent",
+    "native_ink_gap",
+    "native_ink_T",
+    "native_ink_overlap",
+    "native_ink_proper_X_without_dot",
+    "native_ink_proper_X_with_dot",
+    "native_ink_direction_and_order",
+    "native_ink_other_net_excluded"
+  ],
+  "selected_names": [
+    "ag-2421:x1:vbn",
+    "ag-2422:x1:vbn",
+    "ag-2436:x1:nb",
+    "ag-2441:x1:vbn",
+    "ag-2443:x1:nb",
+    "ag-2444:x2:vbn",
+    "ag-2447:x1:vbn"
+  ],
+  "source_inventory_sha256": "d5f16f28dee26ba998c6de51bfe96f5dc3d8d9f8dc55bdc350ecb4a9392c939f",
+  "summaries": {
+    "baseline": {
+      "continuous": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ],
+      "excluded": [
+        {
+          "continuous": false,
+          "name": "ag-2440:x2:vbn",
+          "relative_contract": false
+        }
+      ],
+      "opposite_lead_directions": [],
+      "relative_contract": [],
+      "same_axis": [],
+      "side_mismatches": [
+        "ag-2421:x1:vbn:amplifier:vbn",
+        "ag-2421:x1:vbn:peer:vb1",
+        "ag-2421:x1:vbn:peer:vbn",
+        "ag-2421:x1:vbn:peer:vdd",
+        "ag-2422:x1:vbn:peer:vb1",
+        "ag-2422:x1:vbn:peer:vbn",
+        "ag-2422:x1:vbn:peer:vdd",
+        "ag-2436:x1:nb:peer:nb",
+        "ag-2436:x1:nb:peer:vb1",
+        "ag-2436:x1:nb:peer:vdd",
+        "ag-2440:x2:vbn:peer:vb1",
+        "ag-2440:x2:vbn:peer:vb2",
+        "ag-2440:x2:vbn:peer:vbn",
+        "ag-2440:x2:vbn:peer:vc",
+        "ag-2441:x1:vbn:peer:vb1",
+        "ag-2441:x1:vbn:peer:vb2",
+        "ag-2441:x1:vbn:peer:vbn",
+        "ag-2441:x1:vbn:peer:vdd",
+        "ag-2443:x1:nb:peer:nb",
+        "ag-2443:x1:nb:peer:vb1",
+        "ag-2443:x1:nb:peer:vb2",
+        "ag-2443:x1:nb:peer:vdd",
+        "ag-2444:x2:vbn:amplifier:vbn",
+        "ag-2444:x2:vbn:peer:vbn",
+        "ag-2444:x2:vbn:peer:vdd",
+        "ag-2447:x1:vbn:peer:vb1",
+        "ag-2447:x1:vbn:peer:vb2",
+        "ag-2447:x1:vbn:peer:vbn",
+        "ag-2447:x1:vbn:peer:vdd"
+      ],
+      "whole_body_outward": []
+    },
+    "candidate": {
+      "continuous": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ],
+      "excluded": [
+        {
+          "continuous": false,
+          "name": "ag-2440:x2:vbn",
+          "relative_contract": false
+        }
+      ],
+      "opposite_lead_directions": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ],
+      "relative_contract": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ],
+      "same_axis": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ],
+      "side_mismatches": [
+        "ag-2421:x1:vbn:amplifier:vbn",
+        "ag-2421:x1:vbn:peer:vbn",
+        "ag-2421:x1:vbn:peer:vdd",
+        "ag-2422:x1:vbn:peer:vb1",
+        "ag-2422:x1:vbn:peer:vdd",
+        "ag-2436:x1:nb:peer:vdd",
+        "ag-2440:x2:vbn:peer:vb1",
+        "ag-2440:x2:vbn:peer:vb2",
+        "ag-2440:x2:vbn:peer:vbn",
+        "ag-2440:x2:vbn:peer:vc",
+        "ag-2441:x1:vbn:peer:vdd",
+        "ag-2443:x1:nb:peer:vdd",
+        "ag-2444:x2:vbn:amplifier:vbn",
+        "ag-2444:x2:vbn:peer:vbn",
+        "ag-2447:x1:vbn:peer:vdd"
+      ],
+      "whole_body_outward": [
+        "ag-2421:x1:vbn",
+        "ag-2422:x1:vbn",
+        "ag-2436:x1:nb",
+        "ag-2441:x1:vbn",
+        "ag-2443:x1:nb",
+        "ag-2444:x2:vbn",
+        "ag-2447:x1:vbn"
+      ]
+    }
+  }
+}

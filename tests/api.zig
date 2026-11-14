@@ -524,4 +524,5 @@ test {
     _ = @import("opamp_feedback.zig");
     _ = @import("driven_banks.zig");
     _ = @import("reference_gate_tree.zig");
+    _ = @import("bias_block_neighbors.zig");
 }

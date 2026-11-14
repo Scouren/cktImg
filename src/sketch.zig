@@ -99,6 +99,10 @@
 //!   the controller's column, including a signed glyph's offset. Explicit
 //!   origins or definition sides, an off-column main gate and an unsafe
 //!   pin envelope abstain. `orientAll`; schematic.16
+//! - sketch.23 (habit, bounded) An isolated amplifier bias peer uses its
+//!   actual class frame after lattice coordinates, before scaffold wiring.
+//!   Only its whole orientation and grid anchor change; admitted cells,
+//!   stays and other caller geometry keep precedence. `bias_neighbors`
 //!
 //! Contents:
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
@@ -126,6 +130,7 @@ const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
 const power_compact = @import("power_compact.zig");
+const bias_neighbors = @import("bias_neighbors.zig");
 const thin = @import("thin.zig");
 const relay = @import("relay.zig");
 const config = @import("config.zig");
@@ -198,6 +203,8 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk, ats);
+    var bias_pairs = try bias_neighbors.collect(gpa, nl, s, sk, st, ats);
+    defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
     const loops = try power_loop_wires.collect(gpa, nl, s.roles, sk.drawn, &lines);
@@ -225,6 +232,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         } else false;
         if (along == null and stays) placed_all = try relay.place(gpa, s, sk, geo.xs, geo.ys, ats, at);
     }
+    bias_neighbors.place(s, nl, sk, ats, len, at, &bias_pairs.pairs);
     var xy: std.ArrayList([2]f32) = .empty;
     // Closed up: the drawing as the engine alone makes it (the deck's `at`,
     // `route` and `via` lines are in the finished drawing's coordinates, so
@@ -238,7 +246,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         var own = lines;
         own.routes = &.{};
         try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, &xy);
-        try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk));
+        try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk), bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates));
         const boxes = try deviceBoxes(gpa, s, nl, sk);
         defer gpa.free(boxes);
         const clear = clear: for (boxes, 0..) |a, i| {

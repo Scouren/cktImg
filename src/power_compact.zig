@@ -30,6 +30,10 @@
 //!   or hidden channel leads abstain. When both diode ends already fit
 //!   between the cap columns, retaining those orders also keeps its center
 //!   inside. No exact lower-row equality or output-branch order is added.
+//! - power_compact.6 (invariant) Other geometry owners may append initially
+//!   true actual-coordinate orders to the same pass. Bias peers use this
+//!   seam; this owner does not discover or place those groups. Empty
+//!   extra slices preserve the converter-only requests.
 //!
 //! Data: existing netlist/CSR, skeleton and schematic rows in; temporary
 //! x/y pairs of i32 coordinates out. Both pair fields are read together.
@@ -39,7 +43,7 @@
 //! The compactor owns coordinate writes; this pass only submits orders.
 //!
 //! Contents:
-//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32) Allocator.Error!void`
+//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: [2][]const [2]i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -65,9 +69,10 @@ const Pt = library.Pt;
 
 /// Compacts a wired drawing while preserving its existing converter
 /// terminal orders. Asserts the skeleton and `ats` cover every device and
-/// `s` has its settled symbols and coordinates. Temporary storage belongs
+/// `s` has its settled symbols and coordinates. `extra` borrows initially
+/// strict actual-coordinate orders from other geometry owners. Temporary storage belongs
 /// to this call; allocation failure may leave x compacted as in `compact`.
-pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32) Allocator.Error!void {
+pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: [2][]const [2]i32) Allocator.Error!void {
     const c = &nl.graph;
     assert(ats.len == c.edgeCount());
     assert(sk.drawn.len == c.edgeCount());
@@ -79,7 +84,7 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
     const groups = try gpa.alloc([3]u32, coil_capacity);
     defer gpa.free(groups);
     var count: usize = 0;
-    var y_capacity: usize = 0;
+    var y_capacity: usize = extra[1].len;
     for (c.edges.items(.kind), 0..) |kind, d| {
         if (kind != .inductor) continue;
         const members = power_paths.series(nl, s.roles, sk.drawn, sk.form, @intCast(d)) orelse continue;
@@ -90,13 +95,15 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
         for (controlNets(nl, members)) |net| y_capacity += c.incident(VertexId.from(net)).len;
     }
     assert(count <= coil_capacity);
-    const x_capacity = 13 * count;
+    const x_capacity = 13 * count + extra[0].len;
     const xs = try gpa.alloc([2]i32, x_capacity);
     defer gpa.free(xs);
     const ys = try gpa.alloc([2]i32, y_capacity);
     defer gpa.free(ys);
-    var nx: usize = 0;
-    var ny: usize = 0;
+    @memcpy(xs[0..extra[0].len], extra[0]);
+    @memcpy(ys[0..extra[1].len], extra[1]);
+    var nx: usize = extra[0].len;
+    var ny: usize = extra[1].len;
     for (groups[0..count]) |members| {
         const coil = channel(s, nl, members[1]) orelse continue;
         const first = channel(s, nl, members[0]) orelse continue;

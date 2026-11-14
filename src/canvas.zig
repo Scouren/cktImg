@@ -30,6 +30,9 @@
 //! - canvas.7 (choice) A net's name, where it has no better place, goes on
 //!   its topmost, then leftmost, pin: a place, so the order of the cards
 //!   chooses nothing. `topLeft`
+//! - canvas.8 (invariant) A polyline is committed whole: reserve its route,
+//!   segment and point rows before changing any length. Allocation failure
+//!   leaves the existing drawing intact. `Canvas.commit`
 //!
 //! Contents:
 //! - `pub const Lengths = struct`, `Lengths.of(layout: config.Layout, unit: i32) Lengths`
@@ -168,10 +171,17 @@ pub const Canvas = struct {
     /// Draws the polyline `pts` (two points or more) for `net` when every
     /// piece fits; returns whether it did, with nothing drawn when not. A
     /// `Route` holds six points: a longer polyline is drawn as several, each
-    /// from the last one's end.
+    /// from the last one's end. Allocation failure leaves all drawn rows
+    /// unchanged; their storage capacity may grow.
     pub fn commit(c: *Canvas, net: u32, pts: []const Pt) Allocator.Error!bool {
         assert(pts.len >= 2);
         for (pts[0 .. pts.len - 1], pts[1..]) |a, b| if (!c.fits(net, a, b)) return false;
+        // Each six-point route owns at most five segments. Its first point
+        // is retained too, including the shared tip between route chunks.
+        const pieces = 1 + (pts.len - 2) / 5;
+        try c.s.routes.ensureUnusedCapacity(c.s.arena.allocator(), pieces);
+        try c.segs.ensureUnusedCapacity(c.gpa, pts.len - 1);
+        try c.points.ensureUnusedCapacity(c.gpa, pts.len - 1 + pieces);
         const before = c.segs.items.len;
         defer assert(c.segs.items.len == before + pts.len - 1);
         var k: usize = 0;
@@ -179,9 +189,9 @@ pub const Canvas = struct {
             const piece = pts[k..@min(k + 6, pts.len)];
             var route: sch.Route = .{ .pts = undefined, .len = @intCast(piece.len), .net = net };
             for (piece, 0..) |p, i| route.pts[i] = p.toF();
-            try c.s.routes.append(c.s.arena.allocator(), route);
-            for (piece[0 .. piece.len - 1], piece[1..]) |a, b| try c.segs.append(c.gpa, .{ .a = a, .b = b, .net = net });
-            for (piece) |p| try c.points.append(c.gpa, .{ .at = p, .net = net });
+            c.s.routes.appendAssumeCapacity(route);
+            for (piece[0 .. piece.len - 1], piece[1..]) |a, b| c.segs.appendAssumeCapacity(.{ .a = a, .b = b, .net = net });
+            for (piece) |p| c.points.appendAssumeCapacity(.{ .at = p, .net = net });
         }
         return true;
     }
@@ -390,6 +400,38 @@ fn crossesInterior(r: Rect, a: Pt, b: Pt) bool {
     return s.intersects(r) and !(s.min.x == s.max.x and (s.min.x == r.min.x or s.min.x == r.max.x)) and !(s.min.y == s.max.y and (s.min.y == r.min.y or s.min.y == r.max.y));
 }
 
+fn commitAllocation(gpa: Allocator) !void {
+    const testing = std.testing;
+    var lib: library.Library = .init(gpa);
+    defer lib.deinit();
+    var s: Schematic = .{ .arena = .init(gpa), .lib = &lib, .device_kind = &.{}, .device_name = &.{}, .net_name = &.{"a"}, .device_pin_count = &.{}, .roles = &.{.internal} };
+    defer s.deinit();
+    var xy: std.ArrayList([2]f32) = .empty;
+    var c = try Canvas.init(gpa, &s, &xy, .of(.{}, 40), &.{}, &.{});
+    defer c.deinit();
+    try testing.expect(try c.commit(0, &.{ .{ .x = -20, .y = 0 }, .zero }));
+    const before = c.save();
+    const route = s.routes.items[0];
+    const segment = c.segs.items[0];
+    const points = [2]maze.Mark{ c.points.items[0], c.points.items[1] };
+    // Independent count: 79 segments occupy sixteen routes; each route
+    // records one more point than its segments, including shared tips.
+    var stairs: [80]Pt = undefined;
+    for (&stairs, 0..) |*p, i| p.* = .{ .x = @intCast(10 * ((i + 1) / 2)), .y = @intCast(10 * (i / 2)) };
+    const drawn = c.commit(0, &stairs) catch |err| {
+        try testing.expectEqualDeep(before, c.save());
+        try testing.expectEqual(route.len, s.routes.items[0].len);
+        try testing.expectEqualSlices([2]f32, route.pts[0..route.len], s.routes.items[0].pts[0..route.len]);
+        try testing.expectEqualDeep(segment, c.segs.items[0]);
+        try testing.expectEqualDeep(points, c.points.items[0..2].*);
+        return err;
+    };
+    try testing.expect(drawn);
+    try testing.expectEqual(17, s.routes.items.len);
+    try testing.expectEqual(80, c.segs.items.len);
+    try testing.expectEqual(97, c.points.items.len);
+}
+
 test "lengths: units scale to whole target units, at least 1" {
     const at40 = Lengths.of(.{ .stack = 1 }, 40);
     try std.testing.expectEqual(40, at40.stack);
@@ -431,4 +473,8 @@ test "canvas: a polyline longer than a route holds is drawn as several, whole or
     try std.testing.expectEqual(2, s.routes.items.len);
     try std.testing.expectEqual(8, c.segs.items.len);
     try std.testing.expect(try c.commit(0, through[0..6]));
+}
+
+test "canvas: allocation failure preserves existing routes segments and points" {
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, commitAllocation, .{});
 }

@@ -24,12 +24,19 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Full source corpus | [corpus-scorecard.md](docs/research/corpus-scorecard.md) | Exact source names and hashes, independently measured wire metrics and named structural relations. |
 | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |
 | Driven-bank physical continuity | [driven_banks_connectivity.py](docs/research/figures/driven_banks_connectivity.py), with the explicit inputs documented in [driven-banks.md](docs/research/driven-banks.md) | Every stable terminal pair on changed nets across both complete corpora, compared with actual source conductor ink; every historical mismatch is checked by name. |
+| Private bias peers | [bias_block_neighbors.zig](tests/bias_block_neighbors.zig) and the source/native/continuity companions in [bias-block-neighbors.md](docs/research/bias-block-neighbors.md) | Actual own-body leads, outward peer body, opposing collinear terminals, full pin incidences, caller precedence and source-supported physical wire groups. |
 
 `zig build test` includes allocation-failure sweeps where the operation's
 contract requires rollback or unchanged caller state. Its consumer suites
 are wired explicitly in [build.zig](build.zig); a test file must be imported
 before it contributes to the gate. Prospective unimported studies do not
 count as passing tests.
+
+The bias-peer allocation sweep forces growth through allocation/free so
+opportunistic in-place resizing cannot change the set of failure points.
+Its successful minimal circuit must independently satisfy the placement
+oracle. The canvas sweep also checks that an allocation failure preserves
+the existing route, segment and point rows, including their contents.
 
 ## Automated gates and checkpoint work
 

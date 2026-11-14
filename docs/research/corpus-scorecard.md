@@ -1351,3 +1351,77 @@ The plugin is **558,107 bytes**, SHA-256
 5,093 bytes below the strict cap. Repeated native and plugin builds are
 byte-identical. The measured gain leaves the three inferred-mate facing
 exceptions and two VIN placement cases visible for later rules.
+
+## Twentieth pass: private amplifier bias peers
+
+The [bias-block study](bias-block-neighbors.md) identifies seven private
+amplifier/bias-block pairs whose actual source leads face each other on
+one column, with the peer body outward of the amplifier's bias terminal.
+AG2444 permits touching tips. AG2440's additional local control connection
+excludes it; AG2428 has no local peer. The algorithm verifies full declared
+incidences and complete block contracts, uses actual symbol frames, and
+defers to admitted groups, placement requests and mates. It preserves the
+amplifier and rotates/moves the whole peer; compaction retains the resulting
+actual-terminal order. Caller classes and electrical bindings stay intact.
+
+The final native executable is
+`b542f72061814938289649745b76ff44e3e6d78571d9cb6b605472796e5e22d6`.
+Exactly **AG2421, AG2422, AG2436, AG2441, AG2443, AG2444 and AG2447** change
+their drawing and report; the other **2,929** remain byte-identical.
+The independent actual-body/lead audit improves the complete relative
+contract from **zero to seven of seven**, preserving all seven continuous
+bias connections. Visible port-side mismatches fall from **29 to 15**.
+The two upward source amplifier bias leads and other peer-port differences
+remain explicit. Missing source VSS geometry is retained as unknown.
+
+AG crossings fall from **4,997 to 4,987** and bends from **20,675 to 20,658**,
+with neither measure regressing in any changed drawing. AMS remains at
+203 crossings and 1,545 bends. Device axes, gate directions, block flow and
+the partial all-relation matches remain unchanged: **290/2,202 AG** and
+**243/734 AMS**. The separate physical-ink audit checks **315 stable pairs
+on 84 changed nets**, finding no gains, losses or unsupported transitions.
+All 129 historical marker identities retain their prior states, including
+the same three reviewed AG2436 repairs. Earlier converter, input-resistor,
+power and symbol cohorts preserve their recorded relations.
+
+This is not whole-drawing equivalence. AG2444 still has overlapping native
+box text: the earlier VBN/family collision becomes VSS/family/VDD crowding
+after rotation. Its source places the family title outside the box. Label
+fitting remains a separate unfinished rule.
+
+Twelve focused regressions cover both compaction states, custom frames,
+port/card permutations, full-incidence exclusions and caller precedence.
+Meaningful failures exposed detached and far-edge leads, circle ink beyond
+the terminal, and admitted grouping requests overridden by inference.
+The allocation sweep also exposed two existing cleanup leaks and a canvas
+success assertion running on allocation failure. Role/skeleton allocations
+now unwind correctly; canvas reserves all three row capacities before
+committing a polyline and tests unchanged existing rows on failure.
+
+One total-rank column sort changes from `std.mem.sort` to heapsort, saving
+**8,041 bytes** in the isolated comparison. Distinct columns have distinct
+first-device ranks, so there is no stable-tie behavior to preserve. All
+2,936 drawing/report payloads and measured score fields are identical
+before and after that substitution and the later custom-frame guard.
+This is a measured size reduction, not a speed claim.
+
+Final checks pass **427 tests without LaTeX and 428 with it**, the shared
+query assembly gate, 4,000 fuzz cases, global formatting and changed-file
+style checks except the same five legacy API findings. All 31 gallery
+SVG names and bytes are unchanged. The symbol replay verifies **416 exact
+SVG/JSON pairs**: 338 final-candidate renderings and 78 retained baseline
+controls, including all 311 corpus-associated records. Source, native and
+continuity inventories replay exactly; seven changed drawings reproduce
+identical bytes with one and four jobs.
+
+Release-editor fixtures retain **98 exact comparisons** and the same two
+capacity refusals. All nine selected/control decks produce **26 exact
+subcircuits on both release and current editors**, including every changed
+deck and its 21 subcircuits. The two manual VIN continuity tests still
+fail at their recorded physical-wire assertions and pass the exact
+expected-failure marker check; they are not counted as source successes.
+
+The final plugin is **558,321 bytes**, SHA-256
+`fea14f566ffcf79784de52710978a31393cfe61e62eb0fbe0aa2b181ee0cb546`,
+4,879 bytes below the strict cap. Repeated native and plugin builds are
+byte-identical.

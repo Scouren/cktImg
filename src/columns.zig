@@ -441,7 +441,7 @@ fn rowSpan(cols: Columns, row: []const u32, k: u32) [2]u32 {
 }
 
 fn sortByRank(ctx: Ctx, list: []u32) void {
-    std.mem.sort(u32, list, ctx, struct {
+    std.sort.heap(u32, list, ctx, struct {
         fn lt(c: Ctx, a: u32, b: u32) bool {
             return c.rank[c.cols.of(a)[0]] < c.rank[c.cols.of(b)[0]];
         }

@@ -321,6 +321,7 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
     const circuit = &nl.graph;
     const names = circuit.vertices.items(.name);
     const roles = try gpa.alloc(Role, names.len);
+    errdefer gpa.free(roles);
     for (names, roles, 0..) |name, *r, i| r.* = if (i == 0) .sink else roleFromName(name);
     // A reference comes from outside (R1) unless a transistor's drain or
     // collector makes it here: then it is what the circuit puts out.

@@ -243,9 +243,11 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     const rel = try relations.rows(gpa, arena, nl, st, drawn, form, verdicts);
     const seq = try sequence.read(gpa, arena, nl, st, drawn, form, verdicts);
     const net_rank = st.net_rank;
-    var chain: Chain = .{ .above = try gpa.alloc(u32, n), .below = try gpa.alloc(u32, n) };
-    defer gpa.free(chain.above);
-    defer gpa.free(chain.below);
+    const above = try gpa.alloc(u32, n);
+    defer gpa.free(above);
+    const below = try gpa.alloc(u32, n);
+    defer gpa.free(below);
+    var chain: Chain = .{ .above = above, .below = below };
     try link(gpa, nl, roles, st, net_rank, &rel, &seq, drawn, form, upper, lower, &chain);
 
     // Columns: chains from their top devices, in rank order.
