@@ -1,17 +1,13 @@
 # cktImg
 
-[![ci](https://github.com/OpenFAT/cktImg/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/OpenFAT/cktImg/actions/workflows/ci.yml)
-[![release](https://img.shields.io/github/v/release/OpenFAT/cktImg?label=download)](https://github.com/OpenFAT/cktImg/releases/latest)
 [![zig](https://img.shields.io/badge/zig-0.17.0-f7a41d?logo=zig&logoColor=white)](https://ziglang.org/download/)
-[![docs](https://img.shields.io/badge/docs-omarsiwy.github.io%2FcktImg-blue)](https://openfat.github.io/cktImg/)
-[![license](https://img.shields.io/github/license/OpenFAT/cktImg)](LICENSE)
 
 **Automatic schematics from SPICE netlists.**
 
 cktImg reads the netlist you already simulate and lays it out the way a
 textbook would: supply at the top, ground at the bottom, signal flowing left
 to right, and matched branches side by side. The same layout engine gives you
-an editable schematic in [Schemify](https://github.com/OpenFAT/Schemify), a
+an editable schematic in [Schemify](https://github.com/Scouren/Schemify-Releases), a
 LaTeX figure for your paper, or JSON placement data for your own tools.
 
 ![Bandgap reference, laid out by cktImg from its netlist](assets/bandgap.svg)
@@ -35,26 +31,45 @@ device mapped onto a Schemify `core` cell. An `X` of a subckt the deck does not
 define becomes an instance of that cell in one of the project's `lib … path`
 libraries (a PDK's devices) when one holds it.
 
-Add the package to your Schemify config (`init.lua`), or to a project's own init
-file to make it a project plugin:
+In Schemify the plugin is called `netlist-import`. It is not in the Schemify
+store yet, so you add it by hand, in one of two ways.
+
+From this repository, in your Schemify config (`init.lua`) or a project's own
+init file (fetching it needs read access to this repository):
 
 ```lua
 schemify.pack.add({
-  { src = "https://github.com/OpenFAT/cktImg", name = "netlist-import",
+  { src = "https://github.com/Scouren/cktImg", name = "netlist-import",
     grant = { "read_project", "write_project" }, fuel = 100000000000 },
 })
 ```
 
-Then run `schemify pack sync`. In the editor, use **File ▸ Import SPICE
+Then run `schemify pack sync`. Or, from a checkout, point a spec at it
+(a project's init file takes paths relative to the project):
+
+```lua
+schemify.pack.add({
+  { path = "plugins/cktImg", name = "netlist-import",
+    grant = { "read_project", "write_project" }, fuel = 100000000000 },
+})
+```
+
+A project names its init file in its `schemify.project` header
+(`init project.lua`), and Schemify asks you to trust it the first time the
+project opens. `plugin` records in a project manifest are not loaded.
+
+In the editor, use **File ▸ Import SPICE
 netlist…** (`Ctrl+Shift+I`) and type a project-relative path such as
-`n2s/opamp.sp`. Headless, the same import is one command:
+`n2s/opamp.sp`. In a development build of Schemify (the `dev-cli` feature, or the Nix package
+`schemify-dev`; release builds leave the command stream out), the same import
+is one command:
 
 ```sh
 schemify cmd --trust <project-dir> netlist.import n2s/opamp.sp
 ```
 
-The package is `netlist-import` and its command `netlist.import`: users of
-Schemify never see the engine's name. The command's old name `cktimg.import` is
+Its command is `netlist.import`: Schemify's menus, logs and written files
+never name the engine. The command's old name `cktimg.import` is
 still accepted, for existing keymaps and scripts, but is not declared, so the
 command palette does not list it.
 
@@ -101,7 +116,7 @@ script only has to create them. Pass `--symbols` with your own symbol file and
 [Your own schematic editor](#your-own-schematic-editor).
 
 Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
-[releases page](https://github.com/OpenFAT/cktImg/releases/latest).
+[releases page](https://github.com/Scouren/cktImg/releases/latest).
 
 ## Contents
 
@@ -117,7 +132,7 @@ Prebuilt `cktimg-tex` and `cktimg-json` for Linux, macOS and Windows are on the
 
 ## Download
 
-Every [release](https://github.com/OpenFAT/cktImg/releases/latest) includes
+Every [release](https://github.com/Scouren/cktImg/releases/latest) includes
 the tools prebuilt. Each one is a single file, so there's nothing to install.
 Choose the file whose name ends with your platform:
 
@@ -126,7 +141,8 @@ Choose the file whose name ends with your platform:
 | Windows | `-x86_64-windows.exe` |
 | macOS, Apple silicon (M1 and later) | `-aarch64-macos` |
 | macOS, Intel | `-x86_64-macos` |
-| Linux | `-x86_64-linux` |
+| Linux, x86-64 | `-x86_64-linux` |
+| Linux, ARM64 | `-aarch64-linux` |
 
 | Tool | Use it for |
 |---|---|
@@ -183,7 +199,7 @@ Inkscape.
 ## Your own schematic editor
 
 cktImg decides where every device, pin, wire and label goes; your editor only
-has to create them. That works for Virtuoso, KiCad, an in-house tool, or
+has to create them. That works for KiCad, an in-house tool, or
 anything else that can read a file or call C.
 
 1. **Describe your editor's symbols** in a symbol file, giving each pin's
@@ -193,11 +209,11 @@ anything else that can read a file or call C.
 
    ```json
    {
-     "target": "virtuoso", "version": 1,
+     "target": "myeditor", "version": 1,
      "unmapped": { "mode": "box", "sym": "basic/generic" },
      "classes": {
-       "nmos": { "sym": "analogLib/nmos4" },
-       "res":  { "sym": "analogLib/res", "pins": ["a", "b"] }
+       "nmos": { "sym": "devices/nmos4" },
+       "res":  { "sym": "devices/res", "pins": ["a", "b"] }
      }
    }
    ```
@@ -207,13 +223,13 @@ anything else that can read a file or call C.
 3. **Place:**
 
    ```sh
-   cktimg-json --symbols virtuoso.zon --target virtuoso.json amp.cir amp.json
+   cktimg-json --symbols myeditor.zon --target myeditor.json amp.cir amp.json
    ```
 
    `amp.json` gives each device's cell, position, rotation and mirroring,
    every pin's point, wires as polylines, junction dots and net labels.
-4. **Import** it with a short script in your editor's own language. In
-   Virtuoso, that's SKILL using `dbCreateInst` and `schCreateWire`.
+4. **Import** it with a short script in your editor's own language: one call
+   per instance, one per wire.
 
 The Schemify plugin ([`tools/schemify/`](tools/schemify)) is a complete working
 example of steps 1 to 4: its symbols are Schemify's `core` cells and it writes
@@ -345,8 +361,8 @@ each one the engine does not honour.
 Each drawing below comes straight from its netlist, with no hand edits
 (`zig build gallery -- --svgs out/` regenerates them).
 
-**Beside a person's drawing.** The site at <https://scouren.github.io/cktImg/>
-(the pattern is `https://<owner>.github.io/<repo>/`) shows all 5,274 reference
+**Beside a person's drawing.** The comparison site (not published yet; it
+returns 404 at `https://scouren.github.io/cktImg/`) shows all 5,274 reference
 circuits of the [Analog Canvas](https://analog-canvas.tokenzhang.com) gallery,
 the drawing a person made beside the one cktImg makes from the same netlist,
 with both drawings' crossings, corners, wire length and written names, and the
@@ -400,9 +416,9 @@ are thin layers on top of it.
 
 ```sh
 # The repository root is the package (build.zig.zon):
-zig fetch --save git+https://github.com/OpenFAT/cktImg#<tag-or-commit>
+zig fetch --save git+https://github.com/Scouren/cktImg#<tag-or-commit>
 # or a release tarball, the same files:
-zig fetch --save https://github.com/OpenFAT/cktImg/releases/download/<tag>/NetlistParser-<tag>.tar.gz
+zig fetch --save https://github.com/Scouren/cktImg/releases/download/<tag>/NetlistParser-<tag>.tar.gz
 ```
 
 ```zig
@@ -510,10 +526,22 @@ zig build lib                         # only libcktimg.a + cktimg.h (-Dtarget=wa
 zig build lib -Dzon_config=false      # C ABI without the ZON parser (smaller wasm)
 zig build -Dlatex_renderer=true       # also cktimg-tex and the TikZ emitter
 zig build -Dschemify_plugin=true      # also netlist-import.wasm, the Schemify plugin (written to the repository root)
-zig build test                        # library, algorithm, API, C ABI and Schemify-import tests
+zig build test                        # library, algorithm, API, C ABI and Schemify-import tests (add -Dlatex_renderer=true for the TikZ code too)
+zig fmt --check src tools tests build.zig
 zig build gallery -- --svgs out/      # the gallery as SVG
 zig build fuzz                        # 4000 random netlists through the pipeline
 python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back and compared by a Schemify build in <dir>
+```
+
+Run them inside `nix develop`, which pins Zig 0.17.0; `netlist-import.wasm` is
+byte-reproducible there, and CI fails when the committed module differs from
+its rebuild or reaches 550 KB. `tests/roundtrip.py` needs `schemify` and
+`spicecmp` from a Schemify development build (`dev-cli`) in `<dir>`:
+
+```sh
+cargo build --features schemify-cli/dev-cli,schemify-app/dev-cli \
+  -p schemify-cli -p schemify-app --bin schemify --bin schemify-gui
+cargo build -p schemify-spicecmp --bin spicecmp
 ```
 
 ### Repository layout
@@ -547,8 +575,8 @@ hinting a drawing to hand-drawn quality with `*@` lines.
 - [`docs/API.md`](docs/API.md): the Zig and C API
 - [`docs/TARGETS.md`](docs/TARGETS.md): target manifests for other editors
 - [`docs/ALGORITHM.md`](docs/ALGORITHM.md): how the structure, placement and wiring work, stage by stage
-- [openfat.github.io/cktImg](https://openfat.github.io/cktImg/): the documentation site
+- [`CHANGELOG.md`](CHANGELOG.md): what changed in each release
 
 ## License
 
-[MIT](LICENSE)
+MIT, see [LICENSE](LICENSE).

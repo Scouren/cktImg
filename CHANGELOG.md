@@ -1,38 +1,23 @@
 # Changelog
 
-One line per change, citing its issue or pull request. Numbers are measured.
+All notable changes to this project are documented here. The format follows
+[Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and the project uses
+[Semantic Versioning](https://semver.org/). One line per change, citing its issue or pull
+request; every number is measured.
 
-## Unreleased
+## [Unreleased]
 
-Changed (Schemify plugin; what users see never names the engine):
+The engine work since 2.1.0: 143 commits from 2026-11-06 to 2026-11-13, mostly placement and
+wiring rules measured against 5,263 hand-drawn reference circuits, and a pattern study on the
+AnalogGenie corpus (#8).
 
-- The package is `netlist-import` (`plugin netlist-import path netlist-import.wasm`, was `cktimg`), the command `netlist.import` (was `cktimg.import`, still accepted but no longer declared), the panel's close command `netlist.import_close`, the UI nodes `file.netlist_import` and `netlist_import.*`, and log lines, summaries and the written cells' `provenance` start `netlist-import`. The File menu row stays **Import SPICE netlist…**.
+### Changed
 
-AnalogGenie pattern study (#8):
+Schemify plugin (what users see never names the engine):
 
-- Engine and Schemify: recognize complete AMP/AMP1/CMP/EA contracts as triangles, matching 24 source glyphs and preserving all 130 ordered pins; generic comparators use plain triangles while the explicit ICM family retains its step (#8).
-- Engine: shelf cuts preserve admitted vertical ordering, allow forward upper-to-lower chains across shelves, and ignore rejected or dropped relation spans (#8).
-- Engine: keep unique converter reservoirs outside their main switches and at or below the power path through placement, shelves and compaction; all 359 selected branches satisfy these bounded relations, while two source-level cases remain lower than their source (#8).
-- Engine: place unique grounded converter shunts inside their main-to-coil intervals and preserve actual terminal order during compaction; all 353 selected intervals and all 92 driver clearances hold (#8).
-- Engine and Schemify: replace eight bare integer sorts with heap sort, saving 7,520 plugin bytes against the eighth-pass implementation with identical geometry and reports across 2,202 AnalogGenie and 734 AMSNet decks (#8).
-- Engine: orient certified converter controllers upward and align their actual output pins with switch gates, preserving explicit placement and custom pin geometry; direct SVG evidence supports 67 of 75 source cases, with eight rightward source cases still unmatched (#8).
-- Engine: face external main-switch gates downward only on certified converter paths with grounded capacitors at both outer ends; all 107 selected source controls agree (#8).
-- Engine and Schemify: draw complete single-input amplifier/comparator contracts and the validated `comp` alias as triangles with their actual polarity; all 47 selected one-input source glyphs and their ordered bindings match (#8).
-- Engine: preserve certified converter paths and their control devices through shelf wrapping; orient flat MOS gates toward unanimous active drivers, retaining transmission-pair and explicit-placement precedence (#8).
-- Engine: place two-part switched-capacitor feedback cells as local rectangles with outward return gates; a direct feedback capacitor selects the straight-branch arrangement instead (#8).
-- Engine: place externally controlled switched-capacitor amplifier networks along their signal, normalize MOS channel geometry from the caller's symbol and break traversal ties by canonical name; oversized custom frames retain lattice placement (#8).
-- Engine: keep complementary transmission pairs together with outward gates; recognize source-degeneration bridges and PMOS–inductor converter paths from connectivity. The source predicates select six horizontal degeneration devices, 649 horizontal converter PMOS and 252 horizontal inductors; every selected coil lies between its two main switches (#8).
-- Engine: compensation paths also recognize a block's named input, extending the AnalogGenie predicate to 315 horizontal devices among 319 selected; unknown port roles retain the existing behavior (#8).
-- Engine and Schemify: fully differential amplifiers use a triangle with two signed outputs, preserving all six ordered SPICE ports and caller overrides (#8).
-- Engine and Schemify: recognized amplifiers with VB1/VB2/VB3 bias ports retain a triangle and distinct ordered terminals; all 85 selected source instances have triangular outlines, while unknown controls and duplicate bias roles retain a box (#8).
-- Engine: capacitor-coupled floating MOS channels and leaf compensation channels lie along their signal; MOS and passive series paths share a row using drain/source endpoints, including a body tied to the source. The predicate selects 239 horizontal devices among 243 selected in AnalogGenie and 20 among 23 in AMS-Net; named exceptions and source provenance are recorded in `docs/research/analoggenie.md`.
-- Engine and Schemify: recognized amplifier, comparator, buffer, inverter and two-input logic blocks use conventional symbols while preserving every ordered SPICE port and their subcircuit implementations; custom symbols and explicit pin-side directives take precedence (#8).
-- Engine: pinless coupling cards retain their electrical meaning without registering an empty symbol; all 2,202 AnalogGenie decks now render, including the eight that previously failed with `NoTerminals` (#8).
-- Schemify: register `netlist.import` and its `cktimg.import` compatibility alias; both commands produce identical cells and circuit-equivalent exports on the current and v1.0.1 hosts (#8).
-- Testing: round trips of subcircuit-only decks keep the models exported through a model-only bench and compare the actual component, with a missing-model negative check (#8).
-- Research: freeze the complete AnalogGenie render inventory and score source geometry by named device relations, with explicit source-limit markers, artifact hashes and identical results with one or four workers (`docs/research/figures/corpus_score.py`); the initial complete checkpoint matches all scored relations in 253 of 2,202 circuits, which is not visual equivalence (#8).
+- The package is `netlist-import` (`plugin netlist-import path netlist-import.wasm`, was `cktimg`), the command `netlist.import` (was `cktimg.import`, still accepted but no longer declared), the panel's close command `netlist.import_close`, the UI nodes `file.netlist_import` and `netlist_import.*`, and log lines, summaries and the written cells' `provenance` start `netlist-import`. The File menu row stays **Import SPICE netlist…**. `netlist-import.wasm` is 558,406 bytes on this engine (cap 563,200).
 
-Merged (rounds 4 and 5; each kept change's totals are its agent's, measured on its own branch over the 5,263 reference circuits: crossings, corners, wire units, written names; each trade's are measured on the merged tree, with -> without, and decided by merit = A - D, A the sum of nine agreement means, D the sum of |engine - people| / people over crossings, corners, wire and names):
+Layout rules merged in rounds 4 and 5. Each kept change's totals are its agent's, measured on its own branch over the 5,263 reference circuits: crossings, corners, wire units, written names; each trade's are measured on the merged tree, with -> without, and decided by merit = A - D, A the sum of nine agreement means, D the sum of |engine - people| / people over crossings, corners, wire and names:
 
 - A block's ports stand one unit apart about each side's middle (`library.8`, ab5aaea): people 1,137 of 1,261 two-port sides; crossings 6,953 to 6,958, corners 28,269 to 28,233, wire 197,332 to 195,212, names 10,168 to 10,174.
 - A rail's name is read one way, by its start, as a net's and a port's (`library.4`, `schematic.2`, 8bf64f2): people 10 of 10 numbered grounds; crossings 6,958 to 6,954, corners 28,233 to 28,221, wire 195,212 to 195,174.
@@ -68,7 +53,37 @@ Merged (rounds 4 and 5; each kept change's totals are its agent's, measured on i
 - Not applied, `forms.10` a capacitor off the rails lies flat (patch): people 1,691 of 2,724; crossings 6,166 / 6,138, corners 36,964 / 35,185, wire 204,066 / 199,993, names 11,359 / 11,573; merit 5.50018 / 5.58055.
 - The merge over cf1f5f3: crossings 6,953 to 6,138 (people 3,412), corners 28,269 to 35,185 (30,645), wire 197,332 to 199,993 (179,956), dots 40,832 to 41,656 (48,780), names 10,168 to 11,573 (11,371); merit 5.20308 to 5.58123. `cktimg.wasm` 544,604 bytes.
 
-Added:
+Zig API (the C ABI is unchanged):
+
+- `netlist.DeviceKind` is `device.DeviceKind` (the old name is kept as an alias). `Netlist.path(e)` gives the two nets of a card's current path. `forms.isRail`, `forms.isTransistor` and `forms.isTwoPin` are gone: `schematic.Role.isRail` and `isPort`, `device.isTransistor`, `device.isPart`. `hints.Verdict.of(code)` and `Verdict.blocked(...)` build a verdict; `hints.Verb.side` reads a side word, `hints.Verb.head` writes a line's head, `hints.acyclic` and `hints.nesting` moved in from `sequence.zig` and `netlist.zig`. `library.named(name, reader)` reads a name for a net's role, a port's side or a port's role from one table. `Canvas.commit` takes a polyline of any length; `Canvas.stub`, `canvas.topLeft` and `canvas.ways` are public; `Pt.round`, `Pt.toF`, `Pt.transposed`, `Rect.grow`, `Side.transposed`, `Side.unit`, `Class.shows` and `Class.box` are new. `relay.place` no longer takes a per-hint array (`pinned.At.weak`). `thin.name` takes the nets' rank (earlier in this release).
+
+### Added
+
+AnalogGenie pattern study (#8):
+
+- Engine and Schemify: recognize complete AMP/AMP1/CMP/EA contracts as triangles, matching 24 source glyphs and preserving all 130 ordered pins; generic comparators use plain triangles while the explicit ICM family retains its step (#8).
+- Engine: shelf cuts preserve admitted vertical ordering, allow forward upper-to-lower chains across shelves, and ignore rejected or dropped relation spans (#8).
+- Engine: keep unique converter reservoirs outside their main switches and at or below the power path through placement, shelves and compaction; all 359 selected branches satisfy these bounded relations, while two source-level cases remain lower than their source (#8).
+- Engine: place unique grounded converter shunts inside their main-to-coil intervals and preserve actual terminal order during compaction; all 353 selected intervals and all 92 driver clearances hold (#8).
+- Engine and Schemify: replace eight bare integer sorts with heap sort, saving 7,520 plugin bytes against the eighth-pass implementation with identical geometry and reports across 2,202 AnalogGenie and 734 AMSNet decks (#8).
+- Engine: orient certified converter controllers upward and align their actual output pins with switch gates, preserving explicit placement and custom pin geometry; direct SVG evidence supports 67 of 75 source cases, with eight rightward source cases still unmatched (#8).
+- Engine: face external main-switch gates downward only on certified converter paths with grounded capacitors at both outer ends; all 107 selected source controls agree (#8).
+- Engine and Schemify: draw complete single-input amplifier/comparator contracts and the validated `comp` alias as triangles with their actual polarity; all 47 selected one-input source glyphs and their ordered bindings match (#8).
+- Engine: preserve certified converter paths and their control devices through shelf wrapping; orient flat MOS gates toward unanimous active drivers, retaining transmission-pair and explicit-placement precedence (#8).
+- Engine: place two-part switched-capacitor feedback cells as local rectangles with outward return gates; a direct feedback capacitor selects the straight-branch arrangement instead (#8).
+- Engine: place externally controlled switched-capacitor amplifier networks along their signal, normalize MOS channel geometry from the caller's symbol and break traversal ties by canonical name; oversized custom frames retain lattice placement (#8).
+- Engine: keep complementary transmission pairs together with outward gates; recognize source-degeneration bridges and PMOS–inductor converter paths from connectivity. The source predicates select six horizontal degeneration devices, 649 horizontal converter PMOS and 252 horizontal inductors; every selected coil lies between its two main switches (#8).
+- Engine: compensation paths also recognize a block's named input, extending the AnalogGenie predicate to 315 horizontal devices among 319 selected; unknown port roles retain the existing behavior (#8).
+- Engine and Schemify: fully differential amplifiers use a triangle with two signed outputs, preserving all six ordered SPICE ports and caller overrides (#8).
+- Engine and Schemify: recognized amplifiers with VB1/VB2/VB3 bias ports retain a triangle and distinct ordered terminals; all 85 selected source instances have triangular outlines, while unknown controls and duplicate bias roles retain a box (#8).
+- Engine: capacitor-coupled floating MOS channels and leaf compensation channels lie along their signal; MOS and passive series paths share a row using drain/source endpoints, including a body tied to the source. The predicate selects 239 horizontal devices among 243 selected in AnalogGenie and 20 among 23 in AMS-Net; named exceptions and source provenance are recorded in `docs/research/analoggenie.md`.
+- Engine and Schemify: recognized amplifier, comparator, buffer, inverter and two-input logic blocks use conventional symbols while preserving every ordered SPICE port and their subcircuit implementations; custom symbols and explicit pin-side directives take precedence (#8).
+- Engine: pinless coupling cards retain their electrical meaning without registering an empty symbol; all 2,202 AnalogGenie decks now render, including the eight that previously failed with `NoTerminals` (#8).
+- Schemify: register `netlist.import` and its `cktimg.import` compatibility alias; both commands produce identical cells and circuit-equivalent exports on the current and v1.0.1 hosts (#8).
+- Testing: round trips of subcircuit-only decks keep the models exported through a model-only bench and compare the actual component, with a missing-model negative check (#8).
+- Research: freeze the complete AnalogGenie render inventory and score source geometry by named device relations, with explicit source-limit markers, artifact hashes and identical results with one or four workers (`docs/research/figures/corpus_score.py`); the initial complete checkpoint matches all scored relations in 253 of 2,202 circuits, which is not visual equivalence (#8).
+
+Engine, tools and the Schemify import:
 
 - Every file of `src/` opens with a `Human Rules:` list: each rule the file makes true of a drawing, named `<file>.<n>`, with what it rests on (`order: potential`, `order: signal`, `habit` with its count from hand drawings, `book`, `invariant`, `choice`, `unmeasured`), and a `Narrowing:` line where the code is narrower than the rule. 328 rules in 44 files: 105 unmeasured, 79 choice, 71 invariant, 39 habit, 17 book, 17 of the two orders. Comments only.
 - `src/device.zig`: the one table of what a device kind's pins do (its current path, gate, control pair, body, whether its ends are told apart, whether it is a source and of which kind, whether it passes direct current) and of its card (letter, node counts, model). The parser's card table, the six copies of "a transistor", the four of "a two-pin part" (three different lists), the terminal names, the symmetry's pin labels and the model-type polarity (two lists) read it. No drawing or report changes: every drawing and report of the 5,263 reference circuits and 9,341 hinted decks is byte for byte the same across the sixteen commits of this change, and `cktimg.wasm` is 544,110 bytes, from 561,571. An assembly probe of `device.of` on the column-order loop and the gate-group loop: folded, identical or smaller than the switches it replaced on all nine pairs (the loop of `span.against` 67 instructions for 108).
@@ -120,12 +135,10 @@ Added:
 - The Schemify import reads the manifest header's `place` attributes and its `lib` rows (Schemify format spec §4, OpenFAT/Schemify#66): a bench the host places apart from its subckt cells refers to them as `<lib>:<cell>` instead of `./<cell>`, and a cell no library reaches from its referrer is a log line naming it.
 - The Schemify import calls a project library's cell for an `X` of a subckt the deck does not define: it reads `<lib dir>/<name>.shprim|.shcomp` for each `lib … path` row and places `<lib>:<name>`, pins in node order and matching `k=v` as overrides (a lone parameter name as `{k}`), instead of a generated verbatim leaf. A vendor-kit kit's `vnfet` from PDK-Manager now netlists in every dialect.
 - The bench is named after the deck's `.title` when it has one (`tb_nmos_switch.shbench`, not `nmos_switch_2.shbench`).
+- The site has a colour inverter: a dark page with the drawings inverted, by a button or the system setting.
+- `tools/schemify/abi.zig` records its provenance: the public Schemify SDK commit 39da966d.
 
-Changed (Zig API; the C ABI is unchanged):
-
-- `netlist.DeviceKind` is `device.DeviceKind` (the old name is kept as an alias). `Netlist.path(e)` gives the two nets of a card's current path. `forms.isRail`, `forms.isTransistor` and `forms.isTwoPin` are gone: `schematic.Role.isRail` and `isPort`, `device.isTransistor`, `device.isPart`. `hints.Verdict.of(code)` and `Verdict.blocked(...)` build a verdict; `hints.Verb.side` reads a side word, `hints.Verb.head` writes a line's head, `hints.acyclic` and `hints.nesting` moved in from `sequence.zig` and `netlist.zig`. `library.named(name, reader)` reads a name for a net's role, a port's side or a port's role from one table. `Canvas.commit` takes a polyline of any length; `Canvas.stub`, `canvas.topLeft` and `canvas.ways` are public; `Pt.round`, `Pt.toF`, `Pt.transposed`, `Rect.grow`, `Side.transposed`, `Side.unit`, `Class.shows` and `Class.box` are new. `relay.place` no longer takes a per-hint array (`pinned.At.weak`). `thin.name` takes the nets' rank (earlier in this release).
-
-Fixed:
+### Fixed
 
 - A rejected or overridden `*@ weak at` line changes nothing (`src/sketch.zig`): the drawing is relaid when a weak line gave a place, where it was relaid whenever the deck held such a line, so a stay naming a device the deck lacks (`rejected unknown_name`) still laid the columns out by the relay's path and moved devices. No drawing or report of the 5,263 reference circuits or the 9,341 hinted decks changes.
 - A `label`, `wire` or `port` on a net whose only pin in the circuit is one the symbol does not draw (a dependent source's control pair, a body past the symbol's terminals) is `rejected not_placeable`, as on a net no drawn device touches (`src/report.zig`); it was `relaxed not_drawn` (`zig build fuzz`).
@@ -145,14 +158,16 @@ Fixed:
 - A bench named like a subckt of its netlist (`rcdiv.sp` holding `.subckt rcdiv`) is `tb_rcdiv.shbench`, not `rcdiv_2.shbench`.
 - The import summary no longer counts a driver island's net (engine rule R3: the source drawn apart and joined by name) as a net left unwired: the rcdiv bench reads 1/1 nets fully wired, not 1/2.
 
-## 2.1.0 (2026-11-04)
+## [2.1.0] - 2026-11-04
 
-Changed (Zig API; the C ABI is unchanged):
+### Changed
+
+Zig API (the C ABI is unchanged):
 
 - `report.decisions` takes the skeleton, the drawing, its unit and a rung (1 to 4) (#15, #17).
 - `hints.Hint.devices` is `args` (a line's arguments are not all devices), and `hints.Verb` holds every verb (#15).
 
-Added:
+### Added
 
 - Steering rungs 1 and 2: every verb of docs/research/vocabulary.md on those rungs (`symmetric`, `axis`, `symmetry off`, `role`, `driver`, `class`, `kind`, `expand`; `above`, `row`, `order`, `face`, `upright`, `bridge`, `label`, `wire`, `port`, `rail`, `first`) and the `weak` prefix. Lines are admitted strongest first, a conflicting one dropped with its preferred conflict (#15).
 - The report's `requests`: each line's verdict, every honoured one checked against the drawing; `cktimg-json --decisions 1|2` prints the engine's decisions as lines, and a deck plus them draws the same picture (#15).
@@ -161,7 +176,7 @@ Added:
 - Steering rungs 3 to 5: `cell` (in the skeleton's own frame, a displaced device moving aside, a mate to the mirror cell), `at` and `refdes`, `route` and `via` (committed whole, the router joining the rest of the net to them); `--decisions 3|4` with its fixed point (#17).
 - The Schemify import carries every `*@` line of a subckt into its cell, hands the engine the designer's device names (so a cell no longer depends on the order of its instances), and logs each line the engine does not honour with the designer's line numbers (#16).
 
-Fixed:
+### Fixed
 
 - The report's `wire` check mis-grouped a net's wire pieces and called a one-pin net unwired, so a wired net could read `no_room` (#17).
 - An output port whose stub does not fit is named at the net's top-left pin, not its first in card order, so the cards' order no longer moves it (found by the line fuzz) (#15).
@@ -170,16 +185,17 @@ Measured:
 
 - `cktimg.wasm` is 485,783 bytes (cap 550 KB).
 
-## 2.0.0 (2026-11-04)
+## [2.0.0] - 2026-11-04
+
+### Changed
 
 Breaking:
 
 - The layout draws the structure first, then the wires. `layout_engine` is gone, and `layout` takes `(gpa, nl, roles, lib, config.Layout)` (#8, #9).
 - `lint.zon`'s `.layout` keys are now `stack`, `series`, `rail`, `terminal`, `label`, `tap`, `clearance`, `bend_cost` and `cross_cost`. The old `min_pitch`, `junction` and `bend` are reported as unknown keys (#9).
-- The xschem target and the `cktimg-xschem` binary are removed. The Schemify plugin replaces them (#6).
 - The repository root is the Zig engine, and the Schemify plugin is Zig in `tools/schemify/` (#10).
 
-Added:
+### Added
 
 - Grouping hints in the deck: `*@ group pair|mirror|bank|stack|cross <devices>`, `*@ nogroup`, `*@ grouping off`. The Schemify import carries them into its cells (#7, #9, #13).
 - Left-right symmetry: every symmetric golden figure is drawn exactly symmetric (#9).
@@ -195,3 +211,31 @@ Measured:
 - `cktimg.wasm` is 424,118 bytes (cap 550 KB).
 
 Unchanged: the C ABI (`include/cktimg.h`).
+
+### Removed
+
+- The xschem target and the `cktimg-xschem` binary. The Schemify plugin replaces them (#6).
+
+## [1.0.0] - 2026-10-12
+
+The first release.
+
+### Added
+
+- The layout engine: a SPICE reader (subckts, `X` instances, PDK primitives and undefined
+  masters as `p1..pN` blocks), placement by structure with supply on top and ground below,
+  and a router that never leaves a wire on another net's pin or wire end.
+- Symbol sets in ZON (`tests/symbols.zon` bundled): pin positions and bodies come from the
+  file, so wires land on any editor's pins.
+- Front ends: `cktimg-tex` and `latex/cktimg.sty` (CircuiTikZ figures), `cktimg-json`
+  (placement as JSON, `--svg`, `--symbols`, `--target` manifests, docs/TARGETS.md),
+  `cktimg-xschem` (xschem `.sch`), the lint rules (`--lint`, `lint.zon`).
+- Libraries: the Zig package `NetlistParser` and the C ABI (`include/cktimg.h`,
+  `zig build lib`, also for `wasm32-freestanding`; `-Dzon_config=false` leaves the ZON
+  parser out).
+- Prebuilt tools for Linux, macOS and Windows on each release; Zig 0.17.
+
+[Unreleased]: https://github.com/Scouren/cktImg/compare/v2.1.0...HEAD
+[2.1.0]: https://github.com/Scouren/cktImg/compare/v2.0.0...v2.1.0
+[2.0.0]: https://github.com/Scouren/cktImg/compare/v1.0.0...v2.0.0
+[1.0.0]: https://github.com/Scouren/cktImg/releases/tag/v1.0.0
