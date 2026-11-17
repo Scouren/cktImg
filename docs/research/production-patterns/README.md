@@ -11,7 +11,7 @@ Follow each input transistor's drain to the four load terminals on its output ne
 | [![AG1034 before](ag-1034.before.svg)](ag-1034.before.svg) | [![AG1034 after](ag-1034.after.svg)](ag-1034.after.svg) | [![AG1034 published figure][ag1034]][ag1034] |
 | [![AG215 before](ag-215.before.svg)](ag-215.before.svg) | [![AG215 after](ag-215.after.svg)](ag-215.after.svg) | [![AG215 published figure][ag215]][ag215] |
 
-In AG1034 the outer loads now share columns with the input drains. Reported crossings fell from 4 to 1 and bends from 9 to 4. AG215 keeps one crossing and eight bends. Its outer diode straps now face away from the inner devices. Pin-to-pin wire tests trace both five-terminal outputs. Sixteen controls, including two-tier cascodes and single mirrors, retained byte-identical SVGs and reports.
+In AG1034 the outer loads now share columns with the input drains. Reported crossings fell from 4 to 1 and bends from 9 to 4. AG215 keeps one crossing and eight bends. Its outer diode straps now face away from the inner devices. Pin-to-pin wire tests trace both five-terminal outputs. Sixteen controls, including two-tier cascodes and single mirrors, retained byte-identical SVGs and reports. Five matching decks in the other collections (AMS-Net 245/525 and CT032/050/093) retained their crossing and bend counts and had no report findings.
 
 To reproduce a row, build with `nix develop -c zig build`, then run the command below at the desired commit. Substitute the corresponding deck for other rows.
 
@@ -24,13 +24,13 @@ zig-out/bin/cktimg-json --svg ag-1034.svg --report ag-1034.report.json external/
 
 ## A visible bias feed between two gates
 
-AG725's Q8 and Q10 share VB3. In the production drawing the Vcntrl wire crosses the gate line at its midpoint. The router now tests an adjacent interior takeoff for the port when the midpoint is occupied. Trace the one port to both gates. In the source, the letter Q designates the devices called M8 and M10 in the converted deck.
+AG725's Q8 and Q10 share VB3. In the production drawing the Vcntrl wire crosses the gate line at its midpoint. When the midpoint is occupied, the router tests an adjacent interior tap after all ordinary routes have claimed their space. The tap must be clear of foreign wires. Trace the one port to both gates. In the source, the letter Q designates the devices called M8 and M10 in the converted deck.
 
 | Production before | Production after | Hand layout |
 |---|---|---|
 | [![AG725 before](ag-725.before.svg)](ag-725.before.svg) | [![AG725 after](ag-725.after.svg)](ag-725.after.svg) | [![AG725 Fig. P6.57][ag725]][ag725] |
 
-Across 132 reviewed bias and divider decks, eight gained a visible bias port. The device terminals and the sets of pins joined by each physical wire were preserved in all 132. In particular, all twelve MOS gate dividers already had a straight tap-to-gate wire, including the two taps with a fourth wire arm.
+On AG1652, an early trial of the tap lost one of seven VB3 port markers and split the four-pin net0 wire. The final pass preserves both. Across 132 reviewed bias and divider decks, eight gained a visible bias port. Scanning all 5,274 production decks found 57 that gained this bias tap. Removing its single new stub from each output recovers the exact original wire geometry on every net in those 57. All prior port markers kept their coordinates. In particular, all twelve MOS gate dividers already had a straight tap-to-gate wire, including the two taps with a fourth wire arm.
 
 [ag725]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/725/Book725.png
 
@@ -59,7 +59,7 @@ In AG763 and AG1042 the input and the held voltage sit at the middle contacts of
 | [![AG763 before](ag-763.before.svg)](ag-763.before.svg) | [![AG763 after](ag-763.after.svg)](ag-763.after.svg) | [![AG763 published][ag763]][ag763] |
 | [![AG1042 before](ag-1042.before.svg)](ag-1042.before.svg) | [![AG1042 after](ag-1042.after.svg)](ag-1042.after.svg) | [![AG1042 published][ag1042]][ag1042] |
 
-Both circuits gain four upright diodes in the two observed columns. Crossings went from 4 to 2 in AG763 and from 6 to 4 in AG1042. The vertical spacing and the positions of the current sources still differ from the figures. Twelve controls, including six rectifier or bias diamonds and the AG1142 tuning network, retained identical SVGs.
+Each sampler now has four upright diodes in the two observed columns. The two formerly separate Vin markers become one port on the joined input conductor. Crossings went from 4 to 2 in AG763 and from 6 to 4 in AG1042. The vertical spacing and the positions of the current sources still differ from the figures. Twelve controls, including six rectifier or bias diamonds and the AG1142 tuning network, retained identical SVGs.
 
 [ag763]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/763/Book763.png
 [ag1042]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1042/Book1042.png

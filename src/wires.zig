@@ -184,7 +184,7 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen, no input styled as a wire. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool, final_routes: bool) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -226,6 +226,8 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         order[lead] = net;
         lead += 1;
     }
+    var gate_labels: std.ArrayList(u32) = .empty;
+    defer gate_labels.deinit(gpa);
     var waiting: std.ArrayList(u32) = .empty;
     defer waiting.deinit(gpa);
     // Bias nets a line wires: each named once, as a gate line is, so its
@@ -283,7 +285,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             },
             // A bias a line wires (never an input) is a wire like any
             // other, named once.
-            .port => if (style == .auto) try ported(&c, net, pins, anchor) else {
+            .port => if (style == .auto) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
                 assert(s.roles[net] == .bias);
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
@@ -312,6 +314,10 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         const of = pins_of[net].items;
         try c.labelAt(of[topLeft(s, of)]);
     };
+    for (gate_labels.items) |label| {
+        const net = s.pins.items(.net)[label];
+        try gatePort(&c, net, pins_of[net].items, label);
+    }
     assert(xy.items.len == s.nodes.len);
 }
 
@@ -643,7 +649,7 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
 /// a gate line between them, named at its middle. A successfully seeded
 /// input tree gets its boundary port before nearby outside pins attach;
 /// distant outside pins retain their ordinary input patterns and ports.
-fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
+fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32, gate_labels: ?*std.ArrayList(u32)) !void {
     const s = c.s;
     assert(all.len >= 1);
     const bias = s.roles[net] == .bias;
@@ -667,19 +673,13 @@ fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
             // Keep the gate line intact when another wire crosses its midpoint.
             const mid: Pt = .{ .x = @divFloor(a.x + b.x, 2), .y = a.y };
             for ([_]Side{ .down, .up }) |t| if (try c.stub(.terminal, net, mid, t, c.len.terminal)) return;
-            for (pins) |pin| {
-                const d = s.pins.items(.device)[pin];
-                if (d == sch.none or s.device_kind[d] != .mosfet or s.pins.items(.index)[pin] != 1) break;
-            } else {
-                const q = @max(1, @divFloor(c.len.unit, 4));
-                for ([_]i32{ mid.x - q, mid.x + q }) |x| {
-                    if (x <= @min(a.x, b.x) or x >= @max(a.x, b.x)) continue;
-                    for ([_]Side{ .down, .up }) |side| {
-                        if (try c.stub(.terminal, net, .{ .x = x, .y = mid.y }, side, c.len.terminal)) return;
-                    }
-                }
-            }
             try c.labelAt(pins[0]);
+            if (gate_labels) |list| {
+                for (pins) |pin| {
+                    const d = s.pins.items(.device)[pin];
+                    if (d == sch.none or s.device_kind[d] != .mosfet or s.pins.items(.index)[pin] != 1) break;
+                } else try list.append(c.gpa, @intCast(s.pins.len - 1));
+            }
             return;
         }
     }
@@ -759,4 +759,37 @@ test "wires: an outside cluster reaches actual same-net tree ink within the inpu
     // already 101 units tall. Per-pin chaining must not admit it at 100.
     const wide: Rect = .{ .min = .{ .x = 1, .y = 0 }, .max = .{ .x = 1, .y = 101 } };
     try std.testing.expect(!nearTree(wide, 7, &tree, 100));
+}
+
+// Promote a fallback label on the existing gate span only once the routes
+// are in place. A clear stub cannot introduce crossings for thinning, and
+// no new anchor participates in compaction or in routing another net.
+fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void {
+    const s = c.s;
+    assert(gates.len == 2);
+    const node = s.pins.items(.home)[label];
+    assert(s.nodes.items(.kind)[node] == .label);
+    const a = pinAt(s, gates[0]);
+    const b = pinAt(s, gates[1]);
+    const span = Rect.fromCorners(a, b);
+    if (!span.contains(pinAt(s, label))) return;
+    const mid = @divFloor(a.x + b.x, 2);
+    const q = @max(1, @divFloor(c.len.unit, 4));
+    for ([_]i32{ mid - q, mid + q }) |x| {
+        if (x <= span.min.x or x >= span.max.x) continue;
+        const tap: Pt = .{ .x = x, .y = a.y };
+        for ([_]Side{ .down, .up }) |side| {
+            const tip = canvas.stepPt(tap, side, c.len.terminal);
+            const stub = Rect.fromCorners(tip, tap);
+            for (c.segs.items) |seg| {
+                if (seg.net != net and stub.intersects(Rect.fromCorners(seg.a, seg.b))) break;
+            } else {
+                if (!try c.commit(net, &.{ tap, tip })) continue;
+                s.nodes.items(.kind)[node] = .terminal;
+                s.pins.items(.side)[label] = side.opposite();
+                c.xy.items[node] = tip.toF();
+                return;
+            }
+        }
+    }
 }

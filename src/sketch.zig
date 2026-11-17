@@ -245,7 +245,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         @memset(no_ats, null);
         var own = lines;
         own.routes = &.{};
-        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, &xy);
+        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, &xy, false);
         try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk), bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates));
         const boxes = try deviceBoxes(gpa, s, nl, sk);
         defer gpa.free(boxes);
@@ -279,7 +279,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         }
     }
     for (0..thin_rounds + 1) |round| {
-        try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, &xy);
+        try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, &xy, true);
         const mirror = drawnMirror(s, sk, st);
         if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
         wipe(s, &xy);
@@ -299,14 +299,14 @@ fn wipe(s: *Schematic, xy: *std.ArrayList([2]f32)) void {
 }
 
 /// The devices at `at` (an `at` line's place first), then every net wired.
-fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, xy: *std.ArrayList([2]f32)) !void {
+fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
     try placeDevices(s, nl, sk, at, ats, xy);
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, sk.bridged_t);
+    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, sk.bridged_t, final_routes);
     s.xy = xy.items;
 }
 
