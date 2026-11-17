@@ -10,8 +10,12 @@
 //!   dual AR6364. A differential bridge or a parallel LC has other edges.
 //! - passive_filters.3 (invariant) Every raw card and its two ordered pins
 //!   must match. Existing geometry/group instructions retain precedence.
+//! - passive_filters.4 (habit, bounded) In the complete driven five-card
+//!   network of AR6358/6360, L and C span drive and output on separate
+//!   rows. The reactive and resistive load stand beyond them, tied to
+//!   the output and return. The source is inline, with positive end up.
 //!
-//! Data: the complete four- or six-device graph, existing role/rank arrays
+//! Data: the complete four- to six-device graph, existing role/rank arrays
 //! and shelf limit in, at most six temporary cell assignments out. No
 //! allocation or retained per-device state. See docs/research/production-patterns/README.md.
 //!
@@ -35,7 +39,7 @@ pub const Frame = struct {
     /// Writes the matched cells, keeping SPICE pin order in both orientations.
     pub fn apply(frame: *const Frame, nl: *const Netlist, form: []skeleton.Form, upper: []u32, lower: []u32, left_end: []skeleton.End, x: []i32, y: []i32) void {
         std.debug.assert(x.len == nl.graph.edgeCount() and y.len == x.len);
-        std.debug.assert(x.len == 4 or x.len == 6);
+        std.debug.assert(x.len >= 4 and x.len <= 6);
         for (frame.devices[0..x.len], 0..) |cell, d| {
             x[d] = cell.x;
             y[d] = cell.y;
@@ -47,6 +51,8 @@ pub const Frame = struct {
         }
     }
 };
+
+const Example = struct { deck: []const u8, shelf: u32 = 8, admitted: bool = false };
 
 const Cell = struct { x: u8, y: u8, vertical: bool, first: u1 };
 const Node = enum(u8) { left, right, ground, tap, second };
@@ -68,20 +74,23 @@ const bridged = [_]Arm{
     .{ .from = .tap, .to = .ground, .x = 1, .y = 2 },
 };
 
-/// Admits the complete passive graph and two distinct signal interfaces.
+/// Admits the complete passive graph with two signal interfaces, or a driven
+/// parallel-LC network with one output.
 /// Uses the input at the left when directed, otherwise canonical rank
 /// chooses among equally valid bridged-T reflections.
 pub fn find(nl: *const Netlist, roles: []const sch.Role, ranks: []const u32, shelf: u32) ?Frame {
     const g = &nl.graph;
     const count = g.edgeCount();
-    if (count != 4 and count != 6) return null;
+    if (count < 4 or count > 6) return null;
     const is_ladder = count == 6;
-    const width: u8 = if (is_ladder) 6 else 3;
+    const width: u8 = if (is_ladder) 6 else if (count == 5) 4 else 3;
     if (shelf != 0 and shelf < width) return null;
     for (nl.hints) |hint| switch (hint.verb) {
+        .driver => if (count != 5 or hint.args.len != 2 or !std.mem.eql(u8, hint.args[1], "inline")) return null,
         .role, .expand, .label, .wire, .port, .rail, .via, .route, .refdes => {},
         else => return null,
     };
+    if (count == 5) return resonator(nl, roles);
     for (g.edges.items(.kind), 0..) |kind, d| {
         if (kind != .resistor and kind != .inductor and kind != .capacitor) return null;
         if (g.members(EdgeId.from(d)).len != 2) return null;
@@ -147,6 +156,52 @@ pub fn port(c: *canvas.Canvas, net: u32, pins: []const u32) std.mem.Allocator.Er
 
 // ---- private ----
 
+/// Matches five raw cards: an inline voltage source drives a parallel LC
+/// through path, then one resistor and one reactance shunt its output.
+fn resonator(nl: *const Netlist, roles: []const sch.Role) ?Frame {
+    const g = &nl.graph;
+    const kinds = g.edges.items(.kind);
+    const src = std.mem.indexOfScalar(netlist.DeviceKind, kinds, .vsource) orelse return null;
+    const v = g.members(EdgeId.from(src));
+    if (v.len != 2 or roles[v[0].index()] != .internal or roles[v[1].index()] != .sink) return null;
+    const output = for (roles, 0..) |r, i| {
+        if (r == .output and g.incident(VertexId.from(i)).len != 0) break VertexId.from(i);
+    } else return null;
+    var frame: Frame = undefined;
+    frame.devices[src] = .{ .x = 0, .y = 3, .first = 0, .vertical = true };
+    var seen: u4 = 0;
+    for (kinds, 0..) |kind, d| {
+        if (d == src) continue;
+        const pins = g.members(EdgeId.from(d));
+        if (pins.len != 2) return null;
+        const at_out: u1 = @intFromBool(pins[0] != output);
+        if (pins[at_out] != output) return null;
+        const other = pins[1 - at_out];
+        const shunt = other == v[1];
+        if (!shunt and other != v[0]) return null;
+        const slot: u2 = if (shunt) switch (kind) {
+            .resistor => 3,
+            .capacitor, .inductor => 2,
+            else => return null,
+        } else switch (kind) {
+            .capacitor => 1,
+            .inductor => 0,
+            else => return null,
+        };
+        const bit = @as(u4, 1) << slot;
+        if (seen & bit != 0) return null;
+        seen |= bit;
+        frame.devices[d] = .{
+            .x = if (shunt) slot else 1,
+            .y = if (shunt) 3 else @as(u8, slot) * 2,
+            .first = if (shunt) at_out else 1 - at_out,
+            .vertical = shunt,
+        };
+    }
+    std.debug.assert(seen == 15);
+    return frame;
+}
+
 fn match(nl: *const Netlist, arms: []const Arm, nodes: [5]u32, reflect: bool) ?Frame {
     std.debug.assert(nl.graph.edgeCount() == arms.len);
     var frame: Frame = undefined;
@@ -173,20 +228,7 @@ fn match(nl: *const Netlist, arms: []const Arm, nodes: [5]u32, reflect: bool) ?F
     return frame;
 }
 
-test "passive filters: reject different attachments, forced cells and external taps" {
-    const body = "Filter\nR1 vin x 1k\nR2 x vout 1k\n";
-    const valid = body ++ "C3 vin vout 1p\nC4 x 0 1p\n";
-    // AR6364 beside an untapped path, a duplicate arm, an exported tap,
-    // an extra load, an explicit placement and a shelf that must wrap.
-    const cases = [_]struct { deck: []const u8, shelf: u32 = 8, admitted: bool = false }{
-        .{ .deck = valid, .admitted = true },
-        .{ .deck = body ++ "C3 vin vout 1p\nC4 vout 0 1p\n" },
-        .{ .deck = body ++ "C3 vin x 1p\nC4 x 0 1p\n" },
-        .{ .deck = valid ++ "*@ role x output\n" },
-        .{ .deck = valid ++ "RL vout 0 1k\n" },
-        .{ .deck = valid ++ "*@ cell c3 0 2\n" },
-        .{ .deck = valid, .shelf = 1 },
-    };
+fn check(cases: []const Example) !void {
     for (cases) |case| {
         var arena = std.heap.ArenaAllocator.init(std.testing.allocator);
         defer arena.deinit();
@@ -196,4 +238,36 @@ test "passive filters: reject different attachments, forced cells and external t
         const st = try sch.structure.analyze(a, a, &nl, roles);
         try std.testing.expectEqual(case.admitted, find(&nl, roles, st.net_rank, case.shelf) != null);
     }
+}
+
+test "passive filters: reject different attachments, forced cells and external taps" {
+    const body = "Filter\nR1 vin x 1k\nR2 x vout 1k\n";
+    const valid = body ++ "C3 vin vout 1p\nC4 x 0 1p\n";
+    // AR6364 beside an untapped path, a duplicate arm, an exported tap,
+    // an extra load, an explicit placement and a shelf that must wrap.
+    const cases = [_]Example{
+        .{ .deck = valid, .admitted = true },
+        .{ .deck = body ++ "C3 vin vout 1p\nC4 vout 0 1p\n" },
+        .{ .deck = body ++ "C3 vin x 1p\nC4 x 0 1p\n" },
+        .{ .deck = valid ++ "*@ role x output\n" },
+        .{ .deck = valid ++ "RL vout 0 1k\n" },
+        .{ .deck = valid ++ "*@ cell c3 0 2\n" },
+        .{ .deck = valid, .shelf = 1 },
+    };
+    try check(cases[0..]);
+}
+
+test "parallel LC: exclude separate driver, reversed source, duplicate reactance and switched output" {
+    const body = "Filter\nL drive vo 1n\nC drive vo 1p\nR vo 0 1k\n";
+    const end = "Vi drive 0 DC 1\n*@ weak driver vi inline\n";
+    const valid = body ++ "C2 vo 0 1p\n" ++ end;
+    const cases = [_]Example{
+        .{ .deck = valid, .admitted = true },
+        .{ .deck = valid ++ "*@ driver vi apart\n" },
+        .{ .deck = body ++ "C2 vo 0 1p\nVi 0 drive DC 1\n*@ weak driver vi inline\n" },
+        .{ .deck = body ++ "C2 drive vo 1p\n" ++ end },
+        .{ .deck = body ++ "C2 drive 0 1p\n" ++ end },
+        .{ .deck = valid ++ "*@ role drive output\n" },
+    };
+    try check(cases[0..]);
 }

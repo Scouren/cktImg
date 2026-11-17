@@ -63,3 +63,17 @@ Each sampler now has four upright diodes in the two observed columns. The two fo
 
 [ag763]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/763/Book763.png
 [ag1042]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1042/Book1042.png
+
+## Driven parallel LC filters
+
+AR6358 and AR6360 put a parallel L and C between the drive and output. The inductor occupies the upper path and the capacitor the lower path. Two separate load branches descend from the output. AR6361 uses its parallel pair in a differential readout branch and retains its upright orientation.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AR6358 before](ar-6358.before.svg)](ar-6358.before.svg) | [![AR6358 after](ar-6358.after.svg)](ar-6358.after.svg) | [![AR6358 published][ar6358]][ar6358] |
+| [![AR6360 before](ar-6360.before.svg)](ar-6360.before.svg) | [![AR6360 after](ar-6360.after.svg)](ar-6360.after.svg) | [![AR6360 published][ar6360]][ar6360] |
+
+Both driven filters now meet the terminal-axis and load-branch checks. The output ports and source polarity come from the deck. The upstream open measurement terminals are only present where the converted deck declares them.
+
+[ar6358]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6358.jpg
+[ar6360]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6360.jpg

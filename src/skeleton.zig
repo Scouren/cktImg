@@ -245,6 +245,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     @memset(shelf, 0);
     if (passive) |frame| {
         @memset(drawn, true);
+        if (n == 5) try relations.drivers(gpa, nl, drawn, verdicts);
         frame.apply(nl, form, upper, lower, left_end, x, y);
         return .{ .bridged_t = n == 4, .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .left_end = left_end, .x = x, .y = y, .shelf = shelf, .axis2 = null, .origin = .{ 0, 0 }, .verdicts = verdicts };
     }
