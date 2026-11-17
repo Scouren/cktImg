@@ -112,7 +112,7 @@
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -184,7 +184,7 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen, no input styled as a wire. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -269,6 +269,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             try parts(&c, net, pins);
             s.labeled[net] = true;
             continue;
+        }
+        if (bridged_t and style == .auto and lines.port[net] == null and s.roles[net].isPort()) {
+            if (try @import("passive_filters.zig").port(&c, net, pins)) continue;
         }
         switch (Drawn.of(s.roles[net])) {
             // A rail's pins face out along the rows, a supply's up and a

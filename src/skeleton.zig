@@ -94,6 +94,7 @@ const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
+const passive_filters = @import("passive_filters.zig");
 const loop_place = @import("loop_place.zig");
 const cross_loads = @import("cross_loads.zig");
 const input_place = @import("input_place.zig");
@@ -123,6 +124,8 @@ pub const Options = struct {
 /// One entry per device, in card order. A device that is not drawn (a
 /// driver, a card with no pins) has `drawn` false and the rest unspecified.
 pub const Skeleton = struct {
+    /// The tapped two-arm path owns both ports in a matched passive bridged T.
+    bridged_t: bool = false,
     drawn: []const bool,
     form: []const Form,
     /// A vertical device's upper and lower ends' nets; `none` otherwise.
@@ -172,13 +175,15 @@ const Chain = struct {
 
 /// Asserts that `roles` has one entry per net and `st` comes from `nl`.
 pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton {
-    const first = try lay(gpa, arena, nl, roles, st, opts, null);
+    const passive = passive_filters.find(nl, roles, st.net_rank, opts.shelf);
+    const first = try lay(gpa, arena, nl, roles, st, opts, null, passive);
+    if (passive != null) return first;
     // A flat part that cannot be wired straight stands upright, and the
     // skeleton is laid once more (`crooked`).
     const stood = try gpa.alloc(bool, nl.graph.edgeCount());
     defer gpa.free(stood);
     if (!forms.crooked(nl, roles, st, &first, spread, stood)) return first;
-    return lay(gpa, arena, nl, roles, st, opts, stood);
+    return lay(gpa, arena, nl, roles, st, opts, stood, null);
 }
 
 /// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
@@ -215,7 +220,7 @@ pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
 
 /// The skeleton with the forms `classify` gives, and the devices `stood`
 /// marks (if any) upright all the same.
-fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options, stood: ?[]const bool) Allocator.Error!Skeleton {
+fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options, stood: ?[]const bool, passive: ?passive_filters.Frame) Allocator.Error!Skeleton {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(roles.len == c.vertexCount());
@@ -235,6 +240,13 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
 
     const verdicts = try arena.alloc(?hints.Verdict, nl.hints.len);
     @memset(verdicts, null);
+    const shelf = try arena.alloc(u32, n);
+    @memset(shelf, 0);
+    if (passive) |frame| {
+        @memset(drawn, true);
+        frame.apply(nl, form, upper, lower, left_end, x, y);
+        return .{ .bridged_t = n == 4, .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .left_end = left_end, .x = x, .y = y, .shelf = shelf, .axis2 = null, .origin = .{ 0, 0 }, .verdicts = verdicts };
+    }
     try forms.classify(gpa, nl, roles, st, drawn, form, verdicts);
     try relations.forms(arena, nl, drawn, form, verdicts);
     if (stood) |up| for (up, form, drawn) |u, *f, dr| {
@@ -314,8 +326,6 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     var protected = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
     defer protected.deinit(gpa);
     try input_place.place(gpa, nl, roles, devices_by_rank, st.device_rank, drawn, form, upper, mate, gate_right, left_end, x, y, verdicts, &protected);
-    const shelf = try arena.alloc(u32, n);
-    @memset(shelf, 0);
     try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts, protected.items);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);

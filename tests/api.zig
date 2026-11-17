@@ -514,6 +514,7 @@ test {
     _ = @import("converter_bus.zig");
     _ = @import("converter_bus_remote.zig");
     _ = @import("input_resistors.zig");
+    _ = @import("passive_filters.zig");
     _ = @import("input_order.zig");
     _ = @import("trunk_taps.zig");
     _ = @import("thin_parts.zig");

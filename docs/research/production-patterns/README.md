@@ -33,3 +33,19 @@ AG725's Q8 and Q10 share VB3. In the production drawing the Vcntrl wire crosses 
 Across 132 reviewed bias and divider decks, eight gained a visible bias port. The device terminals and the sets of pins joined by each physical wire were preserved in all 132. In particular, all twelve MOS gate dividers already had a straight tap-to-gate wire, including the two taps with a fourth wire arm.
 
 [ag725]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/725/Book725.png
+
+## Passive ladders and bridged T filters
+
+The reference row is the tapped path between the ports. AR6308 places three resistors on this row with a capacitor dropping from each tap. In AR6363 and its R/C dual AR6364, the two tapped arms share the port row, the untapped arm bridges over them and the return drops from the central junction.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AR6308 before](ar-6308.before.svg)](ar-6308.before.svg) | [![AR6308 after](ar-6308.after.svg)](ar-6308.after.svg) | [![AR6308 source][ar6308]][ar6308] |
+| [![AR6363 before](ar-6363.before.svg)](ar-6363.before.svg) | [![AR6363 after](ar-6363.after.svg)](ar-6363.after.svg) | [![AR6363 source][ar6363]][ar6363] |
+| [![AR6364 before](ar-6364.before.svg)](ar-6364.before.svg) | [![AR6364 after](ar-6364.after.svg)](ar-6364.after.svg) | [![AR6364 source][ar6364]][ar6364] |
+
+The through-path and port checks went from three of four to four of four ladders, and from zero of two to two of two bridged Ts. The drawings of AR1910, AR5431 and AR5432 already had the observed layout. Their placement JSON is byte-identical.
+
+[ar6308]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6308.jpg
+[ar6363]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6363.jpg
+[ar6364]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6364.jpg

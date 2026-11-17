@@ -306,7 +306,7 @@ fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops);
+    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, sk.bridged_t);
     s.xy = xy.items;
 }
 
