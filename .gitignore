@@ -14,3 +14,6 @@ zig-out/
 .claude/
 zig-pkg/
 
+
+# Python corpus checks share the expected terminal contracts.
+/tests/__pycache__/

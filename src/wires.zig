@@ -112,7 +112,7 @@
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -127,6 +127,7 @@ const trunk = @import("trunk.zig");
 const power_loops = @import("power_loops.zig");
 const power_loop_wires = @import("power_loop_wires.zig");
 const NetLines = netlines.NetLines;
+const parent_parts = @import("parent_parts.zig");
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -184,7 +185,7 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen, no input styled as a wire. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, bridged_t: bool, final_routes: bool) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -245,10 +246,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const anchors: []u32 = if (loops.len != 0) try gpa.alloc(u32, n_nets) else &.{};
     defer gpa.free(anchors);
     @memset(anchors, sch.none);
-    var seeded = loops.len == 0;
+    var seeded = loops.len == 0 and trial.pairs.len == 0;
     for (order) |net| {
         if (!seeded and !s.roles[net].isRail()) {
-            try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
+            if (loops.len != 0) try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
+            try trial.draw(&c, lines, pins_of, routed, drawn);
             seeded = true;
         }
         const pins = pins_of[net].items;

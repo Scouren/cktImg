@@ -2,6 +2,8 @@
 
 The first column uses upstream production commit `4c7c3a12`. The middle column uses the layout change for that row. Both use the same converted DUT and the default symbols. Click a drawing to inspect individual pins and wires. The last column links the pinned upstream figures.
 
+The comparator study follows the same output connections through the native SVG and the Schemify netlister. [Reflected comparator output wires](parent-outputs.md)
+
 ## Differential stages with reciprocal MOS loads
 
 Follow each input transistor's drain to the four load terminals on its output net. Both published circuits put the diode-connected loads on the outside. In AG1034 the inner drains cross to the other branch. In AG215 the inner gates cross instead.

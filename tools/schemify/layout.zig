@@ -150,7 +150,24 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
             o.* = .{ .x = q[0], .y = q[1] };
         }
         const box_ops = [_]engine.library.DrawOp{.{ .polyline = &outline }};
-        const ops = if (syms.shape.items[s] == .box) &box_ops else glyph: {
+        // Core MOS terminals have physical leads. The registered ink here
+        // preserves their exact contact/attachment points and pin bounds;
+        // Schemify paints the host's complete core symbol on import.
+        var core_mos: [6]engine.library.DrawOp = undefined;
+        const is_core_mos = syms.origin.items[s] == .core and (fam == .nmos or fam == .pmos);
+        const ops = if (is_core_mos) blk: {
+            const strokes = [_][4]i32{
+                .{ -20, 0, -10, 0 },   .{ -10, -10, -10, 10 },
+                .{ 20, -30, 20, -10 }, .{ 0, -10, 20, -10 },
+                .{ 20, 30, 20, 10 },   .{ 0, 10, 20, 10 },
+            };
+            for (strokes, &core_mos) |seg, *op| {
+                const from = xform(t, seg[0], seg[1]);
+                const to = xform(t, seg[2], seg[3]);
+                op.* = .ln(from[0], from[1], to[0], to[1]);
+            }
+            break :blk &core_mos;
+        } else if (syms.shape.items[s] == .box) &box_ops else glyph: {
             const port_names = try a.alloc([]const u8, pins.len);
             for (pins, port_names) |p, *name| name.* = p.name;
             const glyph = try engine.block_symbols.draw(a, syms.shape.items[s], port_names, 20);
@@ -308,6 +325,11 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
 /// counts, every pin on its symbol's position), which would otherwise mean a wrong class
 /// library.
 pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
+    return drawSource(gpa, a, "", lib, deck, rec, c, budget);
+}
+
+/// Draws the cell with its original, unprojected source available to local-parent analysis.
+pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
     const devs = deck.devs(c);
     const names = try netNames(a, deck, c);
     var out: Drawn = .{};
@@ -328,7 +350,7 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
     }
     const text = try cellDeck(a, deck, rec, c, names);
     var diag: engine.netlist.Diagnostic = .{};
-    var placed = engine.place(gpa, &engine.Config.default, lib, &.{text}, &diag) catch |e| switch (e) {
+    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag) catch |e| switch (e) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });
@@ -343,6 +365,13 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
     try placeFree(a, &out, deck, rec, c);
     assert(out.x.items.len == devs.len());
     return out;
+}
+
+fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic) engine.PlaceError!engine.Placed {
+    var nl = try engine.netlist.parse(gpa, &.{text}, diag);
+    defer nl.deinit(gpa);
+    const pairs = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
+    return engine.placeBound(gpa, gpa, &.default, lib, &nl, pairs);
 }
 
 /// Places the node-less devices of cell `c` (nothing to wire, so the engine never sees

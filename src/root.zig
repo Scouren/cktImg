@@ -29,6 +29,8 @@ pub const netlist = @import("netlist.zig");
 pub const parent_context = @import("parent_context.zig");
 /// Cold structural analysis; a complete reflection is independent of placement mates.
 pub const local_parents = @import("local_parents.zig");
+/// Two private drain outputs proven by a complete ordered reflection.
+pub const parent_outputs = @import("parent_outputs.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -148,11 +150,17 @@ pub const Pipeline = struct {
 fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!Placed {
     var nl = try netlist.parse(tmp, sources, diag);
     defer nl.deinit(tmp);
-    const roles = try guessRoles(tmp, &nl);
+    return placeBound(tmp, out, cfg, lib, &nl, &.{});
+}
+
+/// Draws this exact parsed graph with the supplied fully bound parent outputs.
+/// The caller keeps the graph alive and owns the returned placement.
+pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair) PlaceError!Placed {
+    const roles = try guessRoles(tmp, nl);
     defer tmp.free(roles);
-    var s = try layout(tmp, &nl, roles, lib, cfg.layout);
+    var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
     defer s.deinit();
-    return Placed.init(out, &s, &nl);
+    return Placed.init(out, &s, nl);
 }
 
 test {

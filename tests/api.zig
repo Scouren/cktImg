@@ -497,6 +497,7 @@ test "place: a coupling card remains electrical data and needs no drawable class
 }
 
 test {
+    _ = @import("parent_parts.zig");
     _ = @import("block_symbols.zig");
     _ = @import("block_aliases.zig");
     _ = @import("transmission.zig");

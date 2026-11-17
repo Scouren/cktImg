@@ -117,7 +117,7 @@ pub fn main(init: std.process.Init) !void {
         };
         srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
     }
-    var placed = np.place(gpa, &cfg, &lib, srcs, &diag) catch |err| switch (err) {
+    var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null and opts.symbols == null and opts.target == null) raw else null, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -201,6 +201,13 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
     const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
+}
+
+fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, lib: *np.Library, srcs: []const []const u8, raw: ?[]const u8, diag: *np.netlist.Diagnostic) !np.Placed {
+    var nl = try np.netlist.parse(gpa, srcs, diag);
+    defer nl.deinit(gpa);
+    const pairs = if (raw) |source| try np.parent_outputs.eligible(arena, try np.parent_context.bind(arena, source, &nl, &np.parent_context.standard_rails)) else &.{};
+    return np.placeBound(gpa, gpa, cfg, lib, &nl, pairs);
 }
 
 /// The `*@ weak at` stays of a drawing: one line per named device of

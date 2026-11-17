@@ -80,12 +80,16 @@ pub fn build(b: *std.Build) void {
     const ex_files = b.addWriteFiles();
     _ = ex_files.addCopyFile(b.path("examples/blocks.spice"), "blocks.spice");
     _ = ex_files.addCopyFile(b.path("examples/latex/cs.cir"), "cs.cir");
+    const parent_sources = b.addWriteFiles();
+    const parent_names = [_][]const u8{ "ag-1053.cir", "ag-1079.cir", "ag-1080.cir" };
+    for (parent_names) |name| _ = parent_sources.addCopyFile(b.path(b.fmt("external/examples/analoggenie/{s}", .{name})), name);
+    const parent_examples = b.createModule(.{ .root_source_file = parent_sources.add("parent_examples.zig", "pub const decks = .{ @embedFile(\"ag-1053.cir\"), @embedFile(\"ag-1079.cir\"), @embedFile(\"ag-1080.cir\") };\n") });
     const examples = b.createModule(.{ .root_source_file = ex_files.add("examples.zig", "pub const all = [_][]const u8{ @embedFile(\"blocks.spice\"), @embedFile(\"cs.cir\") };\n") });
     const api = b.addTest(.{ .root_module = b.createModule(.{
         .root_source_file = b.path("tests/api.zig"),
         .target = target,
         .optimize = optimize,
-        .imports = &.{ .{ .name = "NetlistParser", .module = mod }, .{ .name = "examples", .module = examples } },
+        .imports = &.{ .{ .name = "NetlistParser", .module = mod }, .{ .name = "examples", .module = examples }, .{ .name = "parent_examples", .module = parent_examples } },
     }) });
 
     // The C ABI as a C program uses it.

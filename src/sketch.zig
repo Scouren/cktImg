@@ -156,6 +156,9 @@ const none = sch.none;
 /// too many wires: a wire gone may free a path that crosses anew.
 const thin_rounds = 3;
 
+/// Cold graph-bound MOS output pairs supplied by the selected-cell caller.
+pub const parent_parts = @import("parent_parts.zig");
+
 /// Lattice column and row → coordinate.
 const Geo = struct {
     xs: []const i32,
@@ -168,6 +171,11 @@ const flips = [_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true },
 /// The stages in one call: the structure (`structure.analyze`), the
 /// skeleton (`skeleton.place`), then `draw`.
 pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic {
+    return layWithParents(gpa, nl, roles, lib, layout, &.{});
+}
+
+/// The ordinary layout with source-qualified output pairs for final routing.
+pub fn layWithParents(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
@@ -175,7 +183,7 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     const sk = try skeleton.place(gpa, a, nl, roles, &st, .{ .shelf = layout.shelf });
     // `place`'s skeletons always hold.
     skeleton.validate(&sk, nl) catch unreachable;
-    try drawValid(gpa, &s, nl, layout, &st, &sk);
+    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs);
     return s;
 }
 
@@ -185,13 +193,19 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
 /// the stages included: a skeleton the drawing cannot use is refused
 /// (`skeleton.Invalid`) before anything is drawn.
 pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+    return drawWithParents(gpa, s, nl, layout, st, sk, &.{});
+}
+
+/// A caller-edited skeleton with qualified source pairs; physical contacts
+/// are admitted only against actual selected classes and settled poses.
+pub fn drawWithParents(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair) !void {
     try skeleton.validate(sk, nl);
-    try drawValid(gpa, s, nl, layout, st, sk);
+    try drawValid(gpa, s, nl, layout, st, sk, pairs);
 }
 
 // ---- private ----
 
-fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair) !void {
     // The deck's drawing lines; their verdicts are the report's to give.
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
@@ -207,6 +221,10 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
+    const states = try gpa.alloc(parent_parts.State, pairs.len);
+    defer gpa.free(states);
+    for (pairs, states) |p, *state| state.* = if (parent_parts.admitted(nl, p, &lines)) .ready else .withdrawn;
+    const trial: parent_parts.Trial = .{ .states = states, .pairs = pairs, .nl = nl };
     const loops = try power_loop_wires.collect(gpa, nl, s.roles, sk.drawn, &lines);
     defer gpa.free(loops);
     // Each drawn device's point: the lattice's.
@@ -245,7 +263,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         @memset(no_ats, null);
         var own = lines;
         own.routes = &.{};
-        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, &xy, false);
+        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, .{}, &xy, false);
         try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk), bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates));
         const boxes = try deviceBoxes(gpa, s, nl, sk);
         defer gpa.free(boxes);
@@ -278,12 +296,23 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
             if (sk.shelf[e.index()] != first.?) sty.* = .cut;
         }
     }
-    for (0..thin_rounds + 1) |round| {
-        try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, &xy, true);
-        const mirror = drawnMirror(s, sk, st);
-        if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
-        wipe(s, &xy);
-    }
+    const initial = if (pairs.len != 0) try gpa.dupe(netlines.Style, style) else &.{};
+    defer gpa.free(initial);
+    restart: for (0..pairs.len + 1) |_| {
+        for (0..thin_rounds + 1) |round| {
+            try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, trial, &xy, true);
+            const mirror = drawnMirror(s, sk, st);
+            const changed = round != thin_rounds and try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style);
+            if (trial.withdraw(style)) {
+                wipe(s, &xy);
+                @memcpy(style, initial);
+                continue :restart;
+            }
+            if (!changed) break;
+            wipe(s, &xy);
+        }
+        break;
+    } else unreachable;
     try noConnects(gpa, s);
     assert(s.xy.len == s.nodes.len);
 }
@@ -299,14 +328,14 @@ fn wipe(s: *Schematic, xy: *std.ArrayList([2]f32)) void {
 }
 
 /// The devices at `at` (an `at` line's place first), then every net wired.
-fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
+fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
     try placeDevices(s, nl, sk, at, ats, xy);
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, sk.bridged_t, final_routes);
+    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, trial, sk.bridged_t, final_routes);
     s.xy = xy.items;
 }
 

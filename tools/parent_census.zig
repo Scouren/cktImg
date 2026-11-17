@@ -26,6 +26,15 @@ pub fn main(init: std.process.Init) !void {
         const r = try np.local_parents.collect(a, ctx, .{});
         var j = J{ .writer = &sw.interface };
         try write(&j, path, &nl, r);
+        try j.objectField("output_pairs");
+        try j.beginArray();
+        for (try np.parent_outputs.collect(a, ctx, r)) |pair| {
+            try j.beginArray();
+            for (pair) |side| try j.write(.{ .net = nl.graph.vertices.items(.name)[side.net], .pmos = nl.graph.edges.items(.name)[side.pmos], .nmos = nl.graph.edges.items(.name)[side.nmos], .gate = nl.graph.edges.items(.name)[side.gate] });
+            try j.endArray();
+        }
+        try j.endArray();
+        try j.endObject();
         try sw.interface.writeByte('\n');
     }
     try sw.interface.flush();
@@ -83,7 +92,6 @@ fn write(j: *J, path: []const u8, nl: *const np.netlist.Netlist, r: np.local_par
             try j.endObject();
         }
     }
-    try j.endObject();
 }
 fn groups(j: *J, names: []const []const u8, owner: []const u32, count: u32) !void {
     try j.beginArray();
