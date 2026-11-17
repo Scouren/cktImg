@@ -526,3 +526,7 @@ test {
     _ = @import("reference_gate_tree.zig");
     _ = @import("bias_block_neighbors.zig");
 }
+
+test {
+    _ = @import("cross_loads.zig");
+}

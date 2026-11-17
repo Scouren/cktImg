@@ -54,7 +54,8 @@
 //!   of 1,968 (600 face out). A mirror or bank of three or more has no
 //!   rule of its own: skeleton.9 turns each gate (people turn all of one
 //!   left, the rule retired as skeleton.12, in 12 of 1,103 such mirrors
-//!   and 88 of 380 banks). `gates`
+//!   and 88 of 380 banks). A reciprocal load row with two diodes follows
+//!   its input columns and their associated terminals. `gates`, `cross_loads`
 //! - skeleton.15 (habit, bounded) A two-MOS bank with one complete analog
 //!   block output and otherwise only capacitors on its gate net faces an
 //!   exterior driver. All 42 actual source gates in 21 selected banks do
@@ -94,6 +95,7 @@ const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
 const loop_place = @import("loop_place.zig");
+const cross_loads = @import("cross_loads.zig");
 const input_place = @import("input_place.zig");
 const config = @import("config.zig");
 
@@ -306,6 +308,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     mated = false;
     for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
     gates(nl, roles, st, mate, drawn, form, x, gate_right);
+    cross_loads.place(nl, roles, st, mate, drawn, form, x, y, gate_right, verdicts);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
     var protected = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
