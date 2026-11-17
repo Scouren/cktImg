@@ -78,7 +78,7 @@ const Pt = lib.Pt;
 const DrawOp = lib.DrawOp;
 
 /// Appearance only; every recognized symbol remains an electrical subcircuit.
-pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier };
+pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier, regulator_amplifier };
 
 /// Terminals and strokes allocated in `arena`, which the caller releases
 /// together. `ports` and its strings must outlive the returned drawing.
@@ -161,7 +161,9 @@ pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3 {
 /// between two input pins. Asserts `4 <= pitch <= 1_000_000`, two to eight
 /// verified ports, and a non-box shape. Allocation failure leaves arena
 /// cleanup with the caller, as on success.
-pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing {
+pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing {
+    const regulator = selected == .regulator_amplifier;
+    const shape: Shape = if (regulator) .amplifier else selected;
     assert(shape != .box);
     assert(pitch >= 4);
     assert(pitch <= 1_000_000);
@@ -192,8 +194,10 @@ pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i3
         const r = role(shape, ports, name);
         assert(r != .unknown);
         const y: i32 = switch (r) {
-            .positive, .second, .out_negative => pitch,
-            .negative, .out_positive => -pitch,
+            .positive => if (regulator) -pitch else pitch,
+            .negative => if (regulator) pitch else -pitch,
+            .second, .out_negative => pitch,
+            .out_positive => -pitch,
             .input => if (twoInputs(shape)) -pitch else 0,
             else => 0,
         };

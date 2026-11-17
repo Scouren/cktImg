@@ -285,6 +285,7 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
             }
         }
     }
+    try @import("regulator.zig").select(a, deck, &r);
     assert(r.parts.sym.items.len == deck.dev_name.len);
     assert(r.parts.over_start.items.len == deck.dev_name.len + 1);
     return r;
@@ -1144,4 +1145,36 @@ test "faithful cards map to core, others to leaves" {
     } else false);
     try overOf(&r, 6, &.{.{ "args", "undefined_sub w=1" }});
     try testing.expectEqualStrings("undefined_sub", r.syms.args_default.items[r.parts.sym.items[6]]);
+}
+
+test "AG2187 regulator keeps the generated VDD lead above positive and FB below it" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const deck =
+        \\.model nch nmos
+        \\.subckt opamp VDD VSS INN INP OUT
+        \\.ends
+        \\.subckt reg VDD VSS VIN VREF VOUT
+        \\CL VOUT ESR 1p
+        \\MNP VIN gate VOUT VSS nch l=1u w=1u m=1
+        \\R1 VOUT FB 1k
+        \\R2 FB VSS 1k
+        \\R3 ESR VSS 1k
+        \\X1 VDD VSS FB VREF gate opamp
+        \\.ends
+        \\
+    ;
+    // The raw AG2187 book drawing puts VREF at the upper sign. A second
+    // use of the same cell must retain its shared definition's default.
+    for ([_][]const u8{ "", "Xother a b c d e opamp\n" }, [_]bool{ true, false }) |extra, positive_above| {
+        const d = try spice.parse(a, try mem.concat(a, u8, &.{ deck, extra }));
+        const r = try recognize(a, &d, &.{});
+        const pins = r.syms.pins(subSymbol(1));
+        try t.expectEqual(positive_above, pins[3].y < pins[2].y);
+        try t.expect(pins[0].y < @min(pins[2].y, pins[3].y));
+        try t.expect(pins[1].y > @max(pins[2].y, pins[3].y));
+        try t.expectEqualStrings("OUT", pins[4].name);
+    }
 }

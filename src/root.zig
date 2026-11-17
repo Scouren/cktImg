@@ -18,6 +18,7 @@
 //! Contents (the new shared glyph entry; the existing exports follow below):
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
+//! - `pub const regulator = @import("regulator.zig")`
 //! - `pub const block_symbols = @import("block_symbols.zig")`
 
 const std = @import("std");
@@ -31,6 +32,8 @@ pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
+/// Signed input order from raw NMOS regulator connections and declared cell ports.
+pub const regulator = @import("regulator.zig");
 /// Conventional glyphs for subcircuits with verified named port contracts.
 pub const block_symbols = @import("block_symbols.zig");
 pub const config = @import("config.zig");

@@ -77,3 +77,17 @@ Both driven filters now meet the terminal-axis and load-branch checks. The outpu
 
 [ar6358]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6358.jpg
 [ar6360]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6360.jpg
+
+## Signed inputs on a regulator's error amplifier
+
+In AG2187, the amplifier output drives an NMOS pass gate. The positive input receives the reference and the negative input receives the output-divider tap. The right-facing symbol now puts the reference above the feedback lead. The Schemify importer puts the signs and the original ordered terminals on the corresponding rows of the generated symbol.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AG2187 before](ag-2187.before.svg)](ag-2187.before.svg) | [![AG2187 after](ag-2187.after.svg)](ag-2187.after.svg) | [![AG2187 panel A.1][ag2187]][ag2187] |
+
+Of the 40 related decks, 39 accepted the signed frame. AG2212 retains its nine-port box. Across all 39, the physical wire components, port and rail marker counts, crossings and bends were preserved. The 40 decks share the same published image. Wang's Fig. 1A independently illustrates the right-facing arrangement. TI's Fig. 4 shows the corresponding input order on a rotated amplifier. [Wang, Fig. 1A](https://patentimages.storage.googleapis.com/f9/3f/00/1a7115fae3947b/US7446515B2.pdf#page=2) · [Texas Instruments, Fig. 4](https://www.ti.com/lit/ta/ssztac2/ssztac2.pdf#page=3)
+
+The baseline already places the output capacitor above its series resistance in all 40 regulator decks, as well as in AG652 and AG2288. Their capacitor has no direct ground connection. AG652's internal compensation capacitor has a different role.
+
+[ag2187]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/2187/Book2187.png

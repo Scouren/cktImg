@@ -105,7 +105,7 @@ pub fn main(init: std.process.Init) !void {
     if (sym_diags.items.len > 0) fatal("symbols: {s}: {t}", .{ sym_diags.items[0].class, sym_diags.items[0].err });
 
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = deckSources(gpa, arena, opts.netlist, raw, &diag) catch |err| switch (err) {
+    const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -187,7 +187,7 @@ pub fn main(init: std.process.Init) !void {
 
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
-fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
+fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
     const first = std.mem.trimStart(u8, raw, " \t\r\n");
     const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
     var nl = try np.netlist.parse(gpa, &.{text}, diag);
@@ -199,7 +199,7 @@ fn deckSources(gpa: Allocator, arena: Allocator, path: []const u8, raw: []const 
     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
     const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
-    const roles = try portRoles(gpa, arena, &.{ with_sources, rest }, top.ports, diag);
+    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
 
@@ -252,13 +252,15 @@ fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, di
     return out.written();
 }
 
-/// `*@ weak role` lines for the top cell's ports whose names say nothing of
+/// Prepare this top cell’s generated amplifier frame from its declared
+/// interface. Emit `*@ weak role` lines for its ports whose names say nothing of
 /// their role (R1 leaves them internal): a port only gates hang on is an
 /// input, any other an output. So every port is drawn as one, and a port on
 /// one gate is no dangling pin.
-fn portRoles(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, diag: *np.netlist.Diagnostic) ![]const u8 {
+fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic) ![]const u8 {
     var nl = try np.netlist.parse(gpa, sources, diag);
     defer nl.deinit(gpa);
+    if (lib) |draw_lib| try @import("regulator.zig").select(arena, &nl, ports, draw_lib);
     const roles = try np.guessRoles(gpa, &nl);
     defer gpa.free(roles);
     const driven = try gpa.alloc(bool, roles.len);
@@ -494,7 +496,7 @@ test "deck: a subcircuit file draws its top cell" {
     defer arena_state.deinit();
     const arena = arena_state.allocator();
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = try deckSources(gpa, arena, "cell.spice",
+    const srcs = try deckSources(gpa, arena, null, "cell.spice",
         \\.subckt inv in out vdd vss
         \\XM1 out in vss vss sky130_fd_pr__nfet_01v8 W=1 L=0.15
         \\XM2 out in vdd vdd sky130_fd_pr__pfet_01v8 W=2 L=0.15
@@ -520,7 +522,7 @@ test "deck: a top cell's voltage source is a device of the circuit, not a driver
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = try deckSources(gpa, arena_state.allocator(), "cs.spice",
+    const srcs = try deckSources(gpa, arena_state.allocator(), null, "cs.spice",
         \\.subckt dut vdd vss vb
         \\M1 n0 vb vss vss nch
         \\RD vdd n0 1k
@@ -543,7 +545,7 @@ test "deck: the top cell's ports that no name gives a role are inputs and output
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = try deckSources(gpa, arena_state.allocator(), "ota.spice",
+    const srcs = try deckSources(gpa, arena_state.allocator(), null, "ota.spice",
         \\.subckt dut vdd vss vin x vip vb
         \\M1 n0 vin n1 vss nch
         \\M2 x vip n1 vss nch
@@ -607,4 +609,45 @@ test "from: a drawing's JSON gives the stays its decisions give" {
     }
     try std.testing.expectEqualStrings(want.items, got.items);
     try std.testing.expectError(error.NotADrawing, stays(arena, "{\"devices\": 3}", lib.unit));
+}
+
+test "AG2187 signed slots follow the literal cell interface and original port order" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const text =
+        \\* AG2187 with reordered formal/actual pairs and arbitrary internal names
+        \\.model mod nmos
+        \\.subckt opamp INP OUT VDD INN VSS
+        \\.ends
+        \\.subckt dut p gnd i ref o{s}
+        \\Cload e o 1p
+        \\R1 f o 1k
+        \\R2 gnd f 1k
+        \\R3 e gnd 1k
+        \\M1 i c o gnd mod
+        \\X1 ref c p f gnd opamp
+        \\.ends
+        \\
+    ;
+    // Exposing either feedback or the driven gate removes the certificate.
+    for ([_][]const u8{ "", " c", " f" }) |extra| {
+        var lib: np.Library = .init(t.allocator);
+        defer lib.deinit();
+        var diag: np.netlist.Diagnostic = .{};
+        const srcs = try deckSources(t.allocator, a, &lib, "reg.cir", try std.fmt.allocPrint(a, text, .{extra}), &diag);
+        var nl = try np.netlist.parse(t.allocator, srcs, null);
+        defer nl.deinit(t.allocator);
+        const def = nl.defOf(nl.device("x1").?).?;
+        const glyph = lib.at(try lib.blockFor(def));
+        const pins = glyph.terminals;
+        try t.expectEqual(extra.len == 0, pins[0].at.y < pins[3].at.y);
+        try t.expect(pins[2].at.y < @min(pins[0].at.y, pins[3].at.y));
+        try t.expect(pins[4].at.y > @max(pins[0].at.y, pins[3].at.y));
+        for (glyph.draw) |op| if (op == .text) {
+            const p = if (std.mem.eql(u8, op.text.s, "+")) pins[0] else pins[3];
+            try t.expectEqual(p.at.y, op.text.at.y);
+        };
+    }
 }
