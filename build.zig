@@ -244,5 +244,12 @@ fn schemifyPlugin(b: *std.Build) void {
     exe.lto = .full; // optimize the complete guest together at the final size-limited link
     exe.entry = .disabled; // a plugin has no main
     exe.rdynamic = true; // keep the schemify_* exports
-    b.getInstallStep().dependOn(&b.addInstallFileWithDir(exe.getEmittedBin(), .prefix, "../netlist-import.wasm").step);
+    // Keep only the guest's existing WebAssembly features. The ordinary library and
+    // native tools have no optimizer dependency. Nix supplies the pinned Binaryen.
+    const optimize_guest = b.addSystemCommand(&.{ "wasm-opt", "-Oz", "--enable-bulk-memory", "--enable-sign-ext", "--enable-mutable-globals", "--enable-nontrapping-float-to-int" });
+    optimize_guest.addFileInput(b.path("flake.lock"));
+    optimize_guest.addFileArg(exe.getEmittedBin());
+    optimize_guest.addArg("-o");
+    const guest = optimize_guest.addOutputFileArg("netlist-import.wasm");
+    b.getInstallStep().dependOn(&b.addInstallFileWithDir(guest, .prefix, "../netlist-import.wasm").step);
 }

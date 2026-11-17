@@ -533,8 +533,8 @@ zig build fuzz                        # 4000 random netlists through the pipelin
 python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back and compared by a Schemify build in <dir>
 ```
 
-Run them inside `nix develop`, which pins Zig 0.17.0; `netlist-import.wasm` is
-byte-reproducible there, and CI fails when the committed module differs from
+Run them inside `nix develop`, which pins Zig 0.17.0 and the Binaryen optimizer
+used for the Schemify plugin. The module is byte-reproducible there. CI fails when it differs from
 its rebuild or reaches 550 KB. `tests/roundtrip.py` needs `schemify` and
 `spicecmp` from a Schemify development build (`dev-cli`) in `<dir>`:
 

@@ -53,6 +53,8 @@
           packages = with pkgs; [
             # Everything builds with Zig; netlist-import.wasm is byte-reproducible under this one.
             (zig pkgs)
+            # Final size-limited WebAssembly link, version pinned through flake.lock.
+            binaryen
             # The C ABI is shipped product surface, so the header must keep compiling
             # standalone: cc -std=c99 -Wall -Wextra -pedantic -fsyntax-only include/cktimg.h
             clang-tools
