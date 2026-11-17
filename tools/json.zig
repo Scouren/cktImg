@@ -187,7 +187,7 @@ pub fn main(init: std.process.Init) !void {
 
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
-fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
+pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
     const first = std.mem.trimStart(u8, raw, " \t\r\n");
     const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
     var nl = try np.netlist.parse(gpa, &.{text}, diag);

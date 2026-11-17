@@ -185,6 +185,16 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
         .imports = &.{ .{ .name = "NetlistParser", .module = mod }, .{ .name = "symbols", .module = symbols }, .{ .name = "svg", .module = svg_mod } },
     });
+    const census = b.addExecutable(.{ .name = "parent-census", .root_module = b.createModule(.{
+        .root_source_file = b.path("tools/parent_census.zig"),
+        .target = target,
+        .optimize = optimize,
+        .imports = &.{ .{ .name = "NetlistParser", .module = mod }, .{ .name = "symbols", .module = symbols }, .{ .name = "svg", .module = svg_mod } },
+    }) });
+    const census_run = b.addRunArtifact(census);
+    census_run.addPassthruArgs();
+    census_run.has_side_effects = true;
+    b.step("parent-census", "Examine selected-cell MOS parents (one JSON record per input deck)").dependOn(&census_run.step);
     b.installArtifact(b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod }));
     test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = json_mod })).step);
 

@@ -25,6 +25,10 @@ const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub const netlist = @import("netlist.zig");
+/// Cold ordered-MOS parent analysis for callers retaining original source authority.
+pub const parent_context = @import("parent_context.zig");
+/// Cold structural analysis; a complete reflection is independent of placement mates.
+pub const local_parents = @import("local_parents.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).

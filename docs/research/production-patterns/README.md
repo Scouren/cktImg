@@ -91,3 +91,22 @@ Of the 40 related decks, 39 accepted the signed frame. AG2212 retains its nine-p
 The baseline already places the output capacitor above its series resistance in all 40 regulator decks, as well as in AG652 and AG2288. Their capacitor has no direct ground connection. AG652's internal compensation capacitor has a different role.
 
 [ag2187]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/2187/Book2187.png
+
+## Identifying local stages from a netlist
+
+The native parent census recovers five local groups in AG1080 and one group in AG928. It reads ordered device terminals, model declarations, declared cell ports and device parameters before testing symmetry. A bounded search distinguishes a unique reflection from multiple witnesses or exhaustion. All 2,202 production placement JSON files compared byte-for-byte equal to the preceding commit.
+
+| AG1080 group | Device members |
+|---|---|
+| First input stage | M1–M5 |
+| First complementary stage | M6–M9 |
+| Second input stage | M10–M14 |
+| Second complementary stage | M15–M18 |
+| Latch and output branches | M19–M32 |
+
+The independent corpus test checks the exact dispositions and reasons for 2,202 named decks, the device memberships and typed gate interfaces on 96 eligible records, and all 29 uniquely witnessed reflections. AG1053 retains its raw facts and declines the automatic policy because its groups form a gate-dependency cycle. Use the diagnostic to inspect another deck or run the complete comparison.
+
+```sh
+nix develop -c zig build parent-census -- external/examples/analoggenie/ag-1080.cir
+nix develop -c python3 tests/parent_corpus.py
+```
