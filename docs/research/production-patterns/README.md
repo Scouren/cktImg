@@ -21,3 +21,15 @@ zig-out/bin/cktimg-json --svg ag-1034.svg --report ag-1034.report.json external/
 
 [ag1034]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1034/Book1034.png
 [ag215]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/215/Book215.png
+
+## A visible bias feed between two gates
+
+AG725's Q8 and Q10 share VB3. In the production drawing the Vcntrl wire crosses the gate line at its midpoint. The router now tests an adjacent interior takeoff for the port when the midpoint is occupied. Trace the one port to both gates. In the source, the letter Q designates the devices called M8 and M10 in the converted deck.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AG725 before](ag-725.before.svg)](ag-725.before.svg) | [![AG725 after](ag-725.after.svg)](ag-725.after.svg) | [![AG725 Fig. P6.57][ag725]][ag725] |
+
+Across 132 reviewed bias and divider decks, eight gained a visible bias port. The device terminals and the sets of pins joined by each physical wire were preserved in all 132. In particular, all twelve MOS gate dividers already had a straight tap-to-gate wire, including the two taps with a fourth wire arm.
+
+[ag725]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/725/Book725.png

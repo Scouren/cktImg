@@ -192,3 +192,54 @@ test "trunk taps: AG986 retains its straight VC3 gate line" {
     // Source leads M8.G=(510,100), M9.G=(590,100).
     try expectLine(ag986, "m8", "m9");
 }
+
+test "bias feed: AG725 VB3 port joins both gates clear of the control crossing" {
+    const deck =
+        \\AG725 bias feed
+        \\*@ weak role Iin1 output
+        \\*@ weak role Iin2 output
+        \\.model nch nmos
+        \\.model pch pmos
+        \\CL1 Voutp VSS 1p
+        \\CL2 Voutn VSS 1p
+        \\I1 VDD Iin2 DC 1m
+        \\I2 VDD Iin1 DC 1m
+        \\M10 Voutn VB3 net1 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M5 Voutp VB2 Iin2 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M6 Voutn VB2 Iin1 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M7 net0 Vcntrl VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M8 Voutp VB3 net0 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M9 net1 Vcntrl VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\RL1 Voutp Vcntrl 1k
+        \\RL2 Vcntrl Voutn 1k
+    ;
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    var p = try np.place(testing.allocator, &.{}, lib, &.{deck}, null);
+    defer p.deinit();
+
+    const a = gate(&p, "m8");
+    const b = gate(&p, "m10");
+    const net = p.pin_net[a];
+    try testing.expectEqualStrings("vb3", p.net_name[net]);
+    try testing.expectEqual(net, p.pin_net[b]);
+    var port: ?usize = null;
+    for (0..p.deviceCount()) |d| {
+        const start, const end = p.pinRange(d);
+        if (p.dev_name[d].len != 0 or end - start != 1 or p.pin_net[start] != net) continue;
+        try testing.expect(port == null);
+        port = start;
+    }
+    // Fig. P6.57 gives this pair one visible bias feed on the gate line.
+    try testing.expect(port != null);
+    const tip = p.pin_xy[port.?];
+    const left = @min(p.pin_xy[a].x, p.pin_xy[b].x);
+    const right = @max(p.pin_xy[a].x, p.pin_xy[b].x);
+    try testing.expect(tip.x > left and tip.x < right);
+    try testing.expectEqual(p.pin_xy[a].y, p.pin_xy[b].y);
+    try testing.expect(tip.y != p.pin_xy[a].y);
+    try testing.expect(try ink.connected(testing.allocator, &p, &.{ a, b, port.? }));
+    try support.expectConnected(&p, lib);
+    try testing.expectEqual(0, try support.shorts(testing.allocator, &p, true));
+    try testing.expectEqual(0, try support.dots(testing.allocator, &p, true));
+}

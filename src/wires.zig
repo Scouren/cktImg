@@ -59,9 +59,9 @@
 //!   `Canvas.labelAt` would.
 //! - wires.11 (habit) A bias net of two gates facing each other on one row
 //!   is one straight gate line between them, a port symbol hanging from
-//!   its middle, never a written name (a name at its first pin only when no
-//!   stub fits at the middle). People: a port symbol on 197 of 264 such
-//!   gate lines in 5,263 hand-drawn schematics. `ported`
+//!   its middle. If the midpoint is occupied, two MOS gates allow a
+//!   tap one quarter unit to either side, strictly inside the span, before
+//!   falling back to a name. AG725 retains one VB3 feed this way. `ported`
 //! - wires.12 (habit) An input's or a bias's pins standing near each other
 //!   (the box round them no more than 6 units around half) are one wire
 //!   with one port at a free end. People wire 87% of their inputs of two
@@ -661,10 +661,21 @@ fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
         const sb = s.pins.items(.side)[pins[1]];
         const facing = a.y == b.y and ((a.x < b.x and sa == .right and sb == .left) or (b.x < a.x and sb == .right and sa == .left));
         if (facing and try c.commit(net, &.{ a, b })) {
-            // A port hanging from its middle, never a written name (people
-            // 197 of 264); a name at its first pin when no stub fits there.
+            // Keep the gate line intact when another wire crosses its midpoint.
             const mid: Pt = .{ .x = @divFloor(a.x + b.x, 2), .y = a.y };
             for ([_]Side{ .down, .up }) |t| if (try c.stub(.terminal, net, mid, t, c.len.terminal)) return;
+            for (pins) |pin| {
+                const d = s.pins.items(.device)[pin];
+                if (d == sch.none or s.device_kind[d] != .mosfet or s.pins.items(.index)[pin] != 1) break;
+            } else {
+                const q = @max(1, @divFloor(c.len.unit, 4));
+                for ([_]i32{ mid.x - q, mid.x + q }) |x| {
+                    if (x <= @min(a.x, b.x) or x >= @max(a.x, b.x)) continue;
+                    for ([_]Side{ .down, .up }) |side| {
+                        if (try c.stub(.terminal, net, .{ .x = x, .y = mid.y }, side, c.len.terminal)) return;
+                    }
+                }
+            }
             try c.labelAt(pins[0]);
             return;
         }
