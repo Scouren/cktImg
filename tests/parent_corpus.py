@@ -14,6 +14,7 @@ import subprocess
 import tempfile
 
 from parent_output_routes import EXPECTED
+from parent_stages import STAGES
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -86,6 +87,12 @@ def write_mutations(original, directory):
         yield path
 
 
+# An input and its own load may exchange branch names with the other pair.
+def stage_signature(devices):
+    a, b, load_a, load_b, tail = devices
+    return (tail, sorted(((a, load_a), (b, load_b))))
+
+
 def main():
     oracle = json.loads((ROOT / "tests/fixtures/parent-census.json").read_text())
     expected = {}
@@ -117,6 +124,11 @@ def main():
     if expected.keys() != actual.keys():
         raise ValueError(f"missing {sorted(expected.keys()-actual.keys())}, extra {sorted(actual.keys()-expected.keys())}")
     for name, row in expected.items():
+        stages = STAGES.get(name, ()) if name != "ag-1028" else ()
+        expected_stages = sorted(stage_signature(stage[1:]) for stage in stages)
+        observed_stages = sorted(stage_signature(stage) for stage in actual[name]["common_control_stages"])
+        if expected_stages != observed_stages:
+            raise ValueError(f"{name} expected common-control stages {expected_stages}, found {observed_stages}")
         if output_pairs(actual[name]) != reference_pairs(name):
             raise ValueError(f"{name} expected {reference_pairs(name)}, found {output_pairs(actual[name])}")
         want, got = facts(row), facts(actual[name])

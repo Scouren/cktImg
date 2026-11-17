@@ -31,6 +31,8 @@ pub const parent_context = @import("parent_context.zig");
 pub const local_parents = @import("local_parents.zig");
 /// Two private drain outputs proven by a complete ordered reflection.
 pub const parent_outputs = @import("parent_outputs.zig");
+/// Relative organization of a complete five-MOS common-control parent.
+pub const parent_stages = @import("parent_stages.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -161,6 +163,28 @@ pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Libr
     var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
     defer s.deinit();
     return Placed.init(out, &s, nl);
+}
+
+/// Draws certified stages; a failed local room, mandatory route or final
+/// connectivity/short/junction check restores the ordinary paired layout.
+pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage) PlaceError!Placed {
+    if (stages_.len > 0) {
+        const roles = try guessRoles(gpa, nl);
+        defer gpa.free(roles);
+        var accepted = false;
+        var diagram = try schematic.sketch.layOrganized(gpa, nl, roles, lib, cfg.layout, pairs, stages_, &accepted);
+        defer diagram.deinit();
+        if (accepted) {
+            var candidate = try Placed.init(gpa, &diagram, nl);
+            errdefer candidate.deinit();
+            var findings: std.ArrayList(checks.Finding) = .empty;
+            defer findings.deinit(gpa);
+            try checks.find(gpa, &findings, &candidate, lib);
+            if (findings.items.len == 0 and parent_stages.clearWires(&candidate, lib, nl, stages_)) return candidate;
+            candidate.deinit();
+        }
+    }
+    return placeBound(gpa, gpa, cfg, lib, nl, pairs);
 }
 
 test {

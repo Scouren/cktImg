@@ -199,7 +199,14 @@ pub fn build(b: *std.Build) void {
     census_run.addPassthruArgs();
     census_run.has_side_effects = true;
     b.step("parent-census", "Examine selected-cell MOS parents (one JSON record per input deck)").dependOn(&census_run.step);
-    b.installArtifact(b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod }));
+    const json_exe = b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod });
+    b.installArtifact(json_exe);
+    const stage_check = b.addSystemCommand(&.{"python3"});
+    stage_check.addFileArg(b.path("tests/parent_stages.py"));
+    stage_check.addArtifactArg(json_exe);
+    for ([_][]const u8{ "ag-1028.cir", "ag-1046.cir", "ag-1071.cir", "ag-1079.cir", "ag-1080.cir" }) |name|
+        stage_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    test_step.dependOn(&stage_check.step);
     test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = json_mod })).step);
 
     if (latex_renderer) {

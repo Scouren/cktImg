@@ -370,8 +370,8 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
 fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic) engine.PlaceError!engine.Placed {
     var nl = try engine.netlist.parse(gpa, &.{text}, diag);
     defer nl.deinit(gpa);
-    const pairs = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
-    return engine.placeBound(gpa, gpa, &.default, lib, &nl, pairs);
+    const owners = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
+    return engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
 }
 
 /// Places the node-less devices of cell `c` (nothing to wire, so the engine never sees

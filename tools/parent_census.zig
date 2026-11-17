@@ -26,6 +26,14 @@ pub fn main(init: std.process.Init) !void {
         const r = try np.local_parents.collect(a, ctx, .{});
         var j = J{ .writer = &sw.interface };
         try write(&j, path, &nl, r);
+        try j.objectField("common_control_stages");
+        try j.beginArray();
+        for (try np.parent_stages.collect(a, ctx, r)) |stage| {
+            try j.beginArray();
+            for (stage.devices) |d| try j.write(nl.graph.edges.items(.name)[d]);
+            try j.endArray();
+        }
+        try j.endArray();
         try j.objectField("output_pairs");
         try j.beginArray();
         for (try np.parent_outputs.collect(a, ctx, r)) |pair| {

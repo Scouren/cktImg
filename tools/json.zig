@@ -206,8 +206,13 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
 fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, lib: *np.Library, srcs: []const []const u8, raw: ?[]const u8, diag: *np.netlist.Diagnostic) !np.Placed {
     var nl = try np.netlist.parse(gpa, srcs, diag);
     defer nl.deinit(gpa);
-    const pairs = if (raw) |source| try np.parent_outputs.eligible(arena, try np.parent_context.bind(arena, source, &nl, &np.parent_context.standard_rails)) else &.{};
-    return np.placeBound(gpa, gpa, cfg, lib, &nl, pairs);
+    const source = raw orelse return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
+    const ctx = try np.parent_context.bind(arena, source, &nl, &np.parent_context.standard_rails);
+    const parents = try np.local_parents.collect(arena, ctx, .{});
+    if (parents.disposition != .raw_multigroup_candidate) return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
+    const pairs = try np.parent_outputs.collect(arena, ctx, parents);
+    const stages = if (std.meta.eql(cfg.layout, np.Config.default.layout)) try np.parent_stages.collect(arena, ctx, parents) else &.{};
+    return np.placeOrganized(gpa, cfg, lib, &nl, pairs, stages);
 }
 
 /// The `*@ weak at` stays of a drawing: one line per named device of
