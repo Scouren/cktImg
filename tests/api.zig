@@ -530,4 +530,5 @@ test {
 
 test {
     _ = @import("cross_loads.zig");
+    _ = @import("sampling_bridge.zig");
 }

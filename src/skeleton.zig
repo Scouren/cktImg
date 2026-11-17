@@ -96,6 +96,7 @@ const hints = @import("hints.zig");
 const forms = @import("forms.zig");
 const passive_filters = @import("passive_filters.zig");
 const loop_place = @import("loop_place.zig");
+const sampling_bridge = @import("sampling_bridge.zig");
 const cross_loads = @import("cross_loads.zig");
 const input_place = @import("input_place.zig");
 const config = @import("config.zig");
@@ -326,6 +327,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     var protected = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
     defer protected.deinit(gpa);
     try input_place.place(gpa, nl, roles, devices_by_rank, st.device_rank, drawn, form, upper, mate, gate_right, left_end, x, y, verdicts, &protected);
+    try sampling_bridge.place(gpa, &protected, nl, roles, drawn, mate, form, upper, lower, x, y);
     try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts, protected.items);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);

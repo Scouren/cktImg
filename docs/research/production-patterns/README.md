@@ -49,3 +49,17 @@ The through-path and port checks went from three of four to four of four ladders
 [ar6308]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6308.jpg
 [ar6363]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6363.jpg
 [ar6364]: https://huggingface.co/datasets/eulermaxwell/AnalogRetriever-data/resolve/0c053b6580315d8a89c629d67994a6da4575a17f/iccad2026/images/img6364.jpg
+
+## Diode bridges in sample-and-hold circuits
+
+In AG763 and AG1042 the input and the held voltage sit at the middle contacts of two upright diode columns. The hold capacitor and buffer share the right contact. Trace the two additional feedback diodes to the output. The rule checks their anode and cathode connections as well.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AG763 before](ag-763.before.svg)](ag-763.before.svg) | [![AG763 after](ag-763.after.svg)](ag-763.after.svg) | [![AG763 published][ag763]][ag763] |
+| [![AG1042 before](ag-1042.before.svg)](ag-1042.before.svg) | [![AG1042 after](ag-1042.after.svg)](ag-1042.after.svg) | [![AG1042 published][ag1042]][ag1042] |
+
+Both circuits gain four upright diodes in the two observed columns. Crossings went from 4 to 2 in AG763 and from 6 to 4 in AG1042. The vertical spacing and the positions of the current sources still differ from the figures. Twelve controls, including six rectifier or bias diamonds and the AG1142 tuning network, retained identical SVGs.
+
+[ag763]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/763/Book763.png
+[ag1042]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1042/Book1042.png
