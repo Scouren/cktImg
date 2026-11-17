@@ -231,6 +231,7 @@ fn schemifyPlugin(b: *std.Build) void {
             },
         }),
     });
+    exe.lto = .full; // optimize the complete guest together at the final size-limited link
     exe.entry = .disabled; // a plugin has no main
     exe.rdynamic = true; // keep the schemify_* exports
     b.getInstallStep().dependOn(&b.addInstallFileWithDir(exe.getEmittedBin(), .prefix, "../netlist-import.wasm").step);
