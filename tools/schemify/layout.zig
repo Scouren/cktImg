@@ -102,8 +102,8 @@ pub fn toCanonical(fam: Family) u8 {
     };
 }
 
-/// Whether pin `k` of a `fam` symbol gets no wire: a MOSFET's bulk, drawn on the symbol
-/// and joined by name.
+/// Hidden routing contact of the compact class. The core four-lead variant
+/// makes the same MOS body coordinate available for a wire.
 fn hiddenPin(fam: Family, k: usize) bool {
     return (fam == .nmos or fam == .pmos) and k == 3;
 }
@@ -157,13 +157,14 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
         // Core MOS terminals have physical leads. The registered ink here
         // preserves their exact contact/attachment points and pin bounds;
         // Schemify paints the host's complete core symbol on import.
-        var core_mos: [6]engine.library.DrawOp = undefined;
+        var core_mos: [7]engine.library.DrawOp = undefined;
         const is_core_mos = syms.origin.items[s] == .core and (fam == .nmos or fam == .pmos);
         const ops = if (is_core_mos) blk: {
             const strokes = [_][4]i32{
                 .{ -20, 0, -10, 0 },   .{ -10, -10, -10, 10 },
                 .{ 20, -30, 20, -10 }, .{ 0, -10, 20, -10 },
                 .{ 20, 30, 20, 10 },   .{ 0, 10, 20, 10 },
+                .{ 0, 0, 20, 0 },
             };
             for (strokes, &core_mos) |seg, *op| {
                 const from = xform(t, seg[0], seg[1]);
@@ -180,9 +181,16 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
         const block = try a.print("b{d}", .{s});
         const names: []const []const u8 = if (fam == .box) &.{block} else classNames(fam);
         for (names) |name| {
-            _ = lib.register(.{ .name = name, .terminals = terms, .draw = ops }) catch |e| switch (e) {
+            _ = lib.register(.{ .name = name, .terminals = terms, .draw = if (is_core_mos) ops[0..6] else ops }) catch |e| switch (e) {
                 error.OutOfMemory => return error.OutOfMemory,
                 else => try refused.append(a, try a.print("the engine refused class {s} ({s}: {t}); its cells are drawn with labels", .{ name, syms.stem.items[s], e })),
+            };
+        }
+        if (is_core_mos) {
+            terms[3].hidden = false;
+            _ = lib.register(.{ .name = if (fam == .nmos) "nmos_body" else "pmos_body", .body_for = names[0], .terminals = terms, .draw = ops }) catch |e| switch (e) {
+                error.OutOfMemory => return error.OutOfMemory,
+                else => unreachable, // the same D/G/S, and the shipped core's real B
             };
         }
     }
@@ -479,7 +487,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
             assert(local.of(placed.pin_net[lo + k]) == net);
             const face = facing(o, p.x, p.y);
             try faces.append(a, .{ .at = at, .face = face });
-            if (hiddenPin(syms.family.items[s], k))
+            if (!lib.at(placed.dev_class[i]).shows(k))
                 try hidden.append(a, .{ .at = at, .net = net, .face = face })
             else
                 try pin_pts[net].append(a, at);

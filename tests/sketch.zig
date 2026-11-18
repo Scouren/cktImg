@@ -2018,7 +2018,7 @@ test "AG1167 a resistor connected to a hidden MOS body has a name and no no-conn
     const lib = try support.library(t.allocator);
     defer support.freeLibrary(t.allocator, lib);
     // AG1167 M1.B / R1.1; R2's truly isolated terminal is a control.
-    const deck = "body contact\n.model nch nmos\nM1 d g 0 well nch\nR1 well 0 1k\nR2 spare 0 1k\n";
+    const deck = "body contact\n*@ class m1 nmos\n.model nch nmos\nM1 d g 0 well nch\nR1 well 0 1k\nR2 spare 0 1k\n";
     var p = try np.place(t.allocator, &np.Config.default, lib, &.{deck}, null);
     defer p.deinit();
     var found: usize = 0;

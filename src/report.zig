@@ -7,6 +7,8 @@
 //!   relaxed, dropped or rejected, why, and the lines that blocked it. An
 //!   honoured line the finished drawing does not show (`checks.drawnAs`) is
 //!   reported relaxed, `not_drawn`: a bug.
+//! - `unshown_bodies`: device, terminal and net of a distinct non-rail body
+//!   whose selected symbol has no B contact or marks its B hidden.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
 //!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
@@ -292,6 +294,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     }
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
 
+    try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
     try w.writeAll("  \"requests\": [");
     for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");

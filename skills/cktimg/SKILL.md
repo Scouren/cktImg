@@ -106,6 +106,14 @@ on a device overrides the relations on it.
   net most parts end on becomes its bottom wire, drawn with no ground
   symbol. `*@ role <net> ground` names another, with ground symbols. A
   `vee*` net is drawn with the supply glyph below its pin.
+- **MOS bodies.** The built-in symbols show a body contact when the fourth
+  net differs from that device's source and has a non-rail role. Use
+  `*@ class M1 nmos_body` or `pmos_body` to show any B, or the matching
+  compact class `nmos` or `pmos` to suppress routing to it. The native
+  report lists distinct non-rail bodies a selected class cannot show under
+  `unshown_bodies`. A custom symbol file can supply either class on its
+  own, or register a visible D/G/S/B variant after its compact class with
+  `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:
