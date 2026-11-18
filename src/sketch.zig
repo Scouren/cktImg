@@ -160,6 +160,7 @@ const thin_rounds = 3;
 /// Cold graph-bound MOS output pairs supplied by the selected-cell caller.
 pub const parent_parts = @import("parent_parts.zig");
 const parent_stages = @import("parent_stages.zig");
+const source_bridge = @import("source_bridge.zig");
 
 /// Lattice column and row → coordinate.
 const Geo = struct {
@@ -185,6 +186,11 @@ pub fn layWithParents(gpa: Allocator, nl: *const Netlist, roles: []const Role, l
 /// Reconstructs source-qualified relative branch sites for a bounded trial. A
 /// missing room or failed mandatory paired route leaves `accepted` false.
 pub fn layOrganized(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, accepted: *bool) !Schematic {
+    return layQualified(gpa, nl, roles, lib, layout, pairs, stages, null, accepted);
+}
+
+/// Draws source-qualified geometry and reports its physical acceptance.
+pub fn layQualified(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
@@ -192,7 +198,7 @@ pub fn layOrganized(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib
     const sk = try skeleton.place(gpa, a, nl, roles, &st, .{ .shelf = layout.shelf });
     // `place`'s skeletons always hold.
     skeleton.validate(&sk, nl) catch unreachable;
-    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs, stages, accepted);
+    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs, stages, bridge, accepted);
     return s;
 }
 
@@ -210,12 +216,12 @@ pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.La
 pub fn drawWithParents(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair) !void {
     try skeleton.validate(sk, nl);
     var accepted = false;
-    try drawValid(gpa, s, nl, layout, st, sk, pairs, &.{}, &accepted);
+    try drawValid(gpa, s, nl, layout, st, sk, pairs, &.{}, null, &accepted);
 }
 
 // ---- private ----
 
-fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, accepted: *bool) !void {
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !void {
     // The deck's drawing lines; their verdicts are the report's to give.
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
@@ -236,7 +242,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
-    const parent_verdicts: []const hints.Verdict = if (stages.len != 0 or pairs.len != 0)
+    const parent_verdicts: []const hints.Verdict = if (stages.len != 0 or pairs.len != 0 or bridge != null)
         try @import("parent_intent.zig").admitted(sa, nl, s, st, sk)
     else
         &.{};
@@ -303,6 +309,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         } else try available.append(sa, stage);
     }
     accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
+    if (bridge) |request| accepted.* = source_bridge.arrange(nl, s, sk, at, request, parent_verdicts);
     trial.holdPlaces(s, requested_places, ats, at);
     // Wired; then a net crossing too many wires is named and the drawing
     // wired again without it, which may free a path for another.

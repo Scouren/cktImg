@@ -35,6 +35,8 @@ pub const parent_outputs = @import("parent_outputs.zig");
 pub const parent_stages = @import("parent_stages.zig");
 /// Cold source-region incidence and passive/current/tail attachment witnesses.
 pub const source_regions = @import("source_regions.zig");
+/// An ordered horizontal two-arm source-degeneration bridge.
+pub const source_bridge = @import("source_bridge.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -170,11 +172,20 @@ pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Libr
 /// Draws certified stages; a failed local room, mandatory route or final
 /// connectivity/short/junction check restores the ordinary paired layout.
 pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage) PlaceError!Placed {
-    if (stages_.len > 0) {
+    return placeQualified(gpa, cfg, lib, nl, pairs, stages_, null);
+}
+
+/// Draws a certified complete two-arm bridge, with ordinary layout as fallback.
+pub fn placeSourceBridge(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_bridge.Request) PlaceError!Placed {
+    return placeQualified(gpa, cfg, lib, nl, &.{}, &.{}, request);
+}
+
+fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_bridge.Request) PlaceError!Placed {
+    if (stages_.len > 0 or bridge != null) {
         const roles = try guessRoles(gpa, nl);
         defer gpa.free(roles);
         var accepted = false;
-        var diagram = try schematic.sketch.layOrganized(gpa, nl, roles, lib, cfg.layout, pairs, stages_, &accepted);
+        var diagram = try schematic.sketch.layQualified(gpa, nl, roles, lib, cfg.layout, pairs, stages_, bridge, &accepted);
         defer diagram.deinit();
         if (accepted) {
             var candidate = try Placed.init(gpa, &diagram, nl);
@@ -182,7 +193,8 @@ pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *co
             var findings: std.ArrayList(checks.Finding) = .empty;
             defer findings.deinit(gpa);
             try checks.find(gpa, &findings, &candidate, lib);
-            if (findings.items.len == 0 and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
+            const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
+            if (findings.items.len == 0 and bridge_intact and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
                 const intent = @import("parent_intent.zig");
                 if (!intent.needsDrawing(nl)) return candidate;
                 var incumbent = try placeBound(gpa, gpa, cfg, lib, nl, pairs);

@@ -213,6 +213,15 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "ag-1028.cir", "ag-1046.cir", "ag-1071.cir", "ag-1079.cir", "ag-1080.cir" }) |name|
         stage_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
     test_step.dependOn(&stage_check.step);
+    const bridge_check = b.addSystemCommand(&.{"python3"});
+    bridge_check.addFileArg(b.path("tests/source_bridge.py"));
+    bridge_check.addArtifactArg(json_exe);
+    for ([_][]const u8{ "ag-220.cir", "ag-396.cir" }) |name|
+        bridge_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    bridge_check.addFileArg(b.path("tests/symbols.zon"));
+    bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.cir"));
+    bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.human.json"));
+    test_step.dependOn(&bridge_check.step);
     test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = json_mod })).step);
 
     if (latex_renderer) {

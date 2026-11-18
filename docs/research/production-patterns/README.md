@@ -176,3 +176,5 @@ The canonical PFD sides cost one crossing in the complete AG439 native drawing (
 A requested axis through two independent tail sources is checked on the final device and its terminals. The comparison also shows how a fixed pose affects the report on a requested mirror. [Caller symmetry examples](caller-symmetry/README.md)
 
 The degeneration census checks which source resistors and current sources belong to each branch. [Source regions and their attachments](source-regions/README.md)
+
+In AG220, the two equal source resistors meet at a horizontal T above the tail. Both renderers preserve each branch’s electrical identity. [Source-degeneration bridge](two-arm-bridge/README.md)

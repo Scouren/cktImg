@@ -23,6 +23,11 @@
 //! is used as one; and a deck with no top-level devices draws the body of
 //! its last `.subckt` (the top cell), its ports as nets, its instances as
 //! blocks and its voltage sources in the circuit (a cell has no bench).
+//!
+//! Contents:
+//! - `pub fn main`
+//! - `pub fn deckSources`
+//! - `pub fn placeSelected`
 
 const std = @import("std");
 const np = @import("NetlistParser");
@@ -117,7 +122,7 @@ pub fn main(init: std.process.Init) !void {
         };
         srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
     }
-    var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null) raw else null, &diag) catch |err| switch (err) {
+    var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null) raw else null, opts.symbols != null, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -203,15 +208,24 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
 
-fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, lib: *np.Library, srcs: []const []const u8, raw: ?[]const u8, diag: *np.netlist.Diagnostic) !np.Placed {
+/// Places the selected original cell. A caller-supplied symbol library must
+/// match the physical frame used by a source-qualified geometry proposal.
+pub fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, lib: *np.Library, srcs: []const []const u8, raw: ?[]const u8, custom_symbols: bool, diag: *np.netlist.Diagnostic) !np.Placed {
     var nl = try np.netlist.parse(gpa, srcs, diag);
     defer nl.deinit(gpa);
     const source = raw orelse return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
+    if (std.meta.eql(cfg.layout, np.Config.default.layout)) {
+        if (try np.source_bridge.fromSource(arena, source, &nl)) |request| {
+            if (!custom_symbols or try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeSourceBridge(gpa, cfg, lib, &nl, request);
+            return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
+        }
+    }
     const ctx = try np.parent_context.bind(arena, source, &nl, &np.parent_context.standard_rails);
     const parents = try np.local_parents.collect(arena, ctx, .{});
     if (parents.disposition != .raw_multigroup_candidate) return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
     const pairs = try np.parent_outputs.collect(arena, ctx, parents);
     const stages = if (std.meta.eql(cfg.layout, np.Config.default.layout)) try np.parent_stages.collect(arena, ctx, parents) else &.{};
+    if (custom_symbols and stages.len != 0 and !try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeBound(gpa, gpa, cfg, lib, &nl, pairs);
     return np.placeOrganized(gpa, cfg, lib, &nl, pairs, stages);
 }
 
