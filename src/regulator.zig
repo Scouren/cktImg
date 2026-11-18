@@ -9,8 +9,7 @@
 //!   Fig. 1A show the order; TI LDO Basics Fig. 4 rotates it with the
 //!   amplifier. All 40 AnalogGenie decks reuse one panel. The signed marks
 //!   follow their own ports; rail and bias leads retain their positions.
-//!   AG2212 retains its generic box because its fourth bias lacks a
-//!   recognized frame. Schemify keeps a shared .shcomp’s default frame.
+//!   AG2212 uses its certified nine-port frame. Schemify keeps a shared .shcomp’s default frame.
 //!   `positiveAbove`
 //!
 //! Contents: `Card`, `positiveAbove`.
@@ -45,7 +44,7 @@ pub fn positiveAbove(cards: [6]Card, ports: []const []const u8, external: []cons
             nr += 1;
         },
     };
-    if (nr != 3 or mos.len != 4 or cap.len != 2 or amp.len != ports.len or amp.len < 4 or amp.len > 8) return false;
+    if (nr != 3 or mos.len != 4 or cap.len != 2 or amp.len != ports.len or amp.len < 4 or amp.len > 9) return false;
     var neg: ?u32 = null;
     var gate: ?u32 = null;
     var gnd: ?u32 = null;

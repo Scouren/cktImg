@@ -126,3 +126,21 @@ Five AG1167 resistor ends and all seven in AG1169 previously carried false no-co
 
 [ag1167]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1167/Book1167.png
 [ag1169]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1169/Book1169.png
+
+## Four-bias amplifiers and clocked comparators
+
+The three four-bias amplifiers in AG1242, AG1674 and AG2212 now get signed triangles with nine distinct leads. The four comparators in AG808, AG3492, AG3493 and AG3495 get triangles with a separate clock. Across the seven instances both renderers expose all 50 declared ordered terminals. The gallery redraws show 43 of these leads and omit VSS on all seven. The published diagrams can be more abstract still. In AG808, for example, the book omits the comparator's clock and supply contacts.
+
+| Production before | Production after | Published drawing |
+|---|---|---|
+| [![AG1242 before](ag-1242.before.svg)](ag-1242.before.svg) | [![AG1242 after](ag-1242.after.svg)](ag-1242.after.svg) | [![AG1242 book figure][ag1242]][ag1242] |
+| [![AG2212 before](ag-2212.before.svg)](ag-2212.before.svg) | [![AG2212 after](ag-2212.after.svg)](ag-2212.after.svg) | [![AG2212 book figure][ag2212]][ag2212] |
+| [![AG808 before](ag-808.before.svg)](ag-808.before.svg) | [![AG808 after](ag-808.after.svg)](ag-808.after.svg) | [![AG808 book figure][ag808]][ag808] |
+| [![AG3495 before](ag-3495.before.svg)](ag-3495.before.svg) | [![AG3495 after](ag-3495.after.svg)](ag-3495.after.svg) | [![AG3495 book figure][ag3495]][ag3495] |
+
+AG2212 now also qualifies for the regulator input-order rule, bringing that cohort to 40 of 40 deck variants of the same figure. AG3495 declares a global positive supply and five formals, so its symbol has five pins. AG808's other amplifier has an IB control and retains its box. The source redraws include top and bottom clock leads. Putting the canonical clock above the body kept crossings and bends at their previous counts across all seven. A lower-clock trial added a crossing in AG3492 and AG3493. The large converter in AG1242 still faces differently on the production page. [AG3492 reference redraw](../../../external/examples/analoggenie/ag-3492.svg) · [AG3493 reference redraw](../../../external/examples/analoggenie/ag-3493.svg)
+
+[ag1242]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1242/Book1242.png
+[ag2212]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/2212/Book2212.png
+[ag808]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/808/Book808.png
+[ag3495]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/3495/Book3495.png

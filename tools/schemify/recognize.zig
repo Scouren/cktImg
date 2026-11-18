@@ -351,7 +351,7 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
         const pins = try a.alloc(Pin, names.len);
         var agrees = true;
         for (ports, glyph.terminals, pins) |n, t, *p| {
-            const dir: Dir = switch (t.side.?) {
+            const dir: Dir = if (shape == .clocked_comparator and block_symbols.clockFormal(t.name)) .in else switch (t.side.?) {
                 .left => .in,
                 .right => .out,
                 .up, .down => .inout,
@@ -359,7 +359,10 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
             if (deck.pinInfo(deck.netKey(c, n))) |given| agrees = agrees and given == dir;
             p.* = .{ .name = t.name, .x = t.at.x, .y = t.at.y, .dir = dir };
         }
-        if (agrees) return .{ .pins = pins, .body = .{ -60, -60, 60, 60 }, .shape = shape };
+        if (agrees) {
+            const reach: i32 = if (shape == .four_bias_amplifier) 80 else 60;
+            return .{ .pins = pins, .body = .{ -reach, -reach, reach, reach }, .shape = shape };
+        }
     }
     return boxLayout(a, names, dirs, deck.port_side[r.lo..r.hi], deck.port_rank[r.lo..r.hi]);
 }
@@ -1176,5 +1179,21 @@ test "AG2187 regulator keeps the generated VDD lead above positive and FB below 
         try t.expect(pins[0].y < @min(pins[2].y, pins[3].y));
         try t.expect(pins[1].y > @max(pins[2].y, pins[3].y));
         try t.expectEqualStrings("OUT", pins[4].name);
+    }
+}
+
+test "clocked comparator follows its input declaration and explicit side authority" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "*.PININFO CLK:I", "*.PININFO CLK:O", "*@ top CLK" }, 0..) |hint, k| {
+        const raw = try a.print(".subckt comparator vss inp inn out clk\n{s}\n.ends\n", .{hint});
+        const deck = try spice.parse(a, raw);
+        const r = try recognize(a, &deck, &.{});
+        const id = subSymbol(deck.findCell("comparator").?);
+        const pins = r.syms.pins(id);
+        try std.testing.expectEqual(@as(usize, 5), pins.len);
+        try std.testing.expectEqual(if (k == 0) block_symbols.Shape.clocked_comparator else .box, r.syms.shape.items[id]);
+        if (k == 0) try std.testing.expectEqual(Dir.in, pins[4].dir);
     }
 }

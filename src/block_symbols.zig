@@ -59,15 +59,24 @@
 //!   complete reference shape. Digital, differential and opaque contracts
 //!   supply no such certificate. docs/research/driven-banks.md; `analogOutput`
 //!
-//! Cold, bounded work: at most eight ports, once per registered symbol
+//! - block_symbols.11 (choice) Three four-bias amplifier contracts and
+//!   four clocked comparator contracts retain a signed triangle. All
+//!   50 declared terminals stay in order, including seven undrawn VSS
+//!   contacts in their source redraws. A clock is an input; VB4 alone,
+//!   AG808's extra IB and incompatible caller directions stay generic.
+//!   AG1242 and AG3492 motivate canonical lead clearance. See the
+//!   seven-case third-ports study. `identify`, `draw`
+//!
+//! Cold, bounded work: at most nine ports, once per registered symbol
 //! or participating placement candidate.
 //! The caller owns the arena and the existing terminal/DrawOp tables.
 //!
 //! Contents:
 //! - `pub const Shape = enum(u8)`
 //! - `pub const Drawing = struct`
+//! - `pub fn clockFormal(port: []const u8) bool`
 //! - `pub fn identify(name: []const u8, ports: []const []const u8) Shape`
-//! - `pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3`
+//! - `pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u4`
 //! - `pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing`
 
 const std = @import("std");
@@ -78,14 +87,14 @@ const Pt = lib.Pt;
 const DrawOp = lib.DrawOp;
 
 /// Appearance only; every recognized symbol remains an electrical subcircuit.
-pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier, regulator_amplifier };
+pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier, regulator_amplifier, four_bias_amplifier, clocked_comparator };
 
 /// Terminals and strokes allocated in `arena`, which the caller releases
 /// together. `ports` and its strings must outlive the returned drawing.
 pub const Drawing = struct { terminals: []const lib.Terminal, ops: []const DrawOp };
 
-const Role = enum(u4) { supply, ground, positive, negative, input, second, output, out_positive, out_negative, bias1, bias2, bias3, unknown };
-const ports_max = 8;
+const Role = enum(u4) { supply, ground, positive, negative, input, second, output, out_positive, out_negative, bias1, bias2, bias3, bias4, clock, unknown };
+const ports_max = 9;
 
 /// The conventional glyph for a whole, case-insensitive family name and a
 /// complete port contract; `.box` for unknown names, duplicate roles or extra
@@ -112,6 +121,10 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
         for (aliases) |row| if (oneOf(name, row.names)) break :found row.shape;
         return .box;
     };
+    if (shape == .amplifier and ports.len == 9) return extended(.four_bias_amplifier, ports);
+    if (std.ascii.eqlIgnoreCase(name, "comparator") and (ports.len == 5 or ports.len == 6)) {
+        for (ports) |p| if (clockFormal(p)) return extended(.clocked_comparator, ports);
+    }
     var seen: [@typeInfo(Role).@"enum".field_names.len]bool = @splat(false);
     for (ports) |port| {
         const r = role(shape, ports, port);
@@ -136,12 +149,12 @@ pub fn identify(name: []const u8, ports: []const []const u8) Shape {
 
 /// The unique output index of a complete amplifier or reference-amplifier
 /// contract, or null for any other shape or incomplete declaration. The
-/// index is below the existing eight-port limit. Borrows only for this call
+/// index is below the nine-port limit. Borrows only for this call
 /// and allocates nothing; contextual VEA does not alter generic port roles.
 /// Inlines the bounded scan in both placement callers and the codegen probe.
-pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3 {
+pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u4 {
     const reference = switch (identify(name, ports)) {
-        .amplifier => false,
+        .amplifier, .four_bias_amplifier => false,
         .reference_amplifier => true,
         else => return null,
     };
@@ -158,12 +171,16 @@ pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u3 {
 }
 
 /// Draws a previously verified non-box `shape`. `pitch` is half the distance
-/// between two input pins. Asserts `4 <= pitch <= 1_000_000`, two to eight
+/// between two input pins. Asserts `4 <= pitch <= 1_000_000`, two to nine
 /// verified ports, and a non-box shape. Allocation failure leaves arena
 /// cleanup with the caller, as on success.
 pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing {
     const regulator = selected == .regulator_amplifier;
-    const shape: Shape = if (regulator) .amplifier else selected;
+    const frame: Shape = if (regulator and ports.len == 9) .four_bias_amplifier else if (regulator) .amplifier else selected;
+    const wide = frame == .four_bias_amplifier;
+    const clocked = frame == .clocked_comparator;
+    const shape: Shape = if (wide or clocked) .amplifier else frame;
+    const radius: i32 = if (wide) 4 * pitch else 3 * pitch;
     assert(shape != .box);
     assert(pitch >= 4);
     assert(pitch <= 1_000_000);
@@ -175,11 +192,13 @@ pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch:
     const exclusive = shape == .xor_gate or shape == .xnor_gate;
     const inverted = shape == .inverter or shape == .nand_gate or shape == .nor_gate or shape == .xnor_gate;
     const biased = for (ports) |name| {
-        const r = role(shape, ports, name);
+        const r = role(frame, ports, name);
         if (r == .bias1 or r == .bias2 or r == .bias3) break true;
     } else false;
     var ops: std.ArrayList(DrawOp) = .empty;
-    const outline: []const [2]i32 = if (triangle)
+    const outline: []const [2]i32 = if (wide)
+        &.{ .{ -60, -60 }, .{ 60, 0 }, .{ -60, 60 }, .{ -60, -60 } }
+    else if (triangle)
         &.{ .{ -40, -40 }, .{ 40, 0 }, .{ -40, 40 }, .{ -40, -40 } }
     else if (rounded)
         &.{ .{ -40, -40 }, .{ -15, -40 }, .{ 4, -34 }, .{ 22, -20 }, .{ 40, 0 }, .{ 22, 20 }, .{ 4, 34 }, .{ -15, 40 }, .{ -40, 40 }, .{ -27, 20 }, .{ -22, 0 }, .{ -27, -20 }, .{ -40, -40 } }
@@ -191,7 +210,7 @@ pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch:
     if (shape == .comparator) try poly(arena, &ops, &.{ .{ -4, 5 }, .{ 1, 5 }, .{ 1, -5 }, .{ 9, -5 } }, pitch);
     const terminals = try arena.alloc(lib.Terminal, ports.len);
     for (ports, terminals) |name, *terminal| {
-        const r = role(shape, ports, name);
+        const r = role(frame, ports, name);
         assert(r != .unknown);
         const y: i32 = switch (r) {
             .positive => if (regulator) -pitch else pitch,
@@ -202,37 +221,75 @@ pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch:
             else => 0,
         };
         const side: lib.Side = switch (r) {
-            .supply => .up,
-            .ground, .bias1, .bias2, .bias3 => .down,
+            .supply, .clock => .up,
+            .ground, .bias1, .bias2, .bias3, .bias4 => .down,
             .output, .out_positive, .out_negative => .right,
             else => .left,
         };
-        const at: Pt = switch (side) {
-            .up => .{ .x = if (differential) -pitch else 0, .y = -3 * pitch },
+        var at: Pt = switch (side) {
+            .up => .{ .x = if (r == .clock) pitch else if (differential) -pitch else 0, .y = -radius },
             .down => .{ .x = switch (r) {
                 .bias1 => -pitch,
                 .bias2 => 0,
                 .bias3 => pitch,
-                else => if (biased) -2 * pitch else if (differential) -pitch else 0,
-            }, .y = 3 * pitch },
-            .right => .{ .x = 3 * pitch, .y = y },
-            .left => .{ .x = -3 * pitch, .y = y },
+                .bias4 => 2 * pitch,
+                else => if (biased) -2 * pitch else if (differential or clocked) -pitch else 0,
+            }, .y = radius },
+            .right => .{ .x = radius, .y = y },
+            .left => .{ .x = -radius, .y = y },
         };
+        // A sloping triangle edge moves one vertical unit per two
+        // horizontal ones. Align auxiliary leads with an integer contact
+        // on that edge even when the requested pitch is odd.
+        if ((wide or clocked) and !side.isHorizontal()) at.x += @mod(radius - pitch - at.x, 2);
         const edge: Pt = switch (side) {
-            .up, .down => .{ .x = at.x, .y = (if (side == .up) @as(i32, -1) else 1) * (if (triangle) @divTrunc(2 * pitch - at.x, 2) else if (rounded) scale(35, pitch) else 2 * pitch) },
-            .right => .{ .x = scale(if (differential) 0 else if (inverted) 50 else 40, pitch), .y = y },
-            .left => .{ .x = scale(if (rounded) -27 else -40, pitch), .y = y },
+            .up, .down => .{ .x = at.x, .y = (if (side == .up) @as(i32, -1) else 1) * (if (triangle) @divTrunc(radius - pitch - at.x, 2) else if (rounded) scale(35, pitch) else 2 * pitch) },
+            .right => .{ .x = scale(if (differential) 0 else if (inverted) 50 else if (wide) 60 else 40, pitch), .y = y },
+            .left => .{ .x = scale(if (rounded) -27 else if (wide) -60 else -40, pitch), .y = y },
         };
         terminal.* = .{ .name = name, .at = at, .side = side };
         try ops.append(arena, .{ .line = .{ .a = at, .b = edge } });
-        if (r == .positive or r == .negative) try ops.append(arena, .{ .text = .{ .at = .{ .x = scale(-30, pitch), .y = y }, .s = if (r == .positive) "+" else "-", .size = 7 } });
+        if (r == .positive or r == .negative) try ops.append(arena, .{ .text = .{ .at = .{ .x = scale(if (wide) -50 else -30, pitch), .y = y }, .s = if (r == .positive) "+" else "-", .size = 7 } });
         if (r == .out_positive or r == .out_negative) try ops.append(arena, .{ .text = .{ .at = .{ .x = scale(-10, pitch), .y = y }, .s = if (r == .out_positive) "+" else "-", .size = 7 } });
     }
     assert(terminals.len == ports.len);
     return .{ .terminals = terminals, .ops = ops.items };
 }
 
+/// True for the two measured clock formal spellings on clocked comparators.
+/// PININFO directions are checked against the control's input role in Schemify.
+pub fn clockFormal(port: []const u8) bool {
+    return oneOf(port, "clk phi3");
+}
+
 // ---- private ----
+
+fn extended(shape: Shape, ports: []const []const u8) Shape {
+    var seen: std.EnumSet(Role) = .empty;
+    for (ports) |p| {
+        const r = extendedRole(p);
+        if (r == .unknown or seen.contains(r)) return .box;
+        seen.insert(r);
+    }
+    var want = std.EnumSet(Role).initMany(&.{ .ground, .positive, .negative, .output });
+    if (shape == .four_bias_amplifier) {
+        for ([_]Role{ .supply, .bias1, .bias2, .bias3, .bias4 }) |r| want.insert(r);
+    } else {
+        want.insert(.clock);
+        if (ports.len == 6) want.insert(.supply);
+    }
+    return if (seen.eql(want)) shape else .box;
+}
+
+fn extendedRole(port: []const u8) Role {
+    const names = [_]struct { []const u8, Role }{
+        .{ "vdd", .supply },      .{ "vss", .ground },    .{ "inp vp", .positive },
+        .{ "inn vn", .negative }, .{ "out vo", .output }, .{ "vb1", .bias1 },
+        .{ "vb2", .bias2 },       .{ "vb3", .bias3 },     .{ "vb4", .bias4 },
+    };
+    for (names) |entry| if (oneOf(port, entry[0])) return entry[1];
+    return if (clockFormal(port)) .clock else .unknown;
+}
 
 fn twoInputs(s: Shape) bool {
     return switch (s) {
@@ -248,6 +305,7 @@ fn oneOf(name: []const u8, words: []const u8) bool {
 }
 
 fn role(shape: Shape, ports: []const []const u8, name: []const u8) Role {
+    if (shape == .four_bias_amplifier or shape == .clocked_comparator) return extendedRole(name);
     if (shape == .reference_amplifier) {
         if (oneOf(name, "vdd")) return .supply;
         if (oneOf(name, "vss")) return .ground;

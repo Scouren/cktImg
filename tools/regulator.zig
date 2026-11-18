@@ -18,7 +18,10 @@ pub fn select(a: std.mem.Allocator, nl: *const np.netlist.Netlist, ports: []cons
         const k: @FieldType(np.regulator.Card, "kind") = switch (kind) {
             .subckt => k: {
                 const def = nl.defOf(e) orelse return;
-                if (np.block_symbols.identify(def.name, def.ports) != .amplifier) return;
+                switch (np.block_symbols.identify(def.name, def.ports)) {
+                    .amplifier, .four_bias_amplifier => {},
+                    else => return,
+                }
                 for (def.sides) |side| if (side != null) return;
                 if (std.mem.indexOf(u8, def.body, "*.pininfo") != null) return;
                 amp = def;

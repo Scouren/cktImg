@@ -25,7 +25,11 @@ pub fn select(a: std.mem.Allocator, deck: *const Deck, recognized: *rec.Recogniz
             const syms = &recognized.syms;
             const kind: @FieldType(engine.regulator.Card, "kind") = switch (std.ascii.toLower(deck.dev_name[d][0])) {
                 'x' => kind: {
-                    if (syms.origin.items[s] != .sub or syms.shape.items[s] != .amplifier) break;
+                    if (syms.origin.items[s] != .sub) break;
+                    switch (syms.shape.items[s]) {
+                        .amplifier, .four_bias_amplifier => {},
+                        else => break,
+                    }
                     symbol = s;
                     break :kind .amplifier;
                 },
@@ -45,8 +49,8 @@ pub fn select(a: std.mem.Allocator, deck: *const Deck, recognized: *rec.Recogniz
             const s = symbol orelse continue;
             const syms = &recognized.syms;
             const pins = syms.pin.items[syms.pin_start.items[s]..syms.pin_start.items[s + 1]];
-            if (pins.len > 8) continue;
-            var ports: [8][]const u8 = undefined;
+            if (pins.len > 9) continue;
+            var ports: [9][]const u8 = undefined;
             for (ports[0..pins.len], pins) |*name, p| name.* = p.name;
             if (!engine.regulator.positiveAbove(cards, ports[0..pins.len], deck.ports(cell))) continue;
             if (usage == null) {
