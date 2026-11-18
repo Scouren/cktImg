@@ -1,0 +1,34 @@
+{
+  "before_sha256": "949423a1b8aa4b6299f32966ddf11c0936c8e00c17c48503d42e5d2b2123d198",
+  "after_sha256": "ebb158e923fe89cbe99c94315d375beb6819fa7957a6e92cab481ef81ae02e04",
+  "collections": {
+    "amsnet": {
+      "checked": 734,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analoggenie": {
+      "checked": 2202,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analogretriever": {
+      "checked": 2238,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "circuitthink": {
+      "checked": 100,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    }
+  }
+}

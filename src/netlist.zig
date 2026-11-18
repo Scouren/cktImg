@@ -191,6 +191,10 @@ pub const Diagnostic = struct {
 // ===========================================================================
 
 pub const Netlist = struct {
+    /// Optional resolved symbol alternatives for this drawing. The caller
+    /// retains the rows; device handles refer to this exact parsed graph.
+    pub const BlockFrame = struct { device: EdgeId, class: @import("library.zig").ClassId };
+    block_frames: []const BlockFrame = &.{},
     /// Owns the lowercased source text, token pool, name maps and analyses.
     arena: std.heap.ArenaAllocator,
     /// First line of the first source, original case.

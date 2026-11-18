@@ -1,0 +1,6 @@
+codegen_check: call-boundary and residue mutations passed
+FOLDED      gen_analog_output vs hand_analog_output
+  function                         instruct   vector    calls indirect   panics branches
+  gen_analog_output                      92        0        2        0        0       11
+  hand_analog_output                     92        0        2        0        0       11
+

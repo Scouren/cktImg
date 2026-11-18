@@ -1,0 +1,3 @@
+final netlist-import: netlist-import: n2s/input.cir → 2 files (1 cells); 16 devices, 68 wires, 15 labels/ports; 11/12 nets fully wired; 0 warnings
+All 32 actual host contacts, four lane placements, capacitor primitive leads/plates and source circuit verified.
+Wasm ec17ba6498ad77f5719bf9700d213f7b272ed1726991e742b988af399661a5d6

@@ -256,6 +256,54 @@ index 00000000..9d91e54d
 +
 +if __name__ == '__main__':
 +    main(sys.argv[1], *map(Path, sys.argv[2:]))
+diff --git a/tests/schemify.zig b/tests/schemify.zig
+index 80ee2d7c..e508e15b 100644
+--- a/tests/schemify.zig
++++ b/tests/schemify.zig
+@@ -191,3 +191,43 @@ test "a hint naming a device the subckt lacks is a log line naming it, and the r
+     try std.testing.expectEqual(1, comps);
+     try std.testing.expectEqual(5, out.stats.devices);
+ }
++
++test "steered oblique capacitor has two real tips; another cell cannot bind those tips to a resistor" {
++    const t = std.testing;
++    var arena: std.heap.ArenaAllocator = .init(t.allocator);
++    defer arena.deinit();
++    const deck =
++        \\separate target cells
++        \\.subckt selected a b
++        \\C1 a b 2.25p m=3
++        \\C2 a b 8p
++        \\*@ class C1 cap_oblique
++        \\*@ weak class C1 cap
++        \\.ends selected
++        \\.subckt incompatible c d
++        \\R1 c d 1k
++        \\*@ class R1 cap_oblique
++        \\.ends incompatible
++    ;
++    const out = try cktimg.convert(t.allocator, arena.allocator(), "probe.cir", deck);
++    var seen: u8 = 0;
++    for (out.files.items) |f| {
++        if (std.mem.eql(u8, f.name, "polyphase_cap.shprim")) {
++            for ([_][]const u8{ "pin p inout -21 -21", "pin n inout 21 21", "line -21 -21 -3 -3", "line 21 21 3 3", "{name} {p} {n} {value} m={m}" }) |s|
++                try t.expect(std.mem.indexOf(u8, f.bytes, s) != null);
++            seen |= 1;
++        } else if (std.mem.eql(u8, f.name, "selected.shcomp")) {
++            try t.expect(std.mem.indexOf(u8, f.bytes, "core:cap") != null);
++            try t.expect(std.mem.indexOf(u8, f.bytes, "polyphase_cap") != null);
++            seen |= 2;
++        } else if (std.mem.eql(u8, f.name, "incompatible.shcomp")) {
++            try t.expect(std.mem.indexOf(u8, f.bytes, "core:res") != null);
++            seen |= 4;
++        }
++    }
++    try t.expectEqual(@as(u8, 7), seen);
++    for (out.warnings.items) |msg| {
++        if (std.mem.indexOf(u8, msg, "different contact coordinates") != null) return;
++    }
++    return error.MissingCapabilityDiagnostic;
++}
 diff --git a/tests/symbols.zon b/tests/symbols.zon
 index e43bfde9..abea6f12 100644
 --- a/tests/symbols.zon

@@ -1,0 +1,111 @@
+{
+  "before_sha256": "cb6f72f090d7659b9d18a064bffd7b7a18b6f4e15b4e601356946e4456308dec",
+  "after_sha256": "86d220876dc40efb252072ca745d22e512cd62df9186d5fd49fba28ff6c87d64",
+  "collections": {
+    "amsnet": {
+      "checked": 734,
+      "drawing_changes": [
+        {
+          "deck": "amsnet-244.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 6,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        }
+      ],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analoggenie": {
+      "checked": 2202,
+      "drawing_changes": [
+        {
+          "deck": "ag-600.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 6,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-90.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 6,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        }
+      ],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analogretriever": {
+      "checked": 2238,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "circuitthink": {
+      "checked": 100,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    }
+  }
+}

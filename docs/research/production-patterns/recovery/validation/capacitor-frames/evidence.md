@@ -1,0 +1,19 @@
+# Four-phase RC network with oblique capacitors
+
+AG493 has two resistor banks on four horizontal rows. Between each pair of rows, a capacitor in each bank joins the adjacent phases. The bottom pair closes the cycle. The source SVG places all eight capacitor bodies at 315° in the source glyph frame. Each has two real terminal leads that meet perpendicular plates. Their external tips lie on a diagonal. Among all 5,274 human coordinate records, this was the only diagram with an oblique capacitor. Four further diagrams use oblique diodes or a battery. A capacitor elsewhere in the corpus does not acquire this pose from its kind alone. [Source redraw](../../../external/examples/analoggenie/ag-493.svg) · [Ordered DUT cards](../../../external/examples/analoggenie/ag-493.cir)
+
+| Source redraw | Stock native before | Stock native after |
+| --- | --- | --- |
+| ![Eight diagonal capacitances between four horizontal resistor phases](reference.png) | ![Ordinary layout with cardinal capacitors](native-before.png) | ![Two banks of four oblique capacitors and level resistors](native-after.png) |
+
+| Actual Schemify before | Actual Schemify after |
+| --- | --- |
+| ![Editor SVG rendered with core capacitor symbols](editor-before.png) | ![Editor SVG showing real two-pin capacitor primitives with oblique plates and leads](editor-after.png) |
+
+The automatic arrangement requires a closed selected cell with sixteen ordinary two-terminal passives, four input and four output formals. Each formal must own one resistor and one capacitor. Four distinct internal resistor midpoints establish the row pairs, and both capacitor banks must certify the same complete four-cycle. The first declared input anchors its phase. Explicit cell directives and caller-owned geometry retain their placement. The built-in class and the Schemify importer also accept a per-capacitor `*@ class C1 cap_oblique` request. It changes only the named capacitor when no complete default arrangement is selected.
+
+For native C1, the source terminal offsets from its centre are approximately (−14.142,−14.142) and (+14.142,+14.142). Native uses (−14,−14) and (+14,+14). The editor uses (−21,−21) and (+21,+21) in its sixty-unit symbol frame. All 32 ordered capacitor and resistor tips and the sixteen part centres match the source layout after applying the target scale, a common translation and integer rounding. The drawing uses a real primitive with diagonal contacts and plate strokes. Instance orientations remain the editor's existing cardinal rotations and reflections. The generated capacitor carries the ordinary two ordered nodes, original capacitance and multiplicity. A 2.25 pF, m=3 mutation round-tripped through the actual editor and its SPICE comparator.
+
+The ordinary wire router still connects the diagonal body tips with horizontal and vertical wire sections. The source draws oblique inter-device sections too. The original wraparound wire on net0 becomes named pieces in the new native output, and the placement of outer port labels differs. Across the 5,274 converted decks only AG493 changed. Its native crossings remained at three and bends decreased from 21 to 14 with no gate findings. In the actual editor the named source went from 65 wires / 14 marks to 68 wires / 15 marks. The independently netlisted circuit stayed equal.
+
+Reversing the card order, or selected individual resistor and capacitor terminal orders, keeps the same arrangement and correctly rebinds each ordered lead. Splitting an internal midpoint and a caller selecting the ordinary capacitor each keep the standard stock editor symbols. AG494, the neighbouring two-capacitor MOS fixture, remains cardinal. The public native comparator and the actual editor exports provide separate measurements. [Native regression](../../../tests/polyphase_caps.py) · [Adjacent control](../../../external/examples/analoggenie/ag-494.cir)

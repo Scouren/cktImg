@@ -1,0 +1,171 @@
+diff --git a/build.zig b/build.zig
+index 5fb28307..7ee42844 100644
+--- a/build.zig
++++ b/build.zig
+@@ -232,6 +232,11 @@ pub fn build(b: *std.Build) void {
+     for ([_][]const u8{ "ag-364.cir", "ag-1016.cir" }) |name|
+         interleaved.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+     test_step.dependOn(&interleaved.step);
++    const amp_check = b.addSystemCommand(&.{"python3"});
++    amp_check.addFileArg(b.path("tests/amplifier_steering.py"));
++    amp_check.addArtifactArg(json_exe);
++    amp_check.addFileArg(b.path("external/examples/analoggenie/ag-762.cir"));
++    test_step.dependOn(&amp_check.step);
+     const bridge_check = b.addSystemCommand(&.{"python3"});
+     bridge_check.addFileArg(b.path("tests/source_bridge.py"));
+     bridge_check.addArtifactArg(json_exe);
+diff --git a/src/opamp.zig b/src/opamp.zig
+index 2750fdd9..cfb1c955 100644
+--- a/src/opamp.zig
++++ b/src/opamp.zig
+@@ -6,7 +6,7 @@
+ //! of a unit on a quarter-unit grid, y down.
+ //!
+ //! Human Rules:
+-//! - opamp.1 (invariant) A deck with a line that places or turns a device
++//! - opamp.1 (invariant) A deck with an admitted line that places or turns a device
+ //!   (`upright`, `bridge`, `row`, `above`, `order`, `face`, `cell`, a
+ //!   strong `at`) is laid by its lines, not along the signal; a stay
+ //!   (`weak at`) is no such line. `steered`
+@@ -44,8 +44,8 @@
+ //!
+ //! Contents:
+ //! - `pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) bool`
+-//! - `pub fn steered(nl: *const Netlist) bool`
+-//! - `pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At`
++//! - `pub fn steered`
++//! - `pub fn place`
+ //! - for `opamp_grow.zig`: `pub const none`, `unit`, `quarter`, `tries`; `pub const P`, `R`, `Kind`, `Link`, `Pin`, `Block`, `Two`, `Canvas`, `Put`
+ //! - `pub const Placer = struct`, `Placer.canvas`, `Placer.free`, `Placer.wire`, `Placer.add`, `Placer.anchor`, `Placer.aOn`, `Placer.put`
+ //! - `pub fn partRect(kind: Kind, cx: i32, cy: i32, tall: bool) R`, `pub fn ceilQuarter(v: i32) i32`, `pub fn roundEven(num: i64, den: i64) i32`
+@@ -234,24 +234,24 @@ pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) boo
+     return blocks > 0 and (switches == 0 or (cap and rc));
+ }
+ 
+-/// Whether a line of the deck says where a device stands or how it is
+-/// turned (a relation, a cell or a place): the lines place such a deck, not
+-/// this procedure. A stay (`weak at`, a relay's) is none: the same deck is
+-/// placed the same way again.
+-pub fn steered(nl: *const Netlist) bool {
+-    for (nl.hints) |h| switch (h.verb) {
+-        .upright, .bridge, .row, .above, .order, .face, .cell => return true,
+-        .at => if (!h.weak) return true,
+-        else => {},
+-    };
++/// Whether an admitted structural or precise placement request selects the
++/// lattice. Uses the same pre-drawing verdicts as the public report. Weak
++/// relay stays do not constrain the amplifier's signal placement.
++pub fn steered(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const structure.Structure, sk: *const @import("skeleton.zig").Skeleton) Allocator.Error!bool {
++    for (nl.hints) |h| {
++        if (positional(h)) break;
++    } else return false;
++    const verdicts = try @import("report.zig").verdicts(arena, nl, roles, st, sk, null, null);
++    for (nl.hints, verdicts) |h, v| if (v.state == .honoured and positional(h)) return true;
+     return false;
+ }
+ 
+ /// A place and a turn for every drawn device of an op-amp circuit, in
+ /// drawing units, or null when the deck is `steered`, `applies` says no, or
+ /// a block's symbol has an input right of its output. `classes` is each device's class in `lib`.
+-pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At {
+-    if (steered(nl) or !applies(nl, roles, drawn)) return null;
++pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const structure.Structure, sk: *const @import("skeleton.zig").Skeleton, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At {
++    const drawn = sk.drawn;
++    if (!applies(nl, roles, drawn) or try steered(arena, nl, roles, st, sk)) return null;
+     const c = &nl.graph;
+     const n = c.edgeCount();
+     const nets = c.vertexCount();
+@@ -397,6 +397,14 @@ pub fn roundEven(num: i64, den: i64) i32 {
+ 
+ // ---- private ----
+ 
++fn positional(h: @import("hints.zig").Hint) bool {
++    return switch (h.verb) {
++        .upright, .bridge, .row, .above, .order, .face, .cell => true,
++        .at => !h.weak,
++        else => false,
++    };
++}
++
+ /// A control net that touches only MOS gates and independent voltage
+ /// sources whose opposite terminal is a rail. Read every incidence, even
+ /// for sources drawn apart: hiding a driver does not change its function.
+diff --git a/src/report.zig b/src/report.zig
+index 338fc88c..b156bfa9 100644
+--- a/src/report.zig
++++ b/src/report.zig
+@@ -209,9 +209,12 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
+     const n = c.edgeCount();
+     // An op-amp circuit is placed along its signal, not on the lattice
+     // (`opamp.zig`): its places are the decision, every device's.
+-    if (p != null and !opamp.steered(nl) and opamp.applies(nl, try sch.guessRoles(arena, nl), sk.drawn)) {
+-        try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, p.?, unit);
+-        return out.items;
++    if (p) |drawing| {
++        const roles = try sch.guessRoles(arena, nl);
++        if (opamp.applies(nl, roles, sk.drawn) and !try opamp.steered(arena, nl, roles, st, sk)) {
++            try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, drawing, unit);
++            return out.items;
++        }
+     }
+     // Forms of the two-pin devices.
+     for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
+diff --git a/src/sketch.zig b/src/sketch.zig
+index b76a571b..fb020ad8 100644
+--- a/src/sketch.zig
++++ b/src/sketch.zig
+@@ -236,7 +236,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
+     defer gpa.free(requested_places);
+     // A circuit of amplifier blocks and parts is placed along its signal
+     // (`opamp.zig`), every device, unless a line of the deck places one.
+-    const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
++    const along = try opamp.place(sa, nl, s.roles, st, sk, s.lib, s.devices.items(.class));
+     if (along) |own| ats = own;
+     s.refdes = try pinned.sides(sa, nl, scratch);
+     orientAll(s, nl, sk, ats);
+diff --git a/tests/amplifier_steering.py b/tests/amplifier_steering.py
+new file mode 100644
+index 00000000..bb6e511c
+--- /dev/null
++++ b/tests/amplifier_steering.py
+@@ -0,0 +1,40 @@
++"""Rejected positional requests preserve the public amplifier drawing and signal-placement decisions."""
++import json
++from pathlib import Path
++import subprocess
++import sys
++import tempfile
++
++
++def main(binary, fixture):
++    source = Path(fixture).read_text()
++    with tempfile.TemporaryDirectory() as tmp:
++        d = Path(tmp)
++        def draw(directive):
++            text = source.replace('.ends dut', f'*@ {directive}\n.ends dut') if directive else source
++            (d/'input.cir').write_text(text)
++            proc = subprocess.run([binary, '--report', d/'report', '--decisions', '2', d/'input.cir', d/'drawing'],
++                                  check=True, capture_output=True)
++            report = json.loads((d/'report').read_bytes())
++            assert not report['gates'],directive
++            line=next((r for r in report['requests'] if r['text']=='*@ '+directive.lower()), {})
++            return (d/'drawing').read_bytes(),proc.stdout,line
++        drawing,decisions,_=draw('')
++        assert decisions.count(b'*@ at ')==7
++        for line,code in [('row absent m1','unknown_name'),('bridge absent','unknown_name'),('at absent 2 3','unknown_name'),
++                          ('at m1 nan 3','bad_args'),('row m1 m2','not_placeable')]:
++            actual,again,request=draw(line)
++            assert request['state']=='rejected' and request['code']==code,(line,request)
++            assert actual==drawing and again==decisions,(line,'rejection changed geometry or decisions')
++        actual,again,request=draw('weak at m1 100 100 R0')
++        assert request['state']=='dropped' and actual==drawing and again==decisions
++        for line in ['at m1 -20 10 R0','upright c1']:
++            actual,again,request=draw(line)
++            assert request['state']=='honoured' and actual!=drawing and b'*@ at ' not in again
++            if line.startswith('at '):
++                m1=next(d for d in json.loads(actual)['devices'] if d['name']=='m1')
++                assert m1['pos']==[-800,400]
++
++
++if __name__=='__main__':
++    main(*sys.argv[1:])

@@ -691,7 +691,7 @@ index 9ea07db4..86af7105 100644
              return true;
          },
 diff --git a/src/config.zig b/src/config.zig
-index 98b0b69f..8480802a 100644
+index 98b0b69f..80beaa05 100644
 --- a/src/config.zig
 +++ b/src/config.zig
 @@ -154,6 +154,8 @@ pub const Render = struct {
@@ -707,7 +707,7 @@ index 98b0b69f..8480802a 100644
              const key = name.get(zoir);
              const node = tables.vals.at(@intCast(i));
              inline for (@typeInfo(Config).@"struct".field_names, @typeInfo(Config).@"struct".field_types) |table, T| {
-+                if (comptime std.mem.eql(u8,table,"geometry")) continue;
++                if (comptime std.mem.eql(u8, table, "geometry")) continue;
                  if (std.mem.eql(u8, key, table)) {
                      try patch(T, arena, ast, zoir, node, &@field(cfg, table), &sink);
                      continue :outer;
