@@ -1,0 +1,125 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="-16.4 -65 532.8 455" width="532.8" height="455">
+<rect id="background" x="-16.4" y="-65" width="532.8" height="455" fill="#16181c"/>
+<line x1="350" y1="295" x2="350" y2="310" stroke="#8fb84a" stroke-width="1"/>
+<line x1="350" y1="340" x2="350" y2="355" stroke="#8fb84a" stroke-width="1"/>
+<line x1="170" y1="0" x2="170" y2="50" stroke="#8fb84a" stroke-width="1"/>
+<line x1="130" y1="160" x2="130" y2="130" stroke="#8fb84a" stroke-width="1"/>
+<line x1="90" y1="100" x2="110" y2="100" stroke="#8fb84a" stroke-width="1"/>
+<line x1="90" y1="60" x2="110" y2="60" stroke="#8fb84a" stroke-width="1"/>
+<line x1="170" y1="160" x2="170" y2="110" stroke="#8fb84a" stroke-width="1"/>
+<line x1="250" y1="80" x2="230" y2="80" stroke="#8fb84a" stroke-width="1"/>
+<line x1="150" y1="160" x2="150" y2="120" stroke="#8fb84a" stroke-width="1"/>
+<line x1="190" y1="160" x2="190" y2="100" stroke="#8fb84a" stroke-width="1"/>
+<line x1="210" y1="160" x2="210" y2="90" stroke="#8fb84a" stroke-width="1"/>
+<line x1="410" y1="295" x2="410" y2="310" stroke="#8fb84a" stroke-width="1"/>
+<line x1="410" y1="340" x2="410" y2="355" stroke="#8fb84a" stroke-width="1"/>
+<line x1="410" y1="175" x2="410" y2="202.5" stroke="#8fb84a" stroke-width="1"/>
+<line x1="410" y1="207.5" x2="410" y2="235" stroke="#8fb84a" stroke-width="1"/>
+<line x1="402.5" y1="202.5" x2="417.5" y2="202.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="402.5" y1="207.5" x2="417.5" y2="207.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="350" y1="175" x2="350" y2="190" stroke="#8fb84a" stroke-width="1"/>
+<line x1="350" y1="220" x2="350" y2="235" stroke="#8fb84a" stroke-width="1"/>
+<line x1="310" y1="80" x2="320" y2="80" stroke="#8fb84a" stroke-width="1"/>
+<line x1="320" y1="70" x2="320" y2="90" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="322.5" y1="70" x2="322.5" y2="90" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="322.5" y1="70" x2="350" y2="70" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="322.5" y1="90" x2="350" y2="90" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<line x1="350" y1="50" x2="350" y2="70" stroke="#8fb84a" stroke-width="1"/>
+<line x1="350" y1="90" x2="350" y2="110" stroke="#8fb84a" stroke-width="1"/>
+<line x1="322.5" y1="80" x2="350" y2="80" stroke="#8fb84a" stroke-width="1"/>
+<line x1="60" y1="100" x2="60" y2="265" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="60" y1="60" x2="90" y2="60" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="170" y1="160" x2="170" y2="190" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="60" y1="265" x2="350" y2="265" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="410" y1="145" x2="440" y2="145" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="20" x2="350" y2="50" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="210" y1="160" x2="210" y2="190" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="235" x2="350" y2="265" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="145" x2="410" y2="145" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="60" y1="100" x2="90" y2="100" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="410" y1="145" x2="410" y2="175" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="410" y1="235" x2="410" y2="295" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="150" y1="160" x2="150" y2="190" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="110" x2="350" y2="145" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="250" y1="80" x2="280" y2="80" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="280" y1="80" x2="310" y2="80" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="190" y1="160" x2="190" y2="190" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="145" x2="350" y2="175" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="130" y1="160" x2="130" y2="190" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="350" y1="265" x2="350" y2="295" stroke="#4f8fc9" stroke-width="1"/>
+<line x1="170" y1="-30" x2="170" y2="0" stroke="#4f8fc9" stroke-width="1"/>
+<rect x="347.5" y="292.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="352.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="167.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="127.5" y="157.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="87.5" y="97.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="87.5" y="57.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="167.5" y="157.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="247.5" y="77.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="147.5" y="157.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="187.5" y="157.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="207.5" y="157.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="292.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="352.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="172.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="232.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="172.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="232.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="47.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="307.5" y="77.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="107.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="77.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="262.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="127.5" y="187.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="262.5" y="77.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="347.5" y="77.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="407.5" y="352.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<rect x="202.5" y="262.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<circle cx="350" cy="145" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
+<circle cx="350" cy="265" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
+<circle cx="410" cy="145" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
+<polyline points="350,310 355,312.5 345,317.5 355,322.5 345,327.5 355,332.5 345,337.5 350,340" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="110,20 230,80 110,140 110,20" fill="none" stroke="#8fb84a" stroke-width="1"/>
+<polyline points="410,310 415,312.5 405,317.5 415,322.5 405,327.5 415,332.5 405,337.5 410,340" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polyline points="350,190 355,192.5 345,197.5 355,202.5 345,207.5 355,212.5 345,217.5 350,220" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="347.5,90 342.5,91.875 342.5,88.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
+<polygon points="60,60 55,65 35,65 35,55 55,55" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="170,-30 165,-35 165,-55 175,-55 175,-35" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="170,190 165,195 145,195 145,185 165,185" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="350,355 355,360 355,380 345,380 345,360" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="210,190 205,195 185,195 185,185 205,185" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="350,20 345,25 325,25 325,15 345,15" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="440,145 445,140 465,140 465,150 445,150" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="150,190 145,195 125,195 125,185 145,185" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<polygon points="190,190 185,195 165,195 165,185 185,185" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
+<text x="360" y="316" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R2</text>
+<text x="360" y="325" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
+<text x="120" y="100" font-size="15" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">-</text>
+<text x="120" y="60" font-size="15" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">+</text>
+<text x="90" y="-20" font-size="15" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1</text>
+<text x="90" y="170" font-size="15" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">opamp</text>
+<text x="420" y="316" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R3</text>
+<text x="420" y="325" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
+<text x="422.5" y="196" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">CL</text>
+<text x="422.5" y="205" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
+<text x="360" y="196" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R1</text>
+<text x="360" y="205" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
+<text x="355" y="52" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">MNP</text>
+<text x="355" y="61" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
+<text x="355" y="84" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
+<text x="414" y="248" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net1</text>
+<text x="131" y="194" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
+<text x="269" y="63" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net0</text>
+<text x="354" y="63" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
+<text x="411" y="359" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
+<text x="209" y="248" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">FB</text>
+<text x="-6.4" y="52" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vref</text>
+<text x="171" y="-2" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
+<text x="113.2" y="182" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB2</text>
+<text x="351" y="311" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
+<text x="153.2" y="182" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB4</text>
+<text x="293.2" y="12" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VIN</text>
+<text x="468" y="137" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VOUT</text>
+<text x="93.2" y="182" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB1</text>
+<text x="133.2" y="182" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB3</text>
+</svg>

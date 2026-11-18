@@ -178,3 +178,186 @@ test "report: bends counts every corner a reader sees, a trunk drawn in pieces t
     // The figures have corners: the count is not vacuous.
     try std.testing.expect(total > 0);
 }
+
+test "report: a displaced gate and a locally translated mirror pair fail on the final common axis" {
+    // Independent mutations. No abstract mate, origin or hint changes when
+    // a single gate moves. Translating both complete frames retains a local
+    // mirror, while the load pair and the common tail still share the old axis.
+    const spice =
+        \\caller geometry
+        \\.model nch nmos level=1
+        \\R1 VDD OUTN 1k
+        \\R2 VDD OUTP 1k
+        \\M1 OUTN INP tail VSS nch w=2u l=1u
+        \\M2 OUTP INN tail VSS nch w=2u l=1u
+        \\M5 tail VB VSS VSS nch w=4u l=1u
+        \\*@ symmetric M1 M2
+        \\*@ symmetric R1 R2
+        \\*@ axis M5
+    ;
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena: std.heap.ArenaAllocator = .init(gpa);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var p = try np.place(gpa, &.{}, lib, &.{spice}, null);
+    defer p.deinit();
+    const nl = try np.netlist.parse(a, &.{spice}, null);
+    const roles = try np.guessRoles(a, &nl);
+    const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+    const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+    const left = np.checks.deviceIn(&p, "m1").?;
+    const right = np.checks.deviceIn(&p, "m2").?;
+    const xy = try a.dupe(np.Pt, p.pin_xy);
+    const origins = try a.dupe(np.Pt, p.dev_pos);
+    p.pin_xy = xy;
+    p.dev_pos = origins;
+    xy[p.dev_pin0[right] + 1].y += 10;
+    for (0..2) |i| {
+        const got = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
+        try std.testing.expectEqual(np.hints.State.relaxed, got[0].state);
+        try std.testing.expectEqual(np.hints.Code.not_drawn, got[0].code);
+        try std.testing.expectEqual(np.hints.State.honoured, got[1].state);
+        try std.testing.expectEqual(np.hints.State.honoured, got[2].state);
+        if (i == 0) {
+            xy[p.dev_pin0[right] + 1].y -= 10;
+            for ([_]usize{ left, right }) |d| {
+                origins[d].x += 40;
+                for (xy[p.dev_pin0[d]..p.dev_pin0[d + 1]]) |*pin| pin.x += 40;
+            }
+        }
+    }
+    // Neither of the two complete pair axes meets a subsequently displaced
+    // tail. Its new position alone cannot certify a common plane.
+    origins[np.checks.deviceIn(&p, "m5").?].x += 15;
+    const split = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
+    for (split) |v| try std.testing.expectEqual(np.hints.Code.not_drawn, v.code);
+}
+
+test "report: two admitted quad tails occupy distinct rows on the common final axis" {
+    // The complete resistor pair determines the physical axis independent
+    // of the current-source positions. A held exact pose must win even
+    // when its hint occurs before the symmetry requests it breaks.
+    const quad =
+        \\caller geometry
+        \\.model nch nmos level=1
+        \\R1 VDD OUTP 1k
+        \\R2 VDD OUTN 1k
+        \\M1 OUTP INP s1 VSS nch w=2u l=1u
+        \\M2 OUTN INN s1 VSS nch w=2u l=1u
+        \\M3 OUTP INN s2 VSS nch w=2u l=1u
+        \\M4 OUTN INP s2 VSS nch w=2u l=1u
+        \\I1 s1 VSS 1m
+        \\I2 s2 VSS 1m
+        \\*@ at M3 -20 -20 r0
+        \\*@ symmetric M3 M4
+        \\*@ symmetric R1 R2
+        \\*@ axis I1
+        \\*@ axis I2
+    ;
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    var arena: std.heap.ArenaAllocator = .init(gpa);
+    defer arena.deinit();
+    const a = arena.allocator();
+    var p = try np.place(gpa, &.{}, lib, &.{quad}, null);
+    defer p.deinit();
+    const nl = try np.netlist.parse(a, &.{quad}, null);
+    const roles = try np.guessRoles(a, &nl);
+    const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+    const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+    const axis = p.dev_pos[np.checks.deviceIn(&p, "r1").?].x + p.dev_pos[np.checks.deviceIn(&p, "r2").?].x;
+    const tail1 = p.dev_pos[np.checks.deviceIn(&p, "i1").?];
+    const tail2 = p.dev_pos[np.checks.deviceIn(&p, "i2").?];
+    try std.testing.expectEqual(axis, 2 * tail1.x);
+    try std.testing.expectEqual(axis, 2 * tail2.x);
+    try std.testing.expect(tail1.y != tail2.y);
+    const m3 = p.dev_pos[np.checks.deviceIn(&p, "m3").?];
+    try std.testing.expectEqual(-20 * lib.unit, m3.x);
+    try std.testing.expectEqual(-20 * lib.unit, m3.y);
+    const v = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
+    try std.testing.expectEqual(np.hints.State.honoured, v[0].state);
+    try std.testing.expectEqual(np.hints.State.dropped, v[1].state);
+    try std.testing.expectEqual(np.hints.Code.conflict, v[1].code);
+    try std.testing.expectEqualSlices(u32, &.{0}, v[1].blocked_by);
+    for (v[2..]) |rest| try std.testing.expectEqual(np.hints.State.honoured, rest.state);
+}
+
+test "report: the written stack follows the final shared channel, including both pin coordinates" {
+    // The tail net is independently the source of M1 and drain of M5. The
+    // physical MOS path puts M1 above M5, even if the caller names M5 first.
+    const base =
+        \\caller stack
+        \\.model nch nmos level=1
+        \\R1 vdd outn 1k
+        \\R2 vdd outp 1k
+        \\M1 outn inp tail vss nch w=2u l=1u
+        \\M2 outp inn tail vss nch w=2u l=1u
+        \\M5 tail vb vss vss nch w=4u l=1u
+        \\
+    ;
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    for ([_]bool{ false, true }) |reverse| {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const src = try std.mem.concat(a, u8, &.{ base, if (reverse) "*@ group stack m5 m1\n" else "*@ group stack m1 m5\n" });
+        var p = try np.place(gpa, &.{}, lib, &.{src}, null);
+        defer p.deinit();
+        const nl = try np.netlist.parse(a, &.{src}, null);
+        const roles = try np.guessRoles(a, &nl);
+        const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+        const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        const u = np.checks.deviceIn(&p, "m1").?;
+        const l = np.checks.deviceIn(&p, "m5").?;
+        try std.testing.expect(p.dev_pos[u].y < p.dev_pos[l].y);
+        try std.testing.expectEqual(p.pin_xy[p.dev_pin0[u] + 2].x, p.pin_xy[p.dev_pin0[l]].x);
+        const got = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
+        try std.testing.expectEqual(if (reverse) np.hints.Code.not_drawn else .ok, got[0].code);
+        try std.testing.expectEqual(!reverse, support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
+        const decisions = try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1);
+        try std.testing.expect(for (decisions) |line| {
+            if (std.mem.eql(u8, line, "*@ group stack m1 m5")) break true;
+        } else false);
+        if (!reverse) {
+            const pins = try a.dupe(np.Pt, p.pin_xy);
+            p.pin_xy = pins;
+            pins[p.dev_pin0[l]].x += 10;
+            try std.testing.expect(!support.generatedStack(&p, "m1", "m5"));
+            try std.testing.expectEqual(false, np.checks.drawnAs(&p, &nl, nl.hints[0], lib.unit).?);
+        }
+    }
+}
+
+test "report: two controlled sources anchored to the same rail refuse both stack orders" {
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    const deck = "controlled sources\nE3 vdd 0 in b 1\nE5 b vdd c vdd 1\n";
+    for ([_][]const u8{ "*@ group stack e5 e3\n", "*@ group stack e3 e5\n" }) |request| {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const src = try std.mem.concat(a, u8, &.{ deck, request });
+        var p = try np.place(gpa, &.{}, lib, &.{src}, null);
+        defer p.deinit();
+        const e3 = np.checks.deviceIn(&p, "e3").?;
+        const e5 = np.checks.deviceIn(&p, "e5").?;
+        try std.testing.expectEqual(p.dev_pos[e3].y, p.dev_pos[e5].y);
+        try std.testing.expectEqual(p.pin_xy[p.dev_pin0[e3]].y, p.pin_xy[p.dev_pin0[e5] + 1].y);
+        const nl = try np.netlist.parse(a, &.{src}, null);
+        const roles = try np.guessRoles(a, &nl);
+        const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+        const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        const v = (try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib))[0];
+        try std.testing.expectEqual(np.hints.State.relaxed, v.state);
+        try std.testing.expectEqual(np.hints.Code.not_drawn, v.code);
+        try std.testing.expect(!support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
+        for (try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1)) |line|
+            try std.testing.expect(!std.mem.startsWith(u8, line, "*@ group stack"));
+    }
+}

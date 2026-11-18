@@ -70,8 +70,9 @@
 //! - sketch.18 (invariant) No two pins of one side of a device meet at one
 //!   point: a pin off its device's line for that side (an op-amp's second
 //!   input) is wired from its own line. `placeDevices`
-//! - sketch.19 (unmeasured) A device pin with no other pin on its net
-//!   carries a no-connect cross. `noConnects`
+//! - sketch.19 (invariant) A visible pin gets a no-connect cross only
+//!   when its net has no electrical peer. With a hidden body peer the
+//!   visible resistor pin may carry the net name (AG1167/1169). `noConnects`
 //! - sketch.20 (habit) A flat complementary transmission pair's gates face
 //!   outward while its members still share a column on separate rows,
 //!   after cell and row instructions. People: ag-386 and ag-751, both
@@ -105,6 +106,8 @@
 //!   stays and other caller geometry keep precedence. `bias_neighbors`
 //!
 //! Contents:
+//! - `pub const parent_parts`, `pub fn layPanels`
+//! - `pub fn layWithParents`, `pub fn layOrganized`, `pub fn layQualified`, `pub fn drawWithParents`
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
 //! - `pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void`
 
@@ -134,6 +137,12 @@ const bias_neighbors = @import("bias_neighbors.zig");
 const thin = @import("thin.zig");
 const relay = @import("relay.zig");
 const config = @import("config.zig");
+const lattice = @import("lattice_coordinates.zig");
+
+/// Cold graph-bound MOS output pairs supplied by the selected-cell caller.
+pub const parent_parts = @import("parent_parts.zig");
+const parent_stages = @import("parent_stages.zig");
+const source_bridge = @import("source_bridge.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -156,18 +165,34 @@ const none = sch.none;
 /// too many wires: a wire gone may free a path that crosses anew.
 const thin_rounds = 3;
 
-/// Lattice column and row → coordinate.
-const Geo = struct {
-    xs: []const i32,
-    ys: []const i32,
-};
-
 /// A device's four flips, in the order they are tried.
 const flips = [_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } };
 
 /// The stages in one call: the structure (`structure.analyze`), the
 /// skeleton (`skeleton.place`), then `draw`.
 pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic {
+    return layWithParents(gpa, nl, roles, lib, layout, &.{});
+}
+
+/// The ordinary layout with source-qualified output pairs for final routing.
+pub fn layWithParents(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair) !Schematic {
+    var accepted = false;
+    return layOrganized(gpa, nl, roles, lib, layout, pairs, &.{}, &accepted);
+}
+
+/// Reconstructs source-qualified relative branch sites for a bounded trial. A
+/// missing room or failed mandatory paired route leaves `accepted` false.
+pub fn layOrganized(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, accepted: *bool) !Schematic {
+    return layQualified(gpa, nl, roles, lib, layout, pairs, stages, null, accepted);
+}
+
+/// Draws source-qualified geometry and reports its physical acceptance.
+pub fn layQualified(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !Schematic {
+    return layPanels(gpa, nl, roles, lib, layout, pairs, stages, bridge, false, accepted);
+}
+
+/// Runs a complete panel trial when requested and reports the final route admission.
+pub fn layPanels(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
@@ -175,7 +200,7 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
     const sk = try skeleton.place(gpa, a, nl, roles, &st, .{ .shelf = layout.shelf });
     // `place`'s skeletons always hold.
     skeleton.validate(&sk, nl) catch unreachable;
-    try drawValid(gpa, &s, nl, layout, &st, &sk);
+    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs, stages, bridge, panels, accepted);
     return s;
 }
 
@@ -185,18 +210,30 @@ pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Librar
 /// the stages included: a skeleton the drawing cannot use is refused
 /// (`skeleton.Invalid`) before anything is drawn.
 pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+    return drawWithParents(gpa, s, nl, layout, st, sk, &.{});
+}
+
+/// A caller-edited skeleton with qualified source pairs; physical contacts
+/// are admitted only against actual selected classes and settled poses.
+pub fn drawWithParents(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair) !void {
     try skeleton.validate(sk, nl);
-    try drawValid(gpa, s, nl, layout, st, sk);
+    var accepted = false;
+    try drawValid(gpa, s, nl, layout, st, sk, pairs, &.{}, null, false, &accepted);
 }
 
 // ---- private ----
 
-fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void {
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !void {
     // The deck's drawing lines; their verdicts are the report's to give.
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
     @memset(scratch, null);
     var ats = try pinned.read(sa, nl, s.lib.unit, sk.drawn, scratch);
+    const requested_places: []const ?pinned.At = if (pairs.len != 0 and
+        (for (ats) |pose| {
+            if (pose != null) break true;
+        } else false)) try gpa.dupe(?pinned.At, ats) else &.{};
+    defer gpa.free(requested_places);
     // A circuit of amplifier blocks and parts is placed along its signal
     // (`opamp.zig`), every device, unless a line of the deck places one.
     const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
@@ -207,6 +244,14 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
+    const parent_verdicts: []const hints.Verdict = if (stages.len != 0 or pairs.len != 0 or bridge != null)
+        try @import("parent_intent.zig").admitted(sa, nl, s, st, sk)
+    else
+        &.{};
+    const states = try gpa.alloc(parent_parts.State, pairs.len);
+    defer gpa.free(states);
+    for (pairs, states) |p, *state| state.* = parent_parts.initial(nl, p, &lines, parent_verdicts);
+    const trial: parent_parts.Trial = .{ .states = states, .pairs = pairs, .nl = nl };
     const loops = try power_loop_wires.collect(gpa, nl, s.roles, sk.drawn, &lines);
     defer gpa.free(loops);
     // Each drawn device's point: the lattice's.
@@ -216,7 +261,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     @memset(at, .{ 0, 0 });
     var placed_all = true;
     {
-        const geo = try coordinates(gpa, s, nl, sk, len);
+        const geo = try lattice.coordinates(gpa, s, nl, sk, len);
         defer gpa.free(geo.xs);
         defer gpa.free(geo.ys);
         for (at, 0..) |*p, d| if (sk.drawn[d]) {
@@ -245,7 +290,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         @memset(no_ats, null);
         var own = lines;
         own.routes = &.{};
-        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, &xy);
+        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, .{}, &xy, false);
         try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk), bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates));
         const boxes = try deviceBoxes(gpa, s, nl, sk);
         defer gpa.free(boxes);
@@ -259,6 +304,16 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         wipe(s, &xy);
     }
     try keepAts(gpa, s, nl, sk, at, ats);
+    var available: std.ArrayList(parent_stages.Stage) = .empty;
+    for (stages) |stage| {
+        for (nl.hints, parent_verdicts) |h, verdict| {
+            if (@import("parent_intent.zig").touches(nl, h, verdict, &stage.devices, &.{})) break;
+        } else try available.append(sa, stage);
+    }
+    accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
+    if (panels) accepted.* = accepted.* and @import("comparator_panels.zig").arrange(nl, s, sk, at, available.items, pairs, states, parent_verdicts);
+    if (bridge) |request| accepted.* = source_bridge.arrange(nl, s, sk, at, request, parent_verdicts);
+    trial.holdPlaces(s, requested_places, ats, at);
     // Wired; then a net crossing too many wires is named and the drawing
     // wired again without it, which may free a path for another.
     // ponytail: thinned on the finished places only, so a relaid drawing
@@ -278,13 +333,30 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
             if (sk.shelf[e.index()] != first.?) sty.* = .cut;
         }
     }
-    for (0..thin_rounds + 1) |round| {
-        try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, &xy);
-        const mirror = drawnMirror(s, sk, st);
-        if (round == thin_rounds or !try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style)) break;
-        wipe(s, &xy);
-    }
-    try noConnects(gpa, s);
+    const initial = if (pairs.len != 0) try gpa.dupe(netlines.Style, style) else &.{};
+    defer gpa.free(initial);
+    restart: for (0..pairs.len + 1) |_| {
+        for (0..thin_rounds + 1) |round| {
+            try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, trial, &xy, true);
+            const mirror = drawnMirror(s, sk, st);
+            const changed = round != thin_rounds and try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style);
+            if (trial.withdraw(style)) {
+                wipe(s, &xy);
+                @memcpy(style, initial);
+                continue :restart;
+            }
+            if (!changed) break;
+            wipe(s, &xy);
+        }
+        break;
+    } else unreachable;
+    if (accepted.*) for (states) |state| {
+        if (state != .drawn and state != .caller) {
+            accepted.* = false;
+            break;
+        }
+    };
+    try noConnects(gpa, s, nl, lines.style);
     assert(s.xy.len == s.nodes.len);
 }
 
@@ -299,14 +371,14 @@ fn wipe(s: *Schematic, xy: *std.ArrayList([2]f32)) void {
 }
 
 /// The devices at `at` (an `at` line's place first), then every net wired.
-fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, xy: *std.ArrayList([2]f32)) !void {
+fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
     try placeDevices(s, nl, sk, at, ats, xy);
     s.xy = xy.items;
     const boxes = try deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops);
+    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, trial, sk.bridged_t, final_routes);
     s.xy = xy.items;
 }
 
@@ -539,90 +611,6 @@ fn meanX(nl: *const Netlist, sk: *const Skeleton, net: u32, skip: u32) i64 {
     return if (count == 0) 0 else @divFloor(2 * sum, count);
 }
 
-/// Each lattice column as wide as its widest device's reach on each side,
-/// plus room for a port, label or rail symbol (its stub and a unit) where a
-/// side pin on a net driven from outside, an output or a rail faces that
-/// side; rows as tall as their tallest device (its pins' reach, or its body
-/// where that reaches more than `stack` past them), plus a port's or rail
-/// symbol's stub where such a pin faces up or down (the supply's bar over
-/// the top aside). `len.series` between neighbouring columns, `len.stack`
-/// between rows.
-fn coordinates(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton, len: Lengths) !Geo {
-    const c = &nl.graph;
-    var w: usize = 1;
-    var h: usize = 1;
-    for (0..c.edgeCount()) |d| if (sk.drawn[d]) {
-        w = @max(w, @as(usize, @intCast(sk.x[d])) + 1);
-        h = @max(h, @as(usize, @intCast(sk.y[d])) + 1);
-    };
-    // Per column, room left and right; per row, up and down.
-    const room = try gpa.alloc([2]i32, w + h);
-    defer gpa.free(room);
-    @memset(room, .{ 0, 0 });
-    const cols = room[0..w];
-    const rows = room[w..];
-    const reach = s.devices.items(.reach);
-    const up = @backingInt(Side.up);
-    const down = @backingInt(Side.down);
-    for (0..c.edgeCount()) |d| if (sk.drawn[d]) {
-        const r = reach[d];
-        const x: usize = @intCast(sk.x[d]);
-        const y: usize = @intCast(sk.y[d]);
-        // What it needs on each side.
-        var need = r;
-        // A body reaching farther than `stack` past its pins (a block with
-        // pins on its sides only) takes its own room: two such in one
-        // column touched, a pin of one on a pin of the other.
-        const body = boxAt(s, d, .zero);
-        if (-body.min.y > need[up] + len.stack) need[up] = -body.min.y;
-        if (body.max.y > need[down] + len.stack) need[down] = body.max.y;
-        for (c.members(EdgeId.from(d)), 0..) |net, i| {
-            const side = s.pinSide(@intCast(d), i) orelse continue;
-            const role = s.roles[net.index()];
-            // A symbol's stub out from the pin (none for a rail's on a
-            // two-pin part: `wires.terminal`), and a unit for a symbol
-            // beside the device; the supply's bar over the top aside.
-            const two = c.members(EdgeId.from(d)).len == 2;
-            const stub = if (role.isPort()) len.terminal else if (role.isRail()) (if (two) 0 else len.rail) else continue;
-            if (role == .supply and side == .up) continue;
-            need[@backingInt(side)] = r[@backingInt(side)] + stub + if (side.isHorizontal()) len.unit else 0;
-        }
-        cols[x] = .{ @max(cols[x][0], need[@backingInt(Side.left)]), @max(cols[x][1], need[@backingInt(Side.right)]) };
-        rows[y] = .{ @max(rows[y][0], need[up]), @max(rows[y][1], need[down]) };
-    };
-    // Mirrored columns as wide as each other, so the drawing keeps the
-    // skeleton's symmetry exactly.
-    if (sk.axis2) |a2| for (0..w) |k| {
-        const m = a2 - @as(i32, @intCast(k));
-        if (m < 0 or m >= w) continue;
-        const mk: usize = @intCast(m);
-        const left = @max(cols[k][0], cols[mk][1]);
-        const right = @max(cols[k][1], cols[mk][0]);
-        cols[k] = .{ left, right };
-        cols[mk] = .{ right, left };
-    };
-    const xs = try gpa.alloc(i32, w);
-    errdefer gpa.free(xs);
-    const ys = try gpa.alloc(i32, h);
-    errdefer gpa.free(ys);
-    // An empty lattice column takes no room: devices stand `series` apart.
-    const used = try gpa.alloc(bool, w);
-    defer gpa.free(used);
-    @memset(used, false);
-    for (0..c.edgeCount()) |d| if (sk.drawn[d]) {
-        used[@intCast(sk.x[d])] = true;
-    };
-    var prev: ?usize = null;
-    for (xs, cols, used, 0..) |*x, need, u, k| {
-        x.* = if (prev) |p| xs[p] + (if (u) cols[p][1] + len.series + need[0] else 0) else need[0];
-        if (u) prev = k;
-    }
-    for (ys, rows, 0..) |*y, need, k| y.* = if (k == 0) need[0] else ys[k - 1] + rows[k - 1][1] + len.stack + need[0];
-    for (1..w) |k| assert(xs[k] >= xs[k - 1]);
-    for (1..h) |k| assert(ys[k] > ys[k - 1]);
-    return .{ .xs = xs, .ys = ys };
-}
-
 /// A node per drawn device at its cell, and a pin per drawn card pin. A pin
 /// whose terminal is off its device's line for that side (an op-amp's
 /// second input) gets a copy node on its own line, so no two pins of one
@@ -733,14 +721,20 @@ fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
 }
 
 /// A no-connect cross on each device pin with no other pin on its net.
-fn noConnects(gpa: Allocator, s: *Schematic) !void {
+fn noConnects(gpa: Allocator, s: *Schematic, nl: *const Netlist, style: []const netlines.Style) !void {
     const count = try gpa.alloc(u32, s.net_name.len);
     defer gpa.free(count);
     @memset(count, 0);
     for (s.pins.items(.net)) |n| count[n] += 1;
     for (s.pins.items(.net)) |n| assert(count[n] >= 1);
     s.no_connects.clearRetainingCapacity();
+    s.peer_labels.clearRetainingCapacity();
     for (s.pins.items(.net), s.pins.items(.device), 0..) |n, d, p| {
-        if (d != none and count[n] == 1) try s.no_connects.append(s.arena.allocator(), @intCast(p));
+        if (d == none or count[n] != 1) continue;
+        if (nl.graph.incident(netlist.VertexId.from(n)).len == 1) {
+            try s.no_connects.append(s.arena.allocator(), @intCast(p));
+        } else if (style[n] == .auto and s.roles[n] == .internal) {
+            try s.peer_labels.append(s.arena.allocator(), @intCast(p));
+        }
     }
 }

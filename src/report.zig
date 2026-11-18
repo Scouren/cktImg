@@ -7,6 +7,8 @@
 //!   relaxed, dropped or rejected, why, and the lines that blocked it. An
 //!   honoured line the finished drawing does not show (`checks.drawnAs`) is
 //!   reported relaxed, `not_drawn`: a bug.
+//! - `unshown_bodies`: device, terminal and net of a distinct non-rail body
+//!   whose selected symbol has no B contact or marks its B hidden.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
 //!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
@@ -44,6 +46,7 @@ const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
 const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
+const drawn_symmetry = @import("drawn_symmetry.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
@@ -120,7 +123,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     // guarantee refuses is not drawn.
     const drawing = p orelse return out;
     for (out, nl.hints) |*v, h| {
-        if (v.state != .honoured or checks.drawnAs(drawing, nl, h, unit) != false) continue;
+        if (v.state != .honoured or h.verb == .stack or checks.drawnAs(drawing, nl, h, unit) != false) continue;
         // A cell or place on one of its devices is the more exact line: it
         // stands, and this one gives way to it.
         if (try placedBy(arena, nl, out, h)) |by| {
@@ -132,6 +135,24 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
             .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
             else => .{ .state = .relaxed, .code = .not_drawn },
         };
+    }
+    // A later exact pose may break an admitted symmetry. Check the finished
+    // poses first, so a discarded weak stay can never become a blocker.
+    const has_symmetry = for (nl.hints, out) |h, v| {
+        if (v.state == .honoured and (h.verb == .axis or h.verb == .symmetric)) break true;
+    } else false;
+    const axis = if (has_symmetry) drawn_symmetry.plane(nl, st, sk, drawing) else null;
+    for (nl.hints, out) |h, *v| {
+        if (v.state != .honoured) continue;
+        switch (h.verb) {
+            .stack => if (checks.drawnAs(drawing, nl, h, unit) != false) continue,
+            .axis, .symmetric => if (nl.device(h.args[0]) == null or drawn_symmetry.shows(drawing, h, axis)) continue,
+            else => continue,
+        }
+        v.* = if (try placedBy(arena, nl, out, h)) |by|
+            try .blocked(arena, .dropped, .conflict, by)
+        else
+            .{ .state = .relaxed, .code = .not_drawn };
     }
     // A name where a `refdes` line asks, when there is room.
     const l = lib orelse return out;
@@ -169,7 +190,21 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     for (st.block_kind, 0..) |k, b| {
         var line: std.ArrayList(u8) = .empty;
         try line.appendSlice(arena, k.verb().head(.strong));
-        for (st.members(b)) |d| try line.print(arena, " {s}", .{names[d]});
+        const members = st.members(b);
+        var reversed = false;
+        if (k == .stack and p != null) {
+            var forward = true;
+            reversed = true;
+            for (members[0 .. members.len - 1], members[1..]) |a, z| {
+                forward = forward and checks.stackStep(p.?, nl, names[a], names[z]);
+                reversed = reversed and checks.stackStep(p.?, nl, names[z], names[a]);
+            }
+            if (!forward and !reversed) continue;
+        }
+        for (0..members.len) |i| {
+            const d = members[if (reversed) members.len - 1 - i else i];
+            try line.print(arena, " {s}", .{names[d]});
+        }
         try out.append(arena, line.items);
     }
     if (rung < 2) return out.items;
@@ -259,6 +294,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     }
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
 
+    try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
     try w.writeAll("  \"requests\": [");
     for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
@@ -360,7 +396,7 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
 /// for none.
 fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
     const exact: [2]hints.Verb = switch (h.verb) {
-        .row, .above, .order, .face => .{ .cell, .at },
+        .row, .above, .order, .face, .symmetric, .axis, .stack => .{ .cell, .at },
         .label => .{ .route, .via },
         else => return null,
     };

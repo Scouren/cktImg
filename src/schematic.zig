@@ -117,6 +117,7 @@
 
 const std = @import("std");
 const hints = @import("hints.zig");
+const bodies = @import("mos_bodies.zig");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
@@ -242,6 +243,8 @@ pub const Schematic = struct {
     xy: [][2]f32 = &.{},
     /// Device pins alone on their net, drawn with a no-connect mark.
     no_connects: std.ArrayList(u32) = .empty,
+    /// The only visible pin of a net with other electrical terminals.
+    peer_labels: std.ArrayList(u32) = .empty,
     routes: std.ArrayList(Route) = .empty,
 
     pub fn deinit(self: *Schematic) void {
@@ -404,10 +407,17 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
             continue;
         }
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
+        if (bodies.needsBody(nl, roles, e)) c.* = lib.at(c.*).body_variant orelse c.*;
         // An `E` that is a dependent source, not the book's amplifier: the
         // library's two-pin `vcvs`, where it has one. People: a two-pin
         // source symbol for 37 of 37 `E` cards (464 of 464 with G, F, H).
         if (k == .vcvs and forms.isDependent(nl, roles, @intCast(d))) c.* = lib.find("vcvs") orelse c.*;
+    }
+    for (nl.block_frames) |frame| {
+        const d = frame.device.index();
+        assert(d < classes.len and circuit.edges.items(.kind)[d] == .subckt);
+        assert(lib.at(frame.class).terminals.len == lib.at(classes[d]).terminals.len);
+        classes[d] = frame.class;
     }
     // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
     // class with as many terminals as the one it replaces draws every pin
@@ -420,7 +430,12 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
         const e = nl.device(h.args[0]) orelse continue;
         if (circuit.members(e).len == 0) continue;
         const id = lib.find(h.args[1]) orelse continue;
-        if (lib.at(id).terminals.len < lib.at(classes[e.index()]).terminals.len) continue;
+        const current = classes[e.index()];
+        if (lib.at(id).terminals.len < lib.at(current).terminals.len) {
+            if (!bodies.needsBody(nl, roles, e)) continue;
+            const base = lib.at(try lib.classFor(.mosfet, nl.modelType(e), 4));
+            if (base.body_variant != current or lib.at(id).terminals.len < base.terminals.len) continue;
+        }
         classes[e.index()] = id;
     }
     var s: Schematic = .{

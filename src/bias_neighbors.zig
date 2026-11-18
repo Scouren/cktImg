@@ -30,7 +30,7 @@
 //! Data: existing netlist/CSR, roles, hints and settled classes in; one
 //! cold 12-byte certificate per possible amplifier out, then existing
 //! peer orientation/grid-position writes. Handles are u32, port indices
-//! u3 (complete contracts have at most eight ports). Collection reserves
+//! u4 (complete contracts have at most nine ports). Collection reserves
 //! once from the block count; the caller frees it. No per-device role
 //! cache, callbacks or retained state. Attempts follow canonical rank.
 //! This is bounded block-layout work, outside routing/cost inner loops;
@@ -64,7 +64,7 @@ const Side = library.Side;
 
 /// Cold immediate certificate: two existing devices and
 /// their declared port indices. No class or electrical binding is changed.
-pub const Pair = struct { amp: EdgeId, peer: EdgeId, pins: [2]u3 };
+pub const Pair = struct { amp: EdgeId, peer: EdgeId, pins: [2]u4 };
 
 /// Caller-owned temporary certificates and coordinate-order capacity.
 /// Both buffers die at the end of this drawing's geometry stage.
@@ -273,7 +273,7 @@ fn held(nl: *const Netlist, sk: *const Skeleton, a: u32, b: u32) bool {
     return false;
 }
 
-fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u3, want: Side) bool {
+fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u4, want: Side) bool {
     const before = s.devices.get(d);
     const info = s.devices.slice();
     for ([_]sch.Orientation{ .horizontal, .vertical }) |form| for ([_][2]bool{ .{ false, false }, .{ true, true } }) |flips| {
@@ -287,7 +287,7 @@ fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u3, want: Side) bool {
     return false;
 }
 
-fn leadSide(s: *const Schematic, d: u32, pin: u3) ?Side {
+fn leadSide(s: *const Schematic, d: u32, pin: u4) ?Side {
     const info = s.devices.slice();
     const c = s.lib.at(info.items(.class)[d]);
     if (pin >= s.device_pin_count[d] or !c.shows(pin)) return null;
@@ -338,7 +338,7 @@ fn leadSide(s: *const Schematic, d: u32, pin: u3) ?Side {
     return if (body and attached and c.side(pin, o) == actual) actual else null;
 }
 
-fn tip(s: *const Schematic, d: u32, pin: u3, at: Pt) Pt {
+fn tip(s: *const Schematic, d: u32, pin: u4, at: Pt) Pt {
     const info = s.devices.slice();
     const c = s.lib.at(info.items(.class)[d]);
     return at.sub(info.items(.grid)[d]).add(info.items(.orient)[d].apply(c.terminals[pin].at));

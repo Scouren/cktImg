@@ -497,6 +497,7 @@ test "place: a coupling card remains electrical data and needs no drawable class
 }
 
 test {
+    _ = @import("parent_parts.zig");
     _ = @import("block_symbols.zig");
     _ = @import("block_aliases.zig");
     _ = @import("transmission.zig");
@@ -514,6 +515,7 @@ test {
     _ = @import("converter_bus.zig");
     _ = @import("converter_bus_remote.zig");
     _ = @import("input_resistors.zig");
+    _ = @import("passive_filters.zig");
     _ = @import("input_order.zig");
     _ = @import("trunk_taps.zig");
     _ = @import("thin_parts.zig");
@@ -525,4 +527,9 @@ test {
     _ = @import("driven_banks.zig");
     _ = @import("reference_gate_tree.zig");
     _ = @import("bias_block_neighbors.zig");
+}
+
+test {
+    _ = @import("cross_loads.zig");
+    _ = @import("sampling_bridge.zig");
 }

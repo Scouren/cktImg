@@ -15,15 +15,31 @@
 //! The caller's `Library` supplies primitive symbols and may override every
 //! subcircuit glyph; recognized blocks have conventional generated symbols.
 //!
-//! Contents (the new shared glyph entry; the existing exports follow below):
+//! Contents (shared symbol and source-qualified layout entries):
+//! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
+//! - `pub const source_regions`, `pub const source_bridge`
+//! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
+//! - `pub const regulator = @import("regulator.zig")`
 //! - `pub const block_symbols = @import("block_symbols.zig")`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 
 pub const netlist = @import("netlist.zig");
+/// Cold ordered-MOS parent analysis for callers retaining original source authority.
+pub const parent_context = @import("parent_context.zig");
+/// Cold structural analysis; a complete reflection is independent of placement mates.
+pub const local_parents = @import("local_parents.zig");
+/// Two private drain outputs proven by a complete ordered reflection.
+pub const parent_outputs = @import("parent_outputs.zig");
+/// Relative organization of a complete five-MOS common-control parent.
+pub const parent_stages = @import("parent_stages.zig");
+/// Cold source-region incidence and passive/current/tail attachment witnesses.
+pub const source_regions = @import("source_regions.zig");
+/// An ordered horizontal two-arm source-degeneration bridge.
+pub const source_bridge = @import("source_bridge.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -31,12 +47,16 @@ pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
+/// Signed input order from raw NMOS regulator connections and declared cell ports.
+pub const regulator = @import("regulator.zig");
 /// Conventional glyphs for subcircuits with verified named port contracts.
 pub const block_symbols = @import("block_symbols.zig");
 pub const config = @import("config.zig");
 pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
+/// Exact integer membership for horizontal, vertical and 45-degree wire records.
+pub const wire_geometry = @import("wire_geometry.zig");
 pub const lint = @import("lint.zig");
 /// The drawing's guarantees, checked on a finished `Placed`.
 pub const checks = @import("checks.zig");
@@ -134,6 +154,27 @@ pub const Pipeline = struct {
     }
 };
 
+/// Draws this exact parsed graph with the supplied fully bound parent outputs.
+/// The caller keeps the graph alive and owns the returned placement.
+pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair) PlaceError!Placed {
+    const roles = try guessRoles(tmp, nl);
+    defer tmp.free(roles);
+    var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
+    defer s.deinit();
+    return Placed.init(out, &s, nl);
+}
+
+/// Draws certified stages; a failed local room, mandatory route or final
+/// connectivity/short/junction check restores the ordinary paired layout.
+pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage) PlaceError!Placed {
+    return placeQualified(gpa, cfg, lib, nl, pairs, stages_, null);
+}
+
+/// Draws a certified complete two-arm bridge, with ordinary layout as fallback.
+pub fn placeSourceBridge(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_bridge.Request) PlaceError!Placed {
+    return placeQualified(gpa, cfg, lib, nl, &.{}, &.{}, request);
+}
+
 // ---- private ----
 
 /// Every stage in order, the one list both tiers run: each stage's
@@ -141,11 +182,53 @@ pub const Pipeline = struct {
 fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!Placed {
     var nl = try netlist.parse(tmp, sources, diag);
     defer nl.deinit(tmp);
-    const roles = try guessRoles(tmp, &nl);
-    defer tmp.free(roles);
-    var s = try layout(tmp, &nl, roles, lib, cfg.layout);
-    defer s.deinit();
-    return Placed.init(out, &s, &nl);
+    return placeBound(tmp, out, cfg, lib, &nl, &.{});
+}
+
+fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_bridge.Request) PlaceError!Placed {
+    if (stages_.len > 0 or bridge != null) {
+        const roles = try guessRoles(gpa, nl);
+        defer gpa.free(roles);
+        const try_panels = @import("comparator_panels.zig").eligible(stages_, pairs);
+        for (0..if (try_panels) @as(usize, 2) else 1) |attempt| {
+            const panels = try_panels and attempt == 0;
+            var accepted = false;
+            var diagram = try schematic.sketch.layPanels(gpa, nl, roles, lib, cfg.layout, pairs, stages_, bridge, panels, &accepted);
+            defer diagram.deinit();
+            if (accepted) {
+                var candidate = try Placed.init(gpa, &diagram, nl);
+                errdefer candidate.deinit();
+                var findings: std.ArrayList(checks.Finding) = .empty;
+                defer findings.deinit(gpa);
+                try checks.find(gpa, &findings, &candidate, lib);
+                const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
+                const receivers_clear = if (panels) clear: {
+                    for (pairs) |pair| for (pair) |o| {
+                        if (!parent_stages.clearDevice(&candidate, lib, nl, o.pmos) or !parent_stages.clearDevice(&candidate, lib, nl, o.nmos)) break :clear false;
+                    };
+                    break :clear true;
+                } else true;
+                if (findings.items.len == 0 and bridge_intact and receivers_clear and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
+                    const intent = @import("parent_intent.zig");
+                    if (!intent.needsDrawing(nl)) return candidate;
+                    var incumbent = try placeBound(gpa, gpa, cfg, lib, nl, pairs);
+                    errdefer incumbent.deinit();
+                    var scratch = std.heap.ArenaAllocator.init(gpa);
+                    defer scratch.deinit();
+                    if (try intent.preserved(scratch.allocator(), nl, roles, cfg.layout, lib, &incumbent, &candidate)) {
+                        incumbent.deinit();
+                        return candidate;
+                    }
+                    candidate.deinit();
+                    if (!panels) return incumbent;
+                    incumbent.deinit();
+                    continue;
+                }
+                candidate.deinit();
+            }
+        }
+    }
+    return placeBound(gpa, gpa, cfg, lib, nl, pairs);
 }
 
 test {

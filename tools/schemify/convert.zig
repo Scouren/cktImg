@@ -62,6 +62,8 @@ pub const Converter = struct {
     gpa: Allocator,
     a: Allocator,
     source: []const u8,
+    /// Original deck bytes remain available for selected-cell and caller authority.
+    source_text: []const u8,
     deck: spice.Deck,
     rec: recognize.Recognized,
     lib: engine.Library,
@@ -97,7 +99,7 @@ pub const Converter = struct {
         // `tb_<name>` rather than `<name>_2`.
         const named = if (recognize.nameTaken(rec.taken.items, base)) try a.print("tb_{s}", .{base}) else base;
         const bench = try recognize.uniqueStem(a, named, &rec.taken);
-        var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .deck = deck, .rec = rec, .lib = lib, .bench = bench, .out = out };
+        var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .source_text = text, .deck = deck, .rec = rec, .lib = lib, .bench = bench, .out = out };
         var has_top = deck.devs(0).len() > 0;
         for (deck.code_cell) |cc| has_top = has_top or cc == 0;
         if (has_top) try c.todo.append(a, 0);
@@ -121,7 +123,7 @@ pub const Converter = struct {
         const a = c.a;
         const cell = c.todo.pop().?;
         const stem = if (cell == 0) c.bench else c.rec.syms.stem.items[recognize.subSymbol(cell)];
-        const drawn = try layout.draw(c.gpa, a, &c.lib, &c.deck, &c.rec, cell, &c.budget);
+        const drawn = try layout.drawSource(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget);
         if (drawn.fallback) |why| try c.out.warnings.append(a, try a.print("{s}: drawn with labels only ({s})", .{ stem, why }));
         if (drawn.strays > 0) try c.out.warnings.append(a, try a.print("{s}: the engine left {d} pins unconnected; labelled", .{ stem, drawn.strays }));
         for (drawn.notes.items) |note| try c.out.warnings.append(a, try a.print("{s}: {s}", .{ stem, note }));

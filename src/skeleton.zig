@@ -54,7 +54,8 @@
 //!   of 1,968 (600 face out). A mirror or bank of three or more has no
 //!   rule of its own: skeleton.9 turns each gate (people turn all of one
 //!   left, the rule retired as skeleton.12, in 12 of 1,103 such mirrors
-//!   and 88 of 380 banks). `gates`
+//!   and 88 of 380 banks). A reciprocal load row with two diodes follows
+//!   its input columns and their associated terminals. `gates`, `cross_loads`
 //! - skeleton.15 (habit, bounded) A two-MOS bank with one complete analog
 //!   block output and otherwise only capacitors on its gate net faces an
 //!   exterior driver. All 42 actual source gates in 21 selected banks do
@@ -93,7 +94,10 @@ const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
+const passive_filters = @import("passive_filters.zig");
 const loop_place = @import("loop_place.zig");
+const sampling_bridge = @import("sampling_bridge.zig");
+const cross_loads = @import("cross_loads.zig");
 const input_place = @import("input_place.zig");
 const config = @import("config.zig");
 
@@ -121,6 +125,8 @@ pub const Options = struct {
 /// One entry per device, in card order. A device that is not drawn (a
 /// driver, a card with no pins) has `drawn` false and the rest unspecified.
 pub const Skeleton = struct {
+    /// The tapped two-arm path owns both ports in a matched passive bridged T.
+    bridged_t: bool = false,
     drawn: []const bool,
     form: []const Form,
     /// A vertical device's upper and lower ends' nets; `none` otherwise.
@@ -170,13 +176,15 @@ const Chain = struct {
 
 /// Asserts that `roles` has one entry per net and `st` comes from `nl`.
 pub fn place(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options) Allocator.Error!Skeleton {
-    const first = try lay(gpa, arena, nl, roles, st, opts, null);
+    const passive = passive_filters.find(nl, roles, st.net_rank, opts.shelf);
+    const first = try lay(gpa, arena, nl, roles, st, opts, null, passive);
+    if (passive != null) return first;
     // A flat part that cannot be wired straight stands upright, and the
     // skeleton is laid once more (`crooked`).
     const stood = try gpa.alloc(bool, nl.graph.edgeCount());
     defer gpa.free(stood);
     if (!forms.crooked(nl, roles, st, &first, spread, stood)) return first;
-    return lay(gpa, arena, nl, roles, st, opts, stood);
+    return lay(gpa, arena, nl, roles, st, opts, stood, null);
 }
 
 /// Checks what `sketch.draw` relies on in `sk`, as a caller may have edited
@@ -213,7 +221,7 @@ pub fn validate(sk: *const Skeleton, nl: *const Netlist) Invalid!void {
 
 /// The skeleton with the forms `classify` gives, and the devices `stood`
 /// marks (if any) upright all the same.
-fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options, stood: ?[]const bool) Allocator.Error!Skeleton {
+fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, opts: Options, stood: ?[]const bool, passive: ?passive_filters.Frame) Allocator.Error!Skeleton {
     const c = &nl.graph;
     const n = c.edgeCount();
     assert(roles.len == c.vertexCount());
@@ -233,6 +241,14 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
 
     const verdicts = try arena.alloc(?hints.Verdict, nl.hints.len);
     @memset(verdicts, null);
+    const shelf = try arena.alloc(u32, n);
+    @memset(shelf, 0);
+    if (passive) |frame| {
+        @memset(drawn, true);
+        if (n == 5) try relations.drivers(gpa, nl, drawn, verdicts);
+        frame.apply(nl, form, upper, lower, left_end, x, y);
+        return .{ .bridged_t = n == 4, .drawn = drawn, .form = form, .upper = upper, .lower = lower, .gate_right = gate_right, .left_end = left_end, .x = x, .y = y, .shelf = shelf, .axis2 = null, .origin = .{ 0, 0 }, .verdicts = verdicts };
+    }
     try forms.classify(gpa, nl, roles, st, drawn, form, verdicts);
     try relations.forms(arena, nl, drawn, form, verdicts);
     if (stood) |up| for (up, form, drawn) |u, *f, dr| {
@@ -288,6 +304,41 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
         x[d] = spread * col_x[column_of[d]];
         y[d] = 2 * @as(i32, @intCast(rank[d]));
     }
+    // The axis row can hold only one independent tail. Resolve collisions
+    // in canonical device order; cell and exact poses are admitted later.
+    const has_axis = for (nl.hints, st.verdicts) |h, v| {
+        if (h.verb == .axis and v != null and v.?.state == .honoured) break true;
+    } else false;
+    if (has_axis) for (devices_by_rank) |d| {
+        if (mate[d] != d or !drawn[d] or form[d] != .vertical or x[d] == 0) continue;
+        if (c.edges.items(.kind)[d] != .isource or roles[lower[d]] != .sink) continue;
+        if (chain.above[d] != none or chain.below[d] != none) continue;
+        const requested = for (nl.hints, st.verdicts) |h, v| {
+            if (h.verb != .axis or v == null or v.?.state != .honoured) continue;
+            // The same verb also accepts net identities.
+            const target = nl.device(h.args[0]) orelse continue;
+            if (target.index() == d) break true;
+        } else false;
+        if (!requested) continue;
+        // Retain admitted row/above/order relations including bridge rows.
+        const bound = for (seq.pairs) |e| {
+            if (e[0] == d or e[1] == d) break true;
+        } else for (rel.edges) |e| {
+            if (e[0] == d or e[1] == d) break true;
+        } else for (rel.bridge_row, 0..) |bridge_row, e| {
+            if (bridge_row == d or (e != d and rel.find(@intCast(e)) == rel.find(d))) break true;
+        } else false;
+        if (bound) continue;
+        var bottom = y[d];
+        var occupied = false;
+        for (drawn, form, x, y) |shown, orientation, cx, cy| {
+            if (!shown or orientation != .vertical) continue;
+            bottom = @max(bottom, cy);
+            occupied = occupied or (cx == 0 and cy == y[d]);
+        }
+        x[d] = 0;
+        if (occupied) y[d] = bottom + 2;
+    };
     // The core stands about x = 0 until the cells shift to start at 0; a
     // device its own mate whose column went free keeps none.
     var mated = false;
@@ -306,13 +357,13 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     mated = false;
     for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);
     gates(nl, roles, st, mate, drawn, form, x, gate_right);
+    cross_loads.place(nl, roles, st, mate, drawn, form, x, y, gate_right, verdicts);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
     var protected = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
     defer protected.deinit(gpa);
     try input_place.place(gpa, nl, roles, devices_by_rank, st.device_rank, drawn, form, upper, mate, gate_right, left_end, x, y, verdicts, &protected);
-    const shelf = try arena.alloc(u32, n);
-    @memset(shelf, 0);
+    try sampling_bridge.place(gpa, &protected, nl, roles, drawn, mate, form, upper, lower, x, y);
     try wrap.shelves(gpa, nl, roles, drawn, form, mate, opts.shelf, x, y, shelf, verdicts, protected.items);
     const origin = normalize(drawn, x, y);
     try expectDistinctCells(gpa, drawn, x, y);
@@ -411,7 +462,8 @@ fn endsOn(gpa: Allocator, nl: *const Netlist, drawn: []const bool, form: []const
 }
 
 /// The link to keep among `ups` over `downs`, or null: a stack block's
-/// (`stacked`, either way round: a hint lists its devices in any order),
+/// (`stacked` picks adjacent members in either order; the finished drawing
+/// certifies the caller's written top-to-bottom direction),
 /// the first by rank; else none when either side is a pair (its tail
 /// stands alone), else the best free device on each side.
 fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: []const u32, roles: []const Role, chain: *const Chain, stacked: []const u32, ups: []const u32, downs: []const u32) ?struct { u32, u32 } {

@@ -57,6 +57,11 @@ Work down this list. Stop at the first round whose picture meets the target.
    the signal on 4 circuits and took 2 crossings to 0 on a fifth. An order
    across a mirrored pair names the device on the axis too
    (`order m9 m1 iss m2 m10`), or the axis device is pushed aside.
+   Two independent tail current sources can share a requested axis on
+   separate rows. With `--report`, a device symmetry request is honoured
+   when both origins and all corresponding terminals reflect across the
+   common axis. An honoured exact placement that breaks the reflection
+   appears in the request's `blocked_by` entries.
 
 4. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
@@ -64,8 +69,12 @@ Work down this list. Stop at the first round whose picture meets the target.
    left|right` turns a flat part end for end; its mate needs a line of its
    own.
 
-5. **`group stack <transistor> <part>`** for a part that belongs in a
-   transistor's column.
+5. **`group stack <upper> <lower>`** names members from top to bottom. For
+   a pair in series, put their shared conduction terminals in the same
+   column. A reversed request can select the intended branch while its
+   final order is reported `relaxed/not_drawn`. The decision export uses
+   the physical direction. Opaque blocks with their own port anchors can
+   keep their horizontal positions while satisfying the vertical order.
 
 6. **`row` for devices.** Name transistors and upright parts. A flat part
    named in `row` lands on the gates' level; left out, it settles on the node
@@ -112,4 +121,4 @@ complaint open.
 | "This net goes over the top" | `route`, in coordinates |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
-A line reported `relaxed not_drawn` is a cktImg bug: report it with the deck.
+A `group stack` reported `relaxed not_drawn` can reflect opposite series order or two devices anchored to the same rail at equal height. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.
