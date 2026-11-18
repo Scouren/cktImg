@@ -495,12 +495,26 @@ pub const Library = struct {
         for (order, 0..) |*o, k| o.* = k;
         // ponytail: insertion sort, quadratic, for a block's handful of
         // ports; `std.mem.sort` costs the plugin 6 KB more. Both are stable.
-        std.sort.insertion(usize, order, def, struct {
-            fn lt(d: *const netlist.Subckt, x: usize, y: usize) bool {
-                return d.order[x] < d.order[y];
+        const slots = block_symbols.boxSlots(def.name, def.ports);
+        const Order = struct {
+            def: *const netlist.Subckt,
+            slots: ?[4]u8,
+
+            fn lt(o: @This(), x: usize, y: usize) bool {
+                if (o.slots) |frame| {
+                    const x_directed = o.def.sides[x] != null;
+                    const y_directed = o.def.sides[y] != null;
+                    if (x_directed != y_directed) return x_directed;
+                    if (!x_directed) return frame[x] < frame[y];
+                }
+                return o.def.order[x] < o.def.order[y];
             }
-        }.lt);
-        for (order) |k| try per[@backingInt(def.sides[k] orelse defaultSide(def.ports[k]))].append(a, k);
+        };
+        std.sort.insertion(usize, order, Order{ .def = def, .slots = slots }, Order.lt);
+        for (order) |k| {
+            const side = def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) netlist.PortSide.left else .right) else defaultSide(def.ports[k]);
+            try per[@backingInt(side)].append(a, k);
+        }
         // An amplifier's inverting input above the other, as people tend
         // to draw one (448 of 678 blocks with both inputs on one upright
         // side in 5,263 hand-drawn schematics), where no directive of the

@@ -154,3 +154,21 @@ The two external supply leads on the XOR-family gates in AG438, AG545 and AG1076
 | [![AG438 before](ag-438.before.svg)](ag-438.before.svg) | [![AG438 after](ag-438.after.svg)](ag-438.after.svg) | [![AG438 published][ag438]][ag438] |
 
 [ag438]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/438/Book438.png
+
+## Named contacts on PFD and DAC boxes
+
+The PFD in AG439 and AG440 has A and B on the left and QA and QB on the right. All four pins previously appeared on the native left side. The Schemify box previously put all four on the right. Both renderers now use the two observed sides and retain each declared pin and its electrical direction. The rule also recognizes the two complete DAC spellings, OUT1/OUT2 and O1/O2. It places both outputs on the canonical right of the box. Explicit graphical side directives still determine each requested pin.
+
+| Native before | Native after | Published drawing |
+|---|---|---|
+| [![AG439 before](ag-439.before.svg)](ag-439.before.svg) | [![AG439 after](ag-439.after.svg)](ag-439.after.svg) | [![AG439 published][ag439]][ag439] |
+| [![AG440 before](ag-440.before.svg)](ag-440.before.svg) | [![AG440 after](ag-440.after.svg)](ag-440.after.svg) | [![AG440 published][ag440]][ag440] |
+| [![AG515 before](ag-515.before.svg)](ag-515.before.svg) | [![AG515 after](ag-515.after.svg)](ag-515.after.svg) | [![AG515 published][ag515]][ag515] |
+| [![AG516 before](ag-516.before.svg)](ag-516.before.svg) | [![AG516 after](ag-516.after.svg)](ag-516.after.svg) | [![AG516 published][ag516]][ag516] |
+
+The canonical PFD sides cost one crossing in the complete AG439 native drawing (1 → 2) and two bends (8 → 10). AG440 keeps zero crossings and moves from four to six bends. An explicit Schemify PININFO direction keeps its existing side unless the caller assigns a graphical side. The actual editor import preserves PFD A/B/QA/QB as inout. It preserves AG515 OUT1/OUT2 as out and AG516 O1/O2 as inout. The canonical side tests also permute formal order, while the terminal array remains in SPICE order. AG515 already had the intended canonical sides. The placement engine mirrors both DACs, leaving the contacts on the left of the finished sheet. The published drawings put the DAC to the left of the mixer with its contacts on the right. That whole-stage orientation remains a visible difference.
+
+[ag439]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/439/Book439.png
+[ag440]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/440/Book440.png
+[ag515]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/515/Book515.png
+[ag516]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/516/Book516.png

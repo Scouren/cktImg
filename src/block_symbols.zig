@@ -75,6 +75,7 @@
 //! - `pub const Shape = enum(u8)`
 //! - `pub const Drawing = struct`
 //! - `pub fn clockFormal(port: []const u8) bool`
+//! - `pub fn boxSlots(name: []const u8, ports: []const []const u8) ?[4]u8`
 //! - `pub fn identify(name: []const u8, ports: []const []const u8) Shape`
 //! - `pub inline fn analogOutput(name: []const u8, ports: []const []const u8) ?u4`
 //! - `pub fn draw(arena: Allocator, shape: Shape, ports: []const []const u8, pitch: i32) Allocator.Error!Drawing`
@@ -95,6 +96,33 @@ pub const Drawing = struct { terminals: []const lib.Terminal, ops: []const DrawO
 
 const Role = enum(u4) { supply, ground, positive, negative, input, second, output, out_positive, out_negative, bias1, bias2, bias3, bias4, clock, unknown };
 const ports_max = 9;
+
+/// Canonical box slots for the PFD and two-output DAC. Slots 0/1 are
+/// left, 2/3 right, top to bottom. The result is indexed by ordered formal;
+/// it supplies geometry only and leaves each port's electrical direction alone.
+pub fn boxSlots(name: []const u8, ports: []const []const u8) ?[4]u8 {
+    const contracts = .{
+        .{ "pfd", &[_][]const u8{ "a", "b", "qa", "qb" }, 0 },
+        .{ "dac", &[_][]const u8{ "o1", "o2" }, 2 },
+        .{ "dac", &[_][]const u8{ "out1", "out2" }, 2 },
+    };
+    inline for (contracts) |rule| {
+        const family, const names, const start = rule;
+        if (ports.len == names.len and std.ascii.eqlIgnoreCase(name, family)) {
+            var slots: [4]u8 = @splat(0);
+            var seen: [4]bool = @splat(false);
+            for (ports, 0..) |formal, i| {
+                const k = for (names, 0..) |wanted, j| {
+                    if (std.ascii.eqlIgnoreCase(formal, wanted)) break j;
+                } else break;
+                if (seen[k]) break;
+                seen[k] = true;
+                slots[i] = @intCast(start + k);
+            } else return slots;
+        }
+    }
+    return null;
+}
 
 /// The conventional glyph for a whole, case-insensitive family name and a
 /// complete port contract; `.box` for unknown names, duplicate roles or extra

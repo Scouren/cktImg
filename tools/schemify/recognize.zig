@@ -364,6 +364,18 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
             return .{ .pins = pins, .body = .{ -reach, -reach, reach, reach }, .shape = shape };
         }
     }
+    if (block_symbols.boxSlots(deck.cell_name[c], names)) |frame| {
+        const sides = try a.dupe(Side, deck.port_side[r.lo..r.hi]);
+        const ranks = try a.dupe(u16, deck.port_rank[r.lo..r.hi]);
+        for (sides, ranks, ports, 0..) |*side, *rank, net, k| {
+            // PININFO already places inputs left and other directions right
+            // in boxLayout. An explicit graphical side has highest priority.
+            if (side.* == .auto and deck.pinInfo(deck.netKey(c, net)) == null)
+                side.* = if (frame[k] < 2) .left else .right;
+            if (rank.* == spice.rank_none) rank.* = spice.rank_none - 4 + @as(u16, frame[k]);
+        }
+        return boxLayout(a, names, dirs, sides, ranks);
+    }
     return boxLayout(a, names, dirs, deck.port_side[r.lo..r.hi], deck.port_rank[r.lo..r.hi]);
 }
 
@@ -1195,5 +1207,33 @@ test "clocked comparator follows its input declaration and explicit side authori
         try std.testing.expectEqual(@as(usize, 5), pins.len);
         try std.testing.expectEqual(if (k == 0) block_symbols.Shape.clocked_comparator else .box, r.syms.shape.items[id]);
         if (k == 0) try std.testing.expectEqual(Dir.in, pins[4].dir);
+    }
+}
+
+test "PFD box slots keep SPICE order and PININFO direction under a graphical override" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "", "*@ top QA\n" }, [_]bool{ false, true }) |hint, top| {
+        const text = try std.mem.concat(a, u8, &.{
+            ".subckt PFD QB B QA A\n*.PININFO A:O QB:I\n", hint,
+            ".ends PFD\nX1 out_b in_b out_a in_a PFD\n",
+        });
+        const d = try spice.parse(a, text);
+        const r = try recognize(a, &d, &.{});
+        const pins = r.syms.pins(subSymbol(1));
+        try t.expectEqual(.box, r.syms.shape.items[subSymbol(1)]);
+        const names = [_][]const u8{ "QB", "B", "QA", "A" };
+        for (pins, names) |terminal, name| try t.expectEqualStrings(name, terminal.name);
+        try t.expectEqual(.in, pins[0].dir);
+        try t.expectEqual(.out, pins[3].dir);
+        try t.expect(pins[0].x < 0 and pins[1].x == pins[0].x and pins[1].y < pins[0].y);
+        try t.expect(pins[3].x > 0);
+        if (top) {
+            try t.expect(pins[2].y < pins[0].y and pins[2].x == 0);
+        } else {
+            try t.expect(pins[2].x == pins[3].x and pins[3].y < pins[2].y);
+        }
     }
 }

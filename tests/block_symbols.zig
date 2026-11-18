@@ -390,3 +390,36 @@ test "rounded OR-family rail leads stop at the first intersection with the outli
         }
     }
 }
+
+test "PFD and DAC remain boxes with named, ordered contacts after formal permutation" {
+    // AG439/440 show A/B on the left, QA/QB on the right. AG515/516
+    // put O1/O2 or OUT1/OUT2 on the right. These are graphical slots.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const cases = [_]struct { []const u8, []const []const u8, []const np.library.Side, []const i32 }{
+        .{ "PFD", &.{ "QB", "a", "QA", "b" }, &.{ .right, .left, .right, .left }, &.{ 1, -1, -1, 1 } },
+        .{ "DAC", &.{ "o2", "O1" }, &.{ .right, .right }, &.{ 1, -1 } },
+        .{ "DAC", &.{ "OUT2", "out1" }, &.{ .right, .right }, &.{ 1, -1 } },
+        .{ "DAC", &.{ "o2", "out1" }, &.{ .left, .right }, &.{ 0, 0 } },
+        .{ "PFD2", &.{ "a", "qa" }, &.{ .left, .left }, &.{ -1, 1 } },
+        .{ "PFD", &.{ "a", "b", "qa", "en" }, &.{ .left, .left, .left, .left }, &.{ -1, -1, 1, 1 } },
+    };
+    for (cases) |case| {
+        const family, const names, const sides, const ys = case;
+        var lib = np.Library.init(a);
+        defer lib.deinit();
+        const specified = try a.alloc(?np.netlist.PortSide, names.len);
+        @memset(specified, null);
+        const order = try a.alloc(u16, names.len);
+        for (order, 0..) |*o, i| o.* = @intCast(1000 + i);
+        const def: np.netlist.Subckt = .{ .name = family, .ports = names, .sides = specified, .order = order, .expand = false, .body = "" };
+        try testing.expectEqual(.box, np.block_symbols.identify(family, names));
+        const glyph = lib.at(try lib.blockFor(&def));
+        for (glyph.terminals, names, sides, ys) |pin, name, side, ysign| {
+            try testing.expectEqualStrings(name, pin.name);
+            try testing.expectEqual(side, pin.side);
+            try testing.expectEqual(ysign, std.math.sign(pin.at.y));
+        }
+    }
+}
