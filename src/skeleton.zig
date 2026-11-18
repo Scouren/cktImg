@@ -304,6 +304,41 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
         x[d] = spread * col_x[column_of[d]];
         y[d] = 2 * @as(i32, @intCast(rank[d]));
     }
+    // The axis row can hold only one independent tail. Resolve collisions
+    // in canonical device order; cell and exact poses are admitted later.
+    const has_axis = for (nl.hints, st.verdicts) |h, v| {
+        if (h.verb == .axis and v != null and v.?.state == .honoured) break true;
+    } else false;
+    if (has_axis) for (devices_by_rank) |d| {
+        if (mate[d] != d or !drawn[d] or form[d] != .vertical or x[d] == 0) continue;
+        if (c.edges.items(.kind)[d] != .isource or roles[lower[d]] != .sink) continue;
+        if (chain.above[d] != none or chain.below[d] != none) continue;
+        const requested = for (nl.hints, st.verdicts) |h, v| {
+            if (h.verb != .axis or v == null or v.?.state != .honoured) continue;
+            // The same verb also accepts net identities.
+            const target = nl.device(h.args[0]) orelse continue;
+            if (target.index() == d) break true;
+        } else false;
+        if (!requested) continue;
+        // Retain admitted row/above/order relations including bridge rows.
+        const bound = for (seq.pairs) |e| {
+            if (e[0] == d or e[1] == d) break true;
+        } else for (rel.edges) |e| {
+            if (e[0] == d or e[1] == d) break true;
+        } else for (rel.bridge_row, 0..) |bridge_row, e| {
+            if (bridge_row == d or (e != d and rel.find(@intCast(e)) == rel.find(d))) break true;
+        } else false;
+        if (bound) continue;
+        var bottom = y[d];
+        var occupied = false;
+        for (drawn, form, x, y) |shown, orientation, cx, cy| {
+            if (!shown or orientation != .vertical) continue;
+            bottom = @max(bottom, cy);
+            occupied = occupied or (cx == 0 and cy == y[d]);
+        }
+        x[d] = 0;
+        if (occupied) y[d] = bottom + 2;
+    };
     // The core stands about x = 0 until the cells shift to start at 0; a
     // device its own mate whose column went free keeps none.
     var mated = false;

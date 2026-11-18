@@ -44,6 +44,7 @@ const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
 const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
+const drawn_symmetry = @import("drawn_symmetry.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
@@ -132,6 +133,23 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
             .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
             else => .{ .state = .relaxed, .code = .not_drawn },
         };
+    }
+    // A later exact pose may break an admitted symmetry. Check the finished
+    // poses first, so a discarded weak stay can never become a blocker.
+    const has_symmetry = for (nl.hints, out) |h, v| {
+        if (v.state == .honoured and (h.verb == .axis or h.verb == .symmetric)) break true;
+    } else false;
+    if (has_symmetry) {
+        const axis = drawn_symmetry.plane(nl, st, sk, drawing);
+        for (nl.hints, out) |h, *v| {
+            if (v.state != .honoured or (h.verb != .axis and h.verb != .symmetric)) continue;
+            // Net-mate requests have a separate structural identity.
+            if (nl.device(h.args[0]) == null or drawn_symmetry.shows(drawing, h, axis)) continue;
+            v.* = if (try placedBy(arena, nl, out, h)) |by|
+                try .blocked(arena, .dropped, .conflict, by)
+            else
+                .{ .state = .relaxed, .code = .not_drawn };
+        }
     }
     // A name where a `refdes` line asks, when there is room.
     const l = lib orelse return out;
@@ -360,7 +378,7 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
 /// for none.
 fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
     const exact: [2]hints.Verb = switch (h.verb) {
-        .row, .above, .order, .face => .{ .cell, .at },
+        .row, .above, .order, .face, .symmetric, .axis => .{ .cell, .at },
         .label => .{ .route, .via },
         else => return null,
     };

@@ -57,6 +57,11 @@ Work down this list. Stop at the first round whose picture meets the target.
    the signal on 4 circuits and took 2 crossings to 0 on a fifth. An order
    across a mirrored pair names the device on the axis too
    (`order m9 m1 iss m2 m10`), or the axis device is pushed aside.
+   Two independent tail current sources can share a requested axis on
+   separate rows. With `--report`, a device symmetry request is honoured
+   when both origins and all corresponding terminals reflect across the
+   common axis. An honoured exact placement that breaks the reflection
+   appears in the request's `blocked_by` entries.
 
 4. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
