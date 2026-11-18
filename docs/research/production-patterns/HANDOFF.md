@@ -1,0 +1,42 @@
+# Continuing the human-layout implementation
+
+Work is on `feat/human-pattern-series` in PR #22 against `main`. Keep the PR open while implementing the remaining patterns. Preserve the individual behavior commits so a reader can compare consecutive drawings. The user has a separate working checkout with ongoing research. [Pull request](https://github.com/Scouren/cktImg/pull/22) · [Comparison gallery](README.md)
+
+## Checkpoints and open work
+
+| Pattern | What runs and what remains to verify |
+|---|---|
+| Initial 27 proposals | The first series runs from production `4c7c3a12` to `13fa838a`. It implemented the first set of qualified placements, pin roles and wire partitions. The 144 changed drawings and 5,130 identical drawings are the figures for those endpoints. [First 25 commits and tests](checkpoints.md) · [Initial P01–P27 coverage](rule-coverage.md) |
+| P19 comparator stages | `e723a5e2` puts the preamplifiers above the latch in AG1079 and AG1080. Both native and actual Schemify exports reproduce the new stage order. These were the only two changed native drawings across 5,274 inputs at this step. The sheets grow taller. Output remains a single editable sheet. [Originals, drawings, dimensions and crossing counts](comparator-panels/README.md) |
+| P08–P11 MOS bodies | The feature patch selects an optional real fourth contact per MOS occurrence. AG1181 mixes distinct and source-tied bodies on the same named net. Of 23 private wells, 22 have a continuous body wire and AG2287 uses two named pieces by default. Ten actual DUTs preserved 516 ordered terminal occurrences on 129 MOS devices. The cumulative branch build and the additive C API contact query are the next integration gates. |
+| P04/P06 instance frames | The feature patch gives two uses of one native amplifier different signed-input frames and lets multiple uniformly qualifying editor uses share a signed symbol. The real editor keeps one canonical symbol for mixed uses because an instance references one cell for both appearance and implementation. Keep hierarchy navigation, callee identity and electrical export. AG1242 already has a straight 40-unit output-to-pass-gate wire. A different overall orientation requires moving its surrounding mirror as well. |
+| P12–P19 nested and two-dimensional groups | The AG517 patch puts the input pair to the left of all switches and the inner source columns between the outer pair in native and Schemify drawings. The independent AG1093 implementation places its four switches in two rows and two columns. Verify its actual editor geometry, unchanged ordered pins, neighboring circuits and full-corpus selection before publishing. AG364 already has the nested output columns, and AG1028 is a contrary arrangement with the same interface relationships. |
+| P21/P23 diagonal wires | `e1e924f4` makes the editor adapter preserve directions, endpoint cuts and lattice-point labels on oblique segments. The opt-in AG90 patch produces two reciprocal 45-degree gate wires in native output. The older CLI rejected this option. Verify distinct-net crossing, physical pin-to-pin traces, an explicit routing override, legacy C output, native JSON/SVG/TikZ, editor round trip, and the unchanged AG404/647 controls. AG90’s original shows an oblique X between cardinal gate stubs. [Published AG90](https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/90/Book90.png) |
+| P22 oblique capacitor symbols | AG493 has eight capacitors whose own leads and plates are oblique. A native prototype places their terminal coordinates within 0.142 drawing units of the redraw. The source has four resistor rows and two capacitor banks with opposite terminal roles. Add the production selector and a genuine rotated contact/glyph in each supported target. Check each capacitor’s ordered pins and separate inter-device wiring. [AG493 redraw](../../../external/examples/analoggenie/ag-493.svg) |
+| Grouped bus presentation | AG1146 represents four scalar formals with one visible control bus. The trial must preserve `B_3_`, `B_2_`, `B_1_`, `B_0_` in that order. The host accepts comma-separated bundle expressions. Verify an actual one-contact symbol, individual scalar net exports and pin mapping. A bracket range can rename the original SPICE nets. [AG1146 input](../../../external/examples/analoggenie/ag-1146.cir) |
+| Presentation choices | Numbered or separate publication panels, universal feedback orientation and the exact decoration of the source are distinct from the circuit’s inferred connectivity. The comparison should state each supported choice and any remaining visual difference. Qualify new placements using topology, actual terminals and caller intent. |
+
+`329821ae` reduced the shipping guest by 26,904 bytes. Its full-corpus JSON/SVG comparison and all 93 guest event transcripts were unchanged. Use this commit or a descendant when testing the remaining features against the 563,200-byte ceiling.
+
+## Resume from a checkout
+
+1. Inspect `git status --short --branch`, `git worktree list` and `git log --oneline 4c7c3a12..feat/human-pattern-series`. Reuse the existing PR worktree when present. On a fresh clone, check out `feat/human-pattern-series`. Verify the current PR head before using a patch.
+2. Inspect the latest feature entry above and the corresponding files/tests on that head. Apply only work still missing. Compare each new patch with its declared base and run `git apply --check` before integration. Keep existing user research and unrelated changes intact.
+3. Run both renderer configurations, format, the gallery and the pinned plugin rebuild. Verify the committed guest bytes and size. Exercise the affected native and real Schemify circuits. The repository’s GitHub Actions setting was disabled during this series, so an empty PR check list supplies no test result. [Repository test instructions](../../../TESTING.md)
+4. Compare the installed before/after native binaries over all four collections using the checked-in script. Inspect the actual SVG and editor exports against the original. Record named improvements, regressions, electrically equivalent alternatives and any unsupported target behavior. Commit each green step with its regenerated guest. Refresh the comparison gallery and this handoff. Retire temporary worktrees as soon as their work is integrated. [Corpus reproduction instructions](checkpoints.md)
+
+## Local recovery files
+
+On the original workstation the durable recovery directory is `$(git rev-parse --path-format=absolute --git-common-dir)/cktimg-pr22-handoff/latest`. It is shared by the worktrees and survives their removal. `manifest.json` records the snapshot time, PR branch head and SHA-256 of every saved input. `patches/` contains the integration patches, `work-in-progress/` holds each active checkout’s recorded base and local edits, and `validation/` holds the measured outputs. `original-plan/` preserves the proposal, amendments, implementation packages and original round-two study. The latest Git commits take precedence over an older recovery patch.
+
+The durable directory is local to that workstation. Committed code, tests and the gallery are available from PR #22 on another machine. The original local research entry is `docs/research/image-rules/round-2/proposed-human-rules.md` in the user's research checkout.
+
+| Recovery patch | Base and application order |
+|---|---|
+| `panels.patch` | Isolated comparator implementation from `13fa838a`, integrated at `e723a5e2`. |
+| `bodies.patch`, `contact-abi.patch` | Body selection from `13fa838a` first, then its C ABI query. Isolated commits `e4346cb4` and `8a003ba7`. |
+| `shared-frames.patch` | Isolated per-instance and shared definition work from `13fa838a`. Resolve class-selection hooks against the body change. |
+| `nested-bank.patch` | Incremental AG517 geometry over the comparator panels. AG1093 follows in a distinct step. |
+| `diagonals-in-progress.patch` | Prototype against `329821ae`. Reconcile the native and host selection hooks with later group and body commits. Treat the saved working implementation as a candidate until its final tests pass. |
+
+The GUI preview on the original workstation runs at port 8783. Its service is `cktimg-human-patterns-preview.service`. The portable gallery is the Markdown in this directory with relative images and pinned source links. [Open the local comparison gallery](http://127.0.0.1:8783/docs/research/production-patterns/)
