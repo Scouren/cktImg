@@ -144,3 +144,13 @@ AG2212 now also qualifies for the regulator input-order rule, bringing that coho
 [ag2212]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/2212/Book2212.png
 [ag808]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/808/Book808.png
 [ag3495]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/3495/Book3495.png
+
+## Where a rail lead meets a rounded gate
+
+The two external supply leads on the XOR-family gates in AG438, AG545 and AG1076 each extended 5/19 of a drawing unit into the gate at nominal pitch 20. The quantized outline now includes each attachment point. An independent ray–polygon test compares the actual line to the first outline intersection at six symbol pitches, including the minimum. The original book omits these power leads. The comparison shows a graphical correction to the generated symbol while preserving the declared supplies and their external tips.
+
+| Native before | Native after | Published drawing |
+|---|---|---|
+| [![AG438 before](ag-438.before.svg)](ag-438.before.svg) | [![AG438 after](ag-438.after.svg)](ag-438.after.svg) | [![AG438 published][ag438]][ag438] |
+
+[ag438]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/438/Book438.png

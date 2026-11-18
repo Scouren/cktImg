@@ -352,3 +352,41 @@ test "extended triangle terminal leads meet their own body edge and their electr
         }
     }
 }
+
+test "rounded OR-family rail leads stop at the first intersection with the outline" {
+    // AG438, AG545 and AG1076 supply rails. Intersect each actual polygon edge
+    // with the pin's vertical ray using integer arithmetic at several pitches.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    for ([_]np.block_symbols.Shape{ .or_gate, .nor_gate, .xor_gate, .xnor_gate }) |shape| {
+        for ([_]i32{ 4, 7, 19, 20, 21, 1000 }) |pitch| {
+            const glyph = try np.block_symbols.draw(arena.allocator(), shape, &.{ "vdd", "vss", "a", "b", "y" }, pitch);
+            const outline = glyph.ops[0].polyline;
+            for (glyph.terminals[0..2]) |pin| {
+                const endpoint = for (glyph.ops) |op| {
+                    if (op == .line and op.line.a.eql(pin.at)) break op.line.b;
+                } else return error.MissingRailStroke;
+                try testing.expectEqual(pin.at.x, endpoint.x);
+                const direction: i64 = if (pin.at.y < 0) 1 else -1;
+                var touches = false;
+                for (outline[0 .. outline.len - 1], outline[1..]) |left, right| {
+                    const a, const b = if (left.x <= right.x) .{ left, right } else .{ right, left };
+                    if (pin.at.x < a.x or pin.at.x > b.x) continue;
+                    if (a.x == b.x) {
+                        const nearest = if (direction > 0) @min(a.y, b.y) else @max(a.y, b.y);
+                        const gap = direction * (nearest - endpoint.y);
+                        try testing.expect(gap >= 0);
+                        touches = touches or gap == 0;
+                        continue;
+                    }
+                    const width: i64 = b.x - a.x;
+                    const y = a.y * width + @as(i64, b.y - a.y) * (pin.at.x - a.x);
+                    const gap = direction * (y - endpoint.y * width);
+                    try testing.expect(gap >= 0);
+                    touches = touches or gap == 0;
+                }
+                try testing.expect(touches);
+            }
+        }
+    }
+}
