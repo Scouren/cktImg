@@ -246,6 +246,10 @@ const Builder = struct {
             const pin = b.devicePin(d, s.pins.items(.index)[p]) orelse continue;
             try b.no_connects.append(b.a(), b.pin_xy.items[pin]);
         }
+        for (s.peer_labels.items) |p| {
+            const pin = b.devicePin(s.pins.items(.device)[p], s.pins.items(.index)[p]) orelse continue;
+            try b.labels.append(b.a(), .{ .net = b.pin_net.items[pin], .at = b.pin_xy.items[pin], .side = s.pins.items(.side)[p] });
+        }
         try b.names_();
 
         // Terminal symbols: one rail or port per terminal the layout drew.

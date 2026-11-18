@@ -112,3 +112,17 @@ The independent corpus test checks the exact dispositions and reasons for 2,202 
 nix develop -c zig build parent-census -- external/examples/analoggenie/ag-1080.cir
 nix develop -c python3 tests/parent_corpus.py
 ```
+
+## A hidden body still connects to its resistor
+
+The native three-terminal MOS symbol hides its body. A resistor terminal that connects only to that body now carries the shared net name. In AG1167 follow R1's first terminal to M1's body on net0. Both corresponding terminals carry net0 in the generated Schemify drawing, which exposes the body. The hand figure shows the substrate resistor circuit directly.
+
+| Production before | Production after | Hand layout |
+|---|---|---|
+| [![AG1167 before](ag-1167.before.svg)](ag-1167.before.svg) | [![AG1167 after](ag-1167.after.svg)](ag-1167.after.svg) | [![AG1167 published][ag1167]][ag1167] |
+| [![AG1169 before](ag-1169.before.svg)](ag-1169.before.svg) | [![AG1169 after](ag-1169.after.svg)](ag-1169.after.svg) | [![AG1169 published][ag1169]][ag1169] |
+
+Five AG1167 resistor ends and all seven in AG1169 previously carried false no-connect crosses. The sixth body-connected resistor in AG1167 already had a named lead. All 13 connections survived independent Schemify netlisting and comparison. Across 5,274 decks the change replaced 26 crosses with 26 names in 14 drawings. All device poses, wires, junctions and earlier names stayed in place. A truly isolated resistor terminal retains its cross.
+
+[ag1167]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1167/Book1167.png
+[ag1169]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1169/Book1169.png

@@ -242,6 +242,8 @@ pub const Schematic = struct {
     xy: [][2]f32 = &.{},
     /// Device pins alone on their net, drawn with a no-connect mark.
     no_connects: std.ArrayList(u32) = .empty,
+    /// The only visible pin of a net with other electrical terminals.
+    peer_labels: std.ArrayList(u32) = .empty,
     routes: std.ArrayList(Route) = .empty,
 
     pub fn deinit(self: *Schematic) void {

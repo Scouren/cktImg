@@ -70,8 +70,9 @@
 //! - sketch.18 (invariant) No two pins of one side of a device meet at one
 //!   point: a pin off its device's line for that side (an op-amp's second
 //!   input) is wired from its own line. `placeDevices`
-//! - sketch.19 (unmeasured) A device pin with no other pin on its net
-//!   carries a no-connect cross. `noConnects`
+//! - sketch.19 (invariant) A visible pin gets a no-connect cross only
+//!   when its net has no electrical peer. With a hidden body peer the
+//!   visible resistor pin may carry the net name (AG1167/1169). `noConnects`
 //! - sketch.20 (habit) A flat complementary transmission pair's gates face
 //!   outward while its members still share a column on separate rows,
 //!   after cell and row instructions. People: ag-386 and ag-751, both
@@ -329,7 +330,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
             break;
         }
     };
-    try noConnects(gpa, s);
+    try noConnects(gpa, s, nl, lines.style);
     assert(s.xy.len == s.nodes.len);
 }
 
@@ -778,14 +779,20 @@ fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *con
 }
 
 /// A no-connect cross on each device pin with no other pin on its net.
-fn noConnects(gpa: Allocator, s: *Schematic) !void {
+fn noConnects(gpa: Allocator, s: *Schematic, nl: *const Netlist, style: []const netlines.Style) !void {
     const count = try gpa.alloc(u32, s.net_name.len);
     defer gpa.free(count);
     @memset(count, 0);
     for (s.pins.items(.net)) |n| count[n] += 1;
     for (s.pins.items(.net)) |n| assert(count[n] >= 1);
     s.no_connects.clearRetainingCapacity();
+    s.peer_labels.clearRetainingCapacity();
     for (s.pins.items(.net), s.pins.items(.device), 0..) |n, d, p| {
-        if (d != none and count[n] == 1) try s.no_connects.append(s.arena.allocator(), @intCast(p));
+        if (d == none or count[n] != 1) continue;
+        if (nl.graph.incident(netlist.VertexId.from(n)).len == 1) {
+            try s.no_connects.append(s.arena.allocator(), @intCast(p));
+        } else if (style[n] == .auto and s.roles[n] == .internal) {
+            try s.peer_labels.append(s.arena.allocator(), @intCast(p));
+        }
     }
 }
