@@ -21,6 +21,7 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |
 | Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `netlist-import.wasm`; size is strictly below 563,200 bytes. |
 | Real editor round trip | `python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]` | Schemify imports, netlists back and compares with `spicecmp`; omitted decks mean the complete fixture list. |
+| Production comparison | [Implementation checkpoints and reproduction command](docs/research/production-patterns/checkpoints.md) | Compare the full native placement and SVG for both binaries and retain named changes and findings. |
 | Full source corpus | [corpus-scorecard.md](docs/research/corpus-scorecard.md) | Exact source names and hashes, independently measured wire metrics and named structural relations. |
 | Parent structure census | `nix develop -c python3 tests/parent_corpus.py` | All 2,202 AnalogGenie dispositions, memberships, gate interfaces and uniquely witnessed reflections against the frozen ninth-study census. Its SHA-256 is recorded in the test. |
 | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |

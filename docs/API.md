@@ -122,6 +122,12 @@ decisions on rungs 1 to 4 as the `*@` lines that state them
 (`report.decisions`), and each lattice row. A deck plus its decisions, under
 `*@ grouping off`, draws the same picture.
 
+#### Source-qualified local placement
+
+The JSON, SVG and TeX commands can select the last subcircuit in a file containing only definitions. The Schemify importer already knows which cell it is drawing. These frontends can bind the original ordered cards, model declarations and external ports to the selected graph. The plain `place` and C ABI entry points continue to draw the top-level graph supplied by their caller.
+
+A Zig caller that retains the original source can use `parent_context.bind` and `local_parents.collect` before choosing a layout. `placeBound` accepts the qualified output-wire pairs. `placeOrganized` also accepts qualified local stages. `source_bridge.fromSource` and `placeSourceBridge` cover the equal-resistor source bridge. The geometry proposals require compatible actual symbols and the default layout. The native CLI and editor call sites show those checks and the ordinary-layout fallback. [Native selection](../tools/json.zig) · [Schemify selection](../tools/schemify/parent_outputs.zig) · [Production comparisons](research/production-patterns/README.md)
+
 ### 4. Many documents, one set of pages
 
 ```zig

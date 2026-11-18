@@ -299,7 +299,7 @@ tools use it by default, and it is the easiest file to copy and edit.
 
 ## How the layout is made
 
-cktImg draws an analog circuit the way the textbook prints it.
+cktImg uses the netlist’s device roles and connections to select local layouts. The comparison gallery tracks which arrangements match published circuits, including cases where closer grouping adds a crossing. [Production drawings beside their original figures](docs/research/production-patterns/README.md)
 
 | The book | cktImg |
 |---|---|
@@ -307,7 +307,7 @@ cktImg draws an analog circuit the way the textbook prints it.
 | Matched devices side by side | A differential pair, a current mirror, a cross-coupled pair, and every pair of devices the symmetry maps onto each other share a row wherever the circuit allows. |
 | Symmetric circuits drawn symmetric | A left-right symmetry found from the connectivity (not the names) is drawn as an exact mirror image about a vertical axis. What the symmetry maps to itself (a tail, a common-mode node) sits on the axis. |
 | Signal left to right | Inputs enter as ports from the outside and outputs leave at the edge. A stage with no mirror image sits right of the core when it reaches an output, left of it otherwise. |
-| Wires, not labels | Folds, gate lines, feedback and common-mode loops and cross-couplings are wired. A bias line from outside is a named wire between two facing gates of one row, and an input port at each gate otherwise; any other net is a label only where its wire cannot be drawn without running through a device or touching another net. |
+| Wires, not labels | Folds, gate lines, feedback, common-mode loops and cross-couplings normally use wires. A verified comparator output can join its two drains locally and name the remote gate. An external bias can use a named wire between two facing gates in one row or an input port at each gate. Other nets use labels where a wire would run through a device or touch another net. |
 | One picture per circuit | The drawing depends on the circuit, not on the order of its cards. |
 
 It is made in the order a person draws: find the structure (pairs, mirrors,
@@ -316,7 +316,7 @@ graph), place the devices by it (rows by current order with matched groups
 level, columns ordered for the shortest wires, the symmetric half mirrored),
 then wire the placement (the book's patterns for rails, gate lines and
 trunks, and a maze router for the rest). Placement never moves to make room
-for a wire. [`docs/ALGORITHM.md`](docs/ALGORITHM.md) has every rule.
+for a wire. The core stages are described in [the layout algorithm](docs/ALGORITHM.md). The [comparison gallery](docs/research/production-patterns/README.md) covers the source-qualified patterns.
 
 **Steering lines.** A deck can override what the engine decides, one `*@`
 line per decision, at the top level of the deck drawn:

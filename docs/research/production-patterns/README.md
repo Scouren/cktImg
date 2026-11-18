@@ -1,6 +1,10 @@
 # Production layouts beside the published drawings
 
-The first column uses upstream production commit `4c7c3a12`. The middle column uses the layout change for that row. Both use the same converted DUT and the default symbols. Click a drawing to inspect individual pins and wires. The last column links the pinned upstream figures.
+Each row compares the same converted circuit before and after the indicated change. Native panels use the default symbols. The common-control and source-degeneration studies also show actual Schemify editor exports. Click a drawing to trace individual pins, wires and labels.
+
+Start with the AG1080 comparison to see a generated stage beside its published circuit, or use the checkpoint index to reproduce a specific change. [AG1080 and the three other compact-stage cases](common-control/README.md) · [PFD and amplifier symbols in the actual editor](editor-symbols/README.md) · [All implementation commits and corpus results](checkpoints.md) · [Status of the 27 rules](rule-coverage.md)
+
+Published panels are linked to the pinned upstream sources. The repository also contains the converted input decks and cached redraws. [AnalogGenie](../../../external/examples/analoggenie) · [AnalogRetriever](../../../external/examples/analogretriever) · [AMS-Net](../../../external/examples/amsnet) · [CircuitThink](../../../external/examples/circuitthink)
 
 The comparator studies trace the same output connections through the native SVG and Schemify, then measure the physical placement of the five-device input stages. The second study includes actual editor exports alongside the native drawings. [Intermediate output wires](parent-outputs.md) · [Common-control input stages](common-control/README.md)
 
@@ -88,7 +92,7 @@ In AG2187, the amplifier output drives an NMOS pass gate. The positive input rec
 |---|---|---|
 | [![AG2187 before](ag-2187.before.svg)](ag-2187.before.svg) | [![AG2187 after](ag-2187.after.svg)](ag-2187.after.svg) | [![AG2187 panel A.1][ag2187]][ag2187] |
 
-Of the 40 related decks, 39 accepted the signed frame. AG2212 retains its nine-port box. Across all 39, the physical wire components, port and rail marker counts, crossings and bends were preserved. The 40 decks share the same published image. Wang's Fig. 1A independently illustrates the right-facing arrangement. TI's Fig. 4 shows the corresponding input order on a rotated amplifier. [Wang, Fig. 1A](https://patentimages.storage.googleapis.com/f9/3f/00/1a7115fae3947b/US7446515B2.pdf#page=2) · [Texas Instruments, Fig. 4](https://www.ti.com/lit/ta/ssztac2/ssztac2.pdf#page=3)
+At this checkpoint 39 of the 40 related decks accepted the signed frame. AG2212 gained its signed nine-port symbol at the later amplifier checkpoint. Across all 39, the physical wire components, port and rail marker counts, crossings and bends were preserved. The 40 decks share the same published image. Wang's Fig. 1A independently illustrates the right-facing arrangement. TI's Fig. 4 shows the corresponding input order on a rotated amplifier. [Wang, Fig. 1A](https://patentimages.storage.googleapis.com/f9/3f/00/1a7115fae3947b/US7446515B2.pdf#page=2) · [Texas Instruments, Fig. 4](https://www.ti.com/lit/ta/ssztac2/ssztac2.pdf#page=3)
 
 The baseline already places the output capacitor above its series resistance in all 40 regulator decks, as well as in AG652 and AG2288. Their capacitor has no direct ground connection. AG652's internal compensation capacitor has a different role.
 
