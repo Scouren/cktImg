@@ -206,6 +206,13 @@ pub fn build(b: *std.Build) void {
         source_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
     test_step.dependOn(&source_check.step);
     const json_exe = b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod });
+    const signed_frames = b.addSystemCommand(&.{ "python3", "-B" });
+    signed_frames.addFileArg(b.path("tests/shared_frames.py"));
+    signed_frames.addArtifactArg(json_exe);
+    _ = signed_frames.addOutputDirectoryArg("shared-frames");
+    for ([_][]const u8{ "tests/shared_frames/mixed.cir", "tests/shared_frames/uniform.cir", "tests/symbols.zon" }) |file|
+        signed_frames.addFileInput(b.path(file));
+    test_step.dependOn(&signed_frames.step);
     b.installArtifact(json_exe);
     const body_check = b.addSystemCommand(&.{"python3"});
     body_check.addFileArg(b.path("tests/mos_bodies.py"));

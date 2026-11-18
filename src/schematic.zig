@@ -413,6 +413,12 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
         // source symbol for 37 of 37 `E` cards (464 of 464 with G, F, H).
         if (k == .vcvs and forms.isDependent(nl, roles, @intCast(d))) c.* = lib.find("vcvs") orelse c.*;
     }
+    for (nl.block_frames) |frame| {
+        const d = frame.device.index();
+        assert(d < classes.len and circuit.edges.items(.kind)[d] == .subckt);
+        assert(lib.at(frame.class).terminals.len == lib.at(classes[d]).terminals.len);
+        classes[d] = frame.class;
+    }
     // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
     // class with as many terminals as the one it replaces draws every pin
     // it did.

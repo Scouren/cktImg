@@ -2,7 +2,7 @@
 
 Each row compares the same converted circuit before and after the indicated change. Native panels use the default symbols. The common-control and source-degeneration studies also show actual Schemify editor exports. Click a drawing to trace individual pins, wires and labels.
 
-Start with the AG1080 comparison to see a generated stage beside its published circuit, or use the checkpoint index to reproduce a specific change. [AG1080 and the three other compact-stage cases](common-control/README.md) · [PFD and amplifier symbols in the actual editor](editor-symbols/README.md) · [All implementation commits and corpus results](checkpoints.md) · [Status of the 27 rules](rule-coverage.md)
+Start with the AG1080 comparison to see a generated stage beside its published circuit, or use the checkpoint index to reproduce a specific change. [AG1080 and the three other compact-stage cases](common-control/README.md) · [PFD and amplifier symbols in the actual editor](editor-symbols/README.md) · [All implementation commits and corpus results](checkpoints.md) · [Initial coverage of the 27 rules](rule-coverage.md) · [Latest implementation handoff and remaining work](HANDOFF.md)
 
 The next comparator checkpoint places two preamplifiers above their latch in AG1079 and AG1080. The drawings show the previous local-stage layout, the new arrangement and the corresponding original. [Comparator panel placement](comparator-panels/README.md)
 
@@ -101,6 +101,8 @@ At this checkpoint 39 of the 40 related decks accepted the signed frame. AG2212 
 The baseline already places the output capacitor above its series resistance in all 40 regulator decks, as well as in AG652 and AG2288. Their capacitor has no direct ground connection. AG652's internal compensation capacitor has a different role.
 
 [ag2187]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/2187/Book2187.png
+
+A regulator and sampler that share a definition can now use different signed frames in native drawings. The editor can change its single shared symbol when every instance qualifies. [Shared-frame comparisons](shared-frames/README.md)
 
 ## Identifying local stages from a netlist
 
