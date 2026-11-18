@@ -53,3 +53,7 @@ Each row uses the identical source deck and renderer on both sides. Native panel
 | AG1079 Schemify | ![AG1079 host before](ag-1079.target.before.svg) | ![AG1079 host after](ag-1079.target.after.svg) |
 | AG1080 native · [Original](https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1080/Book1080.png) | ![AG1080 native before](ag-1080.native.before.svg) | ![AG1080 native after](ag-1080.native.after.svg) |
 | AG1080 Schemify | ![AG1080 host before](ag-1080.target.before.svg) | ![AG1080 host after](ag-1080.target.after.svg) |
+
+## The same circuit as a LaTeX figure
+
+The native TeX command now selects the same cell as the SVG command when given a file of subcircuit definitions. On AG1080 the earlier command emitted a ten-line empty picture. Its replacement draws all 32 MOS devices. The regression traces the wire coordinates, junctions and each ordered D/G/S lead in the emitted CircuiTikZ. The same check covers AG220, AG808 and AG2212, and all four figures compile with pdfLaTeX. Recognized families use the renderer’s standard CircuiTikZ symbols at the selected contacts. A separately named custom class renders its authored strokes. [Compiled AG1080 figure](ag-1080.pdf) · [CLI regression](../../../../tests/tex_selection.py)

@@ -181,6 +181,8 @@ on your own computer and upload the result alongside the netlist.
 cktimg-tex amp.cir amp.cktimg.tex
 ```
 
+When a netlist contains only subcircuit definitions, both native CLIs draw the selected top cell using its declared interface and matching source geometry. Flat netlists retain their ordinary layout.
+
 `\cktimg{amp.cir}` will then input `amp.cktimg.tex`. The figure is
 [CircuiTikZ](https://ctan.org/pkg/circuitikz), so it uses your document's
 fonts and can be edited by hand. A complete example is in

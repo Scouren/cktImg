@@ -15,7 +15,7 @@ Zig processes and keep at least 6 GB available memory, as required by
 | --- | --- | --- |
 | Format | `nix develop -c zig fmt --check src tests tools build.zig build.zig.zon` | Zig formatter. |
 | Engine, API, C ABI, plugin and JSON tests | `nix develop -c zig build test -Dlatex_renderer=false --summary all` | Literal geometry, electrical connectivity, no shorts, parser examples, caller contracts and recorded source relations. |
-| TikZ option enabled | `nix develop -c zig build test -Dlatex_renderer=true --summary all` | The same contracts with renderer code included. |
+| TikZ option enabled | `nix develop -c zig build test -Dlatex_renderer=true --summary all` | The same contracts, plus actual TikZ/JSON CLI agreement on selected subcircuits, source-qualified stages, wire coordinates, junctions, MOS leads and caller symbols. |
 | Shared-query codegen | `nix develop -c zig build test-codegen` (also in `test`) | Runtime-input helper/direct assembly on fixed x86_64_v3 ReleaseFast; identical direct callees, no hidden tail wrappers, accepted static comparison and literal residue mutations. |
 | Random netlists | `nix develop -c zig build fuzz` | 4,000 deterministic cases checking electrical connectivity, shorts, dots, honoured hints and reversed-card determinism. Both honoured and physically refused stack requests are checked independently against emitted device rows and primary terminal coordinates. |
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |

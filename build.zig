@@ -232,6 +232,14 @@ pub fn build(b: *std.Build) void {
             .imports = &.{ .{ .name = "NetlistParser", .module = mod }, .{ .name = "symbols", .module = symbols } },
         }) });
         b.installArtifact(tex);
+        const figures = b.addSystemCommand(&.{ "python3", "-B" });
+        figures.addFileArg(b.path("tests/tex_selection.py"));
+        figures.addArtifactArg(json_exe);
+        figures.addArtifactArg(tex);
+        _ = figures.addOutputDirectoryArg("tikz-selection");
+        for ([_][]const u8{ "tests/parent_stages.py", "tests/symbols.zon", "examples/latex/cs.cir", "external/examples/analoggenie/ag-1080.cir", "external/examples/analoggenie/ag-2212.cir", "external/examples/analoggenie/ag-808.cir", "external/examples/analoggenie/ag-220.cir" }) |file|
+            figures.addFileInput(b.path(file));
+        test_step.dependOn(&figures.step);
         b.installFile("latex/cktimg.sty", "share/latex/cktimg.sty");
     }
 }

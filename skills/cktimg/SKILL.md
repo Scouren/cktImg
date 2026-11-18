@@ -8,6 +8,10 @@ clean. You steer it on a **ladder** of rungs, from the names in the deck down
 to lines that override what it recognizes. Work from the top and **descend**
 one rung only for a **complaint** the rung above cannot fix.
 
+For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
+top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
+`--config` options to compare the two drawings.
+
 ## Steps
 
 1. **Write the deck so its names carry its meaning** (Roles, below): matched
