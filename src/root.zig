@@ -55,6 +55,8 @@ pub const config = @import("config.zig");
 pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
+/// Exact integer membership for horizontal, vertical and 45-degree wire records.
+pub const wire_geometry = @import("wire_geometry.zig");
 pub const lint = @import("lint.zig");
 /// The drawing's guarantees, checked on a finished `Placed`.
 pub const checks = @import("checks.zig");

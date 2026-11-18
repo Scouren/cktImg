@@ -37,6 +37,7 @@ const Range = spice.Range;
 const Recognized = recognize.Recognized;
 const Family = recognize.Family;
 const Pt = engine.Pt;
+const segments = @import("wire_segments.zig");
 
 /// Devices the engine draws per conversion (cells in file order, each wholly drawn by the
 /// engine or wholly labelled). With `cell_devices_max` it bounds a conversion's time and
@@ -414,7 +415,7 @@ fn faceAt(faces: []const Face, p: P) u8 {
 }
 
 fn onAny(wires: []const Seg, p: P) bool {
-    for (wires) |w| if (onSeg(p, w)) return true;
+    for (wires) |w| if (segments.onSeg(p, w)) return true;
     return false;
 }
 
@@ -531,13 +532,13 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
         var net_wires: ArrayList(Seg) = .empty;
         while (segs.next()) |poly| {
             for (poly[0 .. poly.len - 1], poly[1..]) |p, q| {
-                assert(p.x == q.x or p.y == q.y); // Manhattan
+                assert(engine.wire_geometry.direction(p, q) != null);
                 try net_wires.append(a, .{ p.x, p.y, q.x, q.y });
             }
             try polys[net].append(a, poly);
         }
         const start: u32 = @intCast(out.wire.items.len);
-        try out.wire.appendSlice(a, try merged(a, net_wires.items));
+        try out.wire.appendSlice(a, try segments.merged(a, net_wires.items));
         wire_of[net] = .{ .lo = start, .hi = @intCast(out.wire.items.len) };
     }
     for (pin_pts, 0..) |pins, net| if (pins.items.len >= 2 and !rails[net] and terms[net] < 2) {
@@ -561,7 +562,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     for (pin_pts, 0..) |pins, ni| {
         const net: u32 = @intCast(ni);
         if (pins.items.len < 2 or out.hasMark(net)) continue;
-        if (try spot(a, out.wire.items, wire_of[net])) |p|
+        if (try segments.spot(a, out.wire.items, wire_of[net])) |p|
             try out.addMark(a, p, net, 0)
         else
             try out.addMark(a, pins.items[0], net, faceAt(faces.items, pins.items[0]));
@@ -588,102 +589,9 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     growBounds(out);
 }
 
-const Line = struct { vertical: bool, at: i32, lo: i32, hi: i32 };
-
-fn lineLess(_: void, x: Line, y: Line) bool {
-    if (x.vertical != y.vertical) return !x.vertical;
-    if (x.at != y.at) return x.at < y.at;
-    if (x.lo != y.lo) return x.lo < y.lo;
-    return x.hi < y.hi;
-}
-
-/// One net's axis-aligned segments without overlaps: each normalized so `(x1, y1) <
-/// (x2, y2)` (the format's wire order), zero-length ones dropped, and collinear ones that
-/// overlap cut at every original endpoint into disjoint pieces. Every original endpoint
-/// stays an endpoint, so connectivity is unchanged (netlist spec §3: joining two pieces
-/// through a junction would turn it into an interior crossing, which does not connect).
-fn merged(a: Allocator, segs: []const Seg) Allocator.Error![]const Seg {
-    var lines: ArrayList(Line) = .empty;
-    for (segs) |s0| {
-        const swap = s0[2] < s0[0] or (s0[2] == s0[0] and s0[3] < s0[1]);
-        const s: Seg = if (swap) .{ s0[2], s0[3], s0[0], s0[1] } else s0;
-        if (s[0] == s[2] and s[1] == s[3]) continue;
-        try lines.append(a, if (s[1] == s[3])
-            .{ .vertical = false, .at = s[1], .lo = s[0], .hi = s[2] }
-        else
-            .{ .vertical = true, .at = s[0], .lo = s[1], .hi = s[3] });
-    }
-    const ls = lines.items;
-    std.sort.heap(Line, ls, {}, lineLess);
-    var out: ArrayList(Seg) = try .initCapacity(a, ls.len);
-    var cuts: ArrayList(i32) = .empty;
-    var k: usize = 0;
-    while (k < ls.len) {
-        const vertical = ls[k].vertical;
-        const at = ls[k].at;
-        var end = k;
-        while (end < ls.len and ls[end].vertical == vertical and ls[end].at == at) end += 1;
-        cuts.clearRetainingCapacity();
-        for (ls[k..end]) |l| try cuts.appendSlice(a, &.{ l.lo, l.hi });
-        std.sort.heap(i32, cuts.items, {}, std.sort.asc(i32));
-        // Sweep the union of the intervals; emit the pieces between consecutive cuts.
-        var lo = ls[k].lo;
-        var hi = ls[k].hi;
-        for (k + 1..end + 1) |j| {
-            const sentinel = j == end;
-            if (!sentinel and ls[j].lo <= hi) {
-                hi = @max(hi, ls[j].hi);
-                continue;
-            }
-            var prev: ?i32 = null;
-            for (cuts.items) |cut| {
-                if (cut < lo or cut > hi or (prev != null and prev.? == cut)) continue;
-                if (prev) |p| try out.append(a, if (vertical) .{ at, p, at, cut } else .{ p, at, cut, at });
-                prev = cut;
-            }
-            if (!sentinel) {
-                lo = ls[j].lo;
-                hi = ls[j].hi;
-            }
-        }
-        k = end;
-    }
-    for (out.items) |s| assert((s[0] < s[2] or (s[0] == s[2] and s[1] < s[3])) and (s[0] == s[2] or s[1] == s[3]));
-    return out.items;
-}
-
-/// Whether point `p` lies on segment `w` (normalized, as `merged` leaves it), ends included.
-fn onSeg(p: P, w: Seg) bool {
-    return w[0] <= p[0] and p[0] <= w[2] and w[1] <= p[1] and p[1] <= w[3];
-}
-
-/// Where to write a net's name on its wires `wires[mine]`: the middle of one of its four
-/// longest segments that no other net's wire passes through (a name there would join that
-/// wire too). Null when every candidate tried is crossed.
-fn spot(a: Allocator, wires: []const Seg, mine: Range) Allocator.Error!?P {
-    const order = try a.alloc(u32, mine.len());
-    for (order, mine.lo..) |*o, i| o.* = @intCast(i);
-    mem.sort(u32, order, wires, struct {
-        fn lt(ws: []const Seg, x: u32, y: u32) bool {
-            const lx = (ws[x][2] - ws[x][0]) + (ws[x][3] - ws[x][1]);
-            const ly = (ws[y][2] - ws[y][0]) + (ws[y][3] - ws[y][1]);
-            return lx > ly or (lx == ly and x < y);
-        }
-    }.lt);
-    for (order[0..@min(order.len, 4)]) |i| {
-        const w = wires[i];
-        const m: P = .{ @divFloor(w[0] + w[2], 2), @divFloor(w[1] + w[3], 2) };
-        const clear = for (wires, 0..) |o, j| {
-            if ((j < mine.lo or j >= mine.hi) and onSeg(m, o)) break false;
-        } else true;
-        if (clear) return m;
-    }
-    return null;
-}
-
 fn onPoly(p: Pt, poly: []const Pt) bool {
     for (poly[0 .. poly.len - 1], poly[1..]) |s, t| {
-        if (@min(s.x, t.x) <= p.x and p.x <= @max(s.x, t.x) and @min(s.y, t.y) <= p.y and p.y <= @max(s.y, t.y)) return true;
+        if (engine.wire_geometry.contains(s, t, p)) return true;
     }
     return false;
 }
@@ -891,7 +799,7 @@ test "the canonical turn puts core two-pins on the x axis" {
 test "merged cuts overlaps at every endpoint" {
     var arena: std.heap.ArenaAllocator = .init(testing.allocator);
     defer arena.deinit();
-    const w = try merged(arena.allocator(), &.{
+    const w = try segments.merged(arena.allocator(), &.{
         .{ 30, 0, 0, 0 }, // reversed
         .{ 10, 0, 60, 0 }, // overlaps it
         .{ 60, 0, 90, 0 }, // touches it: stays a separate piece
@@ -903,7 +811,22 @@ test "merged cuts overlaps at every endpoint" {
     try testing.expectEqualSlices(Seg, &.{
         .{ 0, 0, 10, 0 }, .{ 10, 0, 30, 0 }, .{ 30, 0, 60, 0 }, .{ 60, 0, 90, 0 }, .{ 0, -20, 0, 10 }, .{ 0, 40, 0, 50 },
     }, w);
-    try testing.expectEqual(0, (try merged(arena.allocator(), &.{})).len);
+    try testing.expectEqual(0, (try segments.merged(arena.allocator(), &.{})).len);
+}
+
+test "editor wires retain oblique endpoints, gaps, and labels on the actual ink" {
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const descending: Seg = .{ 0, 9, 9, 0 };
+    try testing.expect(!segments.onSeg(.{ 2, 8 }, .{ 0, 0, 10, 10 }));
+    try testing.expect(segments.onSeg(.{ 4, 5 }, descending));
+    try testing.expectEqual(P{ 4, 5 }, (try segments.spot(a, &.{descending}, .{ .lo = 0, .hi = 1 })).?);
+    const pieces = try segments.merged(a, &.{ .{ 8, 8, 0, 0 }, .{ 4, 4, 10, 10 }, .{ 12, 12, 13, 13 }, descending });
+    try testing.expectEqualSlices(Seg, &.{ .{ 0, 0, 4, 4 }, .{ 4, 4, 8, 8 }, .{ 8, 8, 10, 10 }, .{ 12, 12, 13, 13 }, descending }, pieces);
+    const path = [_]Pt{ .{ .x = 0, .y = 0 }, .{ .x = 10, .y = 10 } };
+    try testing.expect(!try wired(a, &.{ .{ 0, 0 }, .{ 2, 8 } }, &.{&path}));
+    try testing.expect(try wired(a, &.{ .{ 0, 0 }, .{ 8, 8 } }, &.{&path}));
 }
 
 test "net names keep readable names and fold ground" {
