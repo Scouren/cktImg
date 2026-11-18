@@ -29,5 +29,16 @@ python3 tests/parent_output_routes.py native zig-out/bin/cktimg-json /tmp/parent
 python3 tests/parent_output_routes.py target /path/to/schemify/bin /path/to/Schemify/crates/model/doc/devices /tmp/parent-output-target
 ```
 
+For AG1080 with `axis missing`, the previous CLI reproduced the [pre-N0 drawing](ag-1080.before.svg) byte for byte. The cumulative corrected CLI reproduces the [unhinted G1 drawing](common-control/ag-1080.native.after.svg) byte for byte. Rejected directives that name a real endpoint leave the six published partitions intact. An accepted `first VDD` claims its routing priority and also preserves them. A compatible explicit pose on a gate, or `role FN1 internal`, returns only its sibling pair to ordinary routing. A weak rotation that the final drawing rejects cannot reserve the pair. These checks examine the actual wire components, ordered member pins and attached labels for each output.
+
+At the N0-only checkpoint `337509a5`, the sibling FP1 had three components in native and one in Schemify under either FN1 override. Once G1 retains the admitted stage positions, the native ordinary router produces one FP1 component for `wire FN1` and two for `label FN1`. The explicit FN1 still has one and three respectively. The regression repeats the same staged drawing with the FN1/FP1 candidate omitted and compares every device pose, pin, wire point, junction and label. [Ordinary-routing comparison](../../../tests/parent_parts.zig)
+
+An explicit symbol file is checked against its selected MOS terminals and ink. Renaming the drain terminal in that file loses physical authority and reproduces ordinary routing. A CLI `--target` manifest describes a permutation of the pins in the same drawing and leaves its wires intact. The host check separately uses Schemify's real core glyphs. [Caller and mapping regression](../../../tests/parent_output_intent.py)
+
+```sh
+python3 tests/parent_output_intent.py zig-out/bin/cktimg-json /tmp/parent-output-intent
+python3 tests/parent_output_intent.py zig-out/bin/cktimg-json /tmp/parent-output-host-intent --host /path/to/schemify/bin /path/to/Schemify/crates/model/doc/devices .
+```
+
 [book1079]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1079/Book1079.png
 [book1080]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1080/Book1080.png

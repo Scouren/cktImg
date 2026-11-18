@@ -40,7 +40,7 @@ def on(point, a, b):
     return y == a[1] and min(a[0], b[0]) <= x <= max(a[0], b[0])
 
 
-def verify(case, segments, pins, markers, target):
+def verify(case, segments, pins, markers, target, ordinary=()):
     parent = list(range(len(segments)))
 
     def root(i):
@@ -72,11 +72,13 @@ def verify(case, segments, pins, markers, target):
             expect = [keys]
         elif case.endswith("-label") and net == "fn1":
             expect = [[k] for k in keys]
-        elif case != family and net == "fp1":
-            # Caller intent on FN1 returns its reflected sibling to ordinary routing.
-            expect = [keys] if target else [[k] for k in keys]
+        # A released sibling uses ordinary routing at the actual retained poses.
+        # The staged comparator in parent_parts.zig exercises that same frame
+        # with the pair deliberately omitted and compares all wire points.
+        free = net in ordinary or (case != family and net == "fp1")
         canon = lambda groups: sorted(sorted(group) for group in groups)
-        assert canon(islands.values()) == canon(expect), (case, net, islands, expect)
+        if not free:
+            assert canon(islands.values()) == canon(expect), (case, net, islands, expect)
         assert {k for k, part in contacts.items() if part in islands} == set(keys), (case, net, "foreign pin")
         for part in islands:
             reachable = [name for name, i in names if i == part]

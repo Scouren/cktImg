@@ -2,6 +2,11 @@
 //! A selected, acyclic parent supplies two triples of exact ordered MOS contacts.
 //! Recheck the visible pins and strokes on each final canvas, then draw both
 //! drain pairs and their isolated gate names in one append transaction.
+//!
+//! Contents:
+//! - `Output`, `Pair`, `State`, `Trial`
+//! - `Trial.draw`, `Trial.holdPlaces`, `Trial.withdraw`
+//! - `pub fn initial(nl: *const Netlist, pair: Pair, lines: *const netlines.NetLines, verdicts: []const hints.Verdict) State`
 
 const std = @import("std");
 const sch = @import("schematic.zig");
@@ -10,6 +15,9 @@ const library = @import("library.zig");
 const netlist = @import("netlist.zig");
 const netlines = @import("netlines.zig");
 const wire_parts = @import("wire_parts.zig");
+const parent_intent = @import("parent_intent.zig");
+const hints = @import("hints.zig");
+const pinned = @import("pinned.zig");
 const Allocator = std.mem.Allocator;
 const Canvas = canvas.Canvas;
 const Netlist = netlist.Netlist;
@@ -21,7 +29,7 @@ pub const Output = struct { net: u32, pmos: u32, nmos: u32, gate: u32 };
 /// Reflected siblings share one admission and withdrawal decision.
 pub const Pair = [2]Output;
 /// Result of the latest attempt, retained through ordinary thinning.
-pub const State = enum(u8) { ready, drawn, failed, withdrawn };
+pub const State = enum(u8) { ready, drawn, failed, withdrawn, caller };
 
 /// Cold per-drawing requests and dispositions. Empty during compaction.
 pub const Trial = struct {
@@ -33,7 +41,7 @@ pub const Trial = struct {
     pub fn draw(t: Trial, c: *Canvas, lines: *const netlines.NetLines, pins_of: []const std.ArrayList(u32), routed: []const bool, handled: []bool) Allocator.Error!void {
         std.debug.assert(t.pairs.len == t.states.len);
         for (t.pairs, t.states) |pair, *state| {
-            if (state.* == .withdrawn) continue;
+            if (state.* == .withdrawn or state.* == .caller) continue;
             state.* = .failed;
             var mapped: [2][3]u32 = undefined;
             for (pair, &mapped) |o, *actual| {
@@ -55,12 +63,31 @@ pub const Trial = struct {
         }
     }
 
+    /// An exact pose owns its endpoints only if the final origin and any
+    /// specified rotation survived relay and collision resolution.
+    pub fn holdPlaces(t: Trial, s: *const sch.Schematic, requested: []const ?pinned.At, retained: []const ?pinned.At, at: []const [2]f32) void {
+        if (requested.len == 0) return;
+        for (t.pairs, t.states) |pair, *state| {
+            if (state.* != .ready) continue;
+            for (pair) |row| {
+                for ([_]u32{ row.pmos, row.nmos, row.gate }) |d| {
+                    const want = requested[d] orelse continue;
+                    const device = s.devices.get(d);
+                    const origin = if (retained[d]) |fixed| fixed.origin else Pt.round(at[d]).sub(device.grid);
+                    if (!want.origin.eql(origin)) continue;
+                    if (want.orient) |o| if (!std.meta.eql(o, device.orient)) continue;
+                    state.* = .caller;
+                }
+            }
+        }
+    }
+
     /// Withdraws a failed pair, including a sibling promoted to labels on
     /// this round. Its caller restores initial styles and rebuilds fresh.
     pub fn withdraw(t: Trial, style: []const netlines.Style) bool {
         var changed = false;
         for (t.pairs, t.states) |p, *s| {
-            if (s.* == .withdrawn) continue;
+            if (s.* == .withdrawn or s.* == .caller) continue;
             if (s.* == .drawn and style[p[0].net] != .label and style[p[1].net] != .label) continue;
             s.* = .withdrawn;
             changed = true;
@@ -71,24 +98,20 @@ pub const Trial = struct {
 
 /// Original caller directives on either sibling or its endpoint devices
 /// keep their ordinary behavior, including accepted default-looking styles.
-pub fn admitted(nl: *const Netlist, pair: Pair, lines: *const netlines.NetLines) bool {
-    if (lines.first.len != 0 or pair[0].net == pair[1].net) return false;
+pub fn initial(nl: *const Netlist, pair: Pair, lines: *const netlines.NetLines, verdicts: []const hints.Verdict) State {
+    if (pair[0].net == pair[1].net) return .withdrawn;
     for (pair) |o| {
-        if (o.net >= lines.style.len or lines.style[o.net] != .auto or lines.port[o.net] != null) return false;
-        for (lines.routes) |r| if (r.net == o.net) return false;
-        for (nl.hints) |h| switch (h.verb) {
-            .role, .port, .wire, .label, .rail, .route, .via => {
-                if (h.args.len > 0 and (nl.net(h.args[0]) orelse continue).index() == o.net) return false;
-            },
-            .off, .symmetry_off, .axis => return false,
-            .refdes, .expand => {},
-            else => for (h.args) |arg| {
-                const d = (nl.device(arg) orelse continue).index();
-                if (d == o.pmos or d == o.nmos or d == o.gate) return false;
-            },
-        };
+        if (o.net >= lines.style.len) return .withdrawn;
+        for ([_]u32{ o.pmos, o.nmos, o.gate }) |d| if (d >= nl.graph.edgeCount()) return .withdrawn;
     }
-    return true;
+    for (pair) |o| {
+        if (lines.style[o.net] != .auto or lines.port[o.net] != null) return .caller;
+        for (lines.routes) |r| if (r.net == o.net) return .caller;
+        for (nl.hints, verdicts) |h, v| {
+            if (h.verb != .at and parent_intent.touches(nl, h, v, &.{ o.pmos, o.nmos, o.gate }, &.{o.net})) return .caller;
+        }
+    }
+    return .ready;
 }
 
 // ---- private ----
@@ -181,11 +204,6 @@ fn lead(class: library.Class, index: u8) bool {
     return false;
 }
 
-test "reflected outputs: second failure and allocator failure restore both sibling routes and names" {
-    try pairRollback(std.testing.allocator, true);
-    try std.testing.checkAllAllocationFailures(std.testing.allocator, pairRollback, .{false});
-}
-
 fn pairRollback(gpa: Allocator, fail_second: bool) !void {
     var lib: library.Library = .init(gpa);
     defer lib.deinit();
@@ -216,4 +234,9 @@ fn pairRollback(gpa: Allocator, fail_second: bool) !void {
     };
     try std.testing.expectEqual(!fail_second, result);
     if (fail_second) try std.testing.expectEqualDeep(saved, wire_parts.Checkpoint.take(&c)) else try std.testing.expectEqual(saved.pins + 4, s.pins.len);
+}
+
+test "reflected outputs: second failure and allocator failure restore both sibling routes and names" {
+    try pairRollback(std.testing.allocator, true);
+    try std.testing.checkAllAllocationFailures(std.testing.allocator, pairRollback, .{false});
 }

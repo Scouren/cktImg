@@ -117,7 +117,7 @@ pub fn main(init: std.process.Init) !void {
         };
         srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
     }
-    var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null and opts.symbols == null and opts.target == null) raw else null, &diag) catch |err| switch (err) {
+    var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null) raw else null, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };

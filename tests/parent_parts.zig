@@ -18,15 +18,13 @@ const rp80 = Names{ "rp", "m8", "m6", "m28" };
 const fn80 = Names{ "fn1", "m16", "m18", "m29" };
 const fp80 = Names{ "fp1", "m15", "m17", "m31" };
 
+// ---- private ----
+
 fn output(nl: *const np.Netlist, names: Names) parts.Output {
     return .{ .net = nl.net(names[0]).?.index(), .pmos = nl.device(names[1]).?.index(), .nmos = nl.device(names[2]).?.index(), .gate = nl.device(names[3]).?.index() };
 }
 
-fn check(d: []const u8, raw: []const [2]Names, policy: []const u8, expected: []const struct { Names, u8 }) !void {
-    const gpa = testing.allocator;
-    var scratch: std.heap.ArenaAllocator = .init(gpa);
-    defer scratch.deinit();
-    const a = scratch.allocator();
+fn prepared(a: std.mem.Allocator, d: []const u8, policy: []const u8) !np.Netlist {
     var text: std.Io.Writer.Allocating = .init(a);
     var records = std.mem.tokenizeScalar(u8, d, '\n');
     while (records.next()) |line| {
@@ -40,7 +38,15 @@ fn check(d: []const u8, raw: []const [2]Names, policy: []const u8, expected: []c
         try text.writer.writeAll("*@ weak role cinn input\n*@ weak role cinp input\n");
     } else try text.writer.writeAll("*@ weak role vip input\n");
     try text.writer.writeAll(policy);
-    const nl = try np.netlist.parse(a, &.{text.written()}, null);
+    return np.netlist.parse(a, &.{text.written()}, null);
+}
+
+fn check(d: []const u8, raw: []const [2]Names, policy: []const u8, expected: []const struct { Names, u8 }) !void {
+    const gpa = testing.allocator;
+    var scratch: std.heap.ArenaAllocator = .init(gpa);
+    defer scratch.deinit();
+    const a = scratch.allocator();
+    const nl = try prepared(a, d, policy);
     const roles = try np.guessRoles(a, &nl);
     const lib = try support.library(gpa);
     defer support.freeLibrary(gpa, lib);
@@ -111,4 +117,56 @@ test "reflected outputs: ordinary thinning retains cut and withdraws both siblin
     try std.testing.expect(trial.withdraw(&.{ .cut, .label, .cut, .cut }));
     try std.testing.expectEqualSlices(parts.State, &.{ .withdrawn, .drawn }, &states);
     try std.testing.expect(!trial.withdraw(&.{ .auto, .auto, .cut, .cut }));
+}
+
+test "reflected parent outputs: rejected names and unrelated routing priority preserve both six-contact siblings" {
+    // The ordered original MOS endpoints still occupy their two physical
+    // parts each. Rejected text on a meaningful node/device owns nothing.
+    const requests =
+        \\*@ axis missing
+        \\*@ unknownverb m7
+        \\*@ wire rn nonsense
+        \\*@ role rn nonsense
+        \\*@ face m7 g nonsense
+        \\*@ class m7 res
+        \\*@ first vdd
+        \\
+    ;
+    try check(src.decks[1], &.{.{ rn79, rp79 }}, requests, &.{ .{ rn79, 2 }, .{ rp79, 2 } });
+    try check(src.decks[2], &.{ .{ fn80, fp80 }, .{ rn80, rp80 } }, requests, &.{ .{ rn80, 2 }, .{ rp80, 2 }, .{ fn80, 2 }, .{ fp80, 2 } });
+}
+
+test "reflected parent outputs: releasing a caller-owned pair equals ordinary routing at identical stage poses" {
+    // An independent candidate list deliberately omits both FN1/FP1 rows.
+    // The two raw source-certified stages and the RN/RP pair remain available
+    // to both calls. Every origin, orientation, pin, wire, dot and label must match.
+    const gpa = testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    for ([_][]const u8{ "*@ wire fn1\n", "*@ label fn1\n", "*@ role fn1 internal\n" }) |policy| {
+        var scratch: std.heap.ArenaAllocator = .init(gpa);
+        defer scratch.deinit();
+        const a = scratch.allocator();
+        const nl = try prepared(a, src.decks[2], policy);
+        const ctx = try np.parent_context.bind(a, src.decks[2], &nl, &np.parent_context.standard_rails);
+        const parents = try np.local_parents.collect(a, ctx, .{});
+        const stages = try np.parent_stages.collect(a, ctx, parents);
+        try testing.expectEqual(2, stages.len);
+        const pairs = [_]parts.Pair{
+            .{ output(&nl, rn80), output(&nl, rp80) },
+            .{ output(&nl, fn80), output(&nl, fp80) },
+        };
+        var supplied = try np.placeOrganized(gpa, &.{}, lib, &nl, &pairs, stages);
+        defer supplied.deinit();
+        var ordinary = try np.placeOrganized(gpa, &.{}, lib, &nl, pairs[0..1], stages);
+        defer ordinary.deinit();
+        try testing.expectEqualDeep(ordinary.dev_pos, supplied.dev_pos);
+        try testing.expectEqualDeep(ordinary.dev_orient, supplied.dev_orient);
+        try testing.expectEqualDeep(ordinary.pin_xy, supplied.pin_xy);
+        try testing.expectEqualDeep(ordinary.net_seg, supplied.net_seg);
+        try testing.expectEqualDeep(ordinary.seg_pt, supplied.seg_pt);
+        try testing.expectEqualDeep(ordinary.wire_pts, supplied.wire_pts);
+        try testing.expectEqualDeep(ordinary.junctions, supplied.junctions);
+        try testing.expectEqualDeep(ordinary.labels, supplied.labels);
+    }
 }

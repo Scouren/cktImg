@@ -221,6 +221,11 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
     @memset(scratch, null);
     var ats = try pinned.read(sa, nl, s.lib.unit, sk.drawn, scratch);
+    const requested_places: []const ?pinned.At = if (pairs.len != 0 and
+        (for (ats) |pose| {
+            if (pose != null) break true;
+        } else false)) try gpa.dupe(?pinned.At, ats) else &.{};
+    defer gpa.free(requested_places);
     // A circuit of amplifier blocks and parts is placed along its signal
     // (`opamp.zig`), every device, unless a line of the deck places one.
     const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
@@ -237,7 +242,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         &.{};
     const states = try gpa.alloc(parent_parts.State, pairs.len);
     defer gpa.free(states);
-    for (pairs, states) |p, *state| state.* = if (parent_parts.admitted(nl, p, &lines)) .ready else .withdrawn;
+    for (pairs, states) |p, *state| state.* = parent_parts.initial(nl, p, &lines, parent_verdicts);
     const trial: parent_parts.Trial = .{ .states = states, .pairs = pairs, .nl = nl };
     const loops = try power_loop_wires.collect(gpa, nl, s.roles, sk.drawn, &lines);
     defer gpa.free(loops);
@@ -298,6 +303,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         } else try available.append(sa, stage);
     }
     accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
+    trial.holdPlaces(s, requested_places, ats, at);
     // Wired; then a net crossing too many wires is named and the drawing
     // wired again without it, which may free a path for another.
     // ponytail: thinned on the finished places only, so a relaid drawing
@@ -335,7 +341,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         break;
     } else unreachable;
     if (accepted.*) for (states) |state| {
-        if (state != .drawn) {
+        if (state != .drawn and state != .caller) {
             accepted.* = false;
             break;
         }

@@ -247,8 +247,8 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     defer gpa.free(anchors);
     @memset(anchors, sch.none);
     var seeded = loops.len == 0 and trial.pairs.len == 0;
-    for (order) |net| {
-        if (!seeded and !s.roles[net].isRail()) {
+    for (order, 0..) |net, position| {
+        if (!seeded and position >= lead and !s.roles[net].isRail()) {
             if (loops.len != 0) try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
             try trial.draw(&c, lines, pins_of, routed, drawn);
             seeded = true;
