@@ -108,6 +108,13 @@ pub fn main(init: std.process.Init) !void {
     var sym_diags: std.ArrayList(np.library.ZonDiagnostic) = .empty;
     try lib.loadZon(arena, sym_text, &sym_diags);
     if (sym_diags.items.len > 0) fatal("symbols: {s}: {t}", .{ sym_diags.items[0].class, sym_diags.items[0].err });
+    if (target) |t| {
+        // A backend with only the ordinary MOS symbol cannot land a new B
+        // wire. Keep its mapped compact class unless it also maps the variant.
+        for (lib.classes.items) |*c| if (c.body_variant) |id| {
+            if (t.lookup(c.name) != null and t.lookup(lib.at(id).name) == null) c.body_variant = null;
+        };
+    }
 
     var diag: np.netlist.Diagnostic = .{};
     const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {

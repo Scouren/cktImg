@@ -37,6 +37,11 @@ name or the **subcircuit name** alone, so `"opamp"` above maps every
 `X… opamp` instance. That works for a subcircuit the deck defines (pins:
 its `.subckt` ports, in order) and for one it does not (pins `p1`..`pN`).
 
+A backend that maps `nmos` or `pmos` keeps that geometry for MOS bodies.
+Map its associated four-contact variant too (`nmos_body` or `pmos_body`
+in the built-in symbol set) to enable automatic B routing on that backend.
+The four-contact entry may provide its own D/G/S/B permutation.
+
 ## `pins`
 
 Absent: the symbol's own terminal order. Present: a permutation of the

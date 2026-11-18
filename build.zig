@@ -207,6 +207,13 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&source_check.step);
     const json_exe = b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod });
     b.installArtifact(json_exe);
+    const body_check = b.addSystemCommand(&.{"python3"});
+    body_check.addFileArg(b.path("tests/mos_bodies.py"));
+    body_check.addArtifactArg(json_exe);
+    for ([_][]const u8{ "ag-1181.cir", "ag-1236.cir", "ag-1294.cir", "ag-2287.cir" }) |name|
+        body_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    body_check.addFileArg(b.path("tests/symbols.zon"));
+    test_step.dependOn(&body_check.step);
     const stage_check = b.addSystemCommand(&.{"python3"});
     stage_check.addFileArg(b.path("tests/parent_stages.py"));
     stage_check.addArtifactArg(json_exe);
