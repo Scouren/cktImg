@@ -496,21 +496,7 @@ pub const Library = struct {
         // ponytail: insertion sort, quadratic, for a block's handful of
         // ports; `std.mem.sort` costs the plugin 6 KB more. Both are stable.
         const slots = block_symbols.boxSlots(def.name, def.ports);
-        const Order = struct {
-            def: *const netlist.Subckt,
-            slots: ?[4]u8,
-
-            fn lt(o: @This(), x: usize, y: usize) bool {
-                if (o.slots) |frame| {
-                    const x_directed = o.def.sides[x] != null;
-                    const y_directed = o.def.sides[y] != null;
-                    if (x_directed != y_directed) return x_directed;
-                    if (!x_directed) return frame[x] < frame[y];
-                }
-                return o.def.order[x] < o.def.order[y];
-            }
-        };
-        std.sort.insertion(usize, order, Order{ .def = def, .slots = slots }, Order.lt);
+        block_symbols.orderBoxPorts(def, slots, order);
         for (order) |k| {
             const side = def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) netlist.PortSide.left else .right) else defaultSide(def.ports[k]);
             try per[@backingInt(side)].append(a, k);

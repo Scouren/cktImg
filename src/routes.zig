@@ -30,6 +30,7 @@
 //!   when the wires' middle is at or right of the drawing's. `port`
 //!
 //! Contents:
+//! - `pub fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void`
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror, anchors: []const u32) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
@@ -45,6 +46,7 @@ const canvas = @import("canvas.zig");
 const maze = @import("maze.zig");
 
 const Side = library.Side;
+const Rect = library.Rect;
 const Pt = library.Pt;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
@@ -133,6 +135,39 @@ pub fn port(c: *Canvas, net: u32) !void {
                 if (e.x == edge and (from == null or e.above(from.?))) from = e;
             };
             try c.port(net, from.?, if (right) .right else .left);
+        }
+    }
+}
+
+/// Promotes a fallback label on the existing gate span only once the routes
+/// are in place. The two gate pin indices and label pin belong to `net`.
+/// The caller supplies the fallback label after other nets have routed.
+pub fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void {
+    const s = c.s;
+    assert(gates.len == 2);
+    const node = s.pins.items(.home)[label];
+    assert(s.nodes.items(.kind)[node] == .label);
+    const a = pinAt(s, gates[0]);
+    const b = pinAt(s, gates[1]);
+    const span = Rect.fromCorners(a, b);
+    if (!span.contains(pinAt(s, label))) return;
+    const mid = @divFloor(a.x + b.x, 2);
+    const q = @max(1, @divFloor(c.len.unit, 4));
+    for ([_]i32{ mid - q, mid + q }) |x| {
+        if (x <= span.min.x or x >= span.max.x) continue;
+        const tap: Pt = .{ .x = x, .y = a.y };
+        for ([_]Side{ .down, .up }) |side| {
+            const tip = canvas.stepPt(tap, side, c.len.terminal);
+            const stub = Rect.fromCorners(tip, tap);
+            for (c.segs.items) |seg| {
+                if (seg.net != net and stub.intersects(Rect.fromCorners(seg.a, seg.b))) break;
+            } else {
+                if (!try c.commit(net, &.{ tap, tip })) continue;
+                s.nodes.items(.kind)[node] = .terminal;
+                s.pins.items(.side)[label] = side.opposite();
+                c.xy.items[node] = tip.toF();
+                return;
+            }
         }
     }
 }

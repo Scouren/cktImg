@@ -72,6 +72,7 @@
 //! The caller owns the arena and the existing terminal/DrawOp tables.
 //!
 //! Contents:
+//! - `pub fn orderBoxPorts(def: *const netlist.Subckt, slots: ?[4]u8, order: []usize) void`
 //! - `pub const Shape = enum(u8)`
 //! - `pub const Drawing = struct`
 //! - `pub fn clockFormal(port: []const u8) bool`
@@ -82,6 +83,7 @@
 
 const std = @import("std");
 const lib = @import("library.zig");
+const netlist = @import("netlist.zig");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const Pt = lib.Pt;
@@ -122,6 +124,28 @@ pub fn boxSlots(name: []const u8, ports: []const []const u8) ?[4]u8 {
         }
     }
     return null;
+}
+
+/// Stably orders declaration indices for the box faces. Explicitly sided
+/// ports keep directive order; other ports follow their recognized slots.
+/// `order` contains the declaration indices of `def`. Use the `slots`
+/// returned by `boxSlots` for that same definition.
+pub fn orderBoxPorts(def: *const netlist.Subckt, slots: ?[4]u8, order: []usize) void {
+    const Order = struct {
+        def: *const netlist.Subckt,
+        slots: ?[4]u8,
+
+        fn lt(o: @This(), x: usize, y: usize) bool {
+            if (o.slots) |frame| {
+                const x_directed = o.def.sides[x] != null;
+                const y_directed = o.def.sides[y] != null;
+                if (x_directed != y_directed) return x_directed;
+                if (!x_directed) return frame[x] < frame[y];
+            }
+            return o.def.order[x] < o.def.order[y];
+        }
+    };
+    std.sort.insertion(usize, order, Order{ .def = def, .slots = slots }, Order.lt);
 }
 
 /// The conventional glyph for a whole, case-insensitive family name and a

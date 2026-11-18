@@ -68,6 +68,9 @@
 //!     *@ bottom vss
 //!     ...
 //!     .ends
+//!
+//! Contents:
+//! - `pub const OriginalCards`, `OriginalCards.init`, `OriginalCards.next`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -85,6 +88,24 @@ pub const Analysis = analysis.Analysis;
 pub const ground: VertexId = @fromBackingInt(@intCast(0));
 
 pub const DeviceKind = device_mod.DeviceKind;
+
+/// The parser's logical-card scanner before declarations are normalized.
+/// `text` stays live and should be lowercased for ordinary SPICE identity.
+pub const OriginalCards = struct {
+    cards: Cards,
+    fields: std.ArrayList([]const u8) = .empty,
+
+    /// `has_title` follows the same first-line rule as `parse`.
+    pub fn init(text: []const u8, has_title: bool) OriginalCards {
+        return .{ .cards = Cards.init(text, has_title) };
+    }
+
+    /// The fields borrow text and a reusable scratch row, valid until the
+    /// next call. The caller supplies a scratch arena for that row.
+    pub fn next(self: *OriginalCards, arena: Allocator) Allocator.Error!?[]const []const u8 {
+        return self.cards.logical(arena, &self.fields);
+    }
+};
 
 /// A `.subckt` definition.
 pub const Subckt = struct {
@@ -962,24 +983,6 @@ fn directive(def: *Subckt, text: []const u8, placed: *u16) Error!void {
 // ===========================================================================
 // Scanning: physical lines → logical cards → fields
 // ===========================================================================
-
-/// The parser's logical-card scanner before declarations are normalized.
-/// `text` stays live and should be lowercased for ordinary SPICE identity.
-pub const OriginalCards = struct {
-    cards: Cards,
-    fields: std.ArrayList([]const u8) = .empty,
-
-    /// `has_title` follows the same first-line rule as `parse`.
-    pub fn init(text: []const u8, has_title: bool) OriginalCards {
-        return .{ .cards = Cards.init(text, has_title) };
-    }
-
-    /// The fields borrow text and a reusable scratch row, valid until the
-    /// next call. The caller supplies a scratch arena for that row.
-    pub fn next(self: *OriginalCards, arena: Allocator) Allocator.Error!?[]const []const u8 {
-        return self.cards.logical(arena, &self.fields);
-    }
-};
 
 const Cards = struct {
     text: []const u8,

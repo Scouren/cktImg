@@ -17,6 +17,9 @@
 //! port's net becomes the `port`); its no-connect crosses become `noconn`; junction dots
 //! are dropped (Schemify derives them). A net nothing names but the cell needs by name (a
 //! port, a `.global`, a net its code text mentions) gets a label on its first pin.
+//!
+//! Contents:
+//! - `pub fn drawSource`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;

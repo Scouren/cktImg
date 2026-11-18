@@ -318,7 +318,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     };
     for (gate_labels.items) |label| {
         const net = s.pins.items(.net)[label];
-        try gatePort(&c, net, pins_of[net].items, label);
+        try routes.gatePort(&c, net, pins_of[net].items, label);
     }
     assert(xy.items.len == s.nodes.len);
 }
@@ -761,37 +761,4 @@ test "wires: an outside cluster reaches actual same-net tree ink within the inpu
     // already 101 units tall. Per-pin chaining must not admit it at 100.
     const wide: Rect = .{ .min = .{ .x = 1, .y = 0 }, .max = .{ .x = 1, .y = 101 } };
     try std.testing.expect(!nearTree(wide, 7, &tree, 100));
-}
-
-// Promote a fallback label on the existing gate span only once the routes
-// are in place. A clear stub cannot introduce crossings for thinning, and
-// no new anchor participates in compaction or in routing another net.
-fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void {
-    const s = c.s;
-    assert(gates.len == 2);
-    const node = s.pins.items(.home)[label];
-    assert(s.nodes.items(.kind)[node] == .label);
-    const a = pinAt(s, gates[0]);
-    const b = pinAt(s, gates[1]);
-    const span = Rect.fromCorners(a, b);
-    if (!span.contains(pinAt(s, label))) return;
-    const mid = @divFloor(a.x + b.x, 2);
-    const q = @max(1, @divFloor(c.len.unit, 4));
-    for ([_]i32{ mid - q, mid + q }) |x| {
-        if (x <= span.min.x or x >= span.max.x) continue;
-        const tap: Pt = .{ .x = x, .y = a.y };
-        for ([_]Side{ .down, .up }) |side| {
-            const tip = canvas.stepPt(tap, side, c.len.terminal);
-            const stub = Rect.fromCorners(tip, tap);
-            for (c.segs.items) |seg| {
-                if (seg.net != net and stub.intersects(Rect.fromCorners(seg.a, seg.b))) break;
-            } else {
-                if (!try c.commit(net, &.{ tap, tip })) continue;
-                s.nodes.items(.kind)[node] = .terminal;
-                s.pins.items(.side)[label] = side.opposite();
-                c.xy.items[node] = tip.toF();
-                return;
-            }
-        }
-    }
 }

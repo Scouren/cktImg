@@ -15,7 +15,10 @@
 //! The caller's `Library` supplies primitive symbols and may override every
 //! subcircuit glyph; recognized blocks have conventional generated symbols.
 //!
-//! Contents (the new shared glyph entry; the existing exports follow below):
+//! Contents (shared symbol and source-qualified layout entries):
+//! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
+//! - `pub const source_regions`, `pub const source_bridge`
+//! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
 //! - `pub const regulator = @import("regulator.zig")`
@@ -149,16 +152,6 @@ pub const Pipeline = struct {
     }
 };
 
-// ---- private ----
-
-/// Every stage in order, the one list both tiers run: each stage's
-/// temporaries in `tmp`, freed before it returns, the result in `out`.
-fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!Placed {
-    var nl = try netlist.parse(tmp, sources, diag);
-    defer nl.deinit(tmp);
-    return placeBound(tmp, out, cfg, lib, &nl, &.{});
-}
-
 /// Draws this exact parsed graph with the supplied fully bound parent outputs.
 /// The caller keeps the graph alive and owns the returned placement.
 pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair) PlaceError!Placed {
@@ -178,6 +171,16 @@ pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *co
 /// Draws a certified complete two-arm bridge, with ordinary layout as fallback.
 pub fn placeSourceBridge(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_bridge.Request) PlaceError!Placed {
     return placeQualified(gpa, cfg, lib, nl, &.{}, &.{}, request);
+}
+
+// ---- private ----
+
+/// Every stage in order, the one list both tiers run: each stage's
+/// temporaries in `tmp`, freed before it returns, the result in `out`.
+fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sources: []const []const u8, diag: ?*netlist.Diagnostic) PlaceError!Placed {
+    var nl = try netlist.parse(tmp, sources, diag);
+    defer nl.deinit(tmp);
+    return placeBound(tmp, out, cfg, lib, &nl, &.{});
 }
 
 fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_bridge.Request) PlaceError!Placed {
