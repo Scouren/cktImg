@@ -1,0 +1,782 @@
+diff --git a/build.zig b/build.zig
+index 961dc1c4..ab9180de 100644
+--- a/build.zig
++++ b/build.zig
+@@ -213,6 +213,13 @@ pub fn build(b: *std.Build) void {
+     for ([_][]const u8{ "tests/shared_frames/mixed.cir", "tests/shared_frames/uniform.cir", "tests/symbols.zon" }) |file|
+         signed_frames.addFileInput(b.path(file));
+     test_step.dependOn(&signed_frames.step);
++
++    const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
++    control_bus.addFileArg(b.path("tests/control_bus_native.py"));
++    control_bus.addArtifactArg(json_exe);
++    _ = control_bus.addOutputDirectoryArg("control-bus");
++    control_bus.addFileInput(b.path("external/examples/analoggenie/ag-1146.cir"));
++    test_step.dependOn(&control_bus.step);
+     b.installArtifact(json_exe);
+     const stage_check = b.addSystemCommand(&.{"python3"});
+     stage_check.addFileArg(b.path("tests/parent_stages.py"));
+diff --git a/docs/TARGETS.md b/docs/TARGETS.md
+index c8a1accb..e5e461eb 100644
+--- a/docs/TARGETS.md
++++ b/docs/TARGETS.md
+@@ -60,3 +60,7 @@ the deck is placed.
+ `device` indexes the document's `devices`; `pins` indexes that device's
+ `pins`, already in the target's order. With `skip`, unmapped devices have no
+ entry. Nothing is written if the manifest is malformed or a mapping fails.
++
++## Optional native port bundles
++
++Pass `--bundles` to request a `port_bundles` array and draw proven groups in the SVG. Each row contains `device`, `label`, `contact` and `atoms`. Each atom contains its original zero-based `slot`, `term`, `net` and `xy`. The owning device retains its original scalar pin list and wires. A renderer can ignore the extra field or expand each row back to its individual atoms. An unsupported or caller-owned symbol yields an empty array. [Four-bit example](research/production-patterns/control-bus/README.md)
+diff --git a/docs/research/production-patterns/control-bus/README.md b/docs/research/production-patterns/control-bus/README.md
+index a0cb9419..2f9173e9 100644
+--- a/docs/research/production-patterns/control-bus/README.md
++++ b/docs/research/production-patterns/control-bus/README.md
+@@ -10,6 +10,20 @@ The Schemify editor exported these views of the original DUT. The generated bank
+ 
+ The grouping requires four consecutive declared control bits on the otherwise opaque differential tuning bank, contiguous matching parent formals, one direct instance and no consuming parent above it. Each actual bit must reach exactly one device pin. The final host geometry must show those four ports directly on their respective contacts with no intervening wire or additional marker. A valid individual port or wire presentation retains the scalar drawing. Explicit bit sides and incompatible directions also retain independent contacts. Permuting the actuals, adding a consumer of B_2_, or instantiating the containing cell elsewhere each retains all eight scalar contacts. Across the 5,274 example decks only AG1146 declares this bank interface.
+ 
++## Optional native view
++
++With `cktimg-json --bundles`, the SVG draws the four tuning bits on one lead and labels that lead `B<3:0>`. The JSON adds a `port_bundles` array. Its entry gives the device, compact label, display contact and ordered atoms. Each atom carries its zero-based original pin slot, terminal name, net name and scalar coordinates. The scalar drawing in the same JSON reproduces the default output after removing the optional member. Custom symbol libraries retain their own drawing and receive an empty array. The library and C ABI keep the scalar placement.
++
++| Native before | Native grouped |
++| --- | --- |
++| [Eight contacts and four scalar ports](ag1146.native.before.svg) | [Five displayed contacts and one tuning port](ag1146.native.after.svg) |
++
++On the stock X2, slots 2 through 5 lie at x=390 and y=110, 150, 190 and 230. The grouped presentation uses the first of these contacts and the existing ordinary port link. The emitter proves that each atom has a distinct two-point wire to one single-pin external port before folding the display. Individual caller styles, a nonmatching pin order or any additional consumer preserve the ordinary view. [Native reversibility tests](../../../../tests/control_bus_native.py)
++
++```sh
++zig-out/bin/cktimg-json --bundles --svg ag1146.svg external/examples/analoggenie/ag-1146.cir ag1146.json
++```
++
+ Reproduce the actual editor exports and verify the slot order with the local Schemify executable and built plugin directory.
+ 
+ ```sh
+diff --git a/docs/research/production-patterns/control-bus/ag1146.native.after.svg b/docs/research/production-patterns/control-bus/ag1146.native.after.svg
+new file mode 100644
+index 00000000..d60b87b9
+--- /dev/null
++++ b/docs/research/production-patterns/control-bus/ag1146.native.after.svg
+@@ -0,0 +1,176 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="981" height="740" viewBox="0 0 981 740" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="120.0,91.2 120.0,59.2 "/>
++<polyline points="248.0,91.2 248.0,59.2 "/>
++<polyline points="776.0,91.2 776.0,59.2 "/>
++<polyline points="120.0,59.2 248.0,59.2 "/>
++<polyline points="248.0,59.2 776.0,59.2 "/>
++<polyline points="88.0,59.2 120.0,59.2 "/>
++<polyline points="776.0,59.2 808.0,59.2 "/>
++<polyline points="152.0,587.2 184.0,587.2 "/>
++<polyline points="184.0,587.2 216.0,587.2 "/>
++<polyline points="184.0,587.2 184.0,523.2 "/>
++<polyline points="120.0,155.2 120.0,523.2 "/>
++<polyline points="120.0,555.2 120.0,523.2 "/>
++<polyline points="120.0,523.2 184.0,523.2 "/>
++<polyline points="120.0,619.2 120.0,651.2 "/>
++<polyline points="248.0,619.2 248.0,651.2 "/>
++<polyline points="696.0,619.2 696.0,651.2 "/>
++<polyline points="856.0,619.2 856.0,651.2 "/>
++<polyline points="280.0,123.2 504.0,123.2 "/>
++<polyline points="504.0,123.2 744.0,123.2 "/>
++<polyline points="504.0,123.2 504.0,187.2 "/>
++<polyline points="248.0,555.2 248.0,187.2 "/>
++<polyline points="248.0,155.2 248.0,187.2 "/>
++<polyline points="248.0,187.2 504.0,187.2 "/>
++<polyline points="776.0,155.2 776.0,187.2 "/>
++<polyline points="696.0,219.2 696.0,187.2 "/>
++<polyline points="856.0,219.2 856.0,187.2 "/>
++<polyline points="696.0,187.2 776.0,187.2 "/>
++<polyline points="776.0,187.2 856.0,187.2 "/>
++<polyline points="696.0,283.2 696.0,315.2 "/>
++<polyline points="824.0,251.2 792.0,251.2 792.0,315.2 "/>
++<polyline points="696.0,555.2 696.0,315.2 "/>
++<polyline points="824.0,587.2 792.0,587.2 792.0,315.2 "/>
++<polyline points="568.0,363.2 536.0,363.2 536.0,315.2 "/>
++<polyline points="472.0,395.2 504.0,395.2 504.0,315.2 "/>
++<polyline points="504.0,315.2 536.0,315.2 "/>
++<polyline points="536.0,315.2 696.0,315.2 "/>
++<polyline points="696.0,315.2 792.0,315.2 "/>
++<polyline points="792.0,315.2 824.0,315.2 "/>
++<polyline points="856.0,283.2 856.0,299.2 744.0,299.2 744.0,251.2 728.0,251.2 "/>
++<polyline points="856.0,555.2 856.0,539.2 "/>
++<polyline points="728.0,587.2 776.0,587.2 776.0,539.2 856.0,539.2 "/>
++<polyline points="568.0,427.2 520.0,427.2 520.0,459.2 "/>
++<polyline points="472.0,459.2 520.0,459.2 "/>
++<polyline points="856.0,283.2 888.0,283.2 "/>
++<polyline points="856.0,539.2 856.0,299.2 "/>
++<polyline points="520.0,459.2 520.0,539.2 776.0,539.2 "/>
++<polyline points="568.0,491.2 536.0,491.2 "/>
++<polyline points="344.0,267.2 312.0,267.2 "/>
++<polyline points="344.0,523.2 312.0,523.2 "/>
++<polyline points="344.0,587.2 312.0,587.2 "/>
++<polyline points="120.0,91.2 120.0,108.8 "/>
++<polyline points="120.0,137.6 120.0,155.2 "/>
++<circle cx="120.0" cy="123.2" r="14.4" fill="#ffffff"/>
++<polyline points="120.0,115.2 120.0,131.2 "/>
++<polyline points="120.0,132.8 115.2,126.4 124.8,126.4 120.0,132.8 "/>
++<polyline points="120.0,555.2 120.0,574.4 124.8,574.4 "/>
++<polyline points="120.0,619.2 120.0,600.0 124.8,600.0 "/>
++<polyline points="124.8,571.2 124.8,603.2 "/>
++<polyline points="131.2,574.4 131.2,600.0 "/>
++<polyline points="152.0,587.2 131.2,587.2 "/>
++<polyline points="248.0,555.2 248.0,574.4 243.2,574.4 "/>
++<polyline points="248.0,619.2 248.0,600.0 243.2,600.0 "/>
++<polyline points="243.2,571.2 243.2,603.2 "/>
++<polyline points="236.8,574.4 236.8,600.0 "/>
++<polyline points="216.0,587.2 236.8,587.2 "/>
++<polyline points="248.0,155.2 248.0,136.0 252.8,136.0 "/>
++<polyline points="248.0,91.2 248.0,110.4 252.8,110.4 "/>
++<polyline points="252.8,139.2 252.8,107.2 "/>
++<polyline points="259.2,136.0 259.2,110.4 "/>
++<circle cx="262.4" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="280.0,123.2 265.6,123.2 "/>
++<polyline points="776.0,155.2 776.0,136.0 771.2,136.0 "/>
++<polyline points="776.0,91.2 776.0,110.4 771.2,110.4 "/>
++<polyline points="771.2,139.2 771.2,107.2 "/>
++<polyline points="764.8,136.0 764.8,110.4 "/>
++<circle cx="761.6" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="744.0,123.2 758.4,123.2 "/>
++<polyline points="696.0,283.2 696.0,264.0 700.8,264.0 "/>
++<polyline points="696.0,219.2 696.0,238.4 700.8,238.4 "/>
++<polyline points="700.8,267.2 700.8,235.2 "/>
++<polyline points="707.2,264.0 707.2,238.4 "/>
++<circle cx="710.4" cy="251.2" r="3.2" fill="#ffffff"/>
++<polyline points="728.0,251.2 713.6,251.2 "/>
++<polyline points="856.0,283.2 856.0,264.0 851.2,264.0 "/>
++<polyline points="856.0,219.2 856.0,238.4 851.2,238.4 "/>
++<polyline points="851.2,267.2 851.2,235.2 "/>
++<polyline points="844.8,264.0 844.8,238.4 "/>
++<circle cx="841.6" cy="251.2" r="3.2" fill="#ffffff"/>
++<polyline points="824.0,251.2 838.4,251.2 "/>
++<polyline points="696.0,555.2 696.0,574.4 700.8,574.4 "/>
++<polyline points="696.0,619.2 696.0,600.0 700.8,600.0 "/>
++<polyline points="700.8,571.2 700.8,603.2 "/>
++<polyline points="707.2,574.4 707.2,600.0 "/>
++<polyline points="728.0,587.2 707.2,587.2 "/>
++<polyline points="856.0,555.2 856.0,574.4 851.2,574.4 "/>
++<polyline points="856.0,619.2 856.0,600.0 851.2,600.0 "/>
++<polyline points="851.2,571.2 851.2,603.2 "/>
++<polyline points="844.8,574.4 844.8,600.0 "/>
++<polyline points="824.0,587.2 844.8,587.2 "/>
++<polyline points="584.0,331.2 680.0,331.2 680.0,523.2 584.0,523.2 584.0,331.2 "/>
++<polyline points="568.0,363.2 584.0,363.2 "/>
++<text x="603.2" y="366.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n1</text>
++<polyline points="568.0,427.2 584.0,427.2 "/>
++<text x="603.2" y="430.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n2</text>
++<polyline points="568.0,491.2 584.0,491.2 "/>
++<text x="603.2" y="494.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n3</text>
++<text x="632.0" y="430.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">ct_inductor</text>
++<polyline points="360.0,235.2 456.0,235.2 456.0,619.2 360.0,619.2 360.0,235.2 "/>
++<polyline points="344.0,267.2 360.0,267.2 "/>
++<polyline points="344.0,523.2 360.0,523.2 "/>
++<text x="384.0" y="526.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vcn</text>
++<polyline points="344.0,587.2 360.0,587.2 "/>
++<text x="384.0" y="590.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vcp</text>
++<polyline points="472.0,395.2 456.0,395.2 "/>
++<text x="432.0" y="398.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">von</text>
++<polyline points="472.0,459.2 456.0,459.2 "/>
++<text x="432.0" y="462.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vop</text>
++<text x="408.0" y="430.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">varactor_switched_caps</text>
++<polyline points="105.6,651.2 134.4,651.2 "/>
++<polyline points="110.4,656.0 129.6,656.0 "/>
++<polyline points="116.8,660.8 123.2,660.8 "/>
++<polyline points="233.6,651.2 262.4,651.2 "/>
++<polyline points="238.4,656.0 257.6,656.0 "/>
++<polyline points="244.8,660.8 251.2,660.8 "/>
++<polyline points="681.6,651.2 710.4,651.2 "/>
++<polyline points="686.4,656.0 705.6,656.0 "/>
++<polyline points="692.8,660.8 699.2,660.8 "/>
++<polyline points="841.6,651.2 870.4,651.2 "/>
++<polyline points="846.4,656.0 865.6,656.0 "/>
++<polyline points="852.8,660.8 859.2,660.8 "/>
++<circle cx="312.0" cy="267.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="271.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">B&lt;3:0&gt;</text>
++<circle cx="312.0" cy="523.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="527.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vcn</text>
++<circle cx="312.0" cy="587.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="591.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vcp</text>
++<circle cx="536.0" cy="491.2" r="4.8" fill="#ffffff"/>
++<text x="529.0" y="495.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vocm</text>
++<circle cx="824.0" cy="315.2" r="4.8" fill="#ffffff"/>
++<text x="831.0" y="319.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">von</text>
++<circle cx="888.0" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="895.0" y="287.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vop</text>
++</g>
++<circle cx="120.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="248.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="504.0" cy="123.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="248.0" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="184.0" cy="587.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="120.0" cy="523.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="696.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="792.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="536.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="283.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="299.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="539.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="539.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="520.0" cy="459.2" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="139.2" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">iref</text>
++<text x="96.0" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="252.8" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="224.0" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="780.8" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="672.0" y="251.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="860.8" y="251.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m6</text>
++<text x="672.0" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m7</text>
++<text x="860.8" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m8</text>
++<text x="544.0" y="408.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">x1</text>
++<text x="398.4" y="227.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">x2</text>
++<text x="815.0" y="63.2" text-anchor="start" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">vdd</text>
++<text x="40.0" y="734.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/docs/research/production-patterns/control-bus/ag1146.native.before.svg b/docs/research/production-patterns/control-bus/ag1146.native.before.svg
+new file mode 100644
+index 00000000..abb5755c
+--- /dev/null
++++ b/docs/research/production-patterns/control-bus/ag1146.native.before.svg
+@@ -0,0 +1,192 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="981" height="740" viewBox="0 0 981 740" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="120.0,91.2 120.0,59.2 "/>
++<polyline points="248.0,91.2 248.0,59.2 "/>
++<polyline points="776.0,91.2 776.0,59.2 "/>
++<polyline points="120.0,59.2 248.0,59.2 "/>
++<polyline points="248.0,59.2 776.0,59.2 "/>
++<polyline points="88.0,59.2 120.0,59.2 "/>
++<polyline points="776.0,59.2 808.0,59.2 "/>
++<polyline points="152.0,587.2 184.0,587.2 "/>
++<polyline points="184.0,587.2 216.0,587.2 "/>
++<polyline points="184.0,587.2 184.0,523.2 "/>
++<polyline points="120.0,155.2 120.0,523.2 "/>
++<polyline points="120.0,555.2 120.0,523.2 "/>
++<polyline points="120.0,523.2 184.0,523.2 "/>
++<polyline points="120.0,619.2 120.0,651.2 "/>
++<polyline points="248.0,619.2 248.0,651.2 "/>
++<polyline points="696.0,619.2 696.0,651.2 "/>
++<polyline points="856.0,619.2 856.0,651.2 "/>
++<polyline points="280.0,123.2 504.0,123.2 "/>
++<polyline points="504.0,123.2 744.0,123.2 "/>
++<polyline points="504.0,123.2 504.0,187.2 "/>
++<polyline points="248.0,555.2 248.0,187.2 "/>
++<polyline points="248.0,155.2 248.0,187.2 "/>
++<polyline points="248.0,187.2 504.0,187.2 "/>
++<polyline points="776.0,155.2 776.0,187.2 "/>
++<polyline points="696.0,219.2 696.0,187.2 "/>
++<polyline points="856.0,219.2 856.0,187.2 "/>
++<polyline points="696.0,187.2 776.0,187.2 "/>
++<polyline points="776.0,187.2 856.0,187.2 "/>
++<polyline points="696.0,283.2 696.0,315.2 "/>
++<polyline points="824.0,251.2 792.0,251.2 792.0,315.2 "/>
++<polyline points="696.0,555.2 696.0,315.2 "/>
++<polyline points="824.0,587.2 792.0,587.2 792.0,315.2 "/>
++<polyline points="568.0,363.2 536.0,363.2 536.0,315.2 "/>
++<polyline points="472.0,395.2 504.0,395.2 504.0,315.2 "/>
++<polyline points="504.0,315.2 536.0,315.2 "/>
++<polyline points="536.0,315.2 696.0,315.2 "/>
++<polyline points="696.0,315.2 792.0,315.2 "/>
++<polyline points="792.0,315.2 824.0,315.2 "/>
++<polyline points="856.0,283.2 856.0,299.2 744.0,299.2 744.0,251.2 728.0,251.2 "/>
++<polyline points="856.0,555.2 856.0,539.2 "/>
++<polyline points="728.0,587.2 776.0,587.2 776.0,539.2 856.0,539.2 "/>
++<polyline points="568.0,427.2 520.0,427.2 520.0,459.2 "/>
++<polyline points="472.0,459.2 520.0,459.2 "/>
++<polyline points="856.0,283.2 888.0,283.2 "/>
++<polyline points="856.0,539.2 856.0,299.2 "/>
++<polyline points="520.0,459.2 520.0,539.2 776.0,539.2 "/>
++<polyline points="568.0,491.2 536.0,491.2 "/>
++<polyline points="344.0,267.2 312.0,267.2 "/>
++<polyline points="344.0,331.2 312.0,331.2 "/>
++<polyline points="344.0,395.2 312.0,395.2 "/>
++<polyline points="344.0,459.2 312.0,459.2 "/>
++<polyline points="344.0,523.2 312.0,523.2 "/>
++<polyline points="344.0,587.2 312.0,587.2 "/>
++<polyline points="120.0,91.2 120.0,108.8 "/>
++<polyline points="120.0,137.6 120.0,155.2 "/>
++<circle cx="120.0" cy="123.2" r="14.4" fill="#ffffff"/>
++<polyline points="120.0,115.2 120.0,131.2 "/>
++<polyline points="120.0,132.8 115.2,126.4 124.8,126.4 120.0,132.8 "/>
++<polyline points="120.0,555.2 120.0,574.4 124.8,574.4 "/>
++<polyline points="120.0,619.2 120.0,600.0 124.8,600.0 "/>
++<polyline points="124.8,571.2 124.8,603.2 "/>
++<polyline points="131.2,574.4 131.2,600.0 "/>
++<polyline points="152.0,587.2 131.2,587.2 "/>
++<polyline points="248.0,555.2 248.0,574.4 243.2,574.4 "/>
++<polyline points="248.0,619.2 248.0,600.0 243.2,600.0 "/>
++<polyline points="243.2,571.2 243.2,603.2 "/>
++<polyline points="236.8,574.4 236.8,600.0 "/>
++<polyline points="216.0,587.2 236.8,587.2 "/>
++<polyline points="248.0,155.2 248.0,136.0 252.8,136.0 "/>
++<polyline points="248.0,91.2 248.0,110.4 252.8,110.4 "/>
++<polyline points="252.8,139.2 252.8,107.2 "/>
++<polyline points="259.2,136.0 259.2,110.4 "/>
++<circle cx="262.4" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="280.0,123.2 265.6,123.2 "/>
++<polyline points="776.0,155.2 776.0,136.0 771.2,136.0 "/>
++<polyline points="776.0,91.2 776.0,110.4 771.2,110.4 "/>
++<polyline points="771.2,139.2 771.2,107.2 "/>
++<polyline points="764.8,136.0 764.8,110.4 "/>
++<circle cx="761.6" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="744.0,123.2 758.4,123.2 "/>
++<polyline points="696.0,283.2 696.0,264.0 700.8,264.0 "/>
++<polyline points="696.0,219.2 696.0,238.4 700.8,238.4 "/>
++<polyline points="700.8,267.2 700.8,235.2 "/>
++<polyline points="707.2,264.0 707.2,238.4 "/>
++<circle cx="710.4" cy="251.2" r="3.2" fill="#ffffff"/>
++<polyline points="728.0,251.2 713.6,251.2 "/>
++<polyline points="856.0,283.2 856.0,264.0 851.2,264.0 "/>
++<polyline points="856.0,219.2 856.0,238.4 851.2,238.4 "/>
++<polyline points="851.2,267.2 851.2,235.2 "/>
++<polyline points="844.8,264.0 844.8,238.4 "/>
++<circle cx="841.6" cy="251.2" r="3.2" fill="#ffffff"/>
++<polyline points="824.0,251.2 838.4,251.2 "/>
++<polyline points="696.0,555.2 696.0,574.4 700.8,574.4 "/>
++<polyline points="696.0,619.2 696.0,600.0 700.8,600.0 "/>
++<polyline points="700.8,571.2 700.8,603.2 "/>
++<polyline points="707.2,574.4 707.2,600.0 "/>
++<polyline points="728.0,587.2 707.2,587.2 "/>
++<polyline points="856.0,555.2 856.0,574.4 851.2,574.4 "/>
++<polyline points="856.0,619.2 856.0,600.0 851.2,600.0 "/>
++<polyline points="851.2,571.2 851.2,603.2 "/>
++<polyline points="844.8,574.4 844.8,600.0 "/>
++<polyline points="824.0,587.2 844.8,587.2 "/>
++<polyline points="584.0,331.2 680.0,331.2 680.0,523.2 584.0,523.2 584.0,331.2 "/>
++<polyline points="568.0,363.2 584.0,363.2 "/>
++<text x="603.2" y="366.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n1</text>
++<polyline points="568.0,427.2 584.0,427.2 "/>
++<text x="603.2" y="430.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n2</text>
++<polyline points="568.0,491.2 584.0,491.2 "/>
++<text x="603.2" y="494.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">n3</text>
++<text x="632.0" y="430.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">ct_inductor</text>
++<polyline points="360.0,235.2 456.0,235.2 456.0,619.2 360.0,619.2 360.0,235.2 "/>
++<polyline points="344.0,267.2 360.0,267.2 "/>
++<text x="388.8" y="270.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">b_3_</text>
++<polyline points="344.0,331.2 360.0,331.2 "/>
++<text x="388.8" y="334.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">b_2_</text>
++<polyline points="344.0,395.2 360.0,395.2 "/>
++<text x="388.8" y="398.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">b_1_</text>
++<polyline points="344.0,459.2 360.0,459.2 "/>
++<text x="388.8" y="462.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">b_0_</text>
++<polyline points="344.0,523.2 360.0,523.2 "/>
++<text x="384.0" y="526.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vcn</text>
++<polyline points="344.0,587.2 360.0,587.2 "/>
++<text x="384.0" y="590.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vcp</text>
++<polyline points="472.0,395.2 456.0,395.2 "/>
++<text x="432.0" y="398.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">von</text>
++<polyline points="472.0,459.2 456.0,459.2 "/>
++<text x="432.0" y="462.2" text-anchor="middle" font-size="9" fill="#1d2330" stroke="none">vop</text>
++<text x="408.0" y="430.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">varactor_switched_caps</text>
++<polyline points="105.6,651.2 134.4,651.2 "/>
++<polyline points="110.4,656.0 129.6,656.0 "/>
++<polyline points="116.8,660.8 123.2,660.8 "/>
++<polyline points="233.6,651.2 262.4,651.2 "/>
++<polyline points="238.4,656.0 257.6,656.0 "/>
++<polyline points="244.8,660.8 251.2,660.8 "/>
++<polyline points="681.6,651.2 710.4,651.2 "/>
++<polyline points="686.4,656.0 705.6,656.0 "/>
++<polyline points="692.8,660.8 699.2,660.8 "/>
++<polyline points="841.6,651.2 870.4,651.2 "/>
++<polyline points="846.4,656.0 865.6,656.0 "/>
++<polyline points="852.8,660.8 859.2,660.8 "/>
++<circle cx="312.0" cy="459.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="463.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">b_0_</text>
++<circle cx="312.0" cy="395.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="399.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">b_1_</text>
++<circle cx="312.0" cy="331.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="335.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">b_2_</text>
++<circle cx="312.0" cy="267.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="271.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">b_3_</text>
++<circle cx="312.0" cy="523.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="527.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vcn</text>
++<circle cx="312.0" cy="587.2" r="4.8" fill="#ffffff"/>
++<text x="305.0" y="591.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vcp</text>
++<circle cx="536.0" cy="491.2" r="4.8" fill="#ffffff"/>
++<text x="529.0" y="495.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vocm</text>
++<circle cx="824.0" cy="315.2" r="4.8" fill="#ffffff"/>
++<text x="831.0" y="319.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">von</text>
++<circle cx="888.0" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="895.0" y="287.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vop</text>
++</g>
++<circle cx="120.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="248.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="504.0" cy="123.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="248.0" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="184.0" cy="587.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="120.0" cy="523.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="696.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="792.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="536.0" cy="315.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="283.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="299.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="776.0" cy="539.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="856.0" cy="539.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="520.0" cy="459.2" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="139.2" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">iref</text>
++<text x="96.0" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="252.8" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="224.0" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="780.8" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="672.0" y="251.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="860.8" y="251.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m6</text>
++<text x="672.0" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m7</text>
++<text x="860.8" y="587.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m8</text>
++<text x="544.0" y="408.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">x1</text>
++<text x="398.4" y="227.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">x2</text>
++<text x="815.0" y="63.2" text-anchor="start" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">vdd</text>
++<text x="40.0" y="734.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/skills/cktimg/SKILL.md b/skills/cktimg/SKILL.md
+index daf93632..30801862 100644
+--- a/skills/cktimg/SKILL.md
++++ b/skills/cktimg/SKILL.md
+@@ -142,3 +142,5 @@ on a device overrides the relations on it.
+ - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
+   imports a deck as editable cells, laid out the same way. `cktimg.import`
+   is still accepted but no longer declared, so the palette never lists it.
++
++For an editable scalar drawing with an optional grouped control-bus view, pass `--bundles` to `cktimg-json`. Its `port_bundles` lists each display contact and every original terminal slot, net and coordinate. The optional SVG uses that grouping. [Example and limits](../../docs/research/production-patterns/control-bus/README.md)
+diff --git a/tests/control_bus_native.py b/tests/control_bus_native.py
+new file mode 100644
+index 00000000..5eea9afa
+--- /dev/null
++++ b/tests/control_bus_native.py
+@@ -0,0 +1,85 @@
++"""Exercise the opt-in renderer and reverse its presentation against the original drawing."""
++
++import argparse
++import json
++from pathlib import Path
++import re
++import subprocess
++
++ROOT = Path(__file__).resolve().parents[1]
++CASE = ROOT / "external/examples/analoggenie/ag-1146.cir"
++
++
++def main(cli, out):
++    out.mkdir(parents=True, exist_ok=True)
++    raw = CASE.read_text()
++    for name, text, expected in (
++        ("original", raw, True),
++        ("extra", raw.replace(".ends dut", "Rextra B_2_ Vcn 1k\n.ends dut"), False),
++        (
++            "permuted",
++            raw.replace("X2 Von Vop B_3_ B_2_", "X2 Von Vop B_2_ B_3_"),
++            False,
++        ),
++        ("called", raw + "Xtop dd ss cm n p a b c3 c2 c1 c0 dut\n", False),
++        (
++            "directed",
++            raw.replace(
++                ".ends Varactor_Switched_caps",
++                "*@ right B_2_\n.ends Varactor_Switched_caps",
++            ),
++            False,
++        ),
++        ("caller", raw.replace(".ends dut", "*@ label B_2_\n.ends dut"), False),
++        (
++            "invalid",
++            raw.replace(".ends dut", "*@ port B_2_ unknown-side\n.ends dut"),
++            True,
++        ),
++    ):
++        path = out / (name + ".cir")
++        path.write_text(text)
++        ordinary = json.loads(
++            subprocess.check_output(
++                [cli, "--svg", out / (name + "-ordinary.svg"), path]
++            )
++        )
++        grouped = json.loads(
++            subprocess.check_output(
++                [cli, "--bundles", "--svg", out / (name + "-grouped.svg"), path]
++            )
++        )
++        annotations = grouped.pop("port_bundles")
++        assert ordinary == grouped and len(annotations) == (1 if expected else 0), name
++        before, after = [
++            (out / (name + suffix)).read_text()
++            for suffix in ("-ordinary.svg", "-grouped.svg")
++        ]
++        if not expected:
++            assert before == after, name
++            continue
++        (bundle,) = annotations
++        dev = next(d for d in grouped["devices"] if d["name"] == "x2")
++        assert (bundle["device"], bundle["label"], bundle["contact"]) == (
++            "x2",
++            "B<3:0>",
++            dev["pins"][2]["xy"],
++        )
++        for i, atom in enumerate(bundle["atoms"], 2):
++            pin = dev["pins"][i]
++            assert atom == {"slot": i, **pin} and pin["term"] == f"b_{5 - i}_", atom
++        assert len(bundle["atoms"]) == 4
++        assert ">B&lt;3:0&gt;<" in after and all(
++            f">b_{i}_<" not in after for i in range(4)
++        )
++        assert all(f">b_{i}_<" in before for i in range(4))
++        assert before.count("<polyline ") > after.count("<polyline ")
++        print(name, bundle, flush=True)
++
++
++if __name__ == "__main__":
++    p = argparse.ArgumentParser(description=__doc__)
++    for arg in ("cli", "out"):
++        p.add_argument(arg, type=lambda s: Path(s).resolve())
++    args = p.parse_args()
++    main(args.cli, args.out)
+diff --git a/tests/svg.zig b/tests/svg.zig
+index 87a9567e..9c9767ea 100644
+--- a/tests/svg.zig
++++ b/tests/svg.zig
+@@ -10,7 +10,12 @@ const np = @import("NetlistParser");
+ const Pt = np.Pt;
+ const Writer = std.Io.Writer;
+ 
++/// A display-only grouping of four scalar pins with independently verified port links.
++pub const Bundle = struct { dev: usize, first: usize, ports: [4]usize, nets: [4]u32, label: []const u8 };
++
+ pub const Style = struct {
++    /// The scalar occurrence table stays intact when this optional grouping is drawn.
++    bundle: ?Bundle = null,
+     /// Pixels per target unit (a symbol is 40 units: 64 px).
+     scale: f32 = 1.6,
+     /// Pixels around the drawing.
+@@ -70,10 +75,14 @@ pub fn write(gpa: std.mem.Allocator, p: *const np.Placed, lib: *const np.Library
+     // Wires under symbols, dots over both.
+     try w.print("<g fill=\"none\" stroke=\"{s}\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n", .{ink});
+     for (0..p.netCount()) |n| {
++        if (st.bundle) |b| if (std.mem.indexOfScalar(u32, b.nets[1..], @intCast(n)) != null) continue;
+         var it = p.segments(n);
+         while (it.next()) |poly| try pen.polyline(poly);
+     }
+-    for (0..p.deviceCount()) |d| try drawDevice(&pen, p, lib, d);
++    for (0..p.deviceCount()) |d| {
++        if (st.bundle) |b| if (std.mem.indexOfScalar(usize, b.ports[1..], d) != null) continue;
++        try drawDevice(&pen, p, lib, d);
++    }
+     for (p.no_connects) |c| {
+         try pen.polyline(&.{ .{ .x = c.x - 3, .y = c.y - 3 }, .{ .x = c.x + 3, .y = c.y + 3 } });
+         try pen.polyline(&.{ .{ .x = c.x - 3, .y = c.y + 3 }, .{ .x = c.x + 3, .y = c.y - 3 } });
+@@ -108,21 +117,33 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
+             return np.geom.placePoint(or_, b, q);
+         }
+     }.f;
+-    for (class.draw) |op| switch (op) {
+-        .line => |l| try pen.polyline(&.{ place(o, base, l.a), place(o, base, l.b) }),
+-        .polyline => |ps| {
+-            var buf: [64]Pt = undefined;
+-            const n = @min(ps.len, buf.len);
+-            for (ps[0..n], buf[0..n]) |q, *r| r.* = place(o, base, q);
+-            try pen.polyline(buf[0..n]);
+-        },
+-        .circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"#ffffff\""),
+-        .text => |t| try pen.text(place(o, base, t.at), 0, 3, t.s, "middle", @floatFromInt(t.size + 4), ink, false),
+-    };
++    for (class.draw) |op| {
++        if (pen.st.bundle) |b| {
++            if (d == b.dev) {
++                const first = b.first - p.dev_pin0[d];
++                const hide = for (class.terminals[first..][0..4], 0..) |t, i| {
++                    if (op == .text and std.mem.eql(u8, op.text.s, t.name)) break true;
++                    if (i > 0 and op == .line and (op.line.a.eql(t.at) or op.line.b.eql(t.at))) break true;
++                } else false;
++                if (hide) continue;
++            }
++        }
++        switch (op) {
++            .line => |l| try pen.polyline(&.{ place(o, base, l.a), place(o, base, l.b) }),
++            .polyline => |ps| {
++                var buf: [64]Pt = undefined;
++                const n = @min(ps.len, buf.len);
++                for (ps[0..n], buf[0..n]) |q, *r| r.* = place(o, base, q);
++                try pen.polyline(buf[0..n]);
++            },
++            .circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"#ffffff\""),
++            .text => |t| try pen.text(place(o, base, t.at), 0, 3, t.s, "middle", @floatFromInt(t.size + 4), ink, false),
++        }
++    }
+     // A rail or port the layout added carries its net's name.
+     if (p.dev_name[d].len == 0 and class.role != .none) {
+         const lo, _ = p.pinRange(d);
+-        const net = p.net_name[p.pin_net[lo]];
++        const net = if (pen.st.bundle != null and pen.st.bundle.?.ports[0] == d) pen.st.bundle.?.label else p.net_name[p.pin_net[lo]];
+         const at = p.pin_xy[lo];
+         switch (class.role) {
+             .power_rail => try railName(pen, at, np.geom.railSide(p, lo), net, 12, ink),
+diff --git a/tools/json.zig b/tools/json.zig
+index d599a4d8..2c4de680 100644
+--- a/tools/json.zig
++++ b/tools/json.zig
+@@ -2,7 +2,7 @@
+ //! document out (`src/json.zig` has the shape), for a script that would
+ //! rather read a file than link the library.
+ //!
+-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
++//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--bundles] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
+ //!
+ //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
+ //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
+@@ -33,6 +33,7 @@ const std = @import("std");
+ const np = @import("NetlistParser");
+ const symbols = @import("symbols").text;
+ const svg = @import("svg");
++const native_bundle = @import("native_bundle.zig");
+ 
+ const Allocator = std.mem.Allocator;
+ const Writer = std.Io.Writer;
+@@ -49,6 +50,7 @@ const usage =
+     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
+     \\                    add a "target" block to the document
+     \\  --svg <path>      also draw the placed schematic as SVG
++    \\  --bundles         add ordered port_bundles to JSON and group their SVG contacts
+     \\  --report <path>   also write the decision report: findings, each *@ line's
+     \\                    verdict, scores, the engine's decisions, the lattice rows
+     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
+@@ -70,6 +72,7 @@ const Options = struct {
+     symbols: ?[]const u8 = null,
+     target: ?[]const u8 = null,
+     svg: ?[]const u8 = null,
++    bundles: bool = false,
+     report: ?[]const u8 = null,
+     decisions: ?[]const u8 = null,
+     from: ?[]const u8 = null,
+@@ -128,8 +131,9 @@ pub fn main(init: std.process.Init) !void {
+     };
+     defer placed.deinit();
+ 
++    const view = if (opts.bundles and opts.symbols == null) try native_bundle.select(arena, raw, srcs, &placed, &lib) else null;
+     if (opts.svg) |path| {
+-        const pic = try svg.alloc(gpa, &placed, &lib, .{});
++        const pic = try svg.alloc(gpa, &placed, &lib, .{ .bundle = view });
+         defer gpa.free(pic);
+         cwd.writeFile(io, .{ .sub_path = path, .data = pic }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
+     }
+@@ -180,6 +184,9 @@ pub fn main(init: std.process.Init) !void {
+         // `json.write` ends the document with "\n}\n": add one member before it.
+         doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"target\": ", b, "\n}\n" });
+     }
++    if (opts.bundles) {
++        doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"port_bundles\": ", try native_bundle.json(arena, &placed, &lib, view), "\n}\n" });
++    }
+     if (opts.out) |path| {
+         cwd.writeFile(io, .{ .sub_path = path, .data = doc }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
+     } else {
+@@ -439,6 +446,10 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
+             std.debug.print("{s}", .{usage});
+             return null;
+         }
++        if (std.mem.eql(u8, a, "--bundles")) {
++            opts.bundles = true;
++            continue;
++        }
+         const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;
+         if (slot) |s| {
+             i += 1;
+diff --git a/tools/native_bundle.zig b/tools/native_bundle.zig
+new file mode 100644
+index 00000000..904edeb0
+--- /dev/null
++++ b/tools/native_bundle.zig
+@@ -0,0 +1,92 @@
++//! Native display projection of a closed switched-capacitor control bus.
++//!
++//! Contents
++//! - `pub fn select`
++//! - `pub fn json`
++
++const std = @import("std");
++const np = @import("NetlistParser");
++const svg = @import("svg");
++const spice = @import("schemify/spice.zig");
++const port_bundle = @import("schemify/port_bundle.zig");
++
++/// Verifies the actual native terminals and four single-segment links to distinct
++/// external ports. The electrical placement stays available in full for every renderer.
++pub fn select(a: std.mem.Allocator, raw: []const u8, srcs: []const []const u8, p: *const np.Placed, lib: *const np.Library) !?svg.Bundle {
++    const deck = try spice.parse(a, raw);
++    const b = (try port_bundle.find(a, &deck)) orelse return null;
++    if (deck.devs(0).len() != 0 or b.parent.cell + 1 != deck.cells()) return null;
++    const d = for (p.dev_name, 0..) |name, i| {
++        if (std.ascii.eqlIgnoreCase(deck.dev_name[b.instance], name)) break i;
++    } else return null;
++    const class = lib.at(p.dev_class[d]);
++    if (!std.ascii.eqlIgnoreCase(class.name, "block:varactor_switched_caps") or class.terminals.len != 8) return null;
++    const lo, const hi = p.pinRange(d);
++    if (hi - lo != class.terminals.len) return null;
++    for (class.terminals, deck.ports(b.leaf.cell), deck.netsOf(b.instance), lo..) |t, formal, actual, k| {
++        if (t.hidden or !std.ascii.eqlIgnoreCase(t.name, deck.netKey(b.leaf.cell, formal)) or !std.ascii.eqlIgnoreCase(p.net_name[p.pin_net[k]], deck.netKey(b.parent.cell, actual))) return null;
++    }
++    if (try held(a, &deck, b, srcs, p, lib)) return null;
++    var out: svg.Bundle = .{ .dev = d, .first = lo + 2, .ports = undefined, .nets = undefined, .label = b.caption };
++    for (&out.ports, &out.nets, out.first..) |*port, *net, bit| {
++        net.* = p.pin_net[bit];
++        var count: usize = 0;
++        for (0..p.deviceCount()) |i| {
++            const pl, const ph = p.pinRange(i);
++            for (pl..ph) |k| {
++                if (p.pin_net[k] != net.* or k == bit) continue;
++                const role = lib.at(p.dev_class[i]).role;
++                if (p.dev_name[i].len != 0 or ph != pl + 1 or (role != .input_port and role != .output_port)) return null;
++                count += 1;
++                port.* = i;
++            }
++        }
++        if (count != 1) return null;
++        const at = p.pin_xy[p.dev_pin0[port.*]];
++        var seg = p.segments(net.*);
++        const pts = seg.next() orelse return null;
++        if (pts.len != 2 or seg.next() != null) return null;
++        if (!(pts[0].eql(at) and pts[1].eql(p.pin_xy[bit])) and !(pts[1].eql(at) and pts[0].eql(p.pin_xy[bit]))) return null;
++        for (p.labels) |l| if (l.net == net.*) return null;
++    }
++    return out;
++}
++
++fn held(a: std.mem.Allocator, deck: *const spice.Deck, b: port_bundle.Candidate, srcs: []const []const u8, p: *const np.Placed, lib: *const np.Library) !bool {
++    // Generated top-cell roles describe the ordinary synthetic terminal symbols.
++    // Only an actual, honoured original scalar presentation reserves its own access.
++    if (deck.directive.len == 0) return false;
++    var nl = try np.netlist.parse(a, srcs, null);
++    defer nl.deinit(a);
++    const roles = try np.guessRoles(a, &nl);
++    const st = try np.schematic.structure.analyze(a, a, &nl, roles);
++    const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
++    const verdicts = try np.report.verdicts(a, &nl, roles, &st, &sk, p, lib);
++    for (nl.hints, verdicts) |h, v| {
++        if (v.state != .honoured or h.args.len == 0) continue;
++        switch (h.verb) {
++            .label, .wire, .port, .role, .rail, .via, .route => {},
++            else => continue,
++        }
++        for (b.parent.nets) |n| {
++            if (!std.ascii.eqlIgnoreCase(h.args[0], deck.netKey(b.parent.cell, n))) continue;
++            for (deck.directive, deck.directive_cell) |line, c| {
++                if (c == b.parent.cell and std.ascii.eqlIgnoreCase(line, h.text)) return true;
++            }
++        }
++    }
++    return false;
++}
++
++/// Returns the optional view's ordered atom table, leaving the original scalar JSON intact.
++pub fn json(a: std.mem.Allocator, p: *const np.Placed, lib: *const np.Library, view: ?svg.Bundle) ![]const u8 {
++    const b = view orelse return "[]";
++    const Atom = struct { slot: usize, term: []const u8, net: []const u8, xy: [2]i32 };
++    var atoms: [4]Atom = undefined;
++    const class = lib.at(p.dev_class[b.dev]);
++    for (&atoms, b.first..) |*atom, k| {
++        const i = k - p.dev_pin0[b.dev];
++        atom.* = .{ .slot = i, .term = class.terminals[i].name, .net = p.net_name[p.pin_net[k]], .xy = .{ p.pin_xy[k].x, p.pin_xy[k].y } };
++    }
++    return std.json.Stringify.valueAlloc(a, .{.{ .device = p.dev_name[b.dev], .label = b.label, .contact = atoms[0].xy, .atoms = atoms }}, .{});
++}

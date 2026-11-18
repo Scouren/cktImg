@@ -1,0 +1,7 @@
+warning: Git tree '/tmp/cktimg-rest-frames' is dirty
+cktimg: zig 0.17.0
+  zig build test                         every suite
+  zig build -Dschemify_plugin=true       netlist-import.wasm (the Schemify plugin)
+  zig build gallery -- --svgs out/       draw the textbook circuits
+541884 netlist-import.wasm
+38f85efa5a013c2fd846eae4591dca09c10037c55ec3de02f8357712c848b858  netlist-import.wasm

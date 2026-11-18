@@ -1,0 +1,4 @@
+original 8 ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+consumer 11 ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+permuted 11 ['Von', 'Vop', 'B_2_', 'B_3_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+called 11 ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']

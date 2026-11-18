@@ -1,0 +1,39 @@
+{
+  "devices": [
+    { "name": "cl", "class": "cap", "value": "1p", "rot": 3, "mirror": true, "pos": [320, 160], "pins": [{ "term": "a", "net": "vout", "xy": [320, 140] }, { "term": "b", "net": "net1", "xy": [320, 180] }] },
+    { "name": "mnp", "class": "nmos", "value": "nch l=0.15 w=1 nf=1 m=1", "rot": 3, "mirror": false, "pos": [280, 80], "pins": [{ "term": "d", "net": "vin", "xy": [280, 60] }, { "term": "g", "net": "net0", "xy": [260, 80] }, { "term": "s", "net": "vout", "xy": [280, 100] }], "bulk": "vss" },
+    { "name": "r1", "class": "res", "value": "1k", "rot": 3, "mirror": true, "pos": [280, 160], "pins": [{ "term": "a", "net": "vout", "xy": [280, 140] }, { "term": "b", "net": "fb", "xy": [280, 180] }] },
+    { "name": "r2", "class": "res", "value": "1k", "rot": 3, "mirror": true, "pos": [280, 240], "pins": [{ "term": "a", "net": "fb", "xy": [280, 220] }, { "term": "b", "net": "vss", "xy": [280, 260] }] },
+    { "name": "r3", "class": "res", "value": "1k", "rot": 3, "mirror": true, "pos": [320, 240], "pins": [{ "term": "a", "net": "net1", "xy": [320, 220] }, { "term": "b", "net": "vss", "xy": [320, 260] }] },
+    { "name": "x1", "class": "block:opamp", "value": "opamp", "rot": 0, "mirror": false, "pos": [140, 80], "pins": [{ "term": "vdd", "net": "vdd", "xy": [140, 0] }, { "term": "vss", "net": "vss", "xy": [100, 160] }, { "term": "inn", "net": "fb", "xy": [60, 100] }, { "term": "inp", "net": "vref", "xy": [60, 60] }, { "term": "vb2", "net": "vb2", "xy": [140, 160] }, { "term": "out", "net": "net0", "xy": [220, 80] }, { "term": "vb1", "net": "vb1", "xy": [120, 160] }, { "term": "vb3", "net": "vb3", "xy": [160, 160] }, { "term": "vb4", "net": "vb4", "xy": [180, 160] }] },
+    { "name": "_vdd6", "class": "vdd", "value": "", "rot": 0, "mirror": false, "pos": [140, -20], "pins": [{ "term": "p", "net": "vdd", "xy": [140, -20] }] },
+    { "name": "_gnd7", "class": "gnd", "value": "", "rot": 0, "mirror": false, "pos": [280, 260], "pins": [{ "term": "p", "net": "vss", "xy": [280, 260] }] },
+    { "name": "_gnd8", "class": "gnd", "value": "", "rot": 0, "mirror": false, "pos": [320, 260], "pins": [{ "term": "p", "net": "vss", "xy": [320, 260] }] },
+    { "name": "_gnd9", "class": "gnd", "value": "", "rot": 0, "mirror": false, "pos": [100, 180], "pins": [{ "term": "p", "net": "vss", "xy": [100, 180] }] },
+    { "name": "_ipin10", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [120, 180], "pins": [{ "term": "p", "net": "vb1", "xy": [120, 180] }] },
+    { "name": "_ipin11", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [140, 180], "pins": [{ "term": "p", "net": "vb2", "xy": [140, 180] }] },
+    { "name": "_ipin12", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [160, 180], "pins": [{ "term": "p", "net": "vb3", "xy": [160, 180] }] },
+    { "name": "_ipin13", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [180, 180], "pins": [{ "term": "p", "net": "vb4", "xy": [180, 180] }] },
+    { "name": "_ipin14", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [280, 40], "pins": [{ "term": "p", "net": "vin", "xy": [280, 40] }] },
+    { "name": "_ipin15", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [40, 60], "pins": [{ "term": "p", "net": "vref", "xy": [40, 60] }] },
+    { "name": "_opin16", "class": "opin", "value": "", "rot": 0, "mirror": false, "pos": [340, 120], "pins": [{ "term": "p", "net": "vout", "xy": [340, 120] }] }
+  ],
+  "nets": ["0", "vout", "net1", "vin", "net0", "vss", "fb", "vdd", "vref", "vb2", "vb1", "vb3", "vb4"],
+  "wires": [
+    { "net": "vout", "segments": [[[320, 140], [320, 120]], [[280, 100], [280, 120]], [[280, 140], [280, 120]], [[280, 120], [320, 120]], [[320, 120], [340, 120]]] },
+    { "net": "net1", "segments": [[[320, 180], [320, 220]]] },
+    { "net": "vin", "segments": [[[280, 60], [280, 40]]] },
+    { "net": "net0", "segments": [[[260, 80], [240, 80]], [[220, 80], [240, 80]]] },
+    { "net": "vss", "segments": [[[100, 160], [100, 180]]] },
+    { "net": "fb", "segments": [[[280, 180], [280, 200]], [[280, 220], [280, 200]], [[60, 100], [40, 100], [40, 200]], [[40, 200], [280, 200]]] },
+    { "net": "vdd", "segments": [[[140, 0], [140, -20]]] },
+    { "net": "vref", "segments": [[[60, 60], [40, 60]]] },
+    { "net": "vb2", "segments": [[[140, 160], [140, 180]]] },
+    { "net": "vb1", "segments": [[[120, 160], [120, 180]]] },
+    { "net": "vb3", "segments": [[[160, 160], [160, 180]]] },
+    { "net": "vb4", "segments": [[[180, 160], [180, 180]]] }
+  ],
+  "junctions": [[280, 200], [320, 120], [280, 120]],
+  "labels": [],
+  "no_connects": []
+}

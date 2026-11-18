@@ -1,0 +1,39 @@
+error: unknown option '--bundles'
+cktimg-json — place a SPICE netlist and write the geometry as JSON
+
+Usage: cktimg-json [options] <netlist.spice> [out.json]
+
+Options:
+  --config <path>   layout settings and lint severities from a lint.zon file
+  --symbols <path>  device symbols from a .zon symbol file (default: built in)
+  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
+                    add a "target" block to the document
+  --svg <path>      also draw the placed schematic as SVG
+  --report <path>   also write the decision report: findings, each *@ line's
+                    verdict, scores, the engine's decisions, the lattice rows
+  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
+                    *@ lines to stdout
+  --from <path>     relay the deck from its last drawing (this tool's JSON):
+                    devices stay where it has them, and only what the deck's
+                    structure moves, or is new to it, is laid again
+  -h, --help        this message
+
+Exit status: 0 written; 1 bad command line, netlist, config, symbols or manifest
+(nothing written).
+
+Traceback (most recent call last):
+  File "/tmp/cktimg-rest-frames/tests/control_bus_native.py", line 53, in <module>
+    main(args.cli, args.out)
+    ~~~~^^^^^^^^^^^^^^^^^^^^
+  File "/tmp/cktimg-rest-frames/tests/control_bus_native.py", line 28, in main
+    grouped = json.loads(subprocess.check_output([cli, "--bundles", "--svg", out / (name + "-grouped.svg"), path]))
+                         ~~~~~~~~~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/nix/store/wcjbrd5w2k43lwjr6hh351nkq7nzszlc-python3-3.13.13-env/lib/python3.13/subprocess.py", line 472, in check_output
+    return run(*popenargs, stdout=PIPE, timeout=timeout, check=True,
+           ~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+               **kwargs).stdout
+               ^^^^^^^^^
+  File "/nix/store/wcjbrd5w2k43lwjr6hh351nkq7nzszlc-python3-3.13.13-env/lib/python3.13/subprocess.py", line 577, in run
+    raise CalledProcessError(retcode, process.args,
+                             output=stdout, stderr=stderr)
+subprocess.CalledProcessError: Command '[PosixPath('/tmp/cktimg-series-final-native'), '--bundles', '--svg', PosixPath('/tmp/cktimg-rest-bus-evidence/native-red/original-grouped.svg'), PosixPath('/tmp/cktimg-rest-bus-evidence/native-red/original.cir')]' returned non-zero exit status 1.

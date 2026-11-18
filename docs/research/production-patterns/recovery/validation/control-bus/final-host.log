@@ -1,0 +1,4 @@
+original five contacts ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+consumer eight contacts ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+permuted eight contacts ['Von', 'Vop', 'B_2_', 'B_3_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']
+called eight contacts ['Von', 'Vop', 'B_3_', 'B_2_', 'B_1_', 'B_0_', 'Vcn', 'Vcp', 'Varactor_Switched_caps']

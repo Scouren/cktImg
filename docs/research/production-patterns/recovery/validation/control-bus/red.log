@@ -1,0 +1,30 @@
+warning: Git tree '/tmp/cktimg-rest-frames' is dirty
+cktimg: zig 0.17.0
+  zig build test                         every suite
+  zig build -Dschemify_plugin=true       netlist-import.wasm (the Schemify plugin)
+  zig build gallery -- --svgs out/       draw the textbook circuits
+test
++- run test 22 pass, 1 fail (23 total)
+error: 'schemify.test.a closed switched-varactor control bus keeps four exact scalar names in one host contact' failed:
+       expected 2, found 0
+       /nix/store/90x7n96l24rm9qv03zfyz4zkb4dbj7g9-zig-0.17.0/lib/std/testing.zig:93:17: 0x130dc19 in expectEqualInner__func_961 (std.zig)
+                       return error.TestExpectedEqual;
+                       ^
+       /nix/store/90x7n96l24rm9qv03zfyz4zkb4dbj7g9-zig-0.17.0/lib/std/testing.zig:57:5: 0x130dfad in expectEqual (schemify.zig)
+           return expectEqualInner(T, expected, actual);
+           ^
+       /tmp/cktimg-rest-frames/tests/schemify.zig:206:9: 0x130e038 in test.a closed switched-varactor control bus keeps four exact scalar names in one host contact (schemify.zig)
+               try std.testing.expectEqual(@as(usize, if (i == 0) 2 else 0), std.mem.count(u8, files, bus));
+               ^
+failed command: ./.zig-cache/o/8c381a98191f999a14ee9166da5cd10c/test --cache-dir=./.zig-cache --seed=0x75dc6cac --listen=-
+
+codegen_check: call-boundary and residue mutations passed
+FOLDED      gen_analog_output vs hand_analog_output
+  function                         instruct   vector    calls indirect   panics branches
+  gen_analog_output                      92        0        2        0        0       11
+  hand_analog_output                     92        0        2        0        0       11
+
+Build Summary: 30/32 steps succeeded (1 failed); 279/280 tests passed (1 failed)
+test transitive failure
++- run test 22 pass, 1 fail (23 total)
+

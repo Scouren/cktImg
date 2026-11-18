@@ -1,0 +1,35 @@
+{
+  "gates": [],
+  "requests": [],
+  "metrics": { "crossings": 0, "bends": 2, "labelled": [] },
+  "decisions": [
+    "*@ upright cl r1 r2 r3",
+    "*@ face cl a up",
+    "*@ face mnp d up",
+    "*@ face mnp g left",
+    "*@ face r1 a up",
+    "*@ face r2 a up",
+    "*@ face r3 a up",
+    "*@ row r1 cl",
+    "*@ row r2 r3",
+    "*@ above mnp r1 r2",
+    "*@ order mnp cl",
+    "*@ weak cell cl 8 2",
+    "*@ weak cell mnp 0 0",
+    "*@ weak cell r1 0 2",
+    "*@ weak cell r2 0 4",
+    "*@ weak cell r3 8 4",
+    "*@ weak cell x1 -1 0",
+    "*@ weak at cl 8 4 MR270",
+    "*@ weak at mnp 7 2 R270",
+    "*@ weak at r1 7 4 MR270",
+    "*@ weak at r2 7 6 MR270",
+    "*@ weak at r3 8 6 MR270",
+    "*@ weak at x1 3.5000 2 R0"
+  ],
+  "grid": [
+    "row 0: x1@0 mnp@1",
+    "row 2: r1@1 cl@9",
+    "row 4: r2@1 r3@9"
+  ]
+}

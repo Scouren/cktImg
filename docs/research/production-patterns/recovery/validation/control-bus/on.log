@@ -1,0 +1,63 @@
+warning: Git tree '/tmp/cktimg-rest-frames' is dirty
+cktimg: zig 0.17.0
+  zig build test                         every suite
+  zig build -Dschemify_plugin=true       netlist-import.wasm (the Schemify plugin)
+  zig build gallery -- --svgs out/       draw the textbook circuits
+FOLDED      gen_analog_output vs hand_analog_output
+  function                         instruct   vector    calls indirect   panics branches
+  gen_analog_output                      92        0        2        0        0       11
+  hand_analog_output                     92        0        2        0        0       11
+
+codegen_check: call-boundary and residue mutations passed
+Build Summary: 34/34 steps succeeded; 281/281 tests passed
+test success
++- run test 97 pass (97 total) 116ms MaxRSS:11M
+|  +- compile test debug native success 906ms MaxRSS:223M
+|     +- options cached
++- run test 131 pass (131 total) 36s MaxRSS:1G
+|  +- compile test debug native success 970ms MaxRSS:234M
+|     +- options (reused)
++- run test cached
+|  +- compile test debug native cached 8ms MaxRSS:33M
+|     +- WriteFile blocks.spice cached
+|     +- WriteFile ag-1053.cir cached
+|     +- options (reused)
++- run exe abi_test success 4ms
+|  +- compile exe abi_test debug native success 104ms MaxRSS:104M
+|     +- WriteFile cached
+|     +- compile lib cktimg debug native success 666ms MaxRSS:277M
+|     |  +- options (reused)
+|     +- compile lib cktimg debug native (+1 more reused dependencies)
++- run test 30 pass (30 total) 182ms MaxRSS:9M
+|  +- compile test debug native success 738ms MaxRSS:228M
+|     +- options (reused)
++- run test 23 pass (23 total) 12s MaxRSS:329M
+|  +- compile test debug native success 827ms MaxRSS:235M
+|     +- options (reused)
++- test-codegen success
+|  +- run python3 success 84ms
+|  |  +- compile obj codegen-probe fast x86_64-linux success 152ms MaxRSS:116M
+|  |     +- options cached
+|  +- run python3 success 31ms
++- run python3 success 343ms
+|  +- compile exe parent-census debug native cached 5ms MaxRSS:33M
+|     +- WriteFile symbols.zon cached
+|     +- options (reused)
++- run python3 (shared-frames) cached
+|  +- compile exe cktimg-json debug native cached 8ms MaxRSS:30M
+|     +- WriteFile symbols.zon (reused)
+|     +- options (reused)
++- run python3 success 1s
+|  +- compile exe cktimg-json debug native (+2 more reused dependencies)
++- run python3 success 703ms
+|  +- compile exe cktimg-json debug native (+2 more reused dependencies)
++- run test cached
+|  +- compile test debug native cached 8ms MaxRSS:33M
+|     +- WriteFile symbols.zon (reused)
+|     +- options (reused)
++- run python3 (tikz-selection) cached
+   +- compile exe cktimg-json debug native (+2 more reused dependencies)
+   +- compile exe cktimg-tex debug native cached 8ms MaxRSS:33M
+      +- WriteFile symbols.zon (reused)
+      +- options (reused)
+
