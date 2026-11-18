@@ -4,6 +4,8 @@ Each row compares the same converted circuit before and after the indicated chan
 
 Start with the AG1080 comparison to see a generated stage beside its published circuit, or use the checkpoint index to reproduce a specific change. [AG1080 and the three other compact-stage cases](common-control/README.md) · [PFD and amplifier symbols in the actual editor](editor-symbols/README.md) · [All implementation commits and corpus results](checkpoints.md) · [Status of the 27 rules](rule-coverage.md)
 
+The next comparator checkpoint places two preamplifiers above their latch in AG1079 and AG1080. The drawings show the previous local-stage layout, the new arrangement and the corresponding original. [Comparator panel placement](comparator-panels/README.md)
+
 Published panels are linked to the pinned upstream sources. The repository also contains the converted input decks and cached redraws. [AnalogGenie](../../../external/examples/analoggenie) · [AnalogRetriever](../../../external/examples/analogretriever) · [AMS-Net](../../../external/examples/amsnet) · [CircuitThink](../../../external/examples/circuitthink)
 
 The comparator studies trace the same output connections through the native SVG and Schemify, then measure the physical placement of the five-device input stages. The second study includes actual editor exports alongside the native drawings. [Intermediate output wires](parent-outputs.md) · [Common-control input stages](common-control/README.md)

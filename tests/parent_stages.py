@@ -37,6 +37,38 @@ def criteria(pins, stage, max_span):
     }
 
 
+
+def panel_order(pins, name, aliases=None):
+    if name not in ('ag-1079', 'ag-1080'):
+        return
+    aliases = aliases or {}
+    def channel(i):
+        n = 'm' + str(i)
+        a, b = (pins[(aliases.get(n, n), t)] for t in (0, 2))
+        return (a[0] + b[0]) / 2, (a[1] + b[1]) / 2
+    # Frozen upstream Book1079/Book1080. Both put a differential stage on
+    # the left and its complementary receiving stacks on the right. The
+    # NMOS-input row is uppermost when both input polarities occur.
+    panels = [[(1, 2, 3, 4, 5), ((8, 6), (9, 7))]]
+    if name == 'ag-1080':
+        panels.append([(10, 11, 12, 13, 14), ((15, 17), (16, 18))])
+    rows = []
+    for members, stacks in panels:
+        left = [channel(i) for i in members]
+        right = []
+        for top, bottom in stacks:
+            a, b = channel(top), channel(bottom)
+            assert a[0] == b[0] and a[1] < b[1], (name, 'receiving column', top, bottom, a, b)
+            right.extend((a, b))
+        assert max(p[0] for p in left) < min(p[0] for p in right), (name, 'successive stages share a row', left, right)
+        assert max(min(p[1] for p in side) for side in (left, right)) < min(max(p[1] for p in side) for side in (left, right))
+        rows.append(left + right)
+    lower = range(11, 21) if name == 'ag-1079' else range(19, 33)
+    rows.append([channel(i) for i in lower])
+    for before, after in zip(rows, rows[1:]):
+        assert max(p[1] for p in before) < min(p[1] for p in after), (name, 'independent tiers', before, after)
+
+
 def native_pins(doc):
     terms = {'d': 0, 's': 2}
     return {(d['name'], terms[p['term']]): p['xy'] for d in doc['devices'] for p in d['pins'] if p['term'] in terms}
@@ -59,6 +91,7 @@ def native(binary, paths):
             subprocess.run([binary, '--report', report, file, out], check=True)
             pins = native_pins(json.loads(out.read_bytes()))
             assert not json.loads(report.read_bytes())['gates'], file
+            panel_order(pins, file.stem)
             for stage in STAGES[file.stem]:
                 result = criteria(pins, stage, (140, 150))
                 assert all(result.values()) == (file.stem != 'ag-1028'), (file, stage, result)
@@ -69,6 +102,7 @@ def native(binary, paths):
                 subprocess.run([binary, '--report', report, renamed, out], check=True)
                 assert not json.loads(report.read_bytes())['gates'], file
                 pins = native_pins(json.loads(out.read_bytes()))
+                panel_order(pins, file.stem, names)
                 for sign, *members in STAGES[file.stem]:
                     result = criteria(pins, [sign, *(names[n] for n in members)], (140, 150))
                     assert all(result.values()), (file, members, result)
@@ -103,6 +137,7 @@ def host(core, projects):
         for stage in stages:
             result = criteria(geom[1], stage, (280, 210))
             assert all(result.values()), (name, stage, result)
+        panel_order(geom[1], name)
         if name in ('ag-1079', 'ag-1080'):
             verify(name, *geom, True)
 
