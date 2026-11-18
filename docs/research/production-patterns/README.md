@@ -174,3 +174,5 @@ The canonical PFD sides cost one crossing in the complete AG439 native drawing (
 [ag516]: https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/516/Book516.png
 
 A requested axis through two independent tail sources is checked on the final device and its terminals. The comparison also shows how a fixed pose affects the report on a requested mirror. [Caller symmetry examples](caller-symmetry/README.md)
+
+The degeneration census checks which source resistors and current sources belong to each branch. [Source regions and their attachments](source-regions/README.md)

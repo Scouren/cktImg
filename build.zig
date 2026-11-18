@@ -199,6 +199,12 @@ pub fn build(b: *std.Build) void {
     census_run.addPassthruArgs();
     census_run.has_side_effects = true;
     b.step("parent-census", "Examine selected-cell MOS parents (one JSON record per input deck)").dependOn(&census_run.step);
+    const source_check = b.addSystemCommand(&.{"python3"});
+    source_check.addFileArg(b.path("tests/source_regions.py"));
+    source_check.addArtifactArg(census);
+    for ([_][]const u8{ "ag-220.cir", "ag-396.cir", "ag-459.cir", "ag-517.cir", "ag-558.cir", "ag-718.cir" }) |name|
+        source_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    test_step.dependOn(&source_check.step);
     const json_exe = b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod });
     b.installArtifact(json_exe);
     const stage_check = b.addSystemCommand(&.{"python3"});

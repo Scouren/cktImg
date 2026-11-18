@@ -26,6 +26,48 @@ pub fn main(init: std.process.Init) !void {
         const r = try np.local_parents.collect(a, ctx, .{});
         var j = J{ .writer = &sw.interface };
         try write(&j, path, &nl, r);
+        const source_regions = try np.source_regions.collect(a, raw, &nl);
+        try j.objectField("source_region_scope");
+        try j.write(@tagName(source_regions.scope));
+        try j.objectField("source_regions");
+        try j.beginArray();
+        for (source_regions.regions) |region| {
+            try j.beginObject();
+            try j.objectField("disposition");
+            try j.write(@tagName(region.disposition));
+            try j.objectField("members");
+            try edgeNames(&j, &nl, region.members);
+            try j.objectField("owned");
+            try edgeNames(&j, &nl, region.owned);
+            try j.objectField("attachment_cards");
+            try j.beginArray();
+            for (region.owned) |e| {
+                if (std.mem.indexOfScalar(np.netlist.EdgeId, region.members, e) != null) continue;
+                try j.beginObject();
+                try j.objectField("device");
+                try j.write(nl.graph.edges.items(.name)[e.index()]);
+                try j.objectField("ordered_nets");
+                try j.beginArray();
+                for (nl.graph.members(e)) |n| try j.write(nl.graph.vertices.items(.name)[n.index()]);
+                try j.endArray();
+                try j.objectField("parameters");
+                try j.write(nl.params(e));
+                try j.endObject();
+            }
+            try j.endArray();
+            try j.objectField("incidence");
+            try j.beginArray();
+            for (region.incidence) |hit| {
+                try j.beginArray();
+                try j.write(nl.graph.edges.items(.name)[hit.device.index()]);
+                try j.write(hit.terminal);
+                try j.write(nl.graph.vertices.items(.name)[hit.net.index()]);
+                try j.endArray();
+            }
+            try j.endArray();
+            try j.endObject();
+        }
+        try j.endArray();
         try j.objectField("common_control_stages");
         try j.beginArray();
         for (try np.parent_stages.collect(a, ctx, r)) |stage| {
@@ -117,4 +159,10 @@ fn map(j: *J, names: []const []const u8, ids: []const u32) !void {
         try j.write(names[id]);
     };
     try j.endObject();
+}
+
+fn edgeNames(j: *J, nl: *const np.netlist.Netlist, ids: []const np.netlist.EdgeId) !void {
+    try j.beginArray();
+    for (ids) |e| try j.write(nl.graph.edges.items(.name)[e.index()]);
+    try j.endArray();
 }

@@ -33,6 +33,8 @@ pub const local_parents = @import("local_parents.zig");
 pub const parent_outputs = @import("parent_outputs.zig");
 /// Relative organization of a complete five-MOS common-control parent.
 pub const parent_stages = @import("parent_stages.zig");
+/// Cold source-region incidence and passive/current/tail attachment witnesses.
+pub const source_regions = @import("source_regions.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
