@@ -10,7 +10,6 @@ const Pt = engine.Pt;
 const Range = @import("spice.zig").Range;
 const Allocator = std.mem.Allocator;
 const ArrayList = std.ArrayList;
-const mem = std.mem;
 const assert = std.debug.assert;
 
 const Seg = [4]i32;
@@ -110,7 +109,7 @@ pub fn onSeg(p: P, w: Seg) bool {
 pub fn spot(a: Allocator, wires: []const Seg, mine: Range) Allocator.Error!?P {
     const order = try a.alloc(u32, mine.len());
     for (order, mine.lo..) |*o, i| o.* = @intCast(i);
-    mem.sort(u32, order, wires, struct {
+    std.sort.heap(u32, order, wires, struct {
         fn lt(ws: []const Seg, x: u32, y: u32) bool {
             const lx = span(ws[x]);
             const ly = span(ws[y]);

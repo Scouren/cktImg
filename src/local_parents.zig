@@ -43,7 +43,7 @@ pub fn collect(arena: Allocator, ctx: context.Context, limits: reflection.Limits
     const v = nl.graph.vertexCount();
     const order = try arena.alloc(u32, n);
     for (order, 0..) |*d, i| d.* = @intCast(i);
-    std.mem.sort(u32, order, nl, lessDevice);
+    std.sort.heap(u32, order, nl, lessDevice);
     var roots = try arena.alloc(u32, n);
     for (roots, 0..) |*d, i| d.* = @intCast(i);
     const driver = try arena.alloc(u32, v);

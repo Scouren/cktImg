@@ -204,12 +204,12 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
     const Order = struct { roles: []const Role, rank: []const u32, pins_of: []const std.ArrayList(u32) };
-    std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank, .pins_of = pins_of }, struct {
+    std.sort.heap(u32, order, Order{ .roles = s.roles, .rank = net_rank, .pins_of = pins_of }, struct {
         fn lt(o: Order, x: u32, y: u32) bool {
             const fx = drawStep(o.roles[x], o.pins_of[x].items.len);
             const fy = drawStep(o.roles[y], o.pins_of[y].items.len);
             if (fx != fy) return fx < fy;
-            return o.rank[x] < o.rank[y];
+            return o.rank[x] < o.rank[y] or (o.rank[x] == o.rank[y] and x < y);
         }
     }.lt);
     // Pinned routes and vias claim their room before anything else.

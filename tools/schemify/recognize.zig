@@ -410,7 +410,7 @@ fn boxLayout(a: Allocator, names: []const []const u8, dirs: []const Dir, sides: 
             on[m] = @intCast(k);
             m += 1;
         };
-        mem.sort(u32, on[0..m], ranks, struct {
+        std.sort.heap(u32, on[0..m], ranks, struct {
             fn lt(rk: []const u16, x: u32, y: u32) bool {
                 return rk[x] < rk[y] or (rk[x] == rk[y] and x < y);
             }
