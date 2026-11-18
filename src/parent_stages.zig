@@ -3,6 +3,7 @@
 //! Contents:
 //! - `pub const Stage`, `pub fn collect(arena: std.mem.Allocator, ctx: context.Context, parents: local.Parents) ![]const Stage`
 //! - `pub fn arrange(a: std.mem.Allocator, s: *const sch.Schematic, sk: *const skeleton.Skeleton, at: [][2]f32, stages: []const Stage) !bool`
+//! - `pub fn clearDevice`
 //! - `pub fn clearWires(p: *const placed.Placed, library: *const lib.Library, nl: *const netlist.Netlist, stages: []const Stage) bool`
 const std = @import("std");
 const netlist = @import("netlist.zig");
@@ -135,20 +136,23 @@ pub fn arrange(a: std.mem.Allocator, s: *const sch.Schematic, sk: *const skeleto
 /// complete selected symbol frames, after routing, off-grid leads and thinning.
 pub fn clearWires(p: *const placed.Placed, library: *const lib.Library, nl: *const netlist.Netlist, stages: []const Stage) bool {
     if (!validMembers(stages, nl.graph.edgeCount())) return false;
-    for (stages) |stage| {
-        for (stage.devices) |source_device| {
-            const name = nl.graph.edges.items(.name)[source_device];
-            const d = checks.deviceIn(p, name) orelse return false;
-            // Coordinates are integral. The one-unit inset leaves the four
-            // boundary contacts available for their incident wire endpoints.
-            const inside = p.deviceRect(library, d).grow(-1);
-            for (0..p.netCount()) |n| {
-                var paths = p.segments(n);
-                while (paths.next()) |path| {
-                    for (path[0 .. path.len - 1], path[1..]) |a, b| {
-                        if (inside.intersects(lib.Rect.fromCorners(a, b))) return false;
-                    }
-                }
+    for (stages) |stage| for (stage.devices) |d| if (!clearDevice(p, library, nl, d)) return false;
+    return true;
+}
+
+/// Checks one original graph device against every final routed segment.
+pub fn clearDevice(p: *const placed.Placed, library: *const lib.Library, nl: *const netlist.Netlist, source_device: u32) bool {
+    if (source_device >= nl.graph.edgeCount()) return false;
+    const name = nl.graph.edges.items(.name)[source_device];
+    const d = checks.deviceIn(p, name) orelse return false;
+    // Coordinates are integral. The one-unit inset leaves the four
+    // boundary contacts available for their incident wire endpoints.
+    const inside = p.deviceRect(library, d).grow(-1);
+    for (0..p.netCount()) |n| {
+        var paths = p.segments(n);
+        while (paths.next()) |path| {
+            for (path[0 .. path.len - 1], path[1..]) |a, b| {
+                if (inside.intersects(lib.Rect.fromCorners(a, b))) return false;
             }
         }
     }

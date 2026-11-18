@@ -187,31 +187,43 @@ fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const 
     if (stages_.len > 0 or bridge != null) {
         const roles = try guessRoles(gpa, nl);
         defer gpa.free(roles);
-        var accepted = false;
-        var diagram = try schematic.sketch.layQualified(gpa, nl, roles, lib, cfg.layout, pairs, stages_, bridge, &accepted);
-        defer diagram.deinit();
-        if (accepted) {
-            var candidate = try Placed.init(gpa, &diagram, nl);
-            errdefer candidate.deinit();
-            var findings: std.ArrayList(checks.Finding) = .empty;
-            defer findings.deinit(gpa);
-            try checks.find(gpa, &findings, &candidate, lib);
-            const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
-            if (findings.items.len == 0 and bridge_intact and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
-                const intent = @import("parent_intent.zig");
-                if (!intent.needsDrawing(nl)) return candidate;
-                var incumbent = try placeBound(gpa, gpa, cfg, lib, nl, pairs);
-                errdefer incumbent.deinit();
-                var scratch = std.heap.ArenaAllocator.init(gpa);
-                defer scratch.deinit();
-                if (try intent.preserved(scratch.allocator(), nl, roles, cfg.layout, lib, &incumbent, &candidate)) {
+        const try_panels = @import("comparator_panels.zig").eligible(stages_, pairs);
+        for (0..if (try_panels) @as(usize, 2) else 1) |attempt| {
+            const panels = try_panels and attempt == 0;
+            var accepted = false;
+            var diagram = try schematic.sketch.layPanels(gpa, nl, roles, lib, cfg.layout, pairs, stages_, bridge, panels, &accepted);
+            defer diagram.deinit();
+            if (accepted) {
+                var candidate = try Placed.init(gpa, &diagram, nl);
+                errdefer candidate.deinit();
+                var findings: std.ArrayList(checks.Finding) = .empty;
+                defer findings.deinit(gpa);
+                try checks.find(gpa, &findings, &candidate, lib);
+                const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
+                const receivers_clear = if (panels) clear: {
+                    for (pairs) |pair| for (pair) |o| {
+                        if (!parent_stages.clearDevice(&candidate, lib, nl, o.pmos) or !parent_stages.clearDevice(&candidate, lib, nl, o.nmos)) break :clear false;
+                    };
+                    break :clear true;
+                } else true;
+                if (findings.items.len == 0 and bridge_intact and receivers_clear and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
+                    const intent = @import("parent_intent.zig");
+                    if (!intent.needsDrawing(nl)) return candidate;
+                    var incumbent = try placeBound(gpa, gpa, cfg, lib, nl, pairs);
+                    errdefer incumbent.deinit();
+                    var scratch = std.heap.ArenaAllocator.init(gpa);
+                    defer scratch.deinit();
+                    if (try intent.preserved(scratch.allocator(), nl, roles, cfg.layout, lib, &incumbent, &candidate)) {
+                        incumbent.deinit();
+                        return candidate;
+                    }
+                    candidate.deinit();
+                    if (!panels) return incumbent;
                     incumbent.deinit();
-                    return candidate;
+                    continue;
                 }
                 candidate.deinit();
-                return incumbent;
             }
-            candidate.deinit();
         }
     }
     return placeBound(gpa, gpa, cfg, lib, nl, pairs);

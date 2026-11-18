@@ -106,7 +106,7 @@
 //!   stays and other caller geometry keep precedence. `bias_neighbors`
 //!
 //! Contents:
-//! - `pub const parent_parts`
+//! - `pub const parent_parts`, `pub fn layPanels`
 //! - `pub fn layWithParents`, `pub fn layOrganized`, `pub fn layQualified`, `pub fn drawWithParents`
 //! - `pub fn lay(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout) !Schematic`
 //! - `pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton) !void`
@@ -188,6 +188,11 @@ pub fn layOrganized(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib
 
 /// Draws source-qualified geometry and reports its physical acceptance.
 pub fn layQualified(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !Schematic {
+    return layPanels(gpa, nl, roles, lib, layout, pairs, stages, bridge, false, accepted);
+}
+
+/// Runs a complete panel trial when requested and reports the final route admission.
+pub fn layPanels(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
@@ -195,7 +200,7 @@ pub fn layQualified(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib
     const sk = try skeleton.place(gpa, a, nl, roles, &st, .{ .shelf = layout.shelf });
     // `place`'s skeletons always hold.
     skeleton.validate(&sk, nl) catch unreachable;
-    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs, stages, bridge, accepted);
+    try drawValid(gpa, &s, nl, layout, &st, &sk, pairs, stages, bridge, panels, accepted);
     return s;
 }
 
@@ -213,12 +218,12 @@ pub fn draw(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.La
 pub fn drawWithParents(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair) !void {
     try skeleton.validate(sk, nl);
     var accepted = false;
-    try drawValid(gpa, s, nl, layout, st, sk, pairs, &.{}, null, &accepted);
+    try drawValid(gpa, s, nl, layout, st, sk, pairs, &.{}, null, false, &accepted);
 }
 
 // ---- private ----
 
-fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !void {
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !void {
     // The deck's drawing lines; their verdicts are the report's to give.
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
@@ -306,6 +311,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         } else try available.append(sa, stage);
     }
     accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
+    if (panels) accepted.* = accepted.* and @import("comparator_panels.zig").arrange(nl, s, sk, at, available.items, pairs, states, parent_verdicts);
     if (bridge) |request| accepted.* = source_bridge.arrange(nl, s, sk, at, request, parent_verdicts);
     trial.holdPlaces(s, requested_places, ats, at);
     // Wired; then a net crossing too many wires is named and the drawing
