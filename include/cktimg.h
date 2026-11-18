@@ -182,6 +182,12 @@ const char *cktimg_pin_net(const CktimgSch *sch, size_t d, size_t p);
 bool cktimg_pin_xy(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
                    int32_t *y);
 
+/* World coordinate of a visible terminal on the selected class. Returns
+ * false and leaves x/y untouched for an absent or hidden terminal or an
+ * invalid index. A contact at the class origin is a valid result. */
+bool cktimg_pin_contact(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
+                        int32_t *y);
+
 /* ---------------------------------------------------------------------------
  * Nets and wires. WIRE INDEX IS NET INDEX; a net drawn with no wire has 0
  * segments. A segment is a Manhattan polyline of >= 2 points.

@@ -340,6 +340,16 @@ pub export fn cktimg_pin_xy(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32
     return true;
 }
 
+/// Writes the placed coordinate of a class-supported visible pin. The
+/// legacy pin coordinate query also covers electrically present hidden pins.
+pub export fn cktimg_pin_contact(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32, y: ?*i32) bool {
+    const pin = pinOf(sch, d, p) orelse return false;
+    const s = sch.?;
+    if (!s.lib.at(s.placed.dev_class[d]).shows(p)) return false;
+    put(s.placed.pin_xy[pin], x, y);
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // Nets, wires, dots, labels, crosses
 // ---------------------------------------------------------------------------
