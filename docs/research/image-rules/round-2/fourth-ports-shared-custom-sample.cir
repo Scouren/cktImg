@@ -1,0 +1,16 @@
+* Same opaque definition, two distinct local signed-slot requirements.
+.model nch nmos
+.subckt opamp VDD VSS INN INP OUT
+.ends opamp
+.subckt dut VDD VSS VIN VREF VOUT SIN SOUT PHI1 PHI2
+XREG VDD VSS fb VREF gate opamp
+MREG VIN gate VOUT VSS nch
+RUP VOUT fb 1k
+RLOW fb VSS 1k
+XSAMPLE VDD VSS sn VSS SOUT opamp
+MS1 SIN PHI1 sj VSS nch
+MS2 sj PHI2 sn VSS nch
+CS sj VSS 1p
+CF sn SOUT 1p
+*@ class XSAMPLE caller_signed
+.ends dut

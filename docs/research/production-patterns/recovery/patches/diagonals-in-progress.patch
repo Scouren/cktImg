@@ -1,0 +1,1698 @@
+diff --git a/build.zig b/build.zig
+index 5e054664..e775cb01 100644
+--- a/build.zig
++++ b/build.zig
+@@ -106,7 +106,9 @@ pub fn build(b: *std.Build) void {
+     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
+     test_step.dependOn(&b.addRunArtifact(cases).step);
+     test_step.dependOn(&b.addRunArtifact(api).step);
+-    test_step.dependOn(&b.addRunArtifact(abi_test).step);
++    const abi_run = b.addRunArtifact(abi_test);
++    abi_run.addFileArg(b.path("tests/symbols.zon"));
++    test_step.dependOn(&abi_run.step);
+     test_step.dependOn(&b.addRunArtifact(plugin_tests).step);
+     test_step.dependOn(&b.addRunArtifact(fixture_tests).step);
+ 
+@@ -222,6 +224,13 @@ pub fn build(b: *std.Build) void {
+     bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.cir"));
+     bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.human.json"));
+     test_step.dependOn(&bridge_check.step);
++
++    const diagonal_check = b.addSystemCommand(&.{"python3"});
++    diagonal_check.addFileArg(b.path("tests/diagonal_feedback.py"));
++    diagonal_check.addArtifactArg(json_exe);
++    for ([_][]const u8{ "ag-90.cir", "ag-404.cir", "ag-647.cir", "ag-493.cir", "ag-1080.cir" }) |name|
++        diagonal_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
++    test_step.dependOn(&diagonal_check.step);
+     test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = json_mod })).step);
+ 
+     if (latex_renderer) {
+diff --git a/docs/API.md b/docs/API.md
+index b2854273..32c6e2de 100644
+--- a/docs/API.md
++++ b/docs/API.md
+@@ -128,6 +128,8 @@ The JSON, SVG and TeX commands can select the last subcircuit in a file containi
+ 
+ A Zig caller that retains the original source can use `parent_context.bind` and `local_parents.collect` before choosing a layout. `placeBound` accepts the qualified output-wire pairs. `placeOrganized` also accepts qualified local stages. `source_bridge.fromSource` and `placeSourceBridge` cover the equal-resistor source bridge. The geometry proposals require compatible actual symbols and the default layout. The native CLI and editor call sites show those checks and the ordinary-layout fallback. [Native selection](../tools/json.zig) · [Schemify selection](../tools/schemify/parent_outputs.zig) · [Production comparisons](research/production-patterns/README.md)
+ 
++A consumer that accepts integer 45-degree wire segments can set `cfg.geometry = .allow_45`. The C entry point is `cktimg_parse_place_geometry(lib, src, zon, CKTIMG_ALLOW_45, &report)`. The ordinary C entry point and the default Zig configuration produce Manhattan wires. A matching differential stage may receive two crossing feedback segments between cardinal terminal leads. A through-crossing of distinct nets has no junction, including when it falls halfway between integer coordinates. The wire point and pin APIs retain integer coordinates.
++
+ ### 4. Many documents, one set of pages
+ 
+ ```zig
+diff --git a/docs/research/production-patterns/diagonal-feedback/host-after.svg b/docs/research/production-patterns/diagonal-feedback/host-after.svg
+new file mode 100644
+index 00000000..b0ed2938
+--- /dev/null
++++ b/docs/research/production-patterns/diagonal-feedback/host-after.svg
+@@ -0,0 +1,144 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="223.6 -48 422.4 443" width="422.4" height="443">
++<rect id="background" x="223.6" y="-48" width="422.4" height="443" fill="#16181c"/>
++<line x1="570" y1="180" x2="560" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="560" y1="170" x2="560" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="170" x2="557.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="170" x2="530" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="190" x2="530" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="530" y1="150" x2="530" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="190" x2="530" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="557.5" y1="180" x2="530" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="490" y1="30" x2="500" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="500" y1="20" x2="500" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="20" x2="502.5" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="20" x2="530" y2="20" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="40" x2="530" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="530" y1="0" x2="530" y2="20" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="40" x2="530" y2="60" stroke="#8fb84a" stroke-width="1"/>
++<line x1="502.5" y1="30" x2="530" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="410" y1="300" x2="420" y2="300" stroke="#8fb84a" stroke-width="1"/>
++<line x1="420" y1="290" x2="420" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="290" x2="422.5" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="290" x2="450" y2="290" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="310" x2="450" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="450" y1="270" x2="450" y2="290" stroke="#8fb84a" stroke-width="1"/>
++<line x1="450" y1="310" x2="450" y2="330" stroke="#8fb84a" stroke-width="1"/>
++<line x1="422.5" y1="300" x2="450" y2="300" stroke="#8fb84a" stroke-width="1"/>
++<line x1="410" y1="30" x2="400" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="400" y1="20" x2="400" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="20" x2="397.5" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="20" x2="370" y2="20" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="40" x2="370" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="370" y1="0" x2="370" y2="20" stroke="#8fb84a" stroke-width="1"/>
++<line x1="370" y1="40" x2="370" y2="60" stroke="#8fb84a" stroke-width="1"/>
++<line x1="397.5" y1="30" x2="370" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="330" y1="180" x2="340" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="340" y1="170" x2="340" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="170" x2="342.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="170" x2="370" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="190" x2="370" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="370" y1="150" x2="370" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="370" y1="190" x2="370" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="342.5" y1="180" x2="370" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="-30" x2="560" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="60" x2="370" y2="75" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="90" x2="490" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="90" x2="370" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="240" x2="530" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="75" x2="430" y2="75" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="-30" x2="530" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="475" y1="30" x2="490" y2="30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="210" x2="370" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="380" y1="300" x2="410" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="240" x2="450" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="75" x2="370" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="120" x2="530" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="430" y1="75" x2="475" y2="30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="425" y1="30" x2="470" y2="75" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="-30" x2="530" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="75" x2="530" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="340" y1="-30" x2="370" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="240" x2="450" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="120" x2="560" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="330" x2="450" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="210" x2="530" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="300" y1="180" x2="330" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="60" x2="530" y2="75" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="410" y1="30" x2="425" y2="30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="-30" x2="370" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="470" y1="75" x2="530" y2="75" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="570" y1="180" x2="600" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<rect x="527.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="567.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="57.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="487.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="57.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="327.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="237.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<circle cx="370" cy="-30" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="370" cy="75" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="370" cy="90" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="450" cy="240" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="530" cy="-30" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="530" cy="75" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="530" cy="120" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<polygon points="532.5,190 537.5,191.875 537.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="522.5,20 527.5,18.125 527.5,21.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="447.5,310 442.5,311.875 442.5,308.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="377.5,20 372.5,18.125 372.5,21.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="367.5,190 362.5,191.875 362.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="560,120 565,115 585,115 585,125 565,125" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="450,360 455,365 455,385 445,385 445,365" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="490,90 495,85 515,85 515,95 495,95" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="600,180 595,185 575,185 575,175 595,175" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="380,300 375,305 355,305 355,295 375,295" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="300,180 295,185 275,185 275,175 295,175" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="560,-30 565,-35 585,-35 585,-25 565,-25" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<text x="516.6" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M2</text>
++<text x="512.4" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="499.8" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="535" y="2" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M4</text>
++<text x="535" y="11" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="535" y="34" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="455" y="272" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M5</text>
++<text x="455" y="281" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="455" y="304" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="356.6" y="2" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M3</text>
++<text x="352.4" y="11" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="339.8" y="34" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="375" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M1</text>
++<text x="375" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="375" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="374" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="534" y="13" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++<text x="454" y="283" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="414" y="223" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net0</text>
++<text x="337.2" y="13" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++<text x="497.2" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="588" y="112" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VOUT2</text>
++<text x="451" y="316" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="518" y="82" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VOUT1</text>
++<text x="533.6" y="172" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VIN2</text>
++<text x="323.2" y="292" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB1</text>
++<text x="233.6" y="172" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VIN1</text>
++<text x="588" y="-38" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++</svg>
+diff --git a/docs/research/production-patterns/diagonal-feedback/host-before.svg b/docs/research/production-patterns/diagonal-feedback/host-before.svg
+new file mode 100644
+index 00000000..71524d3f
+--- /dev/null
++++ b/docs/research/production-patterns/diagonal-feedback/host-before.svg
+@@ -0,0 +1,141 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="223.6 -48 422.4 443" width="422.4" height="443">
++<rect id="background" x="223.6" y="-48" width="422.4" height="443" fill="#16181c"/>
++<line x1="570" y1="180" x2="560" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="560" y1="170" x2="560" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="170" x2="557.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="170" x2="530" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="557.5" y1="190" x2="530" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="530" y1="150" x2="530" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="190" x2="530" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="557.5" y1="180" x2="530" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="490" y1="30" x2="500" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="500" y1="20" x2="500" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="20" x2="502.5" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="20" x2="530" y2="20" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="502.5" y1="40" x2="530" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="530" y1="0" x2="530" y2="20" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="40" x2="530" y2="60" stroke="#8fb84a" stroke-width="1"/>
++<line x1="502.5" y1="30" x2="530" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="410" y1="300" x2="420" y2="300" stroke="#8fb84a" stroke-width="1"/>
++<line x1="420" y1="290" x2="420" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="290" x2="422.5" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="290" x2="450" y2="290" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="422.5" y1="310" x2="450" y2="310" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="450" y1="270" x2="450" y2="290" stroke="#8fb84a" stroke-width="1"/>
++<line x1="450" y1="310" x2="450" y2="330" stroke="#8fb84a" stroke-width="1"/>
++<line x1="422.5" y1="300" x2="450" y2="300" stroke="#8fb84a" stroke-width="1"/>
++<line x1="410" y1="30" x2="400" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="400" y1="20" x2="400" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="20" x2="397.5" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="20" x2="370" y2="20" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="397.5" y1="40" x2="370" y2="40" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="370" y1="0" x2="370" y2="20" stroke="#8fb84a" stroke-width="1"/>
++<line x1="370" y1="40" x2="370" y2="60" stroke="#8fb84a" stroke-width="1"/>
++<line x1="397.5" y1="30" x2="370" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="330" y1="180" x2="340" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="340" y1="170" x2="340" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="170" x2="342.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="170" x2="370" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="342.5" y1="190" x2="370" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="370" y1="150" x2="370" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="370" y1="190" x2="370" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="342.5" y1="180" x2="370" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="530" y1="-30" x2="530" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="60" x2="370" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="460" y1="90" x2="490" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="460" y1="30" x2="460" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="210" x2="370" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="90" x2="460" y2="90" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="460" y1="30" x2="490" y2="30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="240" x2="450" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="240" x2="530" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="90" x2="370" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="570" y1="180" x2="600" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="300" y1="180" x2="330" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="340" y1="-30" x2="370" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="-30" x2="370" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="120" x2="530" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="-30" x2="560" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="210" x2="530" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="440" y1="30" x2="440" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="410" y1="30" x2="440" y2="30" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="330" x2="450" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="240" x2="450" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="60" x2="530" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="440" y1="120" x2="530" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="380" y1="300" x2="410" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="530" y1="120" x2="560" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="370" y1="-30" x2="530" y2="-30" stroke="#4f8fc9" stroke-width="1"/>
++<rect x="527.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="567.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="57.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="487.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="57.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="327.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="367.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="407.5" y="237.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="527.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<circle cx="370" cy="-30" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="370" cy="90" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="450" cy="240" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="460" cy="90" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="530" cy="-30" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="530" cy="120" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<polygon points="532.5,190 537.5,191.875 537.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="522.5,20 527.5,18.125 527.5,21.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="447.5,310 442.5,311.875 442.5,308.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="377.5,20 372.5,18.125 372.5,21.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="367.5,190 362.5,191.875 362.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="450,360 455,365 455,385 445,385 445,365" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="380,300 375,305 355,305 355,295 375,295" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="300,180 295,185 275,185 275,175 295,175" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="560,-30 565,-35 585,-35 585,-25 565,-25" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="560,120 565,115 585,115 585,125 565,125" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="600,180 595,185 575,185 575,175 595,175" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="490,90 495,85 515,85 515,95 495,95" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<text x="516.6" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M2</text>
++<text x="512.4" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="499.8" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="535" y="2" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M4</text>
++<text x="535" y="11" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="535" y="34" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="455" y="272" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M5</text>
++<text x="455" y="281" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="455" y="304" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="356.6" y="2" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M3</text>
++<text x="352.4" y="11" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="339.8" y="34" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="375" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M1</text>
++<text x="375" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="375" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="337.2" y="13" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++<text x="374" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="414" y="223" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net0</text>
++<text x="454" y="283" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="497.2" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="534" y="13" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++<text x="451" y="316" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="323.2" y="292" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VB1</text>
++<text x="233.6" y="172" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VIN1</text>
++<text x="588" y="-38" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VDD</text>
++<text x="588" y="112" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VOUT2</text>
++<text x="533.6" y="172" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VIN2</text>
++<text x="518" y="82" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VOUT1</text>
++</svg>
+diff --git a/docs/research/production-patterns/diagonal-feedback/native-after.svg b/docs/research/production-patterns/diagonal-feedback/native-after.svg
+new file mode 100644
+index 00000000..a3cb28f5
+--- /dev/null
++++ b/docs/research/production-patterns/diagonal-feedback/native-after.svg
+@@ -0,0 +1,83 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="474" height="564" viewBox="0 0 474 564" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="156.8,155.2 156.8,171.2 "/>
++<polyline points="156.8,171.2 156.8,187.2 "/>
++<polyline points="156.8,187.2 156.8,251.2 "/>
++<polyline points="284.8,123.2 268.8,123.2 220.8,171.2 156.8,171.2 "/>
++<polyline points="156.8,187.2 284.8,187.2 "/>
++<polyline points="124.8,283.2 92.8,283.2 "/>
++<polyline points="156.8,315.2 156.8,347.2 "/>
++<polyline points="316.8,315.2 316.8,347.2 "/>
++<polyline points="236.8,379.2 236.8,347.2 "/>
++<polyline points="156.8,347.2 236.8,347.2 "/>
++<polyline points="236.8,347.2 316.8,347.2 "/>
++<polyline points="236.8,443.2 236.8,475.2 "/>
++<polyline points="316.8,155.2 316.8,171.2 "/>
++<polyline points="316.8,171.2 316.8,219.2 "/>
++<polyline points="316.8,219.2 316.8,251.2 "/>
++<polyline points="188.8,123.2 204.8,123.2 252.8,171.2 316.8,171.2 "/>
++<polyline points="316.8,219.2 348.8,219.2 "/>
++<polyline points="348.8,283.2 380.8,283.2 "/>
++<polyline points="156.8,91.2 156.8,59.2 "/>
++<polyline points="316.8,91.2 316.8,59.2 "/>
++<polyline points="156.8,59.2 316.8,59.2 "/>
++<polyline points="124.8,59.2 156.8,59.2 "/>
++<polyline points="316.8,59.2 348.8,59.2 "/>
++<polyline points="204.8,411.2 172.8,411.2 "/>
++<polyline points="156.8,251.2 156.8,270.4 152.0,270.4 "/>
++<polyline points="156.8,315.2 156.8,296.0 152.0,296.0 "/>
++<polyline points="152.0,267.2 152.0,299.2 "/>
++<polyline points="145.6,270.4 145.6,296.0 "/>
++<polyline points="124.8,283.2 145.6,283.2 "/>
++<polyline points="316.8,251.2 316.8,270.4 321.6,270.4 "/>
++<polyline points="316.8,315.2 316.8,296.0 321.6,296.0 "/>
++<polyline points="321.6,267.2 321.6,299.2 "/>
++<polyline points="328.0,270.4 328.0,296.0 "/>
++<polyline points="348.8,283.2 328.0,283.2 "/>
++<polyline points="156.8,155.2 156.8,136.0 161.6,136.0 "/>
++<polyline points="156.8,91.2 156.8,110.4 161.6,110.4 "/>
++<polyline points="161.6,139.2 161.6,107.2 "/>
++<polyline points="168.0,136.0 168.0,110.4 "/>
++<circle cx="171.2" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="188.8,123.2 174.4,123.2 "/>
++<polyline points="316.8,155.2 316.8,136.0 312.0,136.0 "/>
++<polyline points="316.8,91.2 316.8,110.4 312.0,110.4 "/>
++<polyline points="312.0,139.2 312.0,107.2 "/>
++<polyline points="305.6,136.0 305.6,110.4 "/>
++<circle cx="302.4" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="284.8,123.2 299.2,123.2 "/>
++<polyline points="236.8,379.2 236.8,398.4 232.0,398.4 "/>
++<polyline points="236.8,443.2 236.8,424.0 232.0,424.0 "/>
++<polyline points="232.0,395.2 232.0,427.2 "/>
++<polyline points="225.6,398.4 225.6,424.0 "/>
++<polyline points="204.8,411.2 225.6,411.2 "/>
++<polyline points="222.4,475.2 251.2,475.2 "/>
++<polyline points="227.2,480.0 246.4,480.0 "/>
++<polyline points="233.6,484.8 240.0,484.8 "/>
++<circle cx="172.8" cy="411.2" r="4.8" fill="#ffffff"/>
++<text x="165.8" y="415.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vb1</text>
++<circle cx="92.8" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="85.8" y="287.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vin1</text>
++<circle cx="380.8" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="387.8" y="287.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vin2</text>
++<circle cx="284.8" cy="187.2" r="4.8" fill="#ffffff"/>
++<text x="291.8" y="191.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout1</text>
++<circle cx="348.8" cy="219.2" r="4.8" fill="#ffffff"/>
++<text x="355.8" y="223.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout2</text>
++</g>
++<circle cx="156.8" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="236.8" cy="347.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="156.8" cy="171.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="156.8" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="171.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="219.2" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="161.6" y="283.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="292.8" y="283.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="132.8" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="321.6" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="241.6" y="411.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="355.8" y="63.2" text-anchor="start" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">vdd</text>
++<text x="40.0" y="558.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/docs/research/production-patterns/diagonal-feedback/native-before.svg b/docs/research/production-patterns/diagonal-feedback/native-before.svg
+new file mode 100644
+index 00000000..7e3fab62
+--- /dev/null
++++ b/docs/research/production-patterns/diagonal-feedback/native-before.svg
+@@ -0,0 +1,82 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="474" height="564" viewBox="0 0 474 564" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="156.8,251.2 156.8,187.2 "/>
++<polyline points="156.8,155.2 156.8,187.2 "/>
++<polyline points="284.8,123.2 252.8,123.2 252.8,187.2 "/>
++<polyline points="156.8,187.2 252.8,187.2 "/>
++<polyline points="252.8,187.2 284.8,187.2 "/>
++<polyline points="124.8,283.2 92.8,283.2 "/>
++<polyline points="156.8,315.2 156.8,347.2 "/>
++<polyline points="316.8,315.2 316.8,347.2 "/>
++<polyline points="236.8,379.2 236.8,347.2 "/>
++<polyline points="156.8,347.2 236.8,347.2 "/>
++<polyline points="236.8,347.2 316.8,347.2 "/>
++<polyline points="236.8,443.2 236.8,475.2 "/>
++<polyline points="316.8,251.2 316.8,219.2 "/>
++<polyline points="188.8,123.2 220.8,123.2 220.8,219.2 "/>
++<polyline points="316.8,155.2 316.8,219.2 "/>
++<polyline points="220.8,219.2 316.8,219.2 "/>
++<polyline points="316.8,219.2 348.8,219.2 "/>
++<polyline points="348.8,283.2 380.8,283.2 "/>
++<polyline points="156.8,91.2 156.8,59.2 "/>
++<polyline points="316.8,91.2 316.8,59.2 "/>
++<polyline points="156.8,59.2 316.8,59.2 "/>
++<polyline points="124.8,59.2 156.8,59.2 "/>
++<polyline points="316.8,59.2 348.8,59.2 "/>
++<polyline points="204.8,411.2 172.8,411.2 "/>
++<polyline points="156.8,251.2 156.8,270.4 152.0,270.4 "/>
++<polyline points="156.8,315.2 156.8,296.0 152.0,296.0 "/>
++<polyline points="152.0,267.2 152.0,299.2 "/>
++<polyline points="145.6,270.4 145.6,296.0 "/>
++<polyline points="124.8,283.2 145.6,283.2 "/>
++<polyline points="316.8,251.2 316.8,270.4 321.6,270.4 "/>
++<polyline points="316.8,315.2 316.8,296.0 321.6,296.0 "/>
++<polyline points="321.6,267.2 321.6,299.2 "/>
++<polyline points="328.0,270.4 328.0,296.0 "/>
++<polyline points="348.8,283.2 328.0,283.2 "/>
++<polyline points="156.8,155.2 156.8,136.0 161.6,136.0 "/>
++<polyline points="156.8,91.2 156.8,110.4 161.6,110.4 "/>
++<polyline points="161.6,139.2 161.6,107.2 "/>
++<polyline points="168.0,136.0 168.0,110.4 "/>
++<circle cx="171.2" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="188.8,123.2 174.4,123.2 "/>
++<polyline points="316.8,155.2 316.8,136.0 312.0,136.0 "/>
++<polyline points="316.8,91.2 316.8,110.4 312.0,110.4 "/>
++<polyline points="312.0,139.2 312.0,107.2 "/>
++<polyline points="305.6,136.0 305.6,110.4 "/>
++<circle cx="302.4" cy="123.2" r="3.2" fill="#ffffff"/>
++<polyline points="284.8,123.2 299.2,123.2 "/>
++<polyline points="236.8,379.2 236.8,398.4 232.0,398.4 "/>
++<polyline points="236.8,443.2 236.8,424.0 232.0,424.0 "/>
++<polyline points="232.0,395.2 232.0,427.2 "/>
++<polyline points="225.6,398.4 225.6,424.0 "/>
++<polyline points="204.8,411.2 225.6,411.2 "/>
++<polyline points="222.4,475.2 251.2,475.2 "/>
++<polyline points="227.2,480.0 246.4,480.0 "/>
++<polyline points="233.6,484.8 240.0,484.8 "/>
++<circle cx="172.8" cy="411.2" r="4.8" fill="#ffffff"/>
++<text x="165.8" y="415.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vb1</text>
++<circle cx="92.8" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="85.8" y="287.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vin1</text>
++<circle cx="380.8" cy="283.2" r="4.8" fill="#ffffff"/>
++<text x="387.8" y="287.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vin2</text>
++<circle cx="284.8" cy="187.2" r="4.8" fill="#ffffff"/>
++<text x="291.8" y="191.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout1</text>
++<circle cx="348.8" cy="219.2" r="4.8" fill="#ffffff"/>
++<text x="355.8" y="223.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout2</text>
++</g>
++<circle cx="156.8" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="59.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="236.8" cy="347.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="156.8" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="252.8" cy="187.2" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="219.2" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="161.6" y="283.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="292.8" y="283.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="132.8" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="321.6" y="123.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="241.6" y="411.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="355.8" y="63.2" text-anchor="start" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">vdd</text>
++<text x="40.0" y="558.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/include/cktimg.h b/include/cktimg.h
+index 2b87fa65..476533ab 100644
+--- a/include/cktimg.h
++++ b/include/cktimg.h
+@@ -135,6 +135,14 @@ bool cktimg_lib_load_zon(CktimgLib *lib, const char *text, char **out_report);
+ CktimgSch *cktimg_parse_place(CktimgLib *lib, const char *src, const char *zon,
+                               char **out_report);
+ 
++/* Legacy placement emits Manhattan wires. Pass CKTIMG_ALLOW_45 to admit a
++ * verified reciprocal gate pair with two interior diagonals; all coordinates
++ * are still int32_t, and no layout is required to contain a diagonal.
++ * Unknown geometry values return NULL. */
++enum { CKTIMG_MANHATTAN = 0, CKTIMG_ALLOW_45 = 1 };
++CktimgSch *cktimg_parse_place_geometry(CktimgLib *lib, const char *src, const char *zon,
++                                       uint8_t geometry, char **out_report);
++
+ void cktimg_sch_free(CktimgSch *sch);
+ void cktimg_string_free(char *s);
+ 
+@@ -184,7 +192,7 @@ bool cktimg_pin_xy(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
+ 
+ /* ---------------------------------------------------------------------------
+  * Nets and wires. WIRE INDEX IS NET INDEX; a net drawn with no wire has 0
+- * segments. A segment is a Manhattan polyline of >= 2 points.
++ * segments. A segment is a polyline of >= 2 points using the admitted wire geometry.
+  * ------------------------------------------------------------------------- */
+ 
+ size_t cktimg_net_count(const CktimgSch *sch);
+diff --git a/skills/cktimg/SKILL.md b/skills/cktimg/SKILL.md
+index daf93632..811de090 100644
+--- a/skills/cktimg/SKILL.md
++++ b/skills/cktimg/SKILL.md
+@@ -12,6 +12,8 @@ For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
+ top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
+ `--config` options to compare the two drawings.
+ 
++Use `--allow-45` with `cktimg-json` or `cktimg-tex` when the consuming editor or figure accepts oblique wires. In Schemify, pass `netlist.import --allow-45 n2s/deck.sp`. This enables a pair of 45-degree feedback segments in a verified reciprocal differential stage. A wire or label instruction on either output retains the caller's routing. The ordinary invocation uses Manhattan wires.
++
+ ## Steps
+ 
+ 1. **Write the deck so its names carry its meaning** (Roles, below): matched
+diff --git a/src/abi.zig b/src/abi.zig
+index c6961ba5..eb3b4e38 100644
+--- a/src/abi.zig
++++ b/src/abi.zig
+@@ -173,6 +173,11 @@ pub export fn cktimg_lib_load_zon(lib: ?*CktimgLib, text: ?[*:0]const u8, out_re
+ /// defaults). NULL on a netlist the parser rejects, with the reason in
+ /// `*out_report`. `lib` must outlive the handle.
+ pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
++    return cktimg_parse_place_geometry(lib, src, zon, 0, out_report);
++}
++
++/// Places a drawing with the caller's wire capability. Unknown capabilities return null.
++pub export fn cktimg_parse_place_geometry(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, geometry: u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
+     if (out_report) |r| r.* = null;
+     const l = lib orelse return null;
+     const s = src orelse return null;
+@@ -193,6 +198,7 @@ pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*
+         for (diags.items) |d| report.writer.print("config:{d}: {s} '{s}'\n", .{ d.line, @tagName(d.kind), d.key }) catch return null;
+     }
+     var diag: netlist.Diagnostic = .{};
++    sch.cfg.geometry = std.enums.fromInt(root.wire_geometry.Mode, geometry) orelse return null;
+     sch.placed = root.place(gpa, &sch.cfg, l, &.{std.mem.span(s)}, &diag) catch |err| {
+         if (out_report) |r| {
+             var w: std.Io.Writer.Allocating = .init(gpa);
+diff --git a/src/checks.zig b/src/checks.zig
+index 9ea07db4..86af7105 100644
+--- a/src/checks.zig
++++ b/src/checks.zig
+@@ -45,6 +45,7 @@
+ //! - `pub const Rule = enum`, `pub const Finding = struct`
+ //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
+ //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
++//! - `pub fn wireRays`
+ //! - `pub fn ways(p: *const Placed, n: usize, at: Pt) u4`, `pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt`
+ //! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
+ //! - `pub fn stackStep(p: *const Placed, nl: *const Netlist, upper: []const u8, lower: []const u8) bool`
+@@ -62,7 +63,7 @@ const relations = @import("relations.zig");
+ const pinned = @import("pinned.zig");
+ 
+ const Pt = library.Pt;
+-const Rect = library.Rect;
++const wire_geometry = @import("wire_geometry.zig");
+ const Side = library.Side;
+ const Library = library.Library;
+ const Placed = placed.Placed;
+@@ -151,7 +152,7 @@ pub fn connected(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed,
+             // A name written on a wire names the wire.
+             var on = p.segments(n);
+             while (on.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+-                if (Rect.fromCorners(a, b).contains(l.at)) uf.join(parent.items, at, index.get(.{ a.x, a.y }).?);
++                if (wire_geometry.contains(a, b, l.at)) uf.join(parent.items, at, index.get(.{ a.x, a.y }).?);
+             };
+         };
+         var pins: u32 = 0;
+@@ -197,9 +198,8 @@ pub fn shorts(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Al
+     for (0..p.netCount()) |n| {
+         var it = p.segments(n);
+         while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+-            const r = Rect.fromCorners(a, b);
+             for (pts.items) |q| {
+-                if (q.net == n or !r.contains(q.at)) continue;
++                if (q.net == n or !wire_geometry.contains(a, b, q.at)) continue;
+                 try out.append(gpa, .{ .rule = .short, .net = @intCast(n), .at = q.at, .other = q.net });
+             }
+         };
+@@ -223,12 +223,12 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
+             } else false;
+             if (seen) continue;
+             // A pin's lead is one more way: the side its device lies on.
+-            var arms = ways(p, n, at);
++            var arms = wireRays(p, n, at);
+             for (0..p.deviceCount()) |d| {
+                 const lo, const hi = p.pinRange(d);
+                 for (lo..hi) |pin| {
+                     if (p.pin_net[pin] != n or !p.pin_xy[pin].eql(at)) continue;
+-                    if (Side.of(p.dev_pos[d].sub(at))) |s| arms |= @as(u4, 1) << @backingInt(s);
++                    if (Side.of(p.dev_pos[d].sub(at))) |s| arms |= @as(u8, 1) << @backingInt(s);
+                 }
+             }
+             const dot = for (p.junctions) |j| {
+@@ -239,10 +239,15 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
+         }
+         var outer = p.segments(n);
+         while (outer.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+-            if (a.y != b.y) continue;
++            const dir = wire_geometry.direction(a, b) orelse continue;
+             var inner = p.segments(n);
+             while (inner.next()) |q| for (q[0 .. q.len - 1], q[1..]) |c, d| {
+-                if (crossing(a, b, c, d)) |at| try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = at, .other = 0 });
++                const other = wire_geometry.direction(c, d) orelse continue;
++                if (@backingInt(dir) >= @backingInt(other)) continue;
++                if (wire_geometry.properCross(a, b, c, d)) |hit| {
++                    // A half-grid short has no representable contact. Identify the offending run.
++                    try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = hit.lattice() orelse a, .other = 0 });
++                }
+             };
+         };
+     }
+@@ -255,13 +260,15 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
+ /// `Side`: a wire ending there is one way, a wire through it two. Zero for
+ /// a point off its wires; a pin's lead is not counted.
+ pub fn ways(p: *const Placed, n: usize, at: Pt) u4 {
+-    var out: u4 = 0;
++    return @truncate(wireRays(p, n, at));
++}
++
++/// Eight exact wire directions at a point. The low four retain the cardinal Side bits.
++pub fn wireRays(p: *const Placed, n: usize, at: Pt) u8 {
++    var out: u8 = 0;
+     var it = p.segments(n);
+     while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+-        const r = Rect.fromCorners(a, b);
+-        if (!r.contains(at)) continue;
+-        out |= @as(u4, @intFromBool(r.min.x < at.x)) | @as(u4, @intFromBool(r.max.x > at.x)) << 1 |
+-            @as(u4, @intFromBool(r.min.y < at.y)) << 2 | @as(u4, @intFromBool(r.max.y > at.y)) << 3;
++        out |= wire_geometry.rays(a, b, at);
+     };
+     return out;
+ }
+@@ -372,13 +379,13 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
+             var buf: [64]Pt = undefined;
+             const pts = scaled(h.args[1..], unit, &buf) orelse return false;
+             for (pts, 0..) |at, k| {
+-                if (ways(p, net, at) == 0) return false;
++                if (wireRays(p, net, at) == 0) return false;
+                 if (h.verb == .via or k == 0) continue;
+                 // Every point of the segment from the last one on the net.
+                 const prev = pts[k - 1];
+                 const step: Pt = .{ .x = std.math.sign(at.x - prev.x), .y = std.math.sign(at.y - prev.y) };
+                 var q = prev;
+-                while (!q.eql(at)) : (q = q.add(step)) if (ways(p, net, q) == 0) return false;
++                while (!q.eql(at)) : (q = q.add(step)) if (wireRays(p, net, q) == 0) return false;
+             }
+             return true;
+         },
+diff --git a/src/config.zig b/src/config.zig
+index 98b0b69f..8480802a 100644
+--- a/src/config.zig
++++ b/src/config.zig
+@@ -154,6 +154,8 @@ pub const Render = struct {
+ };
+ 
+ pub const Config = struct {
++    /// Wire directions this caller can consume. Netlist text and ZON cannot opt a caller in.
++    geometry: @import("wire_geometry.zig").Mode = .manhattan,
+     layout: Layout = .{},
+     rules: lint.Rules = .{},
+     render: Render = .{},
+@@ -192,6 +194,7 @@ pub const Config = struct {
+             const key = name.get(zoir);
+             const node = tables.vals.at(@intCast(i));
+             inline for (@typeInfo(Config).@"struct".field_names, @typeInfo(Config).@"struct".field_types) |table, T| {
++                if (comptime std.mem.eql(u8,table,"geometry")) continue;
+                 if (std.mem.eql(u8, key, table)) {
+                     try patch(T, arena, ast, zoir, node, &@field(cfg, table), &sink);
+                     continue :outer;
+diff --git a/src/crossover.zig b/src/crossover.zig
+new file mode 100644
+index 00000000..e09e8014
+--- /dev/null
++++ b/src/crossover.zig
+@@ -0,0 +1,226 @@
++//! Optional 45-degree feedback paths in a five-transistor differential pair with
++//! reciprocal loads. The Manhattan router finishes first. Only these two complete
++//! nets are replaced, using the integer pin tips, output ports and actual symbols.
++//!
++//! Contents:
++//! - `pub const Pair`, `pub fn collect`, `pub fn apply`
++
++const std = @import("std");
++const netlist = @import("netlist.zig");
++const device = @import("device.zig");
++const library = @import("library.zig");
++const placed = @import("placed.zig");
++const checks = @import("checks.zig");
++const wire = @import("wire_geometry.zig");
++const sch = @import("schematic.zig");
++const Pt = library.Pt;
++const Allocator = std.mem.Allocator;
++const Edge = netlist.EdgeId;
++
++/// Two load/input branches of one fully bound reciprocal stage in the original graph.
++pub const Pair = struct {
++    loads: [2]u32,
++    inputs: [2]u32,
++};
++comptime {
++    std.debug.assert(@sizeOf(Pair) == 16);
++}
++
++const Branch = struct {
++    net: u32,
++    gate_device: usize,
++    load_device: usize,
++    input_device: usize,
++    port_device: usize,
++    gate: Pt,
++    input: Pt,
++    drain: Pt,
++    port: Pt,
++    stub: Pt,
++    foot: Pt,
++};
++
++/// Selects a complete five-MOS graph, including ordered body, gate, drain and
++/// source roles, equal device contracts on each paired branch and no spare incidence.
++pub fn collect(nl: *const netlist.Netlist, roles: []const sch.Role) ?Pair {
++    const g = nl.graph;
++    if (g.edgeCount() != 5) return null;
++    var rq: Pair = undefined;
++    var count: usize = 0;
++    for (g.edges.items(.kind), 0..) |kind, i| {
++        if (kind != .mosfet) return null;
++        const p = g.members(Edge.from(i));
++        if (p.len != 4 or device.polarity(nl.modelType(Edge.from(i))) == .other) return null;
++        if (p[2] != p[3] or !roles[p[2].index()].isRail() or roles[p[0].index()] != .output or roles[p[1].index()] != .output) continue;
++        if (count == 2) return null;
++        rq.loads[count] = @intCast(i);
++        count += 1;
++    }
++    if (count != 2 or !equalModel(nl, rq.loads)) return null;
++    const left = g.members(Edge.from(rq.loads[0]));
++    const right = g.members(Edge.from(rq.loads[1]));
++    if (left[0] == left[1] or left[0] != right[1] or right[0] != left[1] or left[2] != right[2]) return null;
++    var tail_source: ?netlist.VertexId = null;
++    var input_gates: [2]netlist.VertexId = undefined;
++    for (rq.loads, 0..) |load, k| {
++        const drain = g.members(Edge.from(load))[0];
++        if (g.incident(drain).len != 3) return null;
++        const input = for (g.incident(drain)) |e| {
++            if (e.index() != load and e.index() != rq.loads[1 - k]) break e;
++        } else return null;
++        const p = g.members(input);
++        if (p[0] != drain or roles[p[1].index()] != .input or !roles[p[3].index()].isRail() or roles[p[2].index()] != .internal) return null;
++        if (p[3] == left[2] or device.polarity(nl.modelType(input)) == device.polarity(nl.modelType(Edge.from(load)))) return null;
++        if (tail_source) |n| if (n != p[2]) return null;
++        tail_source = p[2];
++        rq.inputs[k] = input.index();
++        input_gates[k] = p[1];
++    }
++    if (input_gates[0] == input_gates[1] or !equalModel(nl, rq.inputs)) return null;
++    const tail = for (0..5) |i| {
++        if (std.mem.indexOfScalar(u32, &rq.loads, @intCast(i)) == null and std.mem.indexOfScalar(u32, &rq.inputs, @intCast(i)) == null) break Edge.from(i);
++    } else return null;
++    const tp = g.members(tail);
++    const body = g.members(Edge.from(rq.inputs[0]))[3];
++    if (tp[0] != tail_source.? or tp[2] != body or tp[3] != body or g.incident(tp[0]).len != 3 or
++        device.polarity(nl.modelType(tail)) != device.polarity(nl.modelType(Edge.from(rq.inputs[0]))) or
++        (roles[tp[1].index()] != .bias and roles[tp[1].index()] != .input) or g.incident(tp[1]).len != 1) return null;
++    return rq;
++}
++
++/// Trials both new paths together. Every array installed in the result belongs
++/// to its arena. A decline retains all old wires, terminal names and junctions.
++pub fn apply(gpa: Allocator, lib: *const library.Library, p: *placed.Placed, nl: *const netlist.Netlist, pair: Pair) Allocator.Error!bool {
++    // Existing steering governs routing/positioning; these small stages have a
++    // complete ordinary candidate even when no angle can be drawn.
++    var scratch = std.heap.ArenaAllocator.init(gpa);
++    defer scratch.deinit();
++    const a = scratch.allocator();
++    const roles = try sch.guessRoles(a, nl);
++    if (@import("parent_intent.zig").needsDrawing(nl)) {
++        const st = try sch.structure.analyze(a, a, nl, roles);
++        const sk = try sch.skeleton.place(a, a, nl, roles, &st, .{});
++        const verdicts = try @import("report.zig").verdicts(a, nl, roles, &st, &sk, p, lib);
++        const nets = [2]u32{ nl.graph.members(.from(pair.loads[0]))[0].index(), nl.graph.members(.from(pair.loads[1]))[0].index() };
++        for (nl.hints, verdicts) |h, v| switch (h.verb) {
++            .off, .symmetry_off, .wire, .label, .port, .via, .route, .first => if (@import("parent_intent.zig").touches(nl, h, v, &.{}, &nets)) return false,
++            else => {},
++        };
++    }
++    var branches: [2]Branch = undefined;
++    for (pair.inputs, 0..) |idx, k| {
++        const gate_dev = checks.deviceIn(p, nl.graph.edges.items(.name)[pair.loads[1 - k]]) orelse return false;
++        const input_dev = checks.deviceIn(p, nl.graph.edges.items(.name)[idx]) orelse return false;
++        const load_dev = checks.deviceIn(p, nl.graph.edges.items(.name)[pair.loads[k]]) orelse return false;
++        if (!lib.at(p.dev_class[input_dev]).shows(0) or !lib.at(p.dev_class[load_dev]).shows(0)) return false;
++        const gp = p.dev_pin0[gate_dev] + 1;
++        const net = p.pin_net[gp];
++        if (p.pin_net[p.dev_pin0[input_dev]] != net or p.pin_net[p.dev_pin0[load_dev]] != net) return false;
++        const gate = p.pin_xy[gp];
++        const drain = p.pin_xy[p.dev_pin0[load_dev]];
++        const input = p.pin_xy[p.dev_pin0[input_dev]];
++        if (drain.x != input.x or drain.x == gate.x) return false;
++        var port: ?usize = null;
++        for (p.dev_name, 0..) |name, d| {
++            if (name.len != 0 or p.pin_net[p.dev_pin0[d]] != net) continue;
++            if (lib.at(p.dev_class[d]).role != .output_port or port != null) return false;
++            port = d;
++        }
++        const port_dev = port orelse return false;
++        if (!lib.at(p.dev_class[port_dev]).shows(0)) return false;
++        const term = p.pin_xy[p.dev_pin0[port_dev]];
++        if (term.y <= @min(drain.y, input.y) or term.y >= @max(drain.y, input.y)) return false;
++        const sign = std.math.sign(@as(i64, drain.x) - gate.x);
++        const side = lib.at(p.dev_class[gate_dev]).side(1, p.dev_orient[gate_dev]) orelse return false;
++        if (side != (if (sign > 0) library.Side.right else library.Side.left)) return false;
++        const head = @as(i64, gate.x) + sign * @divFloor(lib.unit, 4);
++        if (lib.unit < 4 or head <= @min(drain.x, gate.x) or head >= @max(drain.x, gate.x)) return false;
++        branches[k] = .{ .net = net, .gate_device = gate_dev, .input_device = input_dev, .load_device = load_dev, .port_device = port_dev, .gate = gate, .drain = drain, .input = input, .port = term, .stub = .{ .x = @intCast(head), .y = gate.y }, .foot = undefined };
++    }
++    if (branches[0].gate.y != branches[1].gate.y or branches[0].drain.y != branches[1].drain.y or branches[0].input.y != branches[1].input.y) return false;
++    const y = branches[0].gate.y;
++    const sy = std.math.sign(@as(i64, branches[0].input.y) - y);
++    const reach = @min(sy * (@as(i64, branches[0].port.y) - y), sy * (@as(i64, branches[1].port.y) - y)) - @divFloor(lib.unit, 4);
++    const join_y = @as(i64, y) + sy * reach;
++    if (reach < @divFloor(lib.unit, 2) or sy * (join_y - branches[0].drain.y) <= 0) return false;
++    for (&branches) |*branch| {
++        const sx = std.math.sign(@as(i64, branch.drain.x) - branch.gate.x);
++        const end = @as(i64, branch.stub.x) + sx * reach;
++        if (end <= @min(branch.drain.x, branch.gate.x) or end >= @max(branch.drain.x, branch.gate.x) or branch.port.x == branch.drain.x) return false;
++        branch.foot = .{ .x = @intCast(end), .y = @intCast(join_y) };
++    }
++    const one, const two = branches;
++    const crossing = wire.properCross(one.stub, one.foot, two.stub, two.foot) orelse return false;
++    for (branches) |branch| {
++        for (0..p.deviceCount()) |d| {
++            const box = p.deviceRect(lib, d);
++            if (wire.hitsRect(branch.stub, branch.foot, box) or wire.hitsRect(branch.foot, .{ .x = branch.drain.x, .y = branch.foot.y }, box)) return false;
++            if (d != branch.gate_device and wire.hitsRect(branch.gate, branch.stub, box)) return false;
++            if (d != branch.input_device and d != branch.load_device and wire.hitsRect(branch.drain, branch.input, box)) return false;
++            if (d != branch.port_device and wire.hitsRect(.{ .x = branch.drain.x, .y = branch.port.y }, branch.port, box)) return false;
++        }
++        for (p.labels) |label| if (label.net == branch.net) return false;
++    }
++    var points: std.ArrayList(Pt) = .empty;
++    var offsets: std.ArrayList(u32) = .empty;
++    var ranges: std.ArrayList(u32) = .empty;
++    var junctions: std.ArrayList(Pt) = .empty;
++    try offsets.append(a, 0);
++    for (p.junctions) |j| if (checks.wireRays(p, one.net, j) == 0 and checks.wireRays(p, two.net, j) == 0) try junctions.append(a, j);
++    for (0..p.netCount()) |n| {
++        try ranges.append(a, @intCast(offsets.items.len - 1));
++        if (n != one.net and n != two.net) {
++            var it = p.segments(n);
++            while (it.next()) |poly| {
++                for (poly[0 .. poly.len - 1], poly[1..]) |s, t| {
++                    if (crossing.onSegment(s, t)) return false;
++                }
++                try append(a, &points, &offsets, poly);
++            }
++            continue;
++        }
++        const branch = if (n == one.net) one else two;
++        const joint: Pt = .{ .x = branch.drain.x, .y = branch.foot.y };
++        const port_joint: Pt = .{ .x = branch.drain.x, .y = branch.port.y };
++        try append(a, &points, &offsets, &.{ branch.drain, joint });
++        try append(a, &points, &offsets, &.{ joint, port_joint });
++        try append(a, &points, &offsets, &.{ port_joint, branch.input });
++        try append(a, &points, &offsets, &.{ branch.gate, branch.stub, branch.foot, joint });
++        try append(a, &points, &offsets, &.{ port_joint, branch.port });
++        try junctions.appendSlice(a, &.{ joint, port_joint });
++    }
++    try ranges.append(a, @intCast(offsets.items.len - 1));
++    var trial = p.*;
++    trial.net_seg = ranges.items;
++    trial.seg_pt = offsets.items;
++    trial.wire_pts = points.items;
++    trial.junctions = junctions.items;
++    var issues: std.ArrayList(checks.Finding) = .empty;
++    try checks.find(a, &issues, &trial, lib);
++    if (issues.items.len != 0) return false;
++    const out = p.arena.allocator();
++    const output_ranges = try out.dupe(u32, ranges.items);
++    const output_offsets = try out.dupe(u32, offsets.items);
++    const output_points = try out.dupe(Pt, points.items);
++    const output_junctions = try out.dupe(Pt, junctions.items);
++    p.net_seg = output_ranges;
++    p.seg_pt = output_offsets;
++    p.wire_pts = output_points;
++    p.junctions = output_junctions;
++    return true;
++}
++
++// ---- private ----
++
++fn append(a: Allocator, points: *std.ArrayList(Pt), offsets: *std.ArrayList(u32), poly: []const Pt) !void {
++    try points.appendSlice(a, poly);
++    try offsets.append(a, @intCast(points.items.len));
++}
++
++fn equalModel(nl: *const netlist.Netlist, pair: [2]u32) bool {
++    const a = nl.params(Edge.from(pair[0]));
++    const b = nl.params(Edge.from(pair[1]));
++    if (a.len != b.len or a.len == 0) return false;
++    for (a, b) |x, y| if (!std.mem.eql(u8, x, y)) return false;
++    return true;
++}
+diff --git a/src/placed.zig b/src/placed.zig
+index 7a67191b..95362725 100644
+--- a/src/placed.zig
++++ b/src/placed.zig
+@@ -107,8 +107,8 @@ pub const Placed = struct {
+     // --- nets ---
+     net_name: []const [:0]const u8,
+     /// Wires: net n owns segments `net_seg[n] .. net_seg[n + 1]`; segment k
+-    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]`, Manhattan,
+-    /// at least two points.
++    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]` with at least two
++    /// points. The default is Manhattan. Opt-in geometry also admits 45-degree segments.
+     net_seg: []const u32,
+     seg_pt: []const u32,
+     wire_pts: []const Pt,
+diff --git a/src/report.zig b/src/report.zig
+index 338fc88c..4822beeb 100644
+--- a/src/report.zig
++++ b/src/report.zig
+@@ -14,15 +14,11 @@
+ //! - `grid`: the skeleton's rows, each device at its lattice column.
+ //!
+ //! Human Rules:
+-//! - report.1 (choice) A crossing is a level wire of one net and an upright
+-//!   wire of another meeting strictly inside both; a touch at an end, a T or
+-//!   a bend is none: it is the measure the drawings are compared by.
+-//!   `crossings`
+-//! - report.2 (choice) A corner is a point with no pin on it that a net's
+-//!   wire leaves exactly two ways at a right angle; a T, a net's crossing of
+-//!   its own and a straight joint are none, and a trunk drawn in pieces has
+-//!   its corners where two pieces end: it is the measure the drawings are
+-//!   compared by. `bends`
++//! - report.1: Two distinct nets cross where nonparallel segments meet strictly
++//!   inside both segments. Opt-in diagonals can cross at half-grid points.
++//! - report.2: A corner has exactly two noncollinear wire arms of one net
++//!   and no terminal. A shared endpoint between pieces can be a corner.
++//!   `crossings`, `bends`
+ //!   Both agree with the scorer the 5,263 hand-drawn reference schematics
+ //!   are compared by: on 200 of its drawings, 305 crossings and 1,178
+ //!   corners either way, none differing.
+@@ -44,6 +40,7 @@ const netlist = @import("netlist.zig");
+ const placed = @import("placed.zig");
+ const sch = @import("schematic.zig");
+ const checks = @import("checks.zig");
++const wire_geometry = @import("wire_geometry.zig");
+ const drawn_symmetry = @import("drawn_symmetry.zig");
+ const structure = @import("structure.zig");
+ const skeleton = @import("skeleton.zig");
+@@ -470,12 +467,10 @@ fn crossings(p: *const Placed) u32 {
+     for (0..p.netCount()) |n| {
+         var h = p.segments(n);
+         while (h.next()) |hp| for (hp[0 .. hp.len - 1], hp[1..]) |a, b| {
+-            if (a.y != b.y) continue;
+-            for (0..p.netCount()) |m| {
+-                if (m == n) continue;
++            for (n + 1..p.netCount()) |m| {
+                 var v = p.segments(m);
+                 while (v.next()) |vp| for (vp[0 .. vp.len - 1], vp[1..]) |c, d| {
+-                    count += @intFromBool(checks.crossing(a, b, c, d) != null);
++                    count += @intFromBool(wire_geometry.properCross(a, b, c, d) != null);
+                 };
+             }
+         };
+@@ -502,11 +497,11 @@ fn bends(p: *const Placed) u32 {
+             } else false;
+             if (seen) continue;
+             // The ways out: bits 0 and 1 along the row, 2 and 3 along the column.
+-            const ways = checks.ways(p, n, at);
++            const ways = checks.wireRays(p, n, at);
+             const on_pin = for (p.pin_xy, p.pin_net) |q, net| {
+                 if (net == n and q.eql(at)) break true;
+             } else false;
+-            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways & 3 != 0 and ways & 12 != 0);
++            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways != 3 and ways != 12 and ways != 48 and ways != 192);
+         };
+     }
+     return count;
+diff --git a/src/root.zig b/src/root.zig
+index 1b6cc887..a2c8a20a 100644
+--- a/src/root.zig
++++ b/src/root.zig
+@@ -56,6 +56,8 @@ pub const schematic = @import("schematic.zig");
+ pub const placed = @import("placed.zig");
+ pub const geom = @import("geom.zig");
+ /// Exact integer membership for horizontal, vertical and 45-degree wire records.
++/// Optional 45-degree reciprocal gate connections after ordinary routing.
++pub const crossover = @import("crossover.zig");
+ pub const wire_geometry = @import("wire_geometry.zig");
+ pub const lint = @import("lint.zig");
+ /// The drawing's guarantees, checked on a finished `Placed`.
+@@ -161,7 +163,12 @@ pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Libr
+     defer tmp.free(roles);
+     var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
+     defer s.deinit();
+-    return Placed.init(out, &s, nl);
++    var p = try Placed.init(out, &s, nl);
++    errdefer p.deinit();
++    if (cfg.geometry == .allow_45) if (crossover.collect(nl, roles)) |pair| {
++        _ = try crossover.apply(tmp, lib, &p, nl, pair);
++    };
++    return p;
+ }
+ 
+ /// Draws certified stages; a failed local room, mandatory route or final
+diff --git a/src/wire_geometry.zig b/src/wire_geometry.zig
+index 2bbf3aee..ea30aac9 100644
+--- a/src/wire_geometry.zig
++++ b/src/wire_geometry.zig
+@@ -1,12 +1,17 @@
+ //! Integer test for the four line directions shared by drawing checks and editor wires.
+ //!
+ //! Contents:
++//! - `pub const Mode`, `Crossing.onSegment`
++//! - `pub const Crossing`, `Crossing.lattice`, `pub fn properCross`, `pub fn rays`, `pub fn hitsRect`
+ //! - `pub const Direction`, `Direction.offset`, `pub fn direction`, `pub fn contains`
+ 
+ const std = @import("std");
+ const library = @import("library.zig");
+ const Pt = library.Pt;
+ 
++/// Permission supplied by a consumer for its final wire records.
++pub const Mode = enum(u8) { manhattan, allow_45 };
++
+ /// An undirected line in drawing coordinates, where y increases down the sheet.
+ pub const Direction = enum(u2) {
+     horizontal,
+@@ -26,6 +31,31 @@ pub const Direction = enum(u2) {
+     }
+ };
+ 
++/// A proper crossing in half-grid coordinates. Multiplication by two keeps
++/// the intersection exact even when the two diagonals meet between grid points.
++pub const Crossing = struct {
++    x2: i64,
++    y2: i64,
++
++    /// Whether the exact crossing touches a third closed wire, including its end.
++    pub fn onSegment(c: Crossing, a: Pt, b: Pt) bool {
++        if (c.x2 < 2 * @as(i64, @min(a.x, b.x)) or c.x2 > 2 * @as(i64, @max(a.x, b.x)) or
++            c.y2 < 2 * @as(i64, @min(a.y, b.y)) or c.y2 > 2 * @as(i64, @max(a.y, b.y))) return false;
++        const d = direction(a, b) orelse return a.eql(b);
++        return switch (d) {
++            .horizontal, .vertical => true,
++            .down_right => c.y2 - c.x2 == 2 * d.offset(a),
++            .up_right => c.y2 + c.x2 == 2 * d.offset(a),
++        };
++    }
++
++    /// An integral contact can be a junction in the integer wire format.
++    pub fn lattice(c: Crossing) ?Pt {
++        if (@mod(c.x2, 2) != 0 or @mod(c.y2, 2) != 0) return null;
++        return .{ .x = @intCast(@divExact(c.x2, 2)), .y = @intCast(@divExact(c.y2, 2)) };
++    }
++};
++
+ /// The direction of a nonempty supported segment. A point or another slope has none.
+ pub fn direction(a: Pt, b: Pt) ?Direction {
+     if (a.x == b.x) return if (a.y == b.y) null else .vertical;
+@@ -45,6 +75,90 @@ pub fn contains(a: Pt, b: Pt, p: Pt) bool {
+     return d.offset(a) == d.offset(p);
+ }
+ 
++/// Intersects finite open segments. End touches and collinear pieces have
++/// no proper crossing. Line constants and doubled coordinates fit in i64.
++pub fn properCross(a: Pt, b: Pt, c: Pt, d: Pt) ?Crossing {
++    const u = direction(a, b) orelse return null;
++    const v = direction(c, d) orelse return null;
++    if (u == v) return null;
++    const x2: i64 = if (u == .vertical) 2 * @as(i64, a.x) else if (v == .vertical) 2 * @as(i64, c.x) else @divExact(2 * (v.offset(c) - u.offset(a)), slope(u) - slope(v));
++    const y2 = if (u == .vertical) slope(v) * x2 + 2 * v.offset(c) else slope(u) * x2 + 2 * u.offset(a);
++    if (!betweenOpen(a, b, x2, y2) or !betweenOpen(c, d, x2, y2)) return null;
++    return .{ .x2 = x2, .y2 = y2 };
++}
++
++/// The eight wire rays leaving p. Low bits retain left, right, up, down.
++/// Each successive pair of high bits represents the opposite rays of one diagonal.
++pub fn rays(a: Pt, b: Pt, p: Pt) u8 {
++    if (!contains(a, b, p)) return 0;
++    const d = direction(a, b) orelse return 0;
++    const shift: u3 = @as(u3, @backingInt(d)) * 2;
++    const vertical = d == .vertical;
++    const x = if (vertical) p.y else p.x;
++    const lo = if (vertical) @min(a.y, b.y) else @min(a.x, b.x);
++    const hi = if (vertical) @max(a.y, b.y) else @max(a.x, b.x);
++    const both: u8 = @as(u8, @intFromBool(lo < x)) | (@as(u8, @intFromBool(hi > x)) << 1);
++    return both << shift;
++}
++
++/// Closed segment intersection with a device rectangle, including its edge.
++/// The two coordinate projections and the segment's normal are the separating axes.
++pub fn hitsRect(a: Pt, b: Pt, box: library.Rect) bool {
++    if (@max(a.x, b.x) < box.min.x or @min(a.x, b.x) > box.max.x or
++        @max(a.y, b.y) < box.min.y or @min(a.y, b.y) > box.max.y) return false;
++    const d = direction(a, b) orelse return box.contains(a);
++    const k = d.offset(a);
++    return switch (d) {
++        .horizontal, .vertical => true,
++        .down_right => k >= @as(i64, box.min.y) - box.max.x and k <= @as(i64, box.max.y) - box.min.x,
++        .up_right => k >= d.offset(box.min) and k <= d.offset(box.max),
++    };
++}
++
++// ---- private ----
++
++fn slope(d: Direction) i64 {
++    return switch (d) {
++        .horizontal => 0,
++        .vertical => unreachable,
++        .down_right => 1,
++        .up_right => -1,
++    };
++}
++
++fn betweenOpen(a: Pt, b: Pt, x2: i64, y2: i64) bool {
++    const v = a.x == b.x;
++    const t = if (v) y2 else x2;
++    const lo: i64 = if (v) @min(a.y, b.y) else @min(a.x, b.x);
++    const hi: i64 = if (v) @max(a.y, b.y) else @max(a.x, b.x);
++    return t > 2 * lo and t < 2 * hi;
++}
++
++test "proper crossings use half-grid coordinates and finite, ordered endpoints" {
++    const min = std.math.minInt(i32);
++    const max = std.math.maxInt(i32);
++    const a: Pt = .{ .x = min, .y = min };
++    const b: Pt = .{ .x = max, .y = max };
++    const c: Pt = .{ .x = min, .y = max };
++    const d: Pt = .{ .x = max, .y = min };
++    try std.testing.expectEqual(Crossing{ .x2 = -1, .y2 = -1 }, properCross(b, a, c, d).?);
++    try std.testing.expectEqual(@as(?Pt, null), properCross(d, c, a, b).?.lattice());
++    const ten: Pt = .{ .x = 10, .y = 10 };
++    const other: Pt = .{ .x = 0, .y = 10 };
++    try std.testing.expectEqual(Pt{ .x = 5, .y = 5 }, properCross(.zero, ten, other, .{ .x = 10, .y = 0 }).?.lattice().?);
++    try std.testing.expectEqual(@as(?Crossing, null), properCross(.zero, ten, other, .{ .x = 4, .y = 6 }));
++    const half = properCross(a, b, c, d).?;
++    try std.testing.expect(half.onSegment(.{ .x = -2, .y = -2 }, .zero));
++    try std.testing.expect(!half.onSegment(.{ .x = -2, .y = -1 }, .zero));
++    const entire: Crossing = .{ .x2 = 10, .y2 = 10 };
++    try std.testing.expect(entire.onSegment(.{ .x = 5, .y = 5 }, .{ .x = 5, .y = 8 }));
++    const box: library.Rect = .point(.{ .x = 2, .y = 8 });
++    try std.testing.expect(!hitsRect(.zero, ten, box));
++    try std.testing.expect(hitsRect(other, .{ .x = 10, .y = 0 }, box));
++    const rays_at_origin = rays(.zero, .{ .x = -10, .y = -10 }, .zero) | rays(.zero, .{ .x = 10, .y = -10 }, .zero);
++    try std.testing.expectEqual(@as(u8, 2), @popCount(rays_at_origin));
++}
++
+ test "direction and point membership are exact over the entire signed coordinate range" {
+     const min = std.math.minInt(i32);
+     const max = std.math.maxInt(i32);
+diff --git a/tests/abi_test.c b/tests/abi_test.c
+index eb4e3dd3..8fd140db 100644
+--- a/tests/abi_test.c
++++ b/tests/abi_test.c
+@@ -31,13 +31,16 @@ static int on_wire(const CktimgSch *s, size_t n, int32_t x, int32_t y) {
+       int32_t x0 = xy[2 * i], y0 = xy[2 * i + 1], x1 = xy[2 * i + 2], y1 = xy[2 * i + 3];
+       int32_t lx = x0 < x1 ? x0 : x1, hx = x0 < x1 ? x1 : x0;
+       int32_t ly = y0 < y1 ? y0 : y1, hy = y0 < y1 ? y1 : y0;
+-      if (x >= lx && x <= hx && y >= ly && y <= hy) return 1;
++      if (x < lx || x > hx || y < ly || y > hy) continue;
++      if (lx == hx || ly == hy) return 1;
++      int64_t dx = (int64_t)x - x0, dy = (int64_t)y - y0;
++      if ((x1 > x0) == (y1 > y0) ? dx == dy : dx == -dy) return 1;
+     }
+   }
+   return 0;
+ }
+ 
+-int main(void) {
++int main(int argc, char **argv) {
+   /* NULL is safe everywhere. */
+   CHECK(cktimg_device_count(NULL) == 0);
+   CHECK(cktimg_device_name(NULL, 0) == NULL);
+@@ -74,6 +77,50 @@ int main(void) {
+   CHECK(cktimg_lib_add(lib, "ipin", CKTIMG_ROLE_INPUT_PORT, pin, 1, port, 1) != SIZE_MAX);
+   CHECK(cktimg_lib_add(lib, "opin", CKTIMG_ROLE_OUTPUT_PORT, pin, 1, port, 1) != SIZE_MAX);
+ 
++  /* The same five-MOS graph through the old caller and the opt-in geometry caller. */
++  if (argc != 2) return 1;
++  FILE *symbols = fopen(argv[1], "rb");
++  if (!symbols || fseek(symbols, 0, SEEK_END)) return 1;
++  long length = ftell(symbols);
++  if (length <= 0 || fseek(symbols, 0, SEEK_SET)) return 1;
++  char *text = malloc((size_t)length + 1);
++  if (!text || fread(text, 1, (size_t)length, symbols) != (size_t)length) return 1;
++  text[length] = 0;
++  fclose(symbols);
++  CktimgLib *glyphs = cktimg_lib_new();
++  CHECK(cktimg_lib_load_zon(glyphs, text, NULL));
++  free(text);
++  const char *pair = "Reciprocal PMOS loads\n"
++    ".model n nmos\n.model p pmos\n"
++    "M1 vout1 vin1 tail 0 n\nM2 vout2 vin2 tail 0 n\n"
++    "M3 vout1 vout2 vdd vdd p\nM4 vout2 vout1 vdd vdd p\nM5 tail vb 0 0 n\n";
++  CHECK(cktimg_parse_place_geometry(glyphs, pair, NULL, 245, NULL) == NULL);
++  for (unsigned mode = 0; mode <= 1; ++mode) {
++    CktimgSch *pair_s = mode == 0 ? cktimg_parse_place(glyphs, pair, NULL, NULL)
++                                  : cktimg_parse_place_geometry(glyphs, pair, NULL, CKTIMG_ALLOW_45, NULL);
++    CHECK(pair_s != NULL);
++    size_t diagonals = 0;
++    for (size_t n = 0; n < cktimg_wire_count(pair_s); ++n) {
++      for (size_t k = 0; k < cktimg_wire_segment_count(pair_s, n); ++k) {
++        const int32_t *points;
++        size_t length = cktimg_wire_segment_points(pair_s, n, k, &points);
++        for (size_t i = 0; i + 1 < length; ++i) {
++          const int32_t *seg = points + 2*i;
++          if (seg[0] == seg[2] || seg[1] == seg[3]) continue;
++          ++diagonals;
++          int dx = seg[2] > seg[0] ? 1 : -1;
++          int dy = seg[3] > seg[1] ? 1 : -1;
++          CHECK(on_wire(pair_s, n, seg[0]+dx, seg[1]+dy));
++          CHECK(!on_wire(pair_s, n, seg[0]+dx, seg[1]+dy+1));
++        }
++      }
++    }
++    CHECK(diagonals == (mode ? 2u : 0u));
++    cktimg_sch_free(pair_s);
++  }
++
++  cktimg_lib_free(glyphs);
++
+   char *report = NULL;
+   CktimgSch *s = cktimg_parse_place(lib, cs_stage, ".{ .layout = .{ .stack = 0.5 }, .typo = 1 }", &report);
+   CHECK(s != NULL);
+diff --git a/tests/diagonal_feedback.py b/tests/diagonal_feedback.py
+new file mode 100644
+index 00000000..bef425bd
+--- /dev/null
++++ b/tests/diagonal_feedback.py
+@@ -0,0 +1,93 @@
++"""Trace the reciprocal gates of AG90 and its orthogonal and caller-controlled alternatives."""
++import json
++from pathlib import Path
++import re
++import subprocess
++import sys
++from tempfile import TemporaryDirectory
++
++
++def render(binary, deck, output, angled):
++    report = output.with_suffix('.report')
++    subprocess.run([binary, *(['--allow-45'] if angled else []), '--report', report,
++                    '--svg', output.with_suffix('.svg'), deck, output], check=True)
++    doc = json.loads(output.read_text())
++    decisions = json.loads(report.read_text())
++    assert not decisions['gates'], (deck, decisions['gates'])
++    return doc, decisions
++
++
++def cross(a, b, c):
++    return (b[0]-a[0])*(c[1]-a[1])-(b[1]-a[1])*(c[0]-a[0])
++
++
++def trace(doc):
++    slopes = {}
++    segments = {}
++    for wire in doc['wires']:
++        net = wire['net']
++        edges = [(tuple(a), tuple(b)) for path in wire['segments'] for a,b in zip(path,path[1:])]
++        segments[net] = edges
++        for a,b in edges:
++            if a[0] == b[0] or a[1] == b[1]:
++                continue
++            assert abs(a[0]-b[0]) == abs(a[1]-b[1]), (net,a,b)
++            assert net not in slopes
++            slopes[net] = (a,b)
++    assert len(slopes)==2, slopes
++    (a,b),(c,d) = slopes.values()
++    assert cross(a,b,c)*cross(a,b,d)<0 and cross(c,d,a)*cross(c,d,b)<0
++    for net, diagonal in slopes.items():
++        pins = [(pin['term'],tuple(pin['xy'])) for dev in doc['devices']
++                for pin in dev['pins'] if pin['net']==net]
++        assert sorted(term for term,_ in pins)==['d','d','g','p'], (net,pins)
++        gate=next(at for name,at in pins if name=='g')
++        edges=segments[net]
++        # The first segment leaves the gate horizontally. The gate's net reaches
++        # both drains and the output by wire alone under an endpoint-only netlister.
++        assert any(gate in (a,b) and a[1]==b[1] and (a in diagonal or b in diagonal) for a,b in edges)
++        reachable={gate}
++        for _ in range(len(edges)):
++            for a,b in edges:
++                if a in reachable or b in reachable:
++                    reachable.update((a,b))
++        assert all(pin in reachable for _,pin in pins)
++    return slopes
++
++
++def main():
++    binary, positive, *controls = map(Path,sys.argv[1:])
++    binary=binary.resolve()
++    with TemporaryDirectory() as folder:
++        root=Path(folder)
++        src=positive.read_text()
++        old,_=render(binary,positive,root/'old.json',False)
++        now,report=render(binary,positive,root/'new.json',True)
++        assert {w['net'] for w in old['wires']}=={w['net'] for w in now['wires']}
++        assert old['devices']==now['devices']
++        assert set(trace(now))=={'vout1','vout2'}
++        assert report['metrics']['crossings']>=1
++        for case in controls:
++            render(binary,case,root/'before.json',False)
++            render(binary,case,root/'after.json',True)
++            for suffix in ('.json','.svg','.report'):
++                assert (root/('before'+suffix)).read_bytes()==(root/('after'+suffix)).read_bytes(),case
++        hold, reverse, unmatched = root/'wire.cir',root/'reversed.cir',root/'different.cir'
++        lines=src.splitlines()
++        indices=[i for i,line in enumerate(lines) if re.match('^[mM][0-9]+ ',line)]
++        for i,line in zip(indices,reversed([lines[i] for i in indices])):
++            lines[i]=line
++        reverse.write_text('\n'.join(lines)+'\n')
++        swapped,_=render(binary,reverse,root/'reversed.json',True)
++        assert trace(swapped)==trace(now)
++        hold.write_text(src.replace('.ends dut','*@ wire VOUT1\n.ends dut'))
++        unmatched.write_text(re.sub(r'(?im)^(M3 .*? w=)1\b',r'\g<1>2',src))
++        for deck in [hold,unmatched]:
++            assert deck.read_text()!=src
++            before,_=render(binary,deck,root/'before.json',False)
++            after,_=render(binary,deck,root/'after.json',True)
++            assert before==after,deck
++
++
++if __name__=='__main__':
++    main()
+diff --git a/tests/parent_parts.zig b/tests/parent_parts.zig
+index de43c300..e2d67834 100644
+--- a/tests/parent_parts.zig
++++ b/tests/parent_parts.zig
+@@ -170,3 +170,43 @@ test "reflected parent outputs: releasing a caller-owned pair equals ordinary ro
+         try testing.expectEqualDeep(ordinary.labels, supplied.labels);
+     }
+ }
++
++fn trialFeedback(allocator: std.mem.Allocator, lib: *const np.Library, ordinary: *const np.Placed, nl: *const np.Netlist, pair: np.crossover.Pair) !void {
++    // Borrow immutable rows. Own all replacement wire rows in a separate arena.
++    var trial = ordinary.*;
++    trial.arena = .init(allocator);
++    defer trial.deinit();
++    const applied = np.crossover.apply(allocator, lib, &trial, nl, pair) catch |err| {
++        try testing.expect(trial.net_seg.ptr == ordinary.net_seg.ptr);
++        try testing.expect(trial.seg_pt.ptr == ordinary.seg_pt.ptr);
++        try testing.expect(trial.wire_pts.ptr == ordinary.wire_pts.ptr);
++        try testing.expect(trial.junctions.ptr == ordinary.junctions.ptr);
++        return err;
++    };
++    try testing.expect(applied);
++}
++
++test "crossed feedback retains the complete ordinary drawing at every allocation failure" {
++    const gpa = testing.allocator;
++    const lib = try support.library(gpa);
++    defer support.freeLibrary(gpa, lib);
++    const deck =
++        \\Reciprocal PMOS loads
++        \\.model n nmos
++        \\.model p pmos
++        \\M1 vout1 vin1 tail 0 n
++        \\M2 vout2 vin2 tail 0 n
++        \\M3 vout1 vout2 vdd vdd p
++        \\M4 vout2 vout1 vdd vdd p
++        \\M5 tail vb 0 0 n
++    ;
++    var nl = try np.netlist.parse(gpa, &.{deck}, null);
++    defer nl.deinit(gpa);
++    const roles = try np.guessRoles(gpa, &nl);
++    defer gpa.free(roles);
++    const pair = np.crossover.collect(&nl, roles) orelse return error.InvalidStage;
++    var ordinary = try np.placeBound(gpa, gpa, &.{}, lib, &nl, &.{});
++    defer ordinary.deinit();
++    var no_resize = testing.FailingAllocator.init(gpa, .{ .resize_fail_index = 0 });
++    try testing.checkAllAllocationFailures(no_resize.allocator(), trialFeedback, .{ lib, &ordinary, &nl, pair });
++}
+diff --git a/tools/json.zig b/tools/json.zig
+index e0c76033..7ecdaeea 100644
+--- a/tools/json.zig
++++ b/tools/json.zig
+@@ -45,6 +45,7 @@ const usage =
+     \\
+     \\Options:
+     \\  --config <path>   layout settings and lint severities from a lint.zon file
++    \\  --allow-45        allow certified 45-degree feedback wires
+     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
+     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
+     \\                    add a "target" block to the document
+@@ -53,6 +54,7 @@ const usage =
+     \\                    verdict, scores, the engine's decisions, the lattice rows
+     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
+     \\                    *@ lines to stdout
++    \\  --allow-45         permit 45-degree interiors on certified reciprocal gate wires
+     \\  --from <path>     relay the deck from its last drawing (this tool's JSON):
+     \\                    devices stay where it has them, and only what the deck's
+     \\                    structure moves, or is new to it, is laid again
+@@ -64,6 +66,7 @@ const usage =
+ ;
+ 
+ const Options = struct {
++    allow_45: bool = false,
+     netlist: []const u8,
+     out: ?[]const u8 = null,
+     config: ?[]const u8 = null,
+@@ -86,13 +89,14 @@ pub fn main(init: std.process.Init) !void {
+     const opts = parseArgs(try init.minimal.args.toSlice(arena)) orelse return;
+ 
+     const raw = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
+-    const cfg: np.Config = if (opts.config) |path| blk: {
++    var cfg: np.Config = if (opts.config) |path| blk: {
+         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
+         var diags: std.ArrayList(np.config.Diagnostic) = .empty;
+         const c = try np.Config.parse(arena, t, &diags);
+         for (diags.items) |d| std.log.warn("{s}:{d}: {t} '{s}'", .{ path, d.line, d.kind, d.key });
+         break :blk c;
+     } else .default;
++    if (opts.allow_45) cfg.geometry = .allow_45;
+     // Read before placing: a manifest typo is reported before any work.
+     const target: ?Target = if (opts.target) |path| blk: {
+         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 22)) catch |err| fatal("cannot read target manifest '{s}': {t}", .{ path, err });
+@@ -437,6 +441,10 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
+             std.debug.print("{s}", .{usage});
+             return null;
+         }
++        if (std.mem.eql(u8, a, "--allow-45")) {
++            opts.allow_45 = true;
++            continue;
++        }
+         const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;
+         if (slot) |s| {
+             i += 1;
+diff --git a/tools/schemify/convert.zig b/tools/schemify/convert.zig
+index e69d3c2e..bed61b95 100644
+--- a/tools/schemify/convert.zig
++++ b/tools/schemify/convert.zig
+@@ -59,6 +59,8 @@ pub const Conversion = struct {
+ /// A conversion in progress: parsed and recognized, its cells drawn one `step` at a time.
+ /// Stepping to the end and `finish` give exactly what `convert` gives.
+ pub const Converter = struct {
++    /// The command that started the import admits the final wire geometry.
++    allow_45: bool = false,
+     gpa: Allocator,
+     a: Allocator,
+     source: []const u8,
+@@ -123,7 +125,7 @@ pub const Converter = struct {
+         const a = c.a;
+         const cell = c.todo.pop().?;
+         const stem = if (cell == 0) c.bench else c.rec.syms.stem.items[recognize.subSymbol(cell)];
+-        const drawn = try layout.drawSource(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget);
++        const drawn = try layout.drawSourceGeometry(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget, if (c.allow_45) .allow_45 else .manhattan);
+         if (drawn.fallback) |why| try c.out.warnings.append(a, try a.print("{s}: drawn with labels only ({s})", .{ stem, why }));
+         if (drawn.strays > 0) try c.out.warnings.append(a, try a.print("{s}: the engine left {d} pins unconnected; labelled", .{ stem, drawn.strays }));
+         for (drawn.notes.items) |note| try c.out.warnings.append(a, try a.print("{s}: {s}", .{ stem, note }));
+diff --git a/tools/schemify/layout.zig b/tools/schemify/layout.zig
+index 5f9af53f..ca5d3949 100644
+--- a/tools/schemify/layout.zig
++++ b/tools/schemify/layout.zig
+@@ -334,6 +334,11 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
+ 
+ /// Draws the cell with its original, unprojected source available to local-parent analysis.
+ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
++    return drawSourceGeometry(gpa, a, source, lib, deck, rec, c, budget, .manhattan);
++}
++
++/// Draws one cell using the caller’s supported wire direction set.
++pub fn drawSourceGeometry(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32, mode: engine.wire_geometry.Mode) Allocator.Error!Drawn {
+     const devs = deck.devs(c);
+     const names = try netNames(a, deck, c);
+     var out: Drawn = .{};
+@@ -354,7 +359,7 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
+     }
+     const text = try cellDeck(a, deck, rec, c, names);
+     var diag: engine.netlist.Diagnostic = .{};
+-    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag) catch |e| switch (e) {
++    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag, mode) catch |e| switch (e) {
+         error.OutOfMemory => return error.OutOfMemory,
+         else => {
+             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });
+@@ -371,12 +376,15 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
+     return out;
+ }
+ 
+-fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic) engine.PlaceError!engine.Placed {
++fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic, mode: engine.wire_geometry.Mode) engine.PlaceError!engine.Placed {
+     var nl = try engine.netlist.parse(gpa, &.{text}, diag);
+     defer nl.deinit(gpa);
+-    const owners = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
++    const owners = try @import("parent_outputs.zig").forCellGeometry(gpa, a, source, deck, rec, c, names, &nl, mode);
+     if (owners.bridge) |request| return engine.placeSourceBridge(gpa, &.default, lib, &nl, request);
+-    return engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
++    var result = try engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
++    errdefer result.deinit();
++    if (owners.crossover) |pair| _ = try engine.crossover.apply(gpa, lib, &result, &nl, pair);
++    return result;
+ }
+ 
+ /// Places the node-less devices of cell `c` (nothing to wire, so the engine never sees
+diff --git a/tools/schemify/parent_outputs.zig b/tools/schemify/parent_outputs.zig
+index 8831fd24..7cdeb41e 100644
+--- a/tools/schemify/parent_outputs.zig
++++ b/tools/schemify/parent_outputs.zig
+@@ -11,12 +11,17 @@ const names_ = @import("names.zig");
+ const Allocator = std.mem.Allocator;
+ 
+ /// Qualified owner identities mapped to the actual generated graph.
+-pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_bridge.Request = null };
++pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_bridge.Request = null, crossover: ?np.crossover.Pair = null };
+ 
+ /// The first target scope is one original subcircuit with complete, recognized
+ /// four-pin MOS devices. Both original and emitted graphs are checked against
+ /// every selected Deck device and each of its four ordered original net ids.
+ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const spice.Deck, rec: *const recognize.Recognized, c: u32, names: []const []const u8, actual: *const np.netlist.Netlist) Allocator.Error!Bound {
++    return forCellGeometry(gpa, a, source, deck, rec, c, names, actual, .manhattan);
++}
++
++/// Includes the verified reciprocal loads when the output target accepts their wire directions.
++pub fn forCellGeometry(gpa: Allocator, a: Allocator, source: []const u8, deck: *const spice.Deck, rec: *const recognize.Recognized, c: u32, names: []const []const u8, actual: *const np.netlist.Netlist, mode: np.wire_geometry.Mode) Allocator.Error!Bound {
+     if (source.len == 0 or c != 1 or deck.cells() != 2 or deck.devs(0).len() != 0) return .{};
+     const range = deck.devs(c);
+     if (range.len() < 5 or range.len() > 128 or actual.graph.edgeCount() != range.len()) return .{};
+@@ -57,10 +62,15 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
+         const ctx = try np.parent_context.bind(a, source, &original, &np.parent_context.standard_rails);
+         if (ctx.reasons.count() != 0) return .{};
+         const parents = try np.local_parents.collect(a, ctx, .{});
+-        if (parents.disposition != .raw_multigroup_candidate) return .{};
+-        owners.pairs = try np.parent_outputs.collect(a, ctx, parents);
+-        owners.stages = try np.parent_stages.collect(a, ctx, parents);
+-        if (owners.pairs.len == 0 and owners.stages.len == 0) return .{};
++        if (mode == .allow_45 and original.graph.edgeCount() == 5) {
++            const roles = try np.guessRoles(a, &original);
++            owners.crossover = np.crossover.collect(&original, roles);
++        }
++        if (parents.disposition == .raw_multigroup_candidate) {
++            owners.pairs = try np.parent_outputs.collect(a, ctx, parents);
++            owners.stages = try np.parent_stages.collect(a, ctx, parents);
++        }
++        if (owners.pairs.len == 0 and owners.stages.len == 0 and owners.crossover == null) return .{};
+     }
+     const devices = try a.alloc(u32, range.len());
+     const nets = try a.alloc(u32, original.graph.vertexCount());
+@@ -101,5 +111,9 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
+     if (owners.bridge) |*bridge| {
+         for (&bridge.devices) |*d| d.* = devices[d.*];
+     }
+-    return .{ .pairs = mapped, .stages = target_stages, .bridge = owners.bridge };
++    if (owners.crossover) |*pair| {
++        for (&pair.loads) |*d| d.* = devices[d.*];
++        for (&pair.inputs) |*d| d.* = devices[d.*];
++    }
++    return .{ .pairs = mapped, .stages = target_stages, .bridge = owners.bridge, .crossover = owners.crossover };
+ }
+diff --git a/tools/schemify/plugin.zig b/tools/schemify/plugin.zig
+index 59d5e1df..edfb82aa 100644
+--- a/tools/schemify/plugin.zig
++++ b/tools/schemify/plugin.zig
+@@ -99,6 +99,7 @@ const Job = struct {
+     arena: std.heap.ArenaAllocator,
+     /// This job's number: the id of its timers (an older job's timer finds no match).
+     serial: u32,
++    allow_45: bool,
+     source: []const u8,
+     dir: []const u8,
+     /// Where the host puts bare file names (the manifest's `place` and `lib` rows); empty
+@@ -158,18 +159,23 @@ pub fn onEvent(ev: schemify.Event, out: *Out) void {
+         .command => |c| if (mem.eql(u8, c.name, "netlist.import_close")) {
+             contribute(out, false);
+         } else if (mem.eql(u8, c.name, "netlist.import") or mem.eql(u8, c.name, "cktimg.import")) {
++            var allow_45 = false;
+             var path_buf: [1024]u8 = undefined;
+             var path: Out = .init(&path_buf);
+             var word_buf: [1024]u8 = undefined;
+             var values = schemify.values(c.args);
+             while (values.next(&word_buf) catch null) |w| {
++                if (!allow_45 and path.len == 0 and mem.eql(u8, w, "--allow-45")) {
++                    allow_45 = true;
++                    continue;
++                }
+                 if (path.len > 0) path.put(" ");
+                 path.put(w);
+             }
+             if (path.len == 0 or path.overflow) return contribute(out, true);
+             contribute(out, false);
+             abandon();
+-            start(path.slice(), out);
++            start(path.slice(), allow_45, out);
+         },
+         .io_done => |io| {
+             const job = &(job_slot orelse return);
+@@ -201,7 +207,7 @@ fn hint(e: schemify.Error) []const u8 {
+ }
+ 
+ /// Starts an import of `path` (project-relative).
+-fn start(path: []const u8, out: *Out) void {
++fn start(path: []const u8, allow_45: bool, out: *Out) void {
+     assert(path.len > 0);
+     const known = for ([_][]const u8{ ".sp", ".cir", ".spice", ".net", ".cdl" }) |e| {
+         if (std.ascii.endsWithIgnoreCase(path, e)) break true;
+@@ -214,6 +220,7 @@ fn start(path: []const u8, out: *Out) void {
+     var job: Job = .{
+         .arena = arena,
+         .serial = jobs,
++        .allow_45 = allow_45,
+         .source = source,
+         .dir = source[0 .. mem.lastIndexOfScalar(u8, source, '/') orelse 0],
+     };
+@@ -325,6 +332,7 @@ fn convert(job: *Job, out: *Out) Allocator.Error!bool {
+     }
+     job.conv = try .initLibs(gpa, a, job.source, job.text, libs.items);
+     job.conv.?.place = job.place;
++    job.conv.?.allow_45 = job.allow_45;
+     if (job.conv.?.cellsLeft() == 0) {
+         logf(out, .warn, "{s}: no subckt or top-level card to import", .{job.source});
+         return false;
+diff --git a/tools/tex.zig b/tools/tex.zig
+index a74dbc79..701e97d7 100644
+--- a/tools/tex.zig
++++ b/tools/tex.zig
+@@ -23,6 +23,7 @@ const usage =
+     \\Options:
+     \\  --standalone      a complete \documentclass{standalone} document
+     \\  --config <path>   layout, render and lint settings from a lint.zon file
++    \\  --allow-45        allow certified 45-degree feedback wires
+     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
+     \\  --lint            run the lint.zon rules and report on stderr
+     \\  -h, --help        this message
+@@ -35,6 +36,7 @@ const usage =
+ ;
+ 
+ const Options = struct {
++    allow_45: bool = false,
+     netlist: []const u8,
+     out: ?[]const u8 = null,
+     config: ?[]const u8 = null,
+@@ -56,7 +58,7 @@ pub fn main(init: std.process.Init) !void {
+ 
+     const text = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
+     // A config named on the command line must exist: it was asked for.
+-    const cfg: np.Config = if (opts.config) |path| blk: {
++    var cfg: np.Config = if (opts.config) |path| blk: {
+         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
+         var diags: std.ArrayList(np.config.Diagnostic) = .empty;
+         const c = try np.Config.parse(arena, t, &diags);
+@@ -64,6 +66,7 @@ pub fn main(init: std.process.Init) !void {
+         break :blk c;
+     } else .default;
+ 
++    if (opts.allow_45) cfg.geometry = .allow_45;
+     var lib = np.Library.init(gpa);
+     defer lib.deinit();
+     const symbols = if (opts.symbols) |path|
+@@ -126,6 +129,8 @@ fn parseArgs(io: std.Io, argv: []const [:0]const u8) ?Options {
+         if (std.mem.eql(u8, a, "-h") or std.mem.eql(u8, a, "--help")) {
+             writeUsage(io, .stdout());
+             return null;
++        } else if (std.mem.eql(u8, a, "--allow-45")) {
++            o.allow_45 = true;
+         } else if (std.mem.eql(u8, a, "--standalone")) {
+             o.standalone = true;
+         } else if (std.mem.eql(u8, a, "--lint")) {

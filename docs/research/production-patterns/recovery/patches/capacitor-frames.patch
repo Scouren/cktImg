@@ -1,0 +1,671 @@
+diff --git a/TESTING.md b/TESTING.md
+index 97589f90..3814f245 100644
+--- a/TESTING.md
++++ b/TESTING.md
+@@ -26,6 +26,7 @@ Zig processes and keep at least 6 GB available memory, as required by
+ | Parent structure census | `nix develop -c python3 tests/parent_corpus.py` | All 2,202 AnalogGenie dispositions, memberships, gate interfaces and uniquely witnessed reflections against the frozen ninth-study census. Its SHA-256 is recorded in the test. |
+ | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |
+ | Driven-bank physical continuity | [driven_banks_connectivity.py](docs/research/figures/driven_banks_connectivity.py), with the explicit inputs documented in [driven-banks.md](docs/research/driven-banks.md) | Every stable terminal pair on changed nets across both complete corpora, compared with actual source conductor ink; every historical mismatch is checked by name. |
++| Four-phase passive cells | [polyphase_caps.py](tests/polyphase_caps.py), in `zig build test` | Checks all 32 ordered device tips and both capacitor banks against AG493, card-order and pin-order reversals, a broken cycle, caller authority and the cardinal AG494 control. |
+ | MOS bodies | [mos_bodies.py](tests/mos_bodies.py), in `zig build test` | Four named DUTs, ordered raw cards, actual B-tip conductors or attached names, compact class override, hidden/absent caller capabilities and rejected mistyped fourth terminal. |
+ | Private bias peers | [bias_block_neighbors.zig](tests/bias_block_neighbors.zig) and the source/native/continuity companions in [bias-block-neighbors.md](docs/research/bias-block-neighbors.md) | Actual own-body leads, outward peer body, opposing collinear terminals, full pin incidences, caller precedence and source-supported physical wire groups. |
+ 
+diff --git a/build.zig b/build.zig
+index b2ec5be8..1c9ecb6f 100644
+--- a/build.zig
++++ b/build.zig
+@@ -214,6 +214,12 @@ pub fn build(b: *std.Build) void {
+         body_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+     body_check.addFileArg(b.path("tests/symbols.zon"));
+     test_step.dependOn(&body_check.step);
++    const cap_check = b.addSystemCommand(&.{"python3"});
++    cap_check.addFileArg(b.path("tests/polyphase_caps.py"));
++    cap_check.addArtifactArg(json_exe);
++    for ([_][]const u8{ "ag-493.cir", "ag-493.human.json", "ag-494.cir" }) |name|
++        cap_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
++    test_step.dependOn(&cap_check.step);
+     const stage_check = b.addSystemCommand(&.{"python3"});
+     stage_check.addFileArg(b.path("tests/parent_stages.py"));
+     stage_check.addArtifactArg(json_exe);
+diff --git a/skills/cktimg/SKILL.md b/skills/cktimg/SKILL.md
+index 3bd778df..4b273304 100644
+--- a/skills/cktimg/SKILL.md
++++ b/skills/cktimg/SKILL.md
+@@ -114,6 +114,14 @@ on a device overrides the relations on it.
+   `unshown_bodies`. A custom symbol file can supply either class on its
+   own, or register a visible D/G/S/B variant after its compact class with
+   `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
++- **Polyphase RC cells.** A closed four-phase network with two resistor
++  banks and two certified cyclic capacitor banks can show oblique capacitor
++  plates and leads. Native stock text/SVG and the editor use an actual
++  two-contact `cap_oblique` symbol. With `*@ class C1 cap_oblique` a
++  caller can also request this glyph on a single ordinary capacitor. Its
++  leads are diagonal in its local frame. Inter-device wires use the
++  selected router. An explicit geometry request keeps the other parts on
++  ordinary placement.
+ - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
+   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
+   box, and `*@ expand` draws the devices instead. With no such line:
+diff --git a/src/polyphase_caps.zig b/src/polyphase_caps.zig
+new file mode 100644
+index 00000000..47405a64
+--- /dev/null
++++ b/src/polyphase_caps.zig
+@@ -0,0 +1,113 @@
++//! A four-section RC lattice with two capacitor banks connecting adjacent phases.
++//! Each of eight external nodes has one resistor and one capacitor. The
++//! resistor midpoints define the rows; both capacitor banks must prove the
++//! same four-cycle. All 16 ordered device incidences are consumed.
++//!
++//! Contents:
++//! - `pub const Part`, `pub const Port`, `pub const Pose`, `pub const Layout`
++//! - `pub fn match`, `pub fn hints`
++
++const std = @import("std");
++const library = @import("library.zig");
++
++/// Ordered terminals of one resistor or capacitor.
++pub const Part = struct { cap: bool, nets: [2]u32 };
++/// Actual selected-definition formal with its lowercase source spelling.
++pub const Port = struct { net: u32, name: []const u8 };
++/// Centre in half-symbol units, full class orientation, and symbol kind.
++pub const Pose = struct { x: u8, y: u8, turn: bool, cap: bool };
++/// Poses in the calling cell's original card order.
++pub const Layout = [16]Pose;
++const Contact = struct { part: u8, inner: u32 };
++const Leaf = struct { net: u32, resistor: Contact, cap: Contact };
++
++/// Matches a closed two-bank cycle, starting at the first declared input
++/// formal. Card names, values and device order play no part in admission.
++pub fn match(parts: *const [16]Part, ports: *const [8]Port) ?Layout {
++    var inputs: [4]Leaf = undefined;
++    var outputs: [4]Leaf = undefined;
++    var n_in: usize = 0;
++    var n_out: usize = 0;
++    var used: u16 = 0;
++    for (ports) |port| {
++        const leaf: Leaf = .{
++            .net = port.net,
++            .resistor = contact(parts, port.net, false) orelse return null,
++            .cap = contact(parts, port.net, true) orelse return null,
++        };
++        const bits = bit(leaf.resistor.part) | bit(leaf.cap.part);
++        if (used & bits != 0 or leaf.resistor.inner == leaf.cap.inner) return null;
++        for (ports) |other| if (other.net == leaf.resistor.inner or other.net == leaf.cap.inner) return null;
++        used |= bits;
++        switch (library.named(port.name, .net) orelse return null) {
++            .in, .inp, .inn => {
++                if (n_in == 4 or byMid(inputs[0..n_in], leaf.resistor.inner) != null) return null;
++                inputs[n_in] = leaf;
++                n_in += 1;
++            },
++            .out => {
++                if (n_out == 4 or byMid(outputs[0..n_out], leaf.resistor.inner) != null) return null;
++                outputs[n_out] = leaf;
++                n_out += 1;
++            },
++            else => return null,
++        }
++    }
++    if (n_in != 4 or n_out != 4 or used != std.math.maxInt(u16)) return null;
++    var layout: Layout = undefined;
++    var at: usize = 0;
++    var visited: u16 = 0;
++    for (0..4) |row| {
++        const lhs = inputs[at];
++        const mid = lhs.resistor.inner;
++        const rhs = outputs[byMid(&outputs, mid) orelse return null];
++        const next = byMid(&inputs, lhs.cap.inner) orelse return null;
++        const following = outputs[byMid(&outputs, lhs.cap.inner) orelse return null];
++        if (visited & bit(at) != 0 or following.cap.inner != mid) return null;
++        visited |= bit(at);
++        const y: u8 = @intCast(5 + 4 * row);
++        layout[lhs.resistor.part] = pose(parts, lhs.resistor.part, 7, y, lhs.net);
++        layout[rhs.resistor.part] = pose(parts, rhs.resistor.part, 15, y, mid);
++        layout[lhs.cap.part] = pose(parts, lhs.cap.part, 7, y + 2, lhs.net);
++        layout[following.cap.part] = pose(parts, following.cap.part, 15, y + 2, mid);
++        at = next;
++    }
++    return if (at == 0) layout else null;
++}
++
++/// Writes the selected-cell placement in symbol units using the target's
++/// oblique plate glyph and its ordered canonical resistor contacts.
++pub fn hints(w: *std.Io.Writer, layout: Layout, names: []const []const u8, res_points_right: bool) std.Io.Writer.Error!void {
++    for (layout, names) |p, name| {
++        if (p.cap) try w.print("*@ weak class {s} cap_oblique\n", .{name});
++        try w.print("*@ at {s} {d}.5 {d}.5 {s}\n", .{ name, p.x / 2, p.y / 2, if (p.turn != (!p.cap and res_points_right)) "R180" else "R0" });
++    }
++}
++
++// ---------------- private ----------------
++
++fn contact(parts: *const [16]Part, net: u32, cap: bool) ?Contact {
++    var found: ?Contact = null;
++    for (parts, 0..) |p, i| {
++        if (p.cap != cap) continue;
++        for (p.nets, 0..) |end, k| if (end == net) {
++            if (found != null) return null;
++            found = .{ .part = @intCast(i), .inner = p.nets[1 - k] };
++        };
++    }
++    return found;
++}
++
++fn bit(i: usize) u16 {
++    return @as(u16, 1) << @intCast(i);
++}
++
++fn byMid(leaves: []const Leaf, mid: u32) ?usize {
++    for (leaves, 0..) |l, i| if (l.resistor.inner == mid) return i;
++    return null;
++}
++
++fn pose(parts: *const [16]Part, i: u8, x: u8, y: u8, first: u32) Pose {
++    const p = parts[i];
++    return .{ .x = x, .y = y, .cap = p.cap, .turn = p.nets[0] != first };
++}
+diff --git a/src/root.zig b/src/root.zig
+index 6a093cb1..17899e88 100644
+--- a/src/root.zig
++++ b/src/root.zig
+@@ -21,6 +21,7 @@
+ //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
+ //! - `pub const device = @import("device.zig")`
+ //! - `pub const library = @import("library.zig")`
++//! - `pub const polyphase_caps`
+ //! - `pub const regulator = @import("regulator.zig")`
+ //! - `pub const block_symbols = @import("block_symbols.zig")`
+ 
+@@ -47,7 +48,9 @@ pub const hints = @import("hints.zig");
+ pub const analysis = @import("analysis.zig");
+ pub const csr = @import("csr.zig");
+ pub const library = @import("library.zig");
+-/// Signed input order from raw NMOS regulator connections and declared cell ports.
++/// Complete two-bank passive RC lattice and ordered capacitor poses.
++pub const polyphase_caps = @import("polyphase_caps.zig");
++/// Certified signed controller pose for a regulated pass transistor.
+ pub const regulator = @import("regulator.zig");
+ /// Conventional glyphs for subcircuits with verified named port contracts.
+ pub const block_symbols = @import("block_symbols.zig");
+diff --git a/tests/polyphase_caps.py b/tests/polyphase_caps.py
+new file mode 100644
+index 00000000..9d91e54d
+--- /dev/null
++++ b/tests/polyphase_caps.py
+@@ -0,0 +1,62 @@
++"""Check actual capacitor tips against the AG493 redraw and the literal ordered cards."""
++import copy
++import json
++from pathlib import Path
++import subprocess
++import sys
++import tempfile
++
++
++def run(binary, deck, extra=()):
++    with tempfile.TemporaryDirectory() as tmp:
++        src, out, report = [Path(tmp) / f for f in ('input.cir', 'out.json', 'report.json')]
++        src.write_text(deck)
++        subprocess.run([binary, *extra, '--report', report, src, out], check=True, capture_output=True)
++        data = json.loads(out.read_text())
++        assert not json.loads(report.read_text())['gates']
++        return {d['name']: d for d in data['devices']}
++
++
++def check(devices, human):
++    by_name = {d['card']: d for d in human['devices']}
++    origins = set()
++    for name, expected in by_name.items():
++        got = devices[name]
++        origins.add(tuple(got['pos'][i] - expected[k] for i, k in enumerate(('x', 'y'))))
++        assert [p['net'] for p in got['pins']] == list(expected['nets'].values()), name
++        ordered = list(expected['terminals'].values())
++        for p, ref in zip(got['pins'], ordered):
++            for i, k in enumerate(('x', 'y')):
++                assert p['xy'][i] - got['pos'][i] == round(ref[i] - expected[k]), (name, p, ref)
++    assert len(origins) == 1, origins
++
++
++def main(binary, deck, reference, control):
++    source = deck.read_text()
++    human = json.loads(reference.read_text())
++    check(run(binary, source), human)
++    # Reordering cards cannot select a different place or reverse a polarized
++    # terminal. A renamed or split internal net cannot qualify on appearance.
++    cards = [s for s in source.splitlines() if s.startswith(('R', 'C'))]
++    inverse = iter(cards[::-1])
++    shuffled = '\n'.join(next(inverse) if s in cards else s for s in source.splitlines()) + '\n'
++    check(run(binary, shuffled), human)
++    reversed_gold = copy.deepcopy(human)
++    reversed_cards = source
++    for name in ('C2', 'R5'):
++        row = next(l for l in source.splitlines() if l.startswith(name + ' '))
++        words = row.split()
++        words[1], words[2] = words[2], words[1]
++        reversed_cards = reversed_cards.replace(row, ' '.join(words))
++        expected = next(d for d in reversed_gold['devices'] if d['name'] == name)
++        for key in ('nets', 'terminals'):
++            expected[key]['1'], expected[key]['2'] = expected[key]['2'], expected[key]['1']
++    check(run(binary, reversed_cards), reversed_gold)
++    for contrary in (source.replace('C5 net0', 'C5 split'), source.replace('.ends dut', '*@ class C1 cap\n.ends dut'),
++                     source.replace('.ends dut', '*.PININFO Vin1:O\n.ends dut'), control.read_text()):
++        devices = run(binary, contrary)
++        assert all(d['class'] != 'cap_oblique' for d in devices.values())
++
++
++if __name__ == '__main__':
++    main(sys.argv[1], *map(Path, sys.argv[2:]))
+diff --git a/tests/symbols.zon b/tests/symbols.zon
+index e43bfde9..abea6f12 100644
+--- a/tests/symbols.zon
++++ b/tests/symbols.zon
+@@ -9,6 +9,7 @@
+     .classes = .{
+         .{ .name = "res", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = 0 }, .{ .x = -9, .y = 4 }, .{ .x = -6, .y = -4 }, .{ .x = -3, .y = 4 }, .{ .x = 0, .y = -4 }, .{ .x = 3, .y = 4 }, .{ .x = 6, .y = -4 }, .{ .x = 9, .y = 4 }, .{ .x = 12, .y = 0 } } } } },
+         .{ .name = "cap", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -3, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 3, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -3, .y = -8 }, .b = .{ .x = -3, .y = 8 } } }, .{ .line = .{ .a = .{ .x = 3, .y = -8 }, .b = .{ .x = 3, .y = 8 } } } } },
++        .{ .name = "cap_oblique", .terminals = .{ .{ .name = "a", .at = .{ .x = -14, .y = -14 } }, .{ .name = "b", .at = .{ .x = 14, .y = 14 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -14, .y = -14 }, .b = .{ .x = -2, .y = -2 } } }, .{ .line = .{ .a = .{ .x = 14, .y = 14 }, .b = .{ .x = 2, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -8, .y = 4 }, .b = .{ .x = 4, .y = -8 } } }, .{ .line = .{ .a = .{ .x = -4, .y = 8 }, .b = .{ .x = 8, .y = -4 } } } } },
+         .{ .name = "ind", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = 0 }, .{ .x = -11, .y = -3 }, .{ .x = -9, .y = -4 }, .{ .x = -7, .y = -3 }, .{ .x = -6, .y = 0 }, .{ .x = -5, .y = -3 }, .{ .x = -3, .y = -4 }, .{ .x = -1, .y = -3 }, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = -3 }, .{ .x = 3, .y = -4 }, .{ .x = 5, .y = -3 }, .{ .x = 6, .y = 0 }, .{ .x = 7, .y = -3 }, .{ .x = 9, .y = -4 }, .{ .x = 11, .y = -3 }, .{ .x = 12, .y = 0 } } } } },
+         .{ .name = "vsource", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 9 } }, .{ .line = .{ .a = .{ .x = -6, .y = -2 }, .b = .{ .x = -6, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -8, .y = 0 }, .b = .{ .x = -4, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 5, .y = -2 }, .b = .{ .x = 5, .y = 2 } } } } },
+         .{ .name = "isource", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 9 } }, .{ .line = .{ .a = .{ .x = -5, .y = 0 }, .b = .{ .x = 5, .y = 0 } } }, .{ .polyline = .{ .{ .x = 6, .y = 0 }, .{ .x = 2, .y = -3 }, .{ .x = 2, .y = 3 }, .{ .x = 6, .y = 0 } } } } },
+diff --git a/tools/json.zig b/tools/json.zig
+index b64f1eb9..9a8137c3 100644
+--- a/tools/json.zig
++++ b/tools/json.zig
+@@ -26,7 +26,7 @@
+ //!
+ //! Contents:
+ //! - `pub fn main`
+-//! - `pub fn deckSources`
++//! - `pub fn deckSources`, `pub fn deckSourcesFor`
+ //! - `pub fn placeSelected`
+ 
+ const std = @import("std");
+@@ -117,7 +117,8 @@ pub fn main(init: std.process.Init) !void {
+     }
+ 
+     var diag: np.netlist.Diagnostic = .{};
+-    const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {
++    const lattice = opts.from == null and opts.config == null and opts.symbols == null and (target == null or target.?.lookup("cap_oblique") != null);
++    const srcs = deckSourcesFor(gpa, arena, &lib, opts.netlist, raw, &diag, lattice) catch |err| switch (err) {
+         error.OutOfMemory => return err,
+         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
+     };
+@@ -200,6 +201,11 @@ pub fn main(init: std.process.Init) !void {
+ /// The sources to place for deck `raw` (see the module comment): itself, or
+ /// its top cell's body followed by the deck for the definitions.
+ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
++    return deckSourcesFor(gpa, arena, lib, path, raw, diag, false);
++}
++
++/// Selects the same cell while permitting the stock oblique-symbol capability.
++pub fn deckSourcesFor(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic, lattice: bool) ![][]const u8 {
+     const first = std.mem.trimStart(u8, raw, " \t\r\n");
+     const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
+     var nl = try np.netlist.parse(gpa, &.{text}, diag);
+@@ -211,7 +217,7 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
+     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
+     const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
+     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
+-    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
++    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag, lattice and top.ports.len == 8 and @import("polyphase_caps.zig").plain(top.body));
+     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
+ }
+ 
+@@ -290,7 +296,7 @@ fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, di
+ /// their role (R1 leaves them internal): a port only gates hang on is an
+ /// input, any other an output. So every port is drawn as one, and a port on
+ /// one gate is no dangling pin.
+-fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic) ![]const u8 {
++fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic, lattice: bool) ![]const u8 {
+     var nl = try np.netlist.parse(gpa, sources, diag);
+     defer nl.deinit(gpa);
+     if (lib) |draw_lib| try @import("regulator.zig").select(arena, &nl, ports, draw_lib);
+@@ -315,6 +321,8 @@ fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, po
+         if (roles[net.index()] != .internal) continue;
+         try out.writer.print("*@ weak role {s} {s}\n", .{ port, if (driven[net.index()]) "output" else "input" });
+     }
++    if (lattice and nl.hints.len == 0) if (lib) |draw_lib|
++        try @import("polyphase_caps.zig").write(&out.writer, &nl, ports, draw_lib);
+     return out.written();
+ }
+ 
+diff --git a/tools/polyphase_caps.zig b/tools/polyphase_caps.zig
+new file mode 100644
+index 00000000..d8cd8074
+--- /dev/null
++++ b/tools/polyphase_caps.zig
+@@ -0,0 +1,41 @@
++//! Bind stock native symbol geometry to the checked passive RC lattice.
++//!
++//! Contents:
++//! - `pub fn write`, `pub fn plain`
++
++const std = @import("std");
++const engine = @import("NetlistParser");
++const lattice = engine.polyphase_caps;
++
++/// Emits an arrangement only for the selected raw cell with eight real
++/// formals and exactly the sixteen supported ordinary two-terminal parts.
++pub fn write(w: *std.Io.Writer, nl: *const engine.netlist.Netlist, formal: []const []const u8, lib: *const engine.Library) std.Io.Writer.Error!void {
++    if (formal.len != 8 or nl.graph.edgeCount() != 16 or lib.find("cap_oblique") == null) return;
++    var parts: [16]lattice.Part = undefined;
++    for (&parts, nl.graph.edges.items(.kind), 0..) |*part, kind, i| {
++        const nodes = nl.graph.members(.from(i));
++        if ((kind != .resistor and kind != .capacitor) or nodes.len != 2) return;
++        part.* = .{ .cap = kind == .capacitor, .nets = .{ nodes[0].index(), nodes[1].index() } };
++    }
++    var ports: [8]lattice.Port = undefined;
++    for (&ports, formal) |*p, name| p.* = .{ .name = name, .net = (nl.net(name) orelse return).index() };
++    const arrangement = lattice.match(&parts, &ports) orelse return;
++    const resistor = lib.at(lib.find("res") orelse return);
++    try lattice.hints(w, arrangement, nl.graph.edges.items(.name), resistor.terminals[0].at.x > 0);
++}
++
++/// A source body made only of passive cards, continuation lines and ordinary
++/// comments. Source directions, directives and simulator code own their layout.
++pub fn plain(body: []const u8) bool {
++    var lines = std.mem.splitScalar(u8, body, '\n');
++    while (lines.next()) |raw| {
++        const line = std.mem.trimStart(u8, raw, " \t\r");
++        if (line.len == 0) continue;
++        switch (std.ascii.toLower(line[0])) {
++            'r', 'c', '+' => {},
++            '*' => if (std.mem.startsWith(u8, line, "*@") or std.ascii.startsWithIgnoreCase(line, "*.pininfo")) return false,
++            else => return false,
++        }
++    }
++    return true;
++}
+diff --git a/tools/schemify/emit.zig b/tools/schemify/emit.zig
+index 3435a503..ef6c42db 100644
+--- a/tools/schemify/emit.zig
++++ b/tools/schemify/emit.zig
+@@ -321,6 +321,22 @@ const Refs = struct {
+ /// or for the code leaf the text itself (`{text}`).
+ pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32) Allocator.Error!OutFile {
+     const stem = rec.syms.stem.items[s];
++    if (rec.syms.family.items[s] == .oblique_cap) {
++        var w: Writer = try .init(a, "shprim", source, stem);
++        try w.headerAttr("doc", "Capacitor with oblique plates and leads in a four-phase RC network");
++        try w.headerAttr("prefix", "C");
++        try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
++        try symbol(&w, rec, s);
++        try w.record(.rank1, "param", &.{ "value", "1p" });
++        try w.attr("kind", &.{"string"});
++        try w.attr("unit", &.{"F"});
++        try w.record(.rank1, "param", &.{ "m", "1" });
++        try w.record(.rank1, "impl", &.{ "spice", "spice" });
++        try w.attr("format", &.{ "spice", "{name} {p} {n} {value} m={m}" });
++        try w.attr("format", &.{ "spectre", "{name} ({p} {n}) capacitor c={num(value)} m={m}" });
++        try graphics(&w, rec, s);
++        return w.finish(try a.print("{s}.shprim", .{stem}), true);
++    }
+     const own = rec.syms.format.items[s];
+     const code = s == rec.code_sym;
+     const doc = if (code) "SPICE text kept inside a subckt definition (netlist import)" else "SPICE card re-emitted verbatim (netlist import)";
+@@ -355,6 +371,7 @@ fn lineRec(w: *Writer, v: [4]i32) Allocator.Error!void {
+ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
+     const b = rec.syms.body.items[s];
+     switch (rec.syms.family.items[s]) {
++        .oblique_cap => try drawOps(w, &@import("polyphase_caps.zig").strokes),
+         .two => {
+             try lineRec(w, .{ 0, -30, 0, -20 });
+             try lineRec(w, .{ 0, 20, 0, 30 });
+@@ -405,7 +422,7 @@ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
+             if (rec.syms.pins(s).len == 4) try lineRec(w, .{ 0, 0, 20, 0 });
+         },
+     }
+-    for ([_]struct { i32, []const u8 }{ .{ b[1] - 20, "{name}" }, .{ b[3] + 10, "{cell}" } }) |t| {
++    for ([_]struct { i32, []const u8 }{ .{ b[1] - 20, "{name}" }, .{ b[3] + 10, if (rec.syms.family.items[s] == .oblique_cap) "{value}" else "{cell}" } }) |t| {
+         try w.record(.rank2, "stext", &.{});
+         try w.coords(&.{ b[0], t[0] });
+         try w.fields(&.{ "R0", t[1] });
+diff --git a/tools/schemify/layout.zig b/tools/schemify/layout.zig
+index 632b2f67..83562fb6 100644
+--- a/tools/schemify/layout.zig
++++ b/tools/schemify/layout.zig
+@@ -96,7 +96,7 @@ pub fn facing(o: u8, px: i32, py: i32) u8 {
+ /// (already horizontal) and generated boxes.
+ pub fn toCanonical(fam: Family) u8 {
+     return switch (fam) {
+-        .tline, .box => 0,
++        .tline, .box, .oblique_cap => 0,
+         else => 1,
+     };
+ }
+@@ -112,6 +112,7 @@ fn hiddenPin(fam: Family, k: usize) bool {
+ fn classNames(fam: Family) []const []const u8 {
+     return switch (fam) {
+         .two => &.{ "res", "cap", "ind", "vsource", "isource", "diode", "bsource" },
++        .oblique_cap => &.{"cap_oblique"},
+         .nmos => &.{"nmos"},
+         .pmos => &.{"pmos"},
+         .npn => &.{"npn"},
+@@ -171,7 +172,7 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
+                 op.* = .ln(from[0], from[1], to[0], to[1]);
+             }
+             break :blk &core_mos;
+-        } else if (syms.shape.items[s] == .box) &box_ops else glyph: {
++        } else if (fam == .oblique_cap) &@import("polyphase_caps.zig").strokes else if (syms.shape.items[s] == .box) &box_ops else glyph: {
+             const port_names = try a.alloc([]const u8, pins.len);
+             for (pins, port_names) |p, *name| name.* = p.name;
+             const glyph = try engine.block_symbols.draw(a, syms.shape.items[s], port_names, 20);
+@@ -324,6 +325,11 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
+         try text.print(a, " {s}\n", .{card.tail});
+     }
+     try hints.write(a, &text, deck, c, dev_names, names);
++    for (rec.lattices.items) |lattice| if (lattice.cell == c) {
++        var ink: std.Io.Writer.Allocating = .init(a);
++        engine.polyphase_caps.hints(&ink.writer, lattice.layout, dev_names, true) catch return error.OutOfMemory;
++        try text.appendSlice(a, ink.written());
++    };
+     return text.items;
+ }
+ 
+@@ -372,7 +378,14 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
+     defer placed.deinit();
+     budget.* -= wired_devs;
+     try hints.notes(gpa, a, &out.notes, deck, c, text, &placed, lib);
+-    try translate(a, &out, &placed, lib, deck, rec, c, names);
++    translate(a, &out, &placed, lib, deck, rec, c, names) catch |err| switch (err) {
++        error.OutOfMemory => return error.OutOfMemory,
++        error.IncompatibleClass => {
++            out = .{ .fallback = "the selected class has different contact coordinates from the bound editor symbol" };
++            try labelled(a, &out, deck, rec, c);
++            return out;
++        },
++    };
+     try placeFree(a, &out, deck, rec, c);
+     assert(out.x.items.len == devs.len());
+     return out;
+@@ -427,7 +440,7 @@ fn onAny(wires: []const Seg, p: P) bool {
+ }
+ 
+ /// Fills `out` from the engine's placement `placed` of cell `c`.
+-fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) Allocator.Error!void {
++fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) (Allocator.Error || error{IncompatibleClass})!void {
+     const syms = &rec.syms;
+     const devs = deck.devs(c);
+     const n = devs.len();
+@@ -477,11 +490,11 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
+         try out.place(a, pos.x, pos.y, o);
+         const lo, const hi = placed.pinRange(i);
+         const pins = syms.pins(s);
+-        assert(hi - lo == pins.len);
++        if (hi - lo != pins.len) return error.IncompatibleClass;
+         for (pins, 0..) |p, k| {
+             const dd = xform(o, p.x, p.y);
+             const at: P = .{ pos.x + dd[0], pos.y + dd[1] };
+-            assert(placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] }));
++            if (!placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] })) return error.IncompatibleClass;
+             const net = nets[k];
+             assert(local.of(placed.pin_net[lo + k]) == net);
+             const face = facing(o, p.x, p.y);
+diff --git a/tools/schemify/names.zig b/tools/schemify/names.zig
+index 7940b115..b519776e 100644
+--- a/tools/schemify/names.zig
++++ b/tools/schemify/names.zig
+@@ -49,6 +49,7 @@ pub fn cardOf(a: Allocator, deck: *const Deck, rec: *const Recognized, d: u32) A
+             'v', 'i' => .{ letter, try plainWords(a, deck.dev_rest[d]) },
+             else => .{ 'b', "v=0" },
+         },
++        .oblique_cap => .{ 'c', "" },
+         .nmos => .{ 'm', "nmos" },
+         .pmos => .{ 'm', "pmos" },
+         .npn => .{ 'q', "npn" },
+diff --git a/tools/schemify/polyphase_caps.zig b/tools/schemify/polyphase_caps.zig
+new file mode 100644
+index 00000000..ee728c42
+--- /dev/null
++++ b/tools/schemify/polyphase_caps.zig
+@@ -0,0 +1,59 @@
++//! Select a complete four-phase passive RC cell from actual host bindings.
++//!
++//! Contents:
++//! - `pub const strokes`
++//! - `pub fn match`, `pub fn requested`
++
++const std = @import("std");
++const engine = @import("NetlistParser");
++const rec = @import("recognize.zig");
++const spice = @import("spice.zig");
++
++/// Schemify xschem-unit ink with actual contacts at (−21,−21) and (+21,+21).
++pub const strokes = [_]engine.library.DrawOp{
++    .ln(-21, -21, -3, -3), .ln(21, 21, 3, 3), .ln(-12, 6, 6, -12), .ln(-6, 12, 12, -6),
++};
++
++/// Returns the ordered poses only when every device binds the core passive
++/// it represents. Any explicit cell directive or pin direction retains the
++/// editor's original symbol and layout choice.
++pub fn match(deck: *const spice.Deck, r: *const rec.Recognized, c: u32) ?engine.polyphase_caps.Layout {
++    const ds = deck.devs(c);
++    if (ds.len() != 16 or deck.ports(c).len != 8) return null;
++    if (std.mem.indexOfScalar(u16, deck.directive_cell, @intCast(c)) != null or std.mem.indexOfScalar(u16, deck.code_cell, @intCast(c)) != null) return null;
++    var ports: [8]engine.polyphase_caps.Port = undefined;
++    for (&ports, deck.ports(c)) |*p, n| {
++        const name = deck.netKey(c, n);
++        if (deck.pinInfo(name) != null) return null;
++        p.* = .{ .net = n, .name = name };
++    }
++    var parts: [16]engine.polyphase_caps.Part = undefined;
++    for (&parts, ds.lo..ds.hi) |*p, d| {
++        const id = r.parts.sym.items[d];
++        const nets = deck.netsOf(@intCast(d));
++        if (r.syms.origin.items[id] != .core or nets.len != 2) return null;
++        const name = r.syms.stem.items[id];
++        const cap = std.mem.eql(u8, name, "cap");
++        if (!cap and !std.mem.eql(u8, name, "res")) return null;
++        p.* = .{ .cap = cap, .nets = nets[0..2].* };
++    }
++    return engine.polyphase_caps.match(&parts, &ports);
++}
++
++/// Highest-priority native or oblique capacitor class explicitly requested for
++/// this real core capacitor; later lines win among equally strong directives.
++pub fn requested(deck: *const spice.Deck, c: u32, name: []const u8) bool {
++    var chosen = false;
++    var strong = false;
++    for (deck.directive, deck.directive_cell) |line, cell| {
++        if (cell != c) continue;
++        var hint = engine.hints.read(line) orelse continue;
++        if (hint.verb != .class or (strong and hint.weak)) continue;
++        const owner = hint.names.next() orelse continue;
++        const class = hint.names.next() orelse continue;
++        if (hint.names.next() != null or !std.ascii.eqlIgnoreCase(owner, name)) continue;
++        if (std.ascii.eqlIgnoreCase(class, "cap_oblique")) chosen = true else if (std.ascii.eqlIgnoreCase(class, "cap")) chosen = false else continue;
++        strong = !hint.weak;
++    }
++    return chosen;
++}
+diff --git a/tools/schemify/recognize.zig b/tools/schemify/recognize.zig
+index 54acd073..556b35b3 100644
+--- a/tools/schemify/recognize.zig
++++ b/tools/schemify/recognize.zig
+@@ -22,6 +22,7 @@ const Tok = spice.Tok;
+ const Range = spice.Range;
+ const keyOf = spice.keyOf;
+ const Place = @import("place.zig").Place;
++const cap_lattice = @import("NetlistParser").polyphase_caps;
+ const block_symbols = @import("NetlistParser").block_symbols;
+ 
+ /// Symbols per conversion (core rows + generated cells).
+@@ -31,6 +32,8 @@ pub const symbols_max = 8192;
+ pub const Family = enum {
+     /// Two pins `p` (0,-30) / `n` (0,30).
+     two,
++    /// Capacitor with two physical diagonal leads in its own frame.
++    oblique_cap,
+     /// MOSFET `d g s b`, n-channel drawing.
+     nmos,
+     /// MOSFET `d g s b`, p-channel drawing (drain at the bottom).
+@@ -125,7 +128,7 @@ pub const Symbols = struct {
+         if (s.pin_start.items.len == 0) try s.pin_start.append(a, 0);
+         var body: Body = .{ 0, 0, 0, 0 };
+         for (pins_, 0..) |p, i| {
+-            assert(origin == .lib or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
++            assert(origin == .lib or family == .oblique_cap or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
+             if (i == 0) body = .{ p.x, p.y, p.x, p.y };
+             body = .{ @min(body[0], p.x), @min(body[1], p.y), @max(body[2], p.x), @max(body[3], p.y) };
+         }
+@@ -219,6 +222,7 @@ pub fn subSymbol(c: u32) u32 {
+ /// order, then leaves in first-use order) and one `Parts` row per deck device.
+ pub const Recognized = struct {
+     syms: Symbols = .{},
++    lattices: ArrayList(struct { cell: u32, layout: cap_lattice.Layout }) = .empty,
+     parts: Parts = .{},
+     warnings: ArrayList([]const u8) = .empty,
+     /// The `spice_code` leaf (one pin, template `{text}`) that carries a subckt's code
+@@ -286,11 +290,38 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
+         }
+     }
+     try @import("regulator.zig").select(a, deck, &r);
++    try selectCapLattices(a, deck, &r);
+     assert(r.parts.sym.items.len == deck.dev_name.len);
+     assert(r.parts.over_start.items.len == deck.dev_name.len + 1);
+     return r;
+ }
+ 
++/// A private generated primitive keeps the core capacitor's electrical
++/// parameters and both ordered terminals. Actual caller-steered cells use
++/// their existing ordinary layout and symbols.
++fn selectCapLattices(a: Allocator, deck: *const Deck, r: *Recognized) Allocator.Error!void {
++    var symbol: ?u32 = null;
++    for (0..deck.cells()) |ci| {
++        const c: u32 = @intCast(ci);
++        const matcher = @import("polyphase_caps.zig");
++        const layout = matcher.match(deck, r, c);
++        if (layout == null and deck.directive.len == 0) continue;
++        const ds = deck.devs(c);
++        for (ds.lo..ds.hi, 0..) |d, i| {
++            if (r.parts.sym.items[d] != coreSym("cap")) continue;
++            if (layout == null and !matcher.requested(deck, c, deck.dev_name[d])) continue;
++            if (layout) |l| assert(l[i].cap);
++            if (symbol == null) {
++                const stem = try uniqueStem(a, "polyphase_cap", &r.taken);
++                const pins = [_]Pin{ pin("p", -21, -21, .inout), pin("n", 21, 21, .inout) };
++                symbol = try r.syms.push(a, stem, .leaf, .oblique_cap, &pins, null);
++            }
++            r.parts.sym.items[d] = symbol.?;
++        }
++        if (layout) |l| try r.lattices.append(a, .{ .cell = c, .layout = l });
++    }
++}
++
+ /// True when `n` equals one of `names`, case-insensitively (file stems on a case-folding disk).
+ pub fn nameTaken(names: []const []const u8, n: []const u8) bool {
+     for (names) |x| if (ascii.eqlIgnoreCase(x, n)) return true;
+diff --git a/tools/tex.zig b/tools/tex.zig
+index a74dbc79..90b4563f 100644
+--- a/tools/tex.zig
++++ b/tools/tex.zig
+@@ -113,7 +113,7 @@ pub fn main(init: std.process.Init) !void {
+ // ---- private ----
+ 
+ fn placeDeck(gpa: std.mem.Allocator, arena: std.mem.Allocator, cfg: *const np.Config, lib: *np.Library, path: []const u8, raw: []const u8, custom_symbols: bool, diag: *np.netlist.Diagnostic) !np.Placed {
+-    const sources = try native.deckSources(gpa, arena, lib, path, raw, diag);
++    const sources = try native.deckSourcesFor(gpa, arena, lib, path, raw, diag, !custom_symbols and std.meta.eql(cfg.layout, np.Config.default.layout));
+     return native.placeSelected(gpa, arena, cfg, lib, sources, raw, custom_symbols, diag);
+ }
+ 

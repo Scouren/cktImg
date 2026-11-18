@@ -1,0 +1,6 @@
+* Digital complete-contract probe.
+.subckt xor_gate VDD VSS A B Y ENABLE
+.ends xor_gate
+.subckt dut VDD VSS I J O CONTROL
+X1 VDD VSS I J O CONTROL xor_gate
+.ends dut

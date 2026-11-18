@@ -1,0 +1,9 @@
+* Research-only combined contract and private-bias-peer index-8 fixture.
+.subckt opamp VDD VSS INN INP OUT VB4 VB3 VB2 VB1
+.ends opamp
+.subckt bias VDD VSS NB
+.ends bias
+.subckt dut VDD VSS VIN VOUT VB2 VB3 VB4
+XAMP VDD VSS feedback VIN VOUT VB4 VB3 VB2 private_bias opamp
+XBIAS VDD VSS private_bias bias
+.ends dut

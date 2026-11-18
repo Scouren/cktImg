@@ -1,0 +1,528 @@
+diff --git a/TESTING.md b/TESTING.md
+index ebd4cd40..97589f90 100644
+--- a/TESTING.md
++++ b/TESTING.md
+@@ -26,6 +26,7 @@ Zig processes and keep at least 6 GB available memory, as required by
+ | Parent structure census | `nix develop -c python3 tests/parent_corpus.py` | All 2,202 AnalogGenie dispositions, memberships, gate interfaces and uniquely witnessed reflections against the frozen ninth-study census. Its SHA-256 is recorded in the test. |
+ | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |
+ | Driven-bank physical continuity | [driven_banks_connectivity.py](docs/research/figures/driven_banks_connectivity.py), with the explicit inputs documented in [driven-banks.md](docs/research/driven-banks.md) | Every stable terminal pair on changed nets across both complete corpora, compared with actual source conductor ink; every historical mismatch is checked by name. |
++| MOS bodies | [mos_bodies.py](tests/mos_bodies.py), in `zig build test` | Four named DUTs, ordered raw cards, actual B-tip conductors or attached names, compact class override, hidden/absent caller capabilities and rejected mistyped fourth terminal. |
+ | Private bias peers | [bias_block_neighbors.zig](tests/bias_block_neighbors.zig) and the source/native/continuity companions in [bias-block-neighbors.md](docs/research/bias-block-neighbors.md) | Actual own-body leads, outward peer body, opposing collinear terminals, full pin incidences, caller precedence and source-supported physical wire groups. |
+ 
+ `zig build test` includes allocation-failure sweeps where the operation's
+diff --git a/build.zig b/build.zig
+index 5e054664..b2ec5be8 100644
+--- a/build.zig
++++ b/build.zig
+@@ -207,6 +207,13 @@ pub fn build(b: *std.Build) void {
+     test_step.dependOn(&source_check.step);
+     const json_exe = b.addExecutable(.{ .name = "cktimg-json", .root_module = json_mod });
+     b.installArtifact(json_exe);
++    const body_check = b.addSystemCommand(&.{"python3"});
++    body_check.addFileArg(b.path("tests/mos_bodies.py"));
++    body_check.addArtifactArg(json_exe);
++    for ([_][]const u8{ "ag-1181.cir", "ag-1236.cir", "ag-1294.cir", "ag-2287.cir" }) |name|
++        body_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
++    body_check.addFileArg(b.path("tests/symbols.zon"));
++    test_step.dependOn(&body_check.step);
+     const stage_check = b.addSystemCommand(&.{"python3"});
+     stage_check.addFileArg(b.path("tests/parent_stages.py"));
+     stage_check.addArtifactArg(json_exe);
+diff --git a/docs/TARGETS.md b/docs/TARGETS.md
+index c8a1accb..dbd1c499 100644
+--- a/docs/TARGETS.md
++++ b/docs/TARGETS.md
+@@ -37,6 +37,11 @@ name or the **subcircuit name** alone, so `"opamp"` above maps every
+ `X… opamp` instance. That works for a subcircuit the deck defines (pins:
+ its `.subckt` ports, in order) and for one it does not (pins `p1`..`pN`).
+ 
++A backend that maps `nmos` or `pmos` keeps that geometry for MOS bodies.
++Map its associated four-contact variant too (`nmos_body` or `pmos_body`
++in the built-in symbol set) to enable automatic B routing on that backend.
++The four-contact entry may provide its own D/G/S/B permutation.
++
+ ## `pins`
+ 
+ Absent: the symbol's own terminal order. Present: a permutation of the
+diff --git a/skills/cktimg/SKILL.md b/skills/cktimg/SKILL.md
+index daf93632..3bd778df 100644
+--- a/skills/cktimg/SKILL.md
++++ b/skills/cktimg/SKILL.md
+@@ -106,6 +106,14 @@ on a device overrides the relations on it.
+   net most parts end on becomes its bottom wire, drawn with no ground
+   symbol. `*@ role <net> ground` names another, with ground symbols. A
+   `vee*` net is drawn with the supply glyph below its pin.
++- **MOS bodies.** The built-in symbols show a body contact when the fourth
++  net differs from that device's source and has a non-rail role. Use
++  `*@ class M1 nmos_body` or `pmos_body` to show any B, or the matching
++  compact class `nmos` or `pmos` to suppress routing to it. The native
++  report lists distinct non-rail bodies a selected class cannot show under
++  `unshown_bodies`. A custom symbol file can supply either class on its
++  own, or register a visible D/G/S/B variant after its compact class with
++  `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
+ - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
+   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
+   box, and `*@ expand` draws the devices instead. With no such line:
+diff --git a/src/library.zig b/src/library.zig
+index 87b50ea0..0360c552 100644
+--- a/src/library.zig
++++ b/src/library.zig
+@@ -75,7 +75,8 @@
+ //!   two ports of a two-port side in 1,137 of 1,261 (two units, a row left
+ //!   empty between them, in 13). `blockFor`
+ //!
+-//! Contents (the geometry and `Class`; what follows them is not listed yet):
++//! Contents (geometry and class registration):
++//! - `pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool`
+ //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
+ //! - `pub const Rect = struct`, `Rect.intersects(a: Rect, b: Rect) bool`, `Rect.contains(r: Rect, p: Pt) bool`, `Rect.merge(a: Rect, b: Rect) Rect`, `Rect.point(p: Pt) Rect`, `Rect.fromCorners(a: Pt, b: Pt) Rect`, `Rect.translate(r: Rect, by: Pt) Rect`, `Rect.grow(r: Rect, d: i32) Rect`
+ //! - `pub const Orient = packed struct(u8)`, `Orient.r0`, `Orient.left`, `Orient.apply(o: Orient, p: Pt) Pt`, `Orient.applyRect(o: Orient, r: Rect) Rect`, `Orient.flipped(base: Orient, flip_x: bool, flip_y: bool) Orient`
+@@ -308,6 +309,8 @@ pub const DrawOp = union(enum) {
+ };
+ 
+ pub const Class = struct {
++    /// An explicitly registered compatible variant with a routable MOS body.
++    body_variant: ?ClassId = null,
+     name: []const u8,
+     role: Role = .none,
+     terminals: []const Terminal,
+@@ -362,6 +365,8 @@ pub const ClassId = enum(u32) {
+ /// What a caller supplies to register a class. Every slice is copied, so a
+ /// spec may live on the stack.
+ pub const Spec = struct {
++    /// Compact class this four-contact variant extends; register the compact class first.
++    body_for: ?[]const u8 = null,
+     name: []const u8,
+     role: Role = .none,
+     terminals: []const Terminal,
+@@ -372,6 +377,8 @@ pub const Spec = struct {
+ pub const RegisterError = error{
+     /// A class needs at least one terminal.
+     NoTerminals,
++    /// A body variant must preserve its compact class's D/G/S and supply a visible B.
++    IncompatibleBody,
+     /// Two terminals share an anchor: two nets on one point.
+     CollidingTerminals,
+     /// The name is registered already, with other terminals. Register the
+@@ -408,10 +415,13 @@ pub const Library = struct {
+         for (spec.terminals, 0..) |a, i| for (spec.terminals[i + 1 ..]) |b| {
+             if (a.at.eql(b.at)) return error.CollidingTerminals;
+         };
++        const compact = if (spec.body_for) |name| try @import("mos_bodies.zig").compactFor(self, name, spec) else null;
+         for (self.classes.items, 0..) |c, i| {
+             if (!std.ascii.eqlIgnoreCase(c.name, spec.name)) continue;
+             if (!sameTerminals(c.terminals, spec.terminals) or c.role != spec.role) return error.GeometryChanged;
+-            return @fromBackingInt(@intCast(i));
++            const id: ClassId = @fromBackingInt(@intCast(i));
++            if (compact) |base| self.classes.items[base.i()].body_variant = id;
++            return id;
+         }
+         try self.classes.ensureUnusedCapacity(self.arena.child_allocator, 1);
+         const a = self.arena.allocator();
+@@ -421,7 +431,9 @@ pub const Library = struct {
+         for (spec.terminals, terms) |s, *d| d.* = .{ .name = try a.dupeSentinel(u8, s.name, 0), .at = s.at, .hidden = s.hidden, .ground_ref = s.ground_ref, .side = s.side };
+         const draw = if (spec.draw.len > 0) try copyOps(a, spec.draw) else try box(a, terms, name);
+         self.classes.appendAssumeCapacity(.{ .name = name, .role = spec.role, .terminals = terms, .draw = draw });
+-        return @fromBackingInt(@intCast(self.classes.items.len - 1));
++        const id: ClassId = @fromBackingInt(@intCast(self.classes.items.len - 1));
++        if (compact) |base| self.classes.items[base.i()].body_variant = id;
++        return id;
+     }
+ 
+     pub fn at(self: *const Library, id: ClassId) Class {
+@@ -592,6 +604,14 @@ pub const Library = struct {
+ 
+ pub const ZonDiagnostic = struct { class: []const u8, err: anyerror };
+ 
++/// Equality of ordered class terminal names, coordinates and routing policies.
++pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
++    if (a.len != b.len) return false;
++    for (a, b) |x, y| if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or
++        x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
++    return true;
++}
++
+ /// A block port's role by name (`portRole`): a non-inverting, an inverting
+ /// or a single input, an output, a rail, anything else.
+ pub const PortRole = enum(u8) { rail, inp, inn, in, out, other };
+@@ -741,14 +761,6 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
+     };
+ }
+ 
+-fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
+-    if (a.len != b.len) return false;
+-    for (a, b) |x, y| {
+-        if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
+-    }
+-    return true;
+-}
+-
+ fn copyOps(a: Allocator, ops: []const DrawOp) Allocator.Error![]DrawOp {
+     const out = try a.alloc(DrawOp, ops.len);
+     for (ops, out) |s, *d| d.* = switch (s) {
+diff --git a/src/mos_bodies.zig b/src/mos_bodies.zig
+new file mode 100644
+index 00000000..42ac386b
+--- /dev/null
++++ b/src/mos_bodies.zig
+@@ -0,0 +1,67 @@
++//! Ordered fourth MOS terminals, target contact capabilities, and omitted-contact reporting.
++//! A target may explicitly pair a compact class with a compatible D/G/S/B symbol.
++//! The SPICE row remains the source of the body identity for either class.
++//!
++//! Contents:
++//! - `pub fn compactFor`
++//! - `pub fn needsBody`
++//! - `pub fn writeUnshown`
++
++const std = @import("std");
++const library = @import("library.zig");
++const netlist = @import("netlist.zig");
++const placed = @import("placed.zig");
++const schematic = @import("schematic.zig");
++
++/// The registered class that can safely acquire this optional fourth-contact
++/// mapping. Independently edited geometry leaves both classes available by name.
++pub fn compactFor(lib: *const library.Library, name: []const u8, spec: library.Spec) error{IncompatibleBody}!?library.ClassId {
++    const id = lib.find(name) orelse return error.IncompatibleBody;
++    const base = lib.at(id);
++    if (spec.terminals.len != 4 or spec.terminals[3].hidden or
++        std.ascii.eqlIgnoreCase(spec.name, base.name) or !bodyPinNames(spec.terminals)) return error.IncompatibleBody;
++    // A backend may replace just the compact geometry in a symbol file.
++    // Keep both classes available explicitly; the old mapping no longer fits.
++    if (base.terminals.len < 3 or base.terminals.len > 4 or base.shows(3) or
++        !library.sameTerminals(base.terminals[0..3], spec.terminals[0..3])) return null;
++    if (base.terminals.len == 4 and !base.terminals[3].at.eql(spec.terminals[3].at)) return null;
++    if (base.body_variant) |v| if (!std.ascii.eqlIgnoreCase(lib.at(v).name, spec.name)) return error.IncompatibleBody;
++    return id;
++}
++
++/// A non-rail body distinct from this occurrence's source needs a contact.
++/// Rail and source conventions stay with the target's compact class. A
++/// caller's full four-contact class keeps showing every ordered body.
++pub fn needsBody(nl: *const netlist.Netlist, roles: []const schematic.Role, e: netlist.EdgeId) bool {
++    const pins = nl.graph.members(e);
++    return nl.graph.edges.items(.kind)[e.index()] == .mosfet and pins.len == 4 and
++        pins[3] != pins[2] and !roles[pins[3].index()].isRail();
++}
++
++/// Writes a report member only when a distinct non-rail body lacks a visible
++/// landing. The device/net identity comes from its original ordered SPICE card.
++pub fn writeUnshown(w: *std.Io.Writer, p: *const placed.Placed, lib: *const library.Library, nl: *const netlist.Netlist, roles: []const schematic.Role) std.Io.Writer.Error!void {
++    var unshown: usize = 0;
++    for (p.dev_name, p.dev_class) |name, id| {
++        const e = nl.device(name) orelse continue;
++        const class = lib.at(id);
++        if (class.shows(3) or !needsBody(nl, roles, e)) continue;
++        try w.writeAll(if (unshown == 0) "  \"unshown_bodies\": [" else ", ");
++        try w.writeAll("{ \"device\": ");
++        try std.json.Stringify.value(name, .{}, w);
++        try w.writeAll(", \"terminal\": \"b\", \"net\": ");
++        try std.json.Stringify.value(nl.graph.vertices.items(.name)[nl.graph.members(e)[3].index()], .{}, w);
++        try w.print(", \"reason\": \"{s}\" }}", .{if (class.terminals.len > 3) "hidden" else "no_contact"});
++        unshown += 1;
++    }
++    if (unshown != 0) try w.writeAll("],\n");
++}
++
++// ---------------- private ----------------
++
++fn bodyPinNames(terms: []const library.Terminal) bool {
++    for (terms, "dgsb") |term, letter| {
++        if (term.name.len != 1 or std.ascii.toLower(term.name[0]) != letter) return false;
++    }
++    return true;
++}
+diff --git a/src/report.zig b/src/report.zig
+index 338fc88c..020de3ea 100644
+--- a/src/report.zig
++++ b/src/report.zig
+@@ -7,6 +7,8 @@
+ //!   relaxed, dropped or rejected, why, and the lines that blocked it. An
+ //!   honoured line the finished drawing does not show (`checks.drawnAs`) is
+ //!   reported relaxed, `not_drawn`: a bug.
++//! - `unshown_bodies`: device, terminal and net of a distinct non-rail body
++//!   whose selected symbol has no B contact or marks its B hidden.
+ //! - `metrics`: crossings between nets, bends, the nets drawn as names.
+ //! - `decisions`: the engine's decisions as the `*@` lines that state them,
+ //!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
+@@ -292,6 +294,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library,
+     }
+     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
+ 
++    try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
+     try w.writeAll("  \"requests\": [");
+     for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
+         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
+diff --git a/src/schematic.zig b/src/schematic.zig
+index b8632c5d..87ab6e43 100644
+--- a/src/schematic.zig
++++ b/src/schematic.zig
+@@ -117,6 +117,7 @@
+ 
+ const std = @import("std");
+ const hints = @import("hints.zig");
++const bodies = @import("mos_bodies.zig");
+ const Allocator = std.mem.Allocator;
+ const assert = std.debug.assert;
+ const netlist = @import("netlist.zig");
+@@ -406,6 +407,7 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
+             continue;
+         }
+         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
++        if (bodies.needsBody(nl, roles, e)) c.* = lib.at(c.*).body_variant orelse c.*;
+         // An `E` that is a dependent source, not the book's amplifier: the
+         // library's two-pin `vcvs`, where it has one. People: a two-pin
+         // source symbol for 37 of 37 `E` cards (464 of 464 with G, F, H).
+@@ -422,7 +424,12 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
+         const e = nl.device(h.args[0]) orelse continue;
+         if (circuit.members(e).len == 0) continue;
+         const id = lib.find(h.args[1]) orelse continue;
+-        if (lib.at(id).terminals.len < lib.at(classes[e.index()]).terminals.len) continue;
++        const current = classes[e.index()];
++        if (lib.at(id).terminals.len < lib.at(current).terminals.len) {
++            if (!bodies.needsBody(nl, roles, e)) continue;
++            const base = lib.at(try lib.classFor(.mosfet, nl.modelType(e), 4));
++            if (base.body_variant != current or lib.at(id).terminals.len < base.terminals.len) continue;
++        }
+         classes[e.index()] = id;
+     }
+     var s: Schematic = .{
+diff --git a/tests/mos_bodies.py b/tests/mos_bodies.py
+new file mode 100644
+index 00000000..92322200
+--- /dev/null
++++ b/tests/mos_bodies.py
+@@ -0,0 +1,127 @@
++"""Check MOS body occurrences against literal source cards and physical wire components."""
++import json
++from pathlib import Path
++import subprocess
++import sys
++import tempfile
++
++
++def path_component(paths, start, contacts):
++    segments = [(tuple(a), tuple(b)) for path in paths for a, b in zip(path, path[1:])]
++    points = {start, *contacts, *(point for segment in segments for point in segment)}
++
++    def on(point, a, b):
++        return (a[0] == point[0] == b[0] and min(a[1], b[1]) <= point[1] <= max(a[1], b[1])
++                or a[1] == point[1] == b[1] and min(a[0], b[0]) <= point[0] <= max(a[0], b[0]))
++
++    seen = {start}
++    while True:
++        previous = len(seen)
++        for a, b in segments:
++            if any(on(point, a, b) for point in seen):
++                seen.update(point for point in points if on(point, a, b))
++        if len(seen) == previous:
++            return seen
++
++
++def occurrences(text):
++    cards = text.lower().split('.subckt dut ', 1)[1].split('.ends', 1)[0].splitlines()[1:]
++    return {words[0]: words[1:5] for card in cards if (words := card.split()) and words[0].startswith('m')}
++
++
++def draw(binary, content, directory, extra=(), hints=''):
++    deck, doc, report = [directory / name for name in ('deck.cir', 'draw.json', 'report.json')]
++    deck.write_text(content.replace('.ends dut', hints + '\n.ends dut'))
++    subprocess.run([binary, *extra, '--report', report, deck, doc], check=True, capture_output=True)
++    drawing = json.loads(doc.read_text())
++    devices = {d['name']: d for d in drawing['devices']}
++    for name, pins in occurrences(content).items():
++        dev = devices[name]
++        emitted = [pin['net'] for pin in dev['pins']]
++        if 'bulk' in dev:
++            emitted.append(dev['bulk'])
++        assert emitted == pins, (name, emitted, pins)
++    return drawing, devices, json.loads(report.read_text())
++
++
++def body(devices, name):
++    dev = devices[name]
++    assert [p['term'] for p in dev['pins']] == ['d', 'g', 's', 'b'], (name, dev)
++    return tuple(dev['pins'][3]['xy'])
++
++
++def well(drawing, devices, names, net, require_wire=False):
++    contacts = [body(devices, name) for name in names]
++    paths = [p for wire in drawing['wires'] if wire['net'] == net for p in wire['segments']]
++    labels = {tuple(l['at']) for l in drawing['labels'] if l['net'] == net}
++    pieces = [path_component(paths, p, set(contacts) | labels) for p in contacts]
++    assert contacts[1] in pieces[0] or (not require_wire and all(piece & labels for piece in pieces)), (names, net, contacts, labels)
++    assert all(dev['class'] not in ('ipin', 'opin') or dev['pins'][0]['net'] != net for dev in devices.values())
++
++
++def main(binary, mixed, omitted, explicit, split, stock):
++    with tempfile.TemporaryDirectory() as tmp:
++        tmp = Path(tmp)
++        view, devices, report = draw(binary, mixed.read_text(), tmp)
++        for name in ('m1', 'm2'):
++            body(devices, name)
++        for name in ('m3', 'm4'):
++            assert devices[name]['bulk'] == 'vb', devices[name]
++        for file, names, net in [(omitted, ('mp2', 'mp3'), 'net8'), (explicit, ('mp7', 'mp8'), 'net4'),
++                                 (split, ('m3', 'm4'), 'net4')]:
++            view, devices, _ = draw(binary, file.read_text(), tmp)
++            well(view, devices, names, net)
++        view, devices, report = draw(binary, omitted.read_text(), tmp,
++                                     hints='*@ class mp2 pmos\n*@ class mp3 pmos')
++        assert all(devices[n]['bulk'] == 'net8' for n in ('mp2', 'mp3'))
++        class_requests = {r['text'].strip(): r['state'] for r in report['requests'] if 'class mp' in r['text']}
++        assert len(class_requests) == 2 and set(class_requests.values()) == {'honoured'}
++        rows = {(r['device'], r['net'], r['reason']) for r in report['unshown_bodies']}
++        assert {('mp2', 'net8', 'no_contact'), ('mp3', 'net8', 'no_contact')} <= rows
++        view, devices, _ = draw(binary, split.read_text(), tmp, hints='*@ wire net4')
++        well(view, devices, ('m3', 'm4'), 'net4', require_wire=True)
++        # Supplying only three terminals cannot create a fallback landing. Preserve
++        # all source card occurrences, including the two self-source cases.
++        compact = tmp / 'three.zon'
++        compact.write_text('\n'.join(l for l in stock.read_text().splitlines() if '_body"' not in l))
++        _, devices, report = draw(binary, mixed.read_text(), tmp, extra=('--symbols', compact))
++        assert all(devices[n]['bulk'] == 'vb' for n in ('m1', 'm2', 'm3', 'm4'))
++        assert {(r['device'], r['terminal'], r['net'], r['reason']) for r in report['unshown_bodies']} == {
++            ('m1', 'b', 'vb', 'no_contact'), ('m2', 'b', 'vb', 'no_contact')}
++        # A four-contact caller can suppress or expose B, also for B=S.
++        lines = stock.read_text().splitlines()
++        visible = next(l for l in lines if '.name = "nmos_body"' in l)
++        visible = visible.replace('"nmos_body", .body_for = "nmos"', '"nmos"')
++        for hidden in (True, False):
++            replacement = visible.replace('.name = "b", .at =', '.name = "b", .hidden = true, .at =') if hidden else visible
++            selected = tmp / 'caller.zon'
++            selected.write_text('\n'.join(replacement if '.name = "nmos",' in l else l
++                                          for l in lines if '_body"' not in l))
++            _, devices, report = draw(binary, mixed.read_text(), tmp, extra=('--symbols', selected))
++            assert all(devices[n]['pins'][3]['net'] == 'vb' for n in ('m1', 'm2', 'm3', 'm4'))
++            reasons = {(r['device'], r['reason']) for r in report.get('unshown_bodies', [])}
++            assert reasons == ({('m1', 'hidden'), ('m2', 'hidden')} if hidden else set())
++        # Existing backend declares a three-terminal MOS. The added default
++        # cannot change its arity or leave its physical body wires dangling.
++        manifest = tmp / 'target.json'
++        mapped = {'nmos': {'sym': 'custom/nmos', 'pins': ['s', 'g', 'd']}}
++        for full in (False, True):
++            if full:
++                mapped['nmos_body'] = {'sym': 'custom/nmos4', 'pins': ['s', 'g', 'd', 'b']}
++            manifest.write_text(json.dumps({'target': 'tester', 'version': 1, 'unmapped': {'mode': 'skip'}, 'classes': mapped}))
++            view, devices, _ = draw(binary, mixed.read_text(), tmp, extra=('--target', manifest))
++            exported = {d['name']: d['pins'] for d in view['target']['devices']}
++            for n in ('m1', 'm2', 'm3', 'm4'):
++                active = full and n in ('m1', 'm2')
++                assert exported[n] == ([2, 1, 0, 3] if active else [2, 1, 0])
++                assert ('bulk' not in devices[n]) == active
++        # A mislabeled fourth terminal cannot register as the B capability.
++        bad = tmp / 'wrong.zon'
++        bad.write_text('\n'.join(l.replace('.name = "b",', '.name = "x",') if '_body"' in l else l for l in lines))
++        rejected = subprocess.run([binary, '--symbols', bad, mixed], capture_output=True, text=True)
++        assert rejected.returncode != 0 and 'IncompatibleBody' in rejected.stderr
++
++
++
++if __name__ == '__main__':
++    main(sys.argv[1], *map(Path, sys.argv[2:]))
+diff --git a/tests/sketch.zig b/tests/sketch.zig
+index 3b3fd425..5638db47 100644
+--- a/tests/sketch.zig
++++ b/tests/sketch.zig
+@@ -2018,7 +2018,7 @@ test "AG1167 a resistor connected to a hidden MOS body has a name and no no-conn
+     const lib = try support.library(t.allocator);
+     defer support.freeLibrary(t.allocator, lib);
+     // AG1167 M1.B / R1.1; R2's truly isolated terminal is a control.
+-    const deck = "body contact\n.model nch nmos\nM1 d g 0 well nch\nR1 well 0 1k\nR2 spare 0 1k\n";
++    const deck = "body contact\n*@ class m1 nmos\n.model nch nmos\nM1 d g 0 well nch\nR1 well 0 1k\nR2 spare 0 1k\n";
+     var p = try np.place(t.allocator, &np.Config.default, lib, &.{deck}, null);
+     defer p.deinit();
+     var found: usize = 0;
+diff --git a/tests/symbols.zon b/tests/symbols.zon
+index f827a122..e43bfde9 100644
+--- a/tests/symbols.zon
++++ b/tests/symbols.zon
+@@ -20,7 +20,9 @@
+         .{ .name = "vcvs", .terminals = .{ .{ .name = "out+", .at = .{ .x = -20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = -2 }, .b = .{ .x = -5, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -7, .y = 0 }, .b = .{ .x = -3, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 4, .y = -2 }, .b = .{ .x = 4, .y = 2 } } } } },
+         .{ .name = "cisource", .terminals = .{ .{ .name = "out+", .at = .{ .x = -20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = 0 }, .b = .{ .x = 5, .y = 0 } } }, .{ .polyline = .{ .{ .x = 6, .y = 0 }, .{ .x = 2, .y = -3 }, .{ .x = 2, .y = 3 }, .{ .x = 6, .y = 0 } } } } },
+         .{ .name = "nmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -7 } } } } },
++        .{ .name = "nmos_body", .body_for = "nmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = 20 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -3 }, .b = .{ .x = 0, .y = 20 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -7 } } } } },
+         .{ .name = "pmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = -9 }, .r = 2 } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -11 } } } } },
++        .{ .name = "pmos_body", .body_for = "pmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = 20 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -3 }, .b = .{ .x = 0, .y = 20 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = -9 }, .r = 2 } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -11 } } } } },
+         .{ .name = "npn", .terminals = .{ .{ .name = "c", .at = .{ .x = 20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = -20 } }, .{ .name = "e", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -6 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -6 }, .b = .{ .x = -8, .y = -6 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 12, .y = 0 }, .{ .x = 3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -12, .y = 0 }, .{ .x = -3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -11, .y = -1 }, .{ .x = -8, .y = -5 }, .{ .x = -6, .y = -2 }, .{ .x = -11, .y = -1 } } } } },
+         .{ .name = "pnp", .terminals = .{ .{ .name = "c", .at = .{ .x = 20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = -20 } }, .{ .name = "e", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -6 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -6 }, .b = .{ .x = -8, .y = -6 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 12, .y = 0 }, .{ .x = 3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -12, .y = 0 }, .{ .x = -3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -4, .y = -5 }, .{ .x = -8, .y = -2 }, .{ .x = -9, .y = -5 }, .{ .x = -4, .y = -5 } } } } },
+         .{ .name = "njfet", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -4 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -4 }, .b = .{ .x = -10, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -4 } } }, .{ .polyline = .{ .{ .x = 0, .y = -4 }, .{ .x = -2, .y = -8 }, .{ .x = 2, .y = -8 }, .{ .x = 0, .y = -4 } } } } },
+diff --git a/tools/json.zig b/tools/json.zig
+index e0c76033..b64f1eb9 100644
+--- a/tools/json.zig
++++ b/tools/json.zig
+@@ -108,6 +108,13 @@ pub fn main(init: std.process.Init) !void {
+     var sym_diags: std.ArrayList(np.library.ZonDiagnostic) = .empty;
+     try lib.loadZon(arena, sym_text, &sym_diags);
+     if (sym_diags.items.len > 0) fatal("symbols: {s}: {t}", .{ sym_diags.items[0].class, sym_diags.items[0].err });
++    if (target) |t| {
++        // A backend with only the ordinary MOS symbol cannot land a new B
++        // wire. Keep its mapped compact class unless it also maps the variant.
++        for (lib.classes.items) |*c| if (c.body_variant) |id| {
++            if (t.lookup(c.name) != null and t.lookup(lib.at(id).name) == null) c.body_variant = null;
++        };
++    }
+ 
+     var diag: np.netlist.Diagnostic = .{};
+     const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {
+diff --git a/tools/schemify/layout.zig b/tools/schemify/layout.zig
+index a4f7d7aa..632b2f67 100644
+--- a/tools/schemify/layout.zig
++++ b/tools/schemify/layout.zig
+@@ -101,8 +101,8 @@ pub fn toCanonical(fam: Family) u8 {
+     };
+ }
+ 
+-/// Whether pin `k` of a `fam` symbol gets no wire: a MOSFET's bulk, drawn on the symbol
+-/// and joined by name.
++/// Hidden routing contact of the compact class. The core four-lead variant
++/// makes the same MOS body coordinate available for a wire.
+ fn hiddenPin(fam: Family, k: usize) bool {
+     return (fam == .nmos or fam == .pmos) and k == 3;
+ }
+@@ -156,13 +156,14 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
+         // Core MOS terminals have physical leads. The registered ink here
+         // preserves their exact contact/attachment points and pin bounds;
+         // Schemify paints the host's complete core symbol on import.
+-        var core_mos: [6]engine.library.DrawOp = undefined;
++        var core_mos: [7]engine.library.DrawOp = undefined;
+         const is_core_mos = syms.origin.items[s] == .core and (fam == .nmos or fam == .pmos);
+         const ops = if (is_core_mos) blk: {
+             const strokes = [_][4]i32{
+                 .{ -20, 0, -10, 0 },   .{ -10, -10, -10, 10 },
+                 .{ 20, -30, 20, -10 }, .{ 0, -10, 20, -10 },
+                 .{ 20, 30, 20, 10 },   .{ 0, 10, 20, 10 },
++                .{ 0, 0, 20, 0 },
+             };
+             for (strokes, &core_mos) |seg, *op| {
+                 const from = xform(t, seg[0], seg[1]);
+@@ -179,11 +180,18 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
+         const block = try a.print("b{d}", .{s});
+         const names: []const []const u8 = if (fam == .box) &.{block} else classNames(fam);
+         for (names) |name| {
+-            _ = lib.register(.{ .name = name, .terminals = terms, .draw = ops }) catch |e| switch (e) {
++            _ = lib.register(.{ .name = name, .terminals = terms, .draw = if (is_core_mos) ops[0..6] else ops }) catch |e| switch (e) {
+                 error.OutOfMemory => return error.OutOfMemory,
+                 else => try refused.append(a, try a.print("the engine refused class {s} ({s}: {t}); its cells are drawn with labels", .{ name, syms.stem.items[s], e })),
+             };
+         }
++        if (is_core_mos) {
++            terms[3].hidden = false;
++            _ = lib.register(.{ .name = if (fam == .nmos) "nmos_body" else "pmos_body", .body_for = names[0], .terminals = terms, .draw = ops }) catch |e| switch (e) {
++                error.OutOfMemory => return error.OutOfMemory,
++                else => unreachable, // the same D/G/S, and the shipped core's real B
++            };
++        }
+     }
+     const rails = [_]struct { []const u8, engine.library.Role }{
+         .{ "vdd", .power_rail }, .{ "gnd", .ground_rail }, .{ "ipin", .input_port }, .{ "opin", .output_port },
+@@ -478,7 +486,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
+             assert(local.of(placed.pin_net[lo + k]) == net);
+             const face = facing(o, p.x, p.y);
+             try faces.append(a, .{ .at = at, .face = face });
+-            if (hiddenPin(syms.family.items[s], k))
++            if (!lib.at(placed.dev_class[i]).shows(k))
+                 try hidden.append(a, .{ .at = at, .net = net, .face = face })
+             else
+                 try pin_pts[net].append(a, at);

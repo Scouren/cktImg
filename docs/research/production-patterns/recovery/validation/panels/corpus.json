@@ -1,0 +1,101 @@
+{
+  "before_sha256": "017cb370069b0612a7372a25bc3e4c755c54727f4bb45dbbbcd544b117647401",
+  "after_sha256": "12380c920bfe47a893ae941fbb0fdf41a0736ea2dd7dc2a9900b2aa86bc057df",
+  "collections": {
+    "amsnet": {
+      "checked": 734,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analoggenie": {
+      "checked": 2202,
+      "drawing_changes": [
+        {
+          "deck": "ag-1079.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 12,
+              "bends": 18,
+              "labelled": [
+                "rn",
+                "rp",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 17,
+              "labelled": [
+                "rn",
+                "rp",
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1080.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 14,
+              "bends": 25,
+              "labelled": [
+                "vss",
+                "vdd",
+                "rn1",
+                "rp1",
+                "fp1",
+                "fn1",
+                "rn",
+                "rp"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 11,
+              "bends": 22,
+              "labelled": [
+                "vdd",
+                "rn1",
+                "fp1",
+                "fn1",
+                "rn",
+                "rp"
+              ]
+            }
+          }
+        }
+      ],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analogretriever": {
+      "checked": 2238,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "circuitthink": {
+      "checked": 100,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    }
+  }
+}

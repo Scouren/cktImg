@@ -1,0 +1,64 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="397" height="473" viewBox="0 0 397 473" font-family="Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+<polyline points="134.4,320.0 102.4,320.0 "/>
+<polyline points="262.4,320.0 230.4,320.0 "/>
+<polyline points="166.4,160.0 166.4,192.0 "/>
+<polyline points="166.4,256.0 166.4,288.0 "/>
+<polyline points="166.4,352.0 166.4,384.0 "/>
+<polyline points="294.4,352.0 294.4,384.0 "/>
+<polyline points="294.4,160.0 294.4,288.0 "/>
+<polyline points="134.4,224.0 102.4,224.0 "/>
+<polyline points="294.4,96.0 294.4,64.0 "/>
+<polyline points="262.4,128.0 230.4,128.0 "/>
+<polyline points="166.4,96.0 166.4,113.6 "/>
+<polyline points="166.4,142.4 166.4,160.0 "/>
+<circle cx="166.4" cy="128.0" r="14.4" fill="#ffffff"/>
+<polyline points="166.4,120.0 166.4,136.0 "/>
+<polyline points="166.4,137.6 161.6,131.2 171.2,131.2 166.4,137.6 "/>
+<polyline points="166.4,288.0 166.4,307.2 161.6,307.2 "/>
+<polyline points="166.4,352.0 166.4,332.8 161.6,332.8 "/>
+<polyline points="161.6,304.0 161.6,336.0 "/>
+<polyline points="155.2,307.2 155.2,332.8 "/>
+<polyline points="134.4,320.0 155.2,320.0 "/>
+<polyline points="294.4,288.0 294.4,307.2 289.6,307.2 "/>
+<polyline points="294.4,352.0 294.4,332.8 289.6,332.8 "/>
+<polyline points="289.6,304.0 289.6,336.0 "/>
+<polyline points="283.2,307.2 283.2,332.8 "/>
+<polyline points="262.4,320.0 283.2,320.0 "/>
+<polyline points="166.4,192.0 166.4,211.2 161.6,211.2 "/>
+<polyline points="166.4,256.0 166.4,236.8 161.6,236.8 "/>
+<polyline points="161.6,208.0 161.6,240.0 "/>
+<polyline points="155.2,211.2 155.2,236.8 "/>
+<polyline points="134.4,224.0 155.2,224.0 "/>
+<polyline points="294.4,96.0 294.4,115.2 289.6,115.2 "/>
+<polyline points="294.4,160.0 294.4,140.8 289.6,140.8 "/>
+<polyline points="289.6,112.0 289.6,144.0 "/>
+<polyline points="283.2,115.2 283.2,140.8 "/>
+<polyline points="262.4,128.0 283.2,128.0 "/>
+<polyline points="152.0,96.0 180.8,96.0 "/>
+<text x="185.4" y="100.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
+<polyline points="88.0,320.0 116.8,320.0 "/>
+<text x="83.4" y="324.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vdd</text>
+<polyline points="216.0,320.0 244.8,320.0 "/>
+<text x="211.4" y="324.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vdd</text>
+<polyline points="152.0,384.0 180.8,384.0 "/>
+<polyline points="156.8,388.8 176.0,388.8 "/>
+<polyline points="163.2,393.6 169.6,393.6 "/>
+<polyline points="280.0,384.0 308.8,384.0 "/>
+<polyline points="284.8,388.8 304.0,388.8 "/>
+<polyline points="291.2,393.6 297.6,393.6 "/>
+<circle cx="102.4" cy="224.0" r="4.8" fill="#ffffff"/>
+<text x="95.4" y="228.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vb1</text>
+<circle cx="230.4" cy="128.0" r="4.8" fill="#ffffff"/>
+<text x="223.4" y="132.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vb2</text>
+<circle cx="294.4" cy="64.0" r="4.8" fill="#ffffff"/>
+<text x="294.4" y="58.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">iout</text>
+</g>
+<text x="185.6" y="128.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">iin</text>
+<text x="171.2" y="320.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
+<text x="299.2" y="320.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
+<text x="171.2" y="224.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
+<text x="299.2" y="128.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
+<text x="40.0" y="466.8" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
+</svg>

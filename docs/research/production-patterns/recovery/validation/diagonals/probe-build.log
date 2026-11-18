@@ -1,0 +1,23 @@
+Build Summary: 17/17 steps succeeded
+install success
++- install cktimg success
+|  +- compile lib cktimg debug native success 1s MaxRSS:277M
+|     +- options cached
++- install include/cktimg.h to include/cktimg.h cached
++- install generated to ../netlist-import.wasm success
+|  +- run wasm-opt (netlist-import.wasm) success 1s
+|     +- compile exe netlist-import small wasm32-freestanding success 15s MaxRSS:354M
+|        +- options cached
++- install gallery success
+|  +- compile exe gallery debug native success 1s MaxRSS:214M
+|     +- options (reused)
++- install cktimg-json success
+|  +- compile exe cktimg-json debug native success 1s MaxRSS:222M
+|     +- WriteFile symbols.zon cached
+|     +- options (reused)
++- install cktimg-tex success
+|  +- compile exe cktimg-tex debug native success 1s MaxRSS:217M
+|     +- WriteFile symbols.zon (reused)
+|     +- options (reused)
++- install latex/cktimg.sty to share/latex/cktimg.sty cached
+

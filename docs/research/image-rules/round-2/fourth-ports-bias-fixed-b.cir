@@ -1,0 +1,11 @@
+* One amplifier has two complete, private bias-peer embeddings.
+.subckt opamp VDD VSS INN INP OUT VB1 VB2
+.ends opamp
+.subckt bias VDD VSS NB
+.ends bias
+.subckt dut VDD VSS INN INP OUT
+XAMP VDD VSS INN INP OUT ba bb opamp
+XBA VDD VSS ba bias
+XBB VDD VSS bb bias
+*@ at XBB -30 -30 r90
+.ends dut

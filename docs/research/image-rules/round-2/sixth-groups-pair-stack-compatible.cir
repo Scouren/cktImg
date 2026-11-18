@@ -1,0 +1,10 @@
+Caller geometry pair
+.model nch nmos level=1
+.subckt dut VDD VSS INP INN VB OUTP OUTN
+R1 VDD OUTN 1k
+R2 VDD OUTP 1k
+M1 OUTN INP tail VSS nch w=2u l=1u
+M2 OUTP INN tail VSS nch w=2u l=1u
+M5 tail VB VSS VSS nch w=4u l=1u
+*@ group stack M1 M5
+.ends dut

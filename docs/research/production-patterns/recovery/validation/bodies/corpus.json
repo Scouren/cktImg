@@ -1,0 +1,1854 @@
+{
+  "before_sha256": "12380c920bfe47a893ae941fbb0fdf41a0736ea2dd7dc2a9900b2aa86bc057df",
+  "after_sha256": "caeea0993e7a2b206d909c1b3730758ff1564de1c661d18414cb46b793a5a422",
+  "collections": {
+    "amsnet": {
+      "checked": 734,
+      "drawing_changes": [
+        {
+          "deck": "amsnet-1.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 3,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-10.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-11.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 2,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 2,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-185.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-186.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-28.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-344.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 2,
+              "labelled": [
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 3,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-345.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": [
+                "net0",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 2,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "amsnet-346.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": [
+                "net0",
+                "net1",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "amsnet-38.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "net0"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-39.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-40.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": [
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 4,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-70.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "amsnet-715.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        }
+      ],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analoggenie": {
+      "checked": 2202,
+      "drawing_changes": [
+        {
+          "deck": "ag-1014.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 5,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1021.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 3,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-1022.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 6,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-1026.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 12,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 12,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1049.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 10,
+              "bends": 30,
+              "labelled": [
+                "vg1",
+                "vg2",
+                "vdd",
+                "net7",
+                "net4",
+                "net10",
+                "s2",
+                "net13"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 29,
+              "labelled": [
+                "vg1",
+                "vg2",
+                "vdd",
+                "net7",
+                "net4",
+                "net10",
+                "s2",
+                "net8",
+                "net13"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1057.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 17,
+              "labelled": [
+                "out_bar"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 17,
+              "labelled": [
+                "out_bar"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1065.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 10,
+              "bends": 15,
+              "labelled": [
+                "out_bar"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 10,
+              "bends": 15,
+              "labelled": [
+                "out_bar"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1072.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 18,
+              "labelled": [
+                "net0",
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 18,
+              "labelled": [
+                "net0",
+                "net1",
+                "out_pm"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1076.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 9,
+              "bends": 35,
+              "labelled": [
+                "a",
+                "b",
+                "c",
+                "net0"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 9,
+              "bends": 35,
+              "labelled": [
+                "a",
+                "b",
+                "c",
+                "net0"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1124.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 24,
+              "bends": 26,
+              "labelled": [
+                "y"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 24,
+              "bends": 32,
+              "labelled": [
+                "net2",
+                "y"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1130.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 11,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 11,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1160.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 18,
+              "labelled": [
+                "net3",
+                "net7"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 9,
+              "bends": 26,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-1167.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 17,
+              "labelled": [
+                "net11",
+                "net1",
+                "net13",
+                "net5",
+                "net0",
+                "net10",
+                "net12",
+                "net15",
+                "net9",
+                "net16"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 6,
+              "bends": 26,
+              "labelled": [
+                "net11",
+                "net1",
+                "net5",
+                "net10"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1169.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 11,
+              "labelled": [
+                "net1",
+                "net0",
+                "net6",
+                "net5",
+                "net8",
+                "net17",
+                "net7",
+                "net10",
+                "net15",
+                "net20",
+                "net12",
+                "net14",
+                "net4"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 24,
+              "labelled": [
+                "net1",
+                "net0",
+                "net6",
+                "net5",
+                "net8",
+                "net4"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1181.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 9,
+              "labelled": [
+                "vop"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 9,
+              "labelled": [
+                "vop"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1190.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 6,
+              "bends": 21,
+              "labelled": [
+                "vcore"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 7,
+              "bends": 23,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-1206.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 9,
+              "bends": 23,
+              "labelled": [
+                "vx1",
+                "va",
+                "vdd",
+                "vg1",
+                "vd1",
+                "vd2",
+                "vb5"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 9,
+              "bends": 23,
+              "labelled": [
+                "vx1",
+                "va",
+                "vdd",
+                "vg1",
+                "vd1",
+                "vd2",
+                "vb5"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1236.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 15,
+              "labelled": [
+                "net2",
+                "net7",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 15,
+              "labelled": [
+                "net2",
+                "net7",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1294.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 20,
+              "labelled": [
+                "vx2",
+                "vsr",
+                "va",
+                "net1",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 17,
+              "labelled": [
+                "vx2",
+                "vsr",
+                "va",
+                "net1",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1296.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 23,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "net9",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 23,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "net9",
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1297.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 23,
+              "labelled": [
+                "vdd",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 26,
+              "labelled": [
+                "vdd",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1299.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 19,
+              "labelled": [
+                "vx2",
+                "net4",
+                "net0",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 19,
+              "labelled": [
+                "vx2",
+                "net4",
+                "net0",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1307.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 22,
+              "labelled": [
+                "vx2",
+                "vdd",
+                "net0",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 22,
+              "labelled": [
+                "vx2",
+                "vdd",
+                "net0",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1313.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 27,
+              "labelled": [
+                "vx2",
+                "vsr",
+                "net3",
+                "vg",
+                "vb4",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 23,
+              "labelled": [
+                "vx2",
+                "vsr",
+                "net3",
+                "vg",
+                "vdd",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1319.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 24,
+              "labelled": [
+                "vx2",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 24,
+              "labelled": [
+                "vx2",
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1328.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 11,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 13,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-1329.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 28,
+              "labelled": [
+                "vx1",
+                "vdd",
+                "net5",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 7,
+              "bends": 32,
+              "labelled": [
+                "vx1",
+                "vdd",
+                "net5",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1335.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 22,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "vb3",
+                "vb2",
+                "vea",
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 22,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "vb3",
+                "vb2",
+                "vea",
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1337.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 17,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "vdd",
+                "vb2",
+                "vctrl",
+                "net8",
+                "vfp1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 19,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "vdd",
+                "vb2",
+                "vctrl",
+                "net8",
+                "vfp1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1343.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 15,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "net4",
+                "net6",
+                "vdd",
+                "vfp1",
+                "va"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 15,
+              "labelled": [
+                "vx1",
+                "vx2",
+                "net4",
+                "net6",
+                "vdd",
+                "vfp1",
+                "va"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1399.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 13,
+              "labelled": [
+                "vdd",
+                "vb4",
+                "vg"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 13,
+              "labelled": [
+                "vdd",
+                "vb4",
+                "vg"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-1404.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 14,
+              "labelled": [
+                "vdd",
+                "vb4",
+                "vbn"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 14,
+              "labelled": [
+                "vdd",
+                "vb4",
+                "vbn"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2193.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 6,
+              "labelled": [
+                "vx",
+                "vdd",
+                "vb3",
+                "vy",
+                "fb"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 6,
+              "labelled": [
+                "vx",
+                "vdd",
+                "vb3",
+                "vy",
+                "fb"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2285.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 26,
+              "labelled": [
+                "eao",
+                "vdd",
+                "vx",
+                "gate",
+                "vbn",
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 26,
+              "labelled": [
+                "eao",
+                "vdd",
+                "vx",
+                "gate",
+                "vbn",
+                "net1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2287.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 32,
+              "labelled": [
+                "vdd",
+                "eao",
+                "gate",
+                "vc"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 32,
+              "labelled": [
+                "vdd",
+                "eao",
+                "gate",
+                "vc",
+                "net4"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2315.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 20,
+              "labelled": [
+                "vy",
+                "vx",
+                "gate",
+                "fb"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 19,
+              "labelled": [
+                "vy",
+                "vx",
+                "gate",
+                "fb",
+                "vn2"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2397.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 18,
+              "labelled": [
+                "vy",
+                "veaout",
+                "vdd",
+                "vx",
+                "vb3",
+                "vz"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 25,
+              "labelled": [
+                "vy",
+                "veaout",
+                "vdd",
+                "vx",
+                "vb3",
+                "vz"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2463.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 21,
+              "labelled": [
+                "vo1",
+                "va",
+                "vx",
+                "net8",
+                "vc"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 26,
+              "labelled": [
+                "vo1",
+                "net2",
+                "va",
+                "vx",
+                "net8",
+                "vc"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2464.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 23,
+              "labelled": [
+                "vfb",
+                "net12",
+                "vx",
+                "vy",
+                "vb7"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 23,
+              "labelled": [
+                "vfb",
+                "net12",
+                "vx",
+                "vy",
+                "vb7"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2471.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 21,
+              "labelled": [
+                "vfb",
+                "v1",
+                "vx",
+                "vcn"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 4,
+              "bends": 20,
+              "labelled": [
+                "vfb",
+                "v1",
+                "vx",
+                "vcn"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2475.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 1,
+              "bends": 19,
+              "labelled": [
+                "vfb",
+                "net3",
+                "vx",
+                "vin",
+                "net0",
+                "net8"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 21,
+              "labelled": [
+                "vfb",
+                "net3",
+                "vx",
+                "vin",
+                "net0",
+                "net8"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2486.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 8,
+              "bends": 32,
+              "labelled": [
+                "vfb",
+                "net2",
+                "vf",
+                "vx"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 7,
+              "bends": 30,
+              "labelled": [
+                "vfb",
+                "net2",
+                "vf",
+                "vx"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2490.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 19,
+              "labelled": [
+                "vfb",
+                "net0",
+                "net13",
+                "vt",
+                "net12"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 19,
+              "labelled": [
+                "vfb",
+                "net0",
+                "net13",
+                "vt",
+                "net12"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-2498.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 17,
+              "labelled": [
+                "vfb",
+                "net4",
+                "vx"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 17,
+              "labelled": [
+                "vfb",
+                "net4",
+                "vx"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-334.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 0,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-456.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 0,
+              "bends": 1,
+              "labelled": [
+                "vdd"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-619.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 6,
+              "bends": 18,
+              "labelled": [
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 6,
+              "bends": 19,
+              "labelled": [
+                "net1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-638.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 2,
+              "bends": 9,
+              "labelled": []
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 3,
+              "bends": 13,
+              "labelled": []
+            }
+          }
+        },
+        {
+          "deck": "ag-642.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 6,
+              "bends": 20,
+              "labelled": [
+                "net10",
+                "net4",
+                "net9",
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 7,
+              "bends": 21,
+              "labelled": [
+                "net10",
+                "net4",
+                "net9",
+                "net1"
+              ]
+            }
+          }
+        },
+        {
+          "deck": "ag-665.cir",
+          "placement_changed": true,
+          "svg_changed": true,
+          "before": {
+            "gates": [],
+            "metrics": {
+              "crossings": 5,
+              "bends": 23,
+              "labelled": [
+                "net8",
+                "vdd",
+                "net1"
+              ]
+            }
+          },
+          "after": {
+            "gates": [],
+            "metrics": {
+              "crossings": 7,
+              "bends": 30,
+              "labelled": [
+                "net8",
+                "vdd",
+                "net1"
+              ]
+            }
+          }
+        }
+      ],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "analogretriever": {
+      "checked": 2238,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    },
+    "circuitthink": {
+      "checked": 100,
+      "drawing_changes": [],
+      "with_findings_before": {},
+      "with_findings_after": {},
+      "report_only_changes": []
+    }
+  }
+}

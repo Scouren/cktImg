@@ -1,0 +1,1585 @@
+diff --git a/build.zig b/build.zig
+index 06a0cc0c..dc4a7d86 100644
+--- a/build.zig
++++ b/build.zig
+@@ -219,6 +219,12 @@ pub fn build(b: *std.Build) void {
+     mixer_check.addFileInput(b.path("tests/source_bridge.py"));
+     mixer_check.addFileArg(b.path("external/examples/analoggenie/ag-517.cir"));
+     test_step.dependOn(&mixer_check.step);
++    const folded_check = b.addSystemCommand(&.{"python3"});
++    folded_check.addFileArg(b.path("tests/folded_bank.py"));
++    folded_check.addArtifactArg(json_exe);
++    folded_check.addFileInput(b.path("tests/source_bridge.py"));
++    folded_check.addFileArg(b.path("external/examples/analoggenie/ag-1093.cir"));
++    test_step.dependOn(&folded_check.step);
+     const bridge_check = b.addSystemCommand(&.{"python3"});
+     bridge_check.addFileArg(b.path("tests/source_bridge.py"));
+     bridge_check.addArtifactArg(json_exe);
+diff --git a/docs/research/production-patterns/folded-switch-bank/README.md b/docs/research/production-patterns/folded-switch-bank/README.md
+new file mode 100644
+index 00000000..01f30de7
+--- /dev/null
++++ b/docs/research/production-patterns/folded-switch-bank/README.md
+@@ -0,0 +1,12 @@
++# A two-dimensional folded switching bank
++
++AG1093's published schematic has a complementary transconductor on the left and a four-transistor switching stage on the right. The upper two switches share the upper output. The lower two share the lower output. A resistor connects each output to the supply, and a capacitor joins the two outputs at the far right. Earlier native and editor drawings placed all four switches on one row between the transconductor columns. [Published AG1093, Figure 3](https://raw.githubusercontent.com/xz-group/AnalogGenie/efc25358939c6bedd247f28d3df61066964f3a90/Dataset/1093/Book1093.png)
++
++| Renderer | Before | After |
++| --- | --- | --- |
++| Native | ![Native AG1093 before](ag-1093.native.before.svg) | ![Native AG1093 after](ag-1093.native.after.svg) |
++| Schemify | ![Schemify AG1093 before](ag-1093.target.before.svg) | ![Schemify AG1093 after](ag-1093.target.after.svg) |
++
++The complete nineteen-device circuit establishes the two differential transconductor branches, two input coupling capacitors, three distinct resistor-fed bias formals, four crossed-control switches, both output loads and the output capacitor. Within this family, the declaration order of equivalent formals breaks the remaining reflection tie. The upper switches face their common drain upward, and the lower switches face theirs downward. The left and right inputs retain their complementary partners. The paper inclines the switch glyphs at approximately 45 degrees. Both production symbol libraries use cardinal rotations here. The AG517 source, by comparison, places four switches in one row. [AG517 arrangement](../nested-switch-bank/README.md) · [Independent terminal geometry checks](../../../../tests/folded_bank.py)
++
++Native proper crossings decrease from twelve to nine and bends from thirty to twenty-seven. Schemify strict interior wire crossings increase from five to seven and pin-free corners decrease from twenty-five to twenty-three. The native sheet grows from 1482 × 639 to 1658 × 986. The native drawing labels one net, down from two. Actual Schemify re-export retains the ordered terminal bindings and values, and its circuit comparator matches nineteen devices on fifteen nets. Among 5,274 native examples, AG1093 alone changes when this second switching layout is enabled. The same geometry checks pass after card reversal and renaming. Altering one switch source, input coupling capacitor, bias parent, or output capacitor withdraws this arrangement.
+diff --git a/docs/research/production-patterns/folded-switch-bank/ag-1093.native.after.svg b/docs/research/production-patterns/folded-switch-bank/ag-1093.native.after.svg
+new file mode 100644
+index 00000000..549cb25f
+--- /dev/null
++++ b/docs/research/production-patterns/folded-switch-bank/ag-1093.native.after.svg
+@@ -0,0 +1,224 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1658" height="986" viewBox="0 0 1658 986" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="124.8,384.0 124.8,288.0 "/>
++<polyline points="220.8,288.0 188.8,288.0 "/>
++<polyline points="220.8,96.0 188.8,96.0 188.8,288.0 "/>
++<polyline points="124.8,288.0 188.8,288.0 "/>
++<polyline points="124.8,448.0 124.8,480.0 "/>
++<polyline points="220.8,480.0 188.8,480.0 "/>
++<polyline points="220.8,736.0 188.8,736.0 188.8,480.0 "/>
++<polyline points="124.8,480.0 188.8,480.0 "/>
++<polyline points="124.8,480.0 92.8,480.0 "/>
++<polyline points="636.8,384.0 636.8,288.0 "/>
++<polyline points="540.8,288.0 572.8,288.0 "/>
++<polyline points="540.8,96.0 572.8,96.0 572.8,288.0 "/>
++<polyline points="572.8,288.0 636.8,288.0 "/>
++<polyline points="636.8,448.0 636.8,480.0 "/>
++<polyline points="540.8,480.0 572.8,480.0 "/>
++<polyline points="540.8,736.0 572.8,736.0 572.8,480.0 "/>
++<polyline points="572.8,480.0 636.8,480.0 "/>
++<polyline points="572.8,480.0 572.8,448.0 "/>
++<polyline points="1468.8,448.0 1468.8,480.0 1532.8,480.0 1532.8,224.0 "/>
++<polyline points="956.8,256.0 956.8,224.0 "/>
++<polyline points="1212.8,256.0 1212.8,224.0 "/>
++<polyline points="1084.8,128.0 1084.8,224.0 "/>
++<polyline points="956.8,224.0 1084.8,224.0 "/>
++<polyline points="1084.8,224.0 1212.8,224.0 "/>
++<polyline points="1212.8,224.0 1532.8,224.0 "/>
++<polyline points="1532.8,224.0 1564.8,224.0 "/>
++<polyline points="1212.8,576.0 1212.8,608.0 1452.8,608.0 1452.8,368.0 1468.8,368.0 1468.8,384.0 "/>
++<polyline points="956.8,576.0 956.8,608.0 1100.8,608.0 "/>
++<polyline points="1084.8,768.0 1084.8,784.0 1100.8,784.0 1100.8,608.0 "/>
++<polyline points="1468.8,368.0 1500.8,368.0 "/>
++<polyline points="1100.8,608.0 1212.8,608.0 "/>
++<polyline points="252.8,320.0 252.8,384.0 "/>
++<polyline points="252.8,384.0 220.8,384.0 "/>
++<polyline points="1212.8,320.0 1212.8,416.0 "/>
++<polyline points="1212.8,416.0 1180.8,416.0 "/>
++<polyline points="252.8,384.0 252.8,448.0 "/>
++<polyline points="1212.8,416.0 1212.8,512.0 "/>
++<polyline points="252.8,512.0 252.8,544.0 "/>
++<polyline points="508.8,512.0 508.8,544.0 "/>
++<polyline points="508.8,448.0 508.8,352.0 "/>
++<polyline points="508.8,320.0 508.8,352.0 "/>
++<polyline points="956.8,320.0 956.8,352.0 "/>
++<polyline points="956.8,512.0 956.8,352.0 "/>
++<polyline points="508.8,352.0 956.8,352.0 "/>
++<polyline points="252.8,256.0 252.8,224.0 "/>
++<polyline points="508.8,256.0 508.8,224.0 "/>
++<polyline points="1244.8,544.0 1260.8,544.0 1260.8,336.0 908.8,336.0 908.8,288.0 924.8,288.0 "/>
++<polyline points="1180.8,864.0 1164.8,864.0 1164.8,592.0 1260.8,592.0 1260.8,544.0 "/>
++<polyline points="1260.8,336.0 1292.8,336.0 "/>
++<polyline points="1244.8,288.0 1276.8,288.0 1276.8,902.4 "/>
++<polyline points="924.8,544.0 892.8,544.0 892.8,902.4 "/>
++<polyline points="988.8,864.0 1020.8,864.0 1020.8,902.4 "/>
++<polyline points="892.8,902.4 1020.8,902.4 "/>
++<polyline points="1020.8,902.4 1276.8,902.4 "/>
++<polyline points="1276.8,902.4 1308.8,902.4 "/>
++<polyline points="284.8,96.0 316.8,96.0 "/>
++<polyline points="476.8,96.0 444.8,96.0 "/>
++<polyline points="316.8,96.0 444.8,96.0 "/>
++<polyline points="316.8,96.0 316.8,64.0 "/>
++<polyline points="284.8,736.0 316.8,736.0 "/>
++<polyline points="476.8,736.0 444.8,736.0 "/>
++<polyline points="316.8,736.0 444.8,736.0 "/>
++<polyline points="316.8,736.0 316.8,704.0 "/>
++<polyline points="1244.8,864.0 1260.8,864.0 1260.8,848.0 908.8,848.0 908.8,864.0 924.8,864.0 "/>
++<polyline points="1260.8,848.0 1292.8,848.0 "/>
++<polyline points="124.8,384.0 124.8,411.2 "/>
++<polyline points="124.8,420.8 124.8,448.0 "/>
++<polyline points="112.0,411.2 137.6,411.2 "/>
++<polyline points="112.0,420.8 137.6,420.8 "/>
++<polyline points="636.8,384.0 636.8,411.2 "/>
++<polyline points="636.8,420.8 636.8,448.0 "/>
++<polyline points="624.0,411.2 649.6,411.2 "/>
++<polyline points="624.0,420.8 649.6,420.8 "/>
++<polyline points="1468.8,448.0 1468.8,420.8 "/>
++<polyline points="1468.8,411.2 1468.8,384.0 "/>
++<polyline points="1481.6,420.8 1456.0,420.8 "/>
++<polyline points="1481.6,411.2 1456.0,411.2 "/>
++<polyline points="252.8,448.0 252.8,467.2 248.0,467.2 "/>
++<polyline points="252.8,512.0 252.8,492.8 248.0,492.8 "/>
++<polyline points="248.0,464.0 248.0,496.0 "/>
++<polyline points="241.6,467.2 241.6,492.8 "/>
++<polyline points="220.8,480.0 241.6,480.0 "/>
++<polyline points="508.8,448.0 508.8,467.2 513.6,467.2 "/>
++<polyline points="508.8,512.0 508.8,492.8 513.6,492.8 "/>
++<polyline points="513.6,464.0 513.6,496.0 "/>
++<polyline points="520.0,467.2 520.0,492.8 "/>
++<polyline points="540.8,480.0 520.0,480.0 "/>
++<polyline points="252.8,320.0 252.8,300.8 248.0,300.8 "/>
++<polyline points="252.8,256.0 252.8,275.2 248.0,275.2 "/>
++<polyline points="248.0,304.0 248.0,272.0 "/>
++<polyline points="241.6,300.8 241.6,275.2 "/>
++<circle cx="238.4" cy="288.0" r="3.2" fill="#ffffff"/>
++<polyline points="220.8,288.0 235.2,288.0 "/>
++<polyline points="508.8,320.0 508.8,300.8 513.6,300.8 "/>
++<polyline points="508.8,256.0 508.8,275.2 513.6,275.2 "/>
++<polyline points="513.6,304.0 513.6,272.0 "/>
++<polyline points="520.0,300.8 520.0,275.2 "/>
++<circle cx="523.2" cy="288.0" r="3.2" fill="#ffffff"/>
++<polyline points="540.8,288.0 526.4,288.0 "/>
++<polyline points="956.8,256.0 956.8,275.2 952.0,275.2 "/>
++<polyline points="956.8,320.0 956.8,300.8 952.0,300.8 "/>
++<polyline points="952.0,272.0 952.0,304.0 "/>
++<polyline points="945.6,275.2 945.6,300.8 "/>
++<polyline points="924.8,288.0 945.6,288.0 "/>
++<polyline points="1212.8,256.0 1212.8,275.2 1217.6,275.2 "/>
++<polyline points="1212.8,320.0 1212.8,300.8 1217.6,300.8 "/>
++<polyline points="1217.6,272.0 1217.6,304.0 "/>
++<polyline points="1224.0,275.2 1224.0,300.8 "/>
++<polyline points="1244.8,288.0 1224.0,288.0 "/>
++<polyline points="1212.8,576.0 1212.8,556.8 1217.6,556.8 "/>
++<polyline points="1212.8,512.0 1212.8,531.2 1217.6,531.2 "/>
++<polyline points="1217.6,560.0 1217.6,528.0 "/>
++<polyline points="1224.0,556.8 1224.0,531.2 "/>
++<polyline points="1244.8,544.0 1224.0,544.0 "/>
++<polyline points="956.8,576.0 956.8,556.8 952.0,556.8 "/>
++<polyline points="956.8,512.0 956.8,531.2 952.0,531.2 "/>
++<polyline points="952.0,560.0 952.0,528.0 "/>
++<polyline points="945.6,556.8 945.6,531.2 "/>
++<polyline points="924.8,544.0 945.6,544.0 "/>
++<polyline points="1084.8,64.0 1084.8,76.8 "/>
++<polyline points="1084.8,115.2 1084.8,128.0 "/>
++<polyline points="1084.8,76.8 1091.2,81.6 1078.4,86.4 1091.2,91.2 1078.4,96.0 1091.2,100.8 1078.4,105.6 1091.2,110.4 1084.8,115.2 "/>
++<polyline points="1084.8,768.0 1084.8,755.2 "/>
++<polyline points="1084.8,716.8 1084.8,704.0 "/>
++<polyline points="1084.8,755.2 1091.2,750.4 1078.4,745.6 1091.2,740.8 1078.4,736.0 1091.2,731.2 1078.4,726.4 1091.2,721.6 1084.8,716.8 "/>
++<polyline points="220.8,96.0 233.6,96.0 "/>
++<polyline points="272.0,96.0 284.8,96.0 "/>
++<polyline points="233.6,96.0 238.4,102.4 243.2,89.6 248.0,102.4 252.8,89.6 257.6,102.4 262.4,89.6 267.2,102.4 272.0,96.0 "/>
++<polyline points="476.8,96.0 489.6,96.0 "/>
++<polyline points="528.0,96.0 540.8,96.0 "/>
++<polyline points="489.6,96.0 494.4,102.4 499.2,89.6 504.0,102.4 508.8,89.6 513.6,102.4 518.4,89.6 523.2,102.4 528.0,96.0 "/>
++<polyline points="220.8,736.0 233.6,736.0 "/>
++<polyline points="272.0,736.0 284.8,736.0 "/>
++<polyline points="233.6,736.0 238.4,742.4 243.2,729.6 248.0,742.4 252.8,729.6 257.6,742.4 262.4,729.6 267.2,742.4 272.0,736.0 "/>
++<polyline points="476.8,736.0 489.6,736.0 "/>
++<polyline points="528.0,736.0 540.8,736.0 "/>
++<polyline points="489.6,736.0 494.4,742.4 499.2,729.6 504.0,742.4 508.8,729.6 513.6,742.4 518.4,729.6 523.2,742.4 528.0,736.0 "/>
++<polyline points="988.8,864.0 976.0,864.0 "/>
++<polyline points="937.6,864.0 924.8,864.0 "/>
++<polyline points="976.0,864.0 971.2,870.4 966.4,857.6 961.6,870.4 956.8,857.6 952.0,870.4 947.2,857.6 942.4,870.4 937.6,864.0 "/>
++<polyline points="1244.8,864.0 1232.0,864.0 "/>
++<polyline points="1193.6,864.0 1180.8,864.0 "/>
++<polyline points="1232.0,864.0 1227.2,870.4 1222.4,857.6 1217.6,870.4 1212.8,857.6 1208.0,870.4 1203.2,857.6 1198.4,870.4 1193.6,864.0 "/>
++<polyline points="238.4,224.0 267.2,224.0 "/>
++<text x="271.8" y="228.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="494.4,224.0 523.2,224.0 "/>
++<text x="527.8" y="228.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="1070.4,64.0 1099.2,64.0 "/>
++<text x="1103.8" y="68.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="1070.4,704.0 1099.2,704.0 "/>
++<text x="1103.8" y="708.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="238.4,544.0 267.2,544.0 "/>
++<polyline points="243.2,548.8 262.4,548.8 "/>
++<polyline points="249.6,553.6 256.0,553.6 "/>
++<polyline points="494.4,544.0 523.2,544.0 "/>
++<polyline points="499.2,548.8 518.4,548.8 "/>
++<polyline points="505.6,553.6 512.0,553.6 "/>
++<circle cx="1308.8" cy="902.4" r="4.8" fill="#ffffff"/>
++<text x="1315.8" y="906.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vlo</text>
++<circle cx="1564.8" cy="224.0" r="4.8" fill="#ffffff"/>
++<text x="1571.8" y="228.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout</text>
++<circle cx="92.8" cy="480.0" r="4.8" fill="#ffffff"/>
++<text x="85.8" y="484.0" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vrf</text>
++<circle cx="572.8" cy="448.0" r="4.8" fill="#ffffff"/>
++<text x="572.8" y="442.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vrf_bar</text>
++<circle cx="316.8" cy="704.0" r="4.8" fill="#ffffff"/>
++<text x="316.8" y="698.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vrfdcn</text>
++<circle cx="316.8" cy="64.0" r="4.8" fill="#ffffff"/>
++<text x="316.8" y="58.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vrfdcp</text>
++<circle cx="1292.8" cy="336.0" r="4.8" fill="#ffffff"/>
++<text x="1299.8" y="340.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vlo_bar</text>
++<circle cx="1292.8" cy="848.0" r="4.8" fill="#ffffff"/>
++<text x="1299.8" y="852.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vlodc</text>
++<circle cx="1500.8" cy="368.0" r="4.8" fill="#ffffff"/>
++<text x="1507.8" y="372.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout_bar</text>
++</g>
++<circle cx="572.8" cy="288.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="188.8" cy="288.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="252.8" cy="384.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1212.8" cy="416.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="508.8" cy="352.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="956.8" cy="352.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1276.8" cy="902.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1020.8" cy="902.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1532.8" cy="224.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1212.8" cy="224.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1084.8" cy="224.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="124.8" cy="480.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="188.8" cy="480.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="572.8" cy="480.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="736.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="316.8" cy="96.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1260.8" cy="544.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1260.8" cy="336.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1260.8" cy="848.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1212.8" cy="608.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1468.8" cy="368.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1100.8" cy="608.0" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="142.4" y="416.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cd1</text>
++<text x="654.4" y="416.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cd2</text>
++<text x="1486.4" y="416.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cf</text>
++<text x="257.6" y="480.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="484.8" y="480.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="257.6" y="288.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="484.8" y="288.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="961.6" y="288.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="1188.8" y="288.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m6</text>
++<text x="1188.8" y="544.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m7</text>
++<text x="961.6" y="544.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m8</text>
++<text x="1096.0" y="96.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r1</text>
++<text x="1054.4" y="736.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r2</text>
++<text x="243.2" y="81.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r3</text>
++<text x="499.2" y="81.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r4</text>
++<text x="243.2" y="721.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r5</text>
++<text x="499.2" y="721.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r6</text>
++<text x="947.2" y="886.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r7</text>
++<text x="1203.2" y="886.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r8</text>
++<text x="213.8" y="388.0" text-anchor="end" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1</text>
++<text x="1173.8" y="420.0" text-anchor="end" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1</text>
++<text x="40.0" y="980.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/docs/research/production-patterns/folded-switch-bank/ag-1093.native.before.svg b/docs/research/production-patterns/folded-switch-bank/ag-1093.native.before.svg
+new file mode 100644
+index 00000000..b7ee0537
+--- /dev/null
++++ b/docs/research/production-patterns/folded-switch-bank/ag-1093.native.before.svg
+@@ -0,0 +1,232 @@
++<svg xmlns="http://www.w3.org/2000/svg" width="1482" height="639" viewBox="0 0 1482 639" font-family="Helvetica, Arial, sans-serif">
++<rect width="100%" height="100%" fill="#ffffff"/>
++<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
++<polyline points="124.8,134.4 124.8,64.0 "/>
++<polyline points="220.8,166.4 252.8,166.4 252.8,64.0 "/>
++<polyline points="684.8,102.4 652.8,102.4 652.8,64.0 "/>
++<polyline points="124.8,64.0 252.8,64.0 "/>
++<polyline points="252.8,64.0 652.8,64.0 "/>
++<polyline points="124.8,198.4 124.8,230.4 "/>
++<polyline points="220.8,486.4 252.8,486.4 252.8,230.4 "/>
++<polyline points="684.8,262.4 652.8,262.4 652.8,230.4 "/>
++<polyline points="124.8,230.4 252.8,230.4 "/>
++<polyline points="252.8,230.4 652.8,230.4 "/>
++<polyline points="124.8,230.4 92.8,230.4 "/>
++<polyline points="1196.8,166.4 1180.8,166.4 "/>
++<polyline points="1292.8,134.4 1292.8,118.4 1244.8,118.4 1244.8,246.4 1180.8,246.4 1180.8,166.4 "/>
++<polyline points="1180.8,166.4 988.8,166.4 988.8,102.4 972.8,102.4 "/>
++<polyline points="1292.8,198.4 1292.8,262.4 "/>
++<polyline points="1196.8,486.4 1164.8,486.4 1164.8,262.4 "/>
++<polyline points="972.8,262.4 1004.8,262.4 "/>
++<polyline points="1004.8,262.4 1164.8,262.4 "/>
++<polyline points="1164.8,262.4 1292.8,262.4 "/>
++<polyline points="1292.8,262.4 1324.8,262.4 "/>
++<polyline points="540.8,262.4 572.8,262.4 572.8,294.4 "/>
++<polyline points="940.8,326.4 940.8,294.4 "/>
++<polyline points="716.8,326.4 716.8,294.4 "/>
++<polyline points="828.8,198.4 828.8,294.4 "/>
++<polyline points="572.8,294.4 716.8,294.4 "/>
++<polyline points="716.8,294.4 828.8,294.4 "/>
++<polyline points="828.8,294.4 940.8,294.4 "/>
++<polyline points="940.8,294.4 972.8,294.4 "/>
++<polyline points="476.8,262.4 444.8,262.4 444.8,310.4 "/>
++<polyline points="412.8,326.4 412.8,310.4 "/>
++<polyline points="1036.8,326.4 1036.8,310.4 "/>
++<polyline points="1356.8,198.4 1356.8,310.4 "/>
++<polyline points="412.8,310.4 444.8,310.4 "/>
++<polyline points="444.8,310.4 1036.8,310.4 "/>
++<polyline points="1036.8,310.4 1356.8,310.4 "/>
++<polyline points="1356.8,310.4 1388.8,310.4 "/>
++<polyline points="188.8,454.4 188.8,422.4 "/>
++<polyline points="188.8,198.4 188.8,422.4 "/>
++<polyline points="716.8,390.4 716.8,422.4 "/>
++<polyline points="412.8,390.4 412.8,422.4 "/>
++<polyline points="188.8,422.4 412.8,422.4 "/>
++<polyline points="412.8,422.4 716.8,422.4 "/>
++<polyline points="188.8,518.4 188.8,550.4 "/>
++<polyline points="1228.8,518.4 1228.8,550.4 "/>
++<polyline points="1228.8,454.4 1228.8,422.4 "/>
++<polyline points="1228.8,198.4 1228.8,230.4 "/>
++<polyline points="940.8,390.4 940.8,422.4 "/>
++<polyline points="1036.8,390.4 1036.8,422.4 "/>
++<polyline points="188.8,134.4 188.8,102.4 "/>
++<polyline points="828.8,134.4 828.8,102.4 "/>
++<polyline points="1228.8,134.4 1228.8,102.4 "/>
++<polyline points="1356.8,134.4 1356.8,102.4 "/>
++<polyline points="1228.8,102.4 1356.8,102.4 "/>
++<polyline points="1196.8,102.4 1228.8,102.4 "/>
++<polyline points="1356.8,102.4 1388.8,102.4 "/>
++<polyline points="380.8,358.4 364.8,358.4 364.8,102.4 396.8,102.4 "/>
++<polyline points="908.8,358.4 780.8,358.4 780.8,454.4 364.8,454.4 364.8,358.4 "/>
++<polyline points="364.8,102.4 332.8,102.4 "/>
++<polyline points="748.8,358.4 764.8,358.4 764.8,118.4 636.8,118.4 636.8,102.4 620.8,102.4 "/>
++<polyline points="1068.8,358.4 1084.8,358.4 1084.8,438.4 764.8,438.4 764.8,358.4 "/>
++<polyline points="1084.8,358.4 1116.8,358.4 "/>
++<polyline points="748.8,102.4 780.8,102.4 780.8,64.0 "/>
++<polyline points="908.8,102.4 876.8,102.4 876.8,64.0 "/>
++<polyline points="780.8,64.0 876.8,64.0 "/>
++<polyline points="876.8,64.0 908.8,64.0 "/>
++<polyline points="748.8,262.4 780.8,262.4 "/>
++<polyline points="908.8,262.4 876.8,262.4 "/>
++<polyline points="780.8,262.4 876.8,262.4 "/>
++<polyline points="876.8,262.4 876.8,230.4 "/>
++<polyline points="556.8,102.4 524.8,102.4 "/>
++<polyline points="460.8,102.4 492.8,102.4 "/>
++<polyline points="492.8,102.4 524.8,102.4 "/>
++<polyline points="492.8,102.4 492.8,70.4 "/>
++<polyline points="124.8,134.4 124.8,161.6 "/>
++<polyline points="124.8,171.2 124.8,198.4 "/>
++<polyline points="112.0,161.6 137.6,161.6 "/>
++<polyline points="112.0,171.2 137.6,171.2 "/>
++<polyline points="1292.8,134.4 1292.8,161.6 "/>
++<polyline points="1292.8,171.2 1292.8,198.4 "/>
++<polyline points="1280.0,161.6 1305.6,161.6 "/>
++<polyline points="1280.0,171.2 1305.6,171.2 "/>
++<polyline points="540.8,262.4 513.6,262.4 "/>
++<polyline points="504.0,262.4 476.8,262.4 "/>
++<polyline points="513.6,249.6 513.6,275.2 "/>
++<polyline points="504.0,249.6 504.0,275.2 "/>
++<polyline points="188.8,454.4 188.8,473.6 193.6,473.6 "/>
++<polyline points="188.8,518.4 188.8,499.2 193.6,499.2 "/>
++<polyline points="193.6,470.4 193.6,502.4 "/>
++<polyline points="200.0,473.6 200.0,499.2 "/>
++<polyline points="220.8,486.4 200.0,486.4 "/>
++<polyline points="1228.8,454.4 1228.8,473.6 1224.0,473.6 "/>
++<polyline points="1228.8,518.4 1228.8,499.2 1224.0,499.2 "/>
++<polyline points="1224.0,470.4 1224.0,502.4 "/>
++<polyline points="1217.6,473.6 1217.6,499.2 "/>
++<polyline points="1196.8,486.4 1217.6,486.4 "/>
++<polyline points="188.8,198.4 188.8,179.2 193.6,179.2 "/>
++<polyline points="188.8,134.4 188.8,153.6 193.6,153.6 "/>
++<polyline points="193.6,182.4 193.6,150.4 "/>
++<polyline points="200.0,179.2 200.0,153.6 "/>
++<circle cx="203.2" cy="166.4" r="3.2" fill="#ffffff"/>
++<polyline points="220.8,166.4 206.4,166.4 "/>
++<polyline points="1228.8,198.4 1228.8,179.2 1224.0,179.2 "/>
++<polyline points="1228.8,134.4 1228.8,153.6 1224.0,153.6 "/>
++<polyline points="1224.0,182.4 1224.0,150.4 "/>
++<polyline points="1217.6,179.2 1217.6,153.6 "/>
++<circle cx="1214.4" cy="166.4" r="3.2" fill="#ffffff"/>
++<polyline points="1196.8,166.4 1211.2,166.4 "/>
++<polyline points="940.8,326.4 940.8,345.6 936.0,345.6 "/>
++<polyline points="940.8,390.4 940.8,371.2 936.0,371.2 "/>
++<polyline points="936.0,342.4 936.0,374.4 "/>
++<polyline points="929.6,345.6 929.6,371.2 "/>
++<polyline points="908.8,358.4 929.6,358.4 "/>
++<polyline points="716.8,326.4 716.8,345.6 721.6,345.6 "/>
++<polyline points="716.8,390.4 716.8,371.2 721.6,371.2 "/>
++<polyline points="721.6,342.4 721.6,374.4 "/>
++<polyline points="728.0,345.6 728.0,371.2 "/>
++<polyline points="748.8,358.4 728.0,358.4 "/>
++<polyline points="412.8,326.4 412.8,345.6 408.0,345.6 "/>
++<polyline points="412.8,390.4 412.8,371.2 408.0,371.2 "/>
++<polyline points="408.0,342.4 408.0,374.4 "/>
++<polyline points="401.6,345.6 401.6,371.2 "/>
++<polyline points="380.8,358.4 401.6,358.4 "/>
++<polyline points="1036.8,326.4 1036.8,345.6 1041.6,345.6 "/>
++<polyline points="1036.8,390.4 1036.8,371.2 1041.6,371.2 "/>
++<polyline points="1041.6,342.4 1041.6,374.4 "/>
++<polyline points="1048.0,345.6 1048.0,371.2 "/>
++<polyline points="1068.8,358.4 1048.0,358.4 "/>
++<polyline points="828.8,134.4 828.8,147.2 "/>
++<polyline points="828.8,185.6 828.8,198.4 "/>
++<polyline points="828.8,147.2 835.2,152.0 822.4,156.8 835.2,161.6 822.4,166.4 835.2,171.2 822.4,176.0 835.2,180.8 828.8,185.6 "/>
++<polyline points="1356.8,198.4 1356.8,185.6 "/>
++<polyline points="1356.8,147.2 1356.8,134.4 "/>
++<polyline points="1356.8,185.6 1363.2,180.8 1350.4,176.0 1363.2,171.2 1350.4,166.4 1363.2,161.6 1350.4,156.8 1363.2,152.0 1356.8,147.2 "/>
++<polyline points="684.8,102.4 697.6,102.4 "/>
++<polyline points="736.0,102.4 748.8,102.4 "/>
++<polyline points="697.6,102.4 702.4,108.8 707.2,96.0 712.0,108.8 716.8,96.0 721.6,108.8 726.4,96.0 731.2,108.8 736.0,102.4 "/>
++<polyline points="908.8,102.4 921.6,102.4 "/>
++<polyline points="960.0,102.4 972.8,102.4 "/>
++<polyline points="921.6,102.4 926.4,108.8 931.2,96.0 936.0,108.8 940.8,96.0 945.6,108.8 950.4,96.0 955.2,108.8 960.0,102.4 "/>
++<polyline points="684.8,262.4 697.6,262.4 "/>
++<polyline points="736.0,262.4 748.8,262.4 "/>
++<polyline points="697.6,262.4 702.4,268.8 707.2,256.0 712.0,268.8 716.8,256.0 721.6,268.8 726.4,256.0 731.2,268.8 736.0,262.4 "/>
++<polyline points="908.8,262.4 921.6,262.4 "/>
++<polyline points="960.0,262.4 972.8,262.4 "/>
++<polyline points="921.6,262.4 926.4,268.8 931.2,256.0 936.0,268.8 940.8,256.0 945.6,268.8 950.4,256.0 955.2,268.8 960.0,262.4 "/>
++<polyline points="620.8,102.4 608.0,102.4 "/>
++<polyline points="569.6,102.4 556.8,102.4 "/>
++<polyline points="608.0,102.4 603.2,108.8 598.4,96.0 593.6,108.8 588.8,96.0 584.0,108.8 579.2,96.0 574.4,108.8 569.6,102.4 "/>
++<polyline points="460.8,102.4 448.0,102.4 "/>
++<polyline points="409.6,102.4 396.8,102.4 "/>
++<polyline points="448.0,102.4 443.2,108.8 438.4,96.0 433.6,108.8 428.8,96.0 424.0,108.8 419.2,96.0 414.4,108.8 409.6,102.4 "/>
++<polyline points="174.4,102.4 203.2,102.4 "/>
++<text x="207.8" y="106.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="814.4,102.4 843.2,102.4 "/>
++<text x="847.8" y="106.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
++<polyline points="174.4,550.4 203.2,550.4 "/>
++<polyline points="179.2,555.2 198.4,555.2 "/>
++<polyline points="185.6,560.0 192.0,560.0 "/>
++<polyline points="1214.4,550.4 1243.2,550.4 "/>
++<polyline points="1219.2,555.2 1238.4,555.2 "/>
++<polyline points="1225.6,560.0 1232.0,560.0 "/>
++<circle cx="492.8" cy="70.4" r="4.8" fill="#ffffff"/>
++<text x="492.8" y="64.4" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vlodc</text>
++<circle cx="972.8" cy="294.4" r="4.8" fill="#ffffff"/>
++<text x="979.8" y="298.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout</text>
++<circle cx="1388.8" cy="310.4" r="4.8" fill="#ffffff"/>
++<text x="1395.8" y="314.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout_bar</text>
++<circle cx="92.8" cy="230.4" r="4.8" fill="#ffffff"/>
++<text x="85.8" y="234.4" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vrf</text>
++<circle cx="1324.8" cy="262.4" r="4.8" fill="#ffffff"/>
++<text x="1331.8" y="266.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vrf_bar</text>
++<circle cx="876.8" cy="230.4" r="4.8" fill="#ffffff"/>
++<text x="876.8" y="224.4" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vrfdcn</text>
++<circle cx="908.8" cy="64.0" r="4.8" fill="#ffffff"/>
++<text x="915.8" y="68.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vrfdcp</text>
++<circle cx="1116.8" cy="358.4" r="4.8" fill="#ffffff"/>
++<text x="1123.8" y="362.4" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vlo</text>
++<circle cx="332.8" cy="102.4" r="4.8" fill="#ffffff"/>
++<text x="325.8" y="106.4" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vlo_bar</text>
++</g>
++<circle cx="1228.8" cy="102.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1356.8" cy="102.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="252.8" cy="64.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="188.8" cy="422.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="412.8" cy="422.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="492.8" cy="102.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="940.8" cy="294.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="716.8" cy="294.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="828.8" cy="294.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="444.8" cy="310.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1036.8" cy="310.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1356.8" cy="310.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="124.8" cy="230.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="252.8" cy="230.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1292.8" cy="262.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1164.8" cy="262.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="876.8" cy="262.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="876.8" cy="64.0" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1180.8" cy="166.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="764.8" cy="358.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="1084.8" cy="358.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="364.8" cy="358.4" r="3.8" fill="#1d2330" stroke="none"/>
++<circle cx="364.8" cy="102.4" r="3.8" fill="#1d2330" stroke="none"/>
++<text x="142.4" y="166.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cd1</text>
++<text x="1310.4" y="166.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cd2</text>
++<text x="499.2" y="291.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cf</text>
++<text x="164.8" y="486.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m1</text>
++<text x="1233.6" y="486.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m2</text>
++<text x="164.8" y="147.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m3</text>
++<text x="1172.8" y="147.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m4</text>
++<text x="945.6" y="358.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m5</text>
++<text x="692.8" y="358.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m6</text>
++<text x="417.6" y="358.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m7</text>
++<text x="1012.8" y="358.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">m8</text>
++<text x="840.0" y="166.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r1</text>
++<text x="1368.0" y="166.4" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r2</text>
++<text x="707.2" y="88.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r3</text>
++<text x="931.2" y="88.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r4</text>
++<text x="707.2" y="248.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r5</text>
++<text x="931.2" y="248.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r6</text>
++<text x="579.2" y="88.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r7</text>
++<text x="419.2" y="88.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r8</text>
++<text x="1395.8" y="106.4" text-anchor="start" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">vdd</text>
++<text x="1228.8" y="416.4" text-anchor="middle" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1p</text>
++<text x="1228.8" y="246.4" text-anchor="middle" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1p</text>
++<text x="940.8" y="438.4" text-anchor="middle" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1p</text>
++<text x="1036.8" y="438.4" text-anchor="middle" font-size="12" fill="#2a62b8" stroke="none" font-style="italic">v1p</text>
++<text x="40.0" y="633.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
++</svg>
+diff --git a/docs/research/production-patterns/folded-switch-bank/ag-1093.target.after.svg b/docs/research/production-patterns/folded-switch-bank/ag-1093.target.after.svg
+new file mode 100644
+index 00000000..8c869e31
+--- /dev/null
++++ b/docs/research/production-patterns/folded-switch-bank/ag-1093.target.after.svg
+@@ -0,0 +1,362 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="42.5 -60 1422.3 848" width="1422.3" height="848">
++<rect id="background" x="42.5" y="-60" width="1422.3" height="848" fill="#16181c"/>
++<line x1="1120" y1="180" x2="1110" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1110" y1="170" x2="1110" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="170" x2="1107.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="170" x2="1080" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="190" x2="1080" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1080" y1="150" x2="1080" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1080" y1="190" x2="1080" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1107.5" y1="180" x2="1080" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="800" y1="180" x2="810" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="810" y1="170" x2="810" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="170" x2="812.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="170" x2="840" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="190" x2="840" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="840" y1="150" x2="840" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="840" y1="190" x2="840" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="812.5" y1="180" x2="840" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="800" y1="420" x2="810" y2="420" stroke="#8fb84a" stroke-width="1"/>
++<line x1="810" y1="430" x2="810" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="430" x2="812.5" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="430" x2="840" y2="430" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="812.5" y1="410" x2="840" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="840" y1="450" x2="840" y2="430" stroke="#8fb84a" stroke-width="1"/>
++<line x1="840" y1="410" x2="840" y2="390" stroke="#8fb84a" stroke-width="1"/>
++<line x1="812.5" y1="420" x2="840" y2="420" stroke="#8fb84a" stroke-width="1"/>
++<line x1="390" y1="0" x2="405" y2="0" stroke="#8fb84a" stroke-width="1"/>
++<line x1="435" y1="0" x2="450" y2="0" stroke="#8fb84a" stroke-width="1"/>
++<line x1="540" y1="270" x2="540" y2="297.5" stroke="#8fb84a" stroke-width="1"/>
++<line x1="540" y1="302.5" x2="540" y2="330" stroke="#8fb84a" stroke-width="1"/>
++<line x1="532.5" y1="297.5" x2="547.5" y2="297.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="532.5" y1="302.5" x2="547.5" y2="302.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="460" y1="180" x2="450" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="450" y1="170" x2="450" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="170" x2="447.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="170" x2="420" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="190" x2="420" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="420" y1="150" x2="420" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="420" y1="190" x2="420" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="447.5" y1="180" x2="420" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="140" y1="180" x2="150" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="150" y1="170" x2="150" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="170" x2="152.5" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="170" x2="180" y2="170" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="190" x2="180" y2="190" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="180" y1="150" x2="180" y2="170" stroke="#8fb84a" stroke-width="1"/>
++<line x1="180" y1="190" x2="180" y2="210" stroke="#8fb84a" stroke-width="1"/>
++<line x1="152.5" y1="180" x2="180" y2="180" stroke="#8fb84a" stroke-width="1"/>
++<line x1="150" y1="600" x2="165" y2="600" stroke="#8fb84a" stroke-width="1"/>
++<line x1="195" y1="600" x2="210" y2="600" stroke="#8fb84a" stroke-width="1"/>
++<line x1="150" y1="0" x2="165" y2="0" stroke="#8fb84a" stroke-width="1"/>
++<line x1="195" y1="0" x2="210" y2="0" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1120" y1="420" x2="1110" y2="420" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1110" y1="430" x2="1110" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="430" x2="1107.5" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="430" x2="1080" y2="430" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1107.5" y1="410" x2="1080" y2="410" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1080" y1="450" x2="1080" y2="430" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1080" y1="410" x2="1080" y2="390" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1107.5" y1="420" x2="1080" y2="420" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="-30" x2="960" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="15" x2="960" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="140" y1="360" x2="150" y2="360" stroke="#8fb84a" stroke-width="1"/>
++<line x1="150" y1="350" x2="150" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="350" x2="152.5" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="350" x2="180" y2="350" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="152.5" y1="370" x2="180" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="180" y1="330" x2="180" y2="350" stroke="#8fb84a" stroke-width="1"/>
++<line x1="180" y1="370" x2="180" y2="390" stroke="#8fb84a" stroke-width="1"/>
++<line x1="152.5" y1="360" x2="180" y2="360" stroke="#8fb84a" stroke-width="1"/>
++<line x1="390" y1="600" x2="405" y2="600" stroke="#8fb84a" stroke-width="1"/>
++<line x1="435" y1="600" x2="450" y2="600" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1110" y1="720" x2="1095" y2="720" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1065" y1="720" x2="1050" y2="720" stroke="#8fb84a" stroke-width="1"/>
++<line x1="870" y1="720" x2="855" y2="720" stroke="#8fb84a" stroke-width="1"/>
++<line x1="825" y1="720" x2="810" y2="720" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="630" x2="960" y2="615" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="585" x2="960" y2="570" stroke="#8fb84a" stroke-width="1"/>
++<line x1="460" y1="360" x2="450" y2="360" stroke="#8fb84a" stroke-width="1"/>
++<line x1="450" y1="350" x2="450" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="350" x2="447.5" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="350" x2="420" y2="350" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="447.5" y1="370" x2="420" y2="370" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="420" y1="330" x2="420" y2="350" stroke="#8fb84a" stroke-width="1"/>
++<line x1="420" y1="370" x2="420" y2="390" stroke="#8fb84a" stroke-width="1"/>
++<line x1="447.5" y1="360" x2="420" y2="360" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1320" y1="270" x2="1320" y2="297.5" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1320" y1="302.5" x2="1320" y2="330" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1312.5" y1="297.5" x2="1327.5" y2="297.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="1312.5" y1="302.5" x2="1327.5" y2="302.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="60" y1="270" x2="60" y2="297.5" stroke="#8fb84a" stroke-width="1"/>
++<line x1="60" y1="302.5" x2="60" y2="330" stroke="#8fb84a" stroke-width="1"/>
++<line x1="52.5" y1="297.5" x2="67.5" y2="297.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="52.5" y1="302.5" x2="67.5" y2="302.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="840" y1="450" x2="840" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1110" y1="720" x2="1140" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="460" y1="180" x2="540" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="210" y1="0" x2="240" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1320" y1="120" x2="1350" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="120" x2="1080" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="420" y1="390" x2="420" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1120" y1="420" x2="1125" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="270" x2="180" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="210" x2="1080" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1035" y1="675" x2="1035" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="180" y1="120" x2="180" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="795" y1="180" x2="800" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1120" y1="180" x2="1150" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="780" y1="720" x2="810" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="360" y1="600" x2="390" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="120" x2="1080" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="660" x2="1320" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1320" y1="120" x2="1320" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="540" y1="180" x2="540" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="780" y1="720" x2="780" y2="770" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1320" y1="330" x2="1320" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1140" y1="720" x2="1140" y2="770" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="540" y1="240" x2="540" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1125" y1="420" x2="1170" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="210" y1="600" x2="240" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="460" y1="360" x2="540" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="840" y1="120" x2="960" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="840" y1="660" x2="960" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="870" y1="720" x2="900" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="840" y1="225" x2="840" y2="390" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="420" y1="225" x2="840" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="240" x2="1150" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="180" y1="390" x2="180" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="240" x2="900" y2="480" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="540" y1="360" x2="540" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="180" y1="270" x2="180" y2="330" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="360" x2="140" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="630" x2="960" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="180" y1="210" x2="180" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1035" y1="720" x2="1050" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="600" x2="150" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1170" y1="135" x2="1170" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="0" x2="540" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="300" x2="1080" y2="390" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="770" y1="480" x2="900" y2="480" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="240" y1="0" x2="360" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="450" y1="600" x2="540" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="240" y1="600" x2="360" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="240" x2="60" y2="270" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="540" y1="330" x2="540" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1035" y1="675" x2="1125" y2="675" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="770" y1="420" x2="800" y2="420" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="660" x2="1080" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="420" y1="225" x2="420" y2="330" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="30" x2="960" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1050" y1="300" x2="1080" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="360" x2="60" y2="600" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="840" y1="210" x2="840" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="795" y1="135" x2="795" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1150" y1="180" x2="1150" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="795" y1="135" x2="1170" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="420" y1="210" x2="420" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="0" x2="60" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="450" x2="1080" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="770" y1="420" x2="770" y2="480" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="780" y1="770" x2="1140" y2="770" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1080" y1="120" x2="1320" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="840" y1="120" x2="840" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="420" y1="120" x2="420" y2="150" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="180" x2="60" y2="240" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="0" x2="150" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="360" y1="0" x2="390" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1320" y1="660" x2="1350" y2="660" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="480" x2="900" y2="720" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="540" y1="0" x2="540" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="180" x2="140" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1125" y1="420" x2="1125" y2="675" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="330" x2="60" y2="360" stroke="#4f8fc9" stroke-width="1"/>
++<rect x="1077.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1117.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="797.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="447.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="797.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="387.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="387.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="537.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="537.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="457.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="207.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="137.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="147.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="147.5" y="597.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="207.5" y="597.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="147.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="207.5" y="-2.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="447.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1117.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="387.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="-32.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="27.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="137.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="387.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="387.5" y="597.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="447.5" y="597.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1107.5" y="717.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1047.5" y="717.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="867.5" y="717.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="807.5" y="717.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="627.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="567.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="457.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="387.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1317.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1317.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="327.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="117.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1047.5" y="297.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="-32.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1077.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="87.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="837.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="567.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="627.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="177.5" y="357.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="147.5" y="267.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="537.5" y="87.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="177.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="417.5" y="417.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<circle cx="60" cy="180" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="60" cy="360" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="180" cy="270" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="420" cy="225" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="540" cy="180" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="540" cy="360" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="840" cy="225" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="900" cy="480" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="960" cy="120" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="960" cy="660" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1080" cy="120" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1080" cy="300" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1080" cy="660" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1125" cy="420" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1320" cy="120" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1320" cy="660" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<polyline points="405,0 407.5,5 412.5,-5 417.5,5 422.5,-5 427.5,5 432.5,-5 435,0" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="165,600 167.5,605 172.5,595 177.5,605 182.5,595 187.5,605 192.5,595 195,600" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="165,0 167.5,5 172.5,-5 177.5,5 182.5,-5 187.5,5 192.5,-5 195,0" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="960,-15 965,-12.5 955,-7.5 965,-2.5 955,2.5 965,7.5 955,12.5 960,15" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="405,600 407.5,605 412.5,595 417.5,605 422.5,595 427.5,605 432.5,595 435,600" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="1095,720 1092.5,725 1087.5,715 1082.5,725 1077.5,715 1072.5,725 1067.5,715 1065,720" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="855,720 852.5,725 847.5,715 842.5,725 837.5,715 832.5,725 827.5,715 825,720" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="960,615 965,612.5 955,607.5 965,602.5 955,597.5 965,592.5 955,587.5 960,585" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="1082.5,190 1087.5,191.875 1087.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="837.5,190 832.5,191.875 832.5,188.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="837.5,410 832.5,408.125 832.5,411.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="427.5,170 422.5,168.125 422.5,171.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="172.5,170 177.5,168.125 177.5,171.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="1082.5,410 1087.5,408.125 1087.5,411.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="177.5,370 172.5,371.875 172.5,368.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="422.5,370 427.5,371.875 427.5,368.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="540,480 545,475 565,475 565,485 545,485" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="60,480 65,475 85,475 85,485 65,485" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="300,600 305,595 325,595 325,605 305,605" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="960,770 965,765 985,765 985,775 965,775" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="300,0 305,-5 325,-5 325,5 305,5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="1350,660 1355,655 1375,655 1375,665 1355,665" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="1350,120 1355,115 1375,115 1375,125 1355,125" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="180,420 185,425 185,445 175,445 175,425" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="982,135 987,130 1007,130 1007,140 987,140" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="180,120 175,115 175,95 185,95 185,115" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="1025,240 1030,235 1050,235 1050,245 1030,245" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<text x="1066.6" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M6</text>
++<text x="1062.4" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="1049.8" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="845" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M5</text>
++<text x="845" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="845" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="845" y="441" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M8</text>
++<text x="845" y="432" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="845" y="409" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="418" y="10" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 418 10)">R4</text>
++<text x="427" y="10" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 427 10)">1MegΩ</text>
++<text x="552.5" y="291" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">Cd2</text>
++<text x="552.5" y="300" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
++<text x="406.6" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M4</text>
++<text x="402.4" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="389.8" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="185" y="152" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M3</text>
++<text x="185" y="161" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="185" y="184" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="178" y="610" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 178 610)">R5</text>
++<text x="187" y="610" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 187 610)">1MegΩ</text>
++<text x="178" y="10" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 178 10)">R3</text>
++<text x="187" y="10" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 187 10)">1MegΩ</text>
++<text x="1066.6" y="441" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M7</text>
++<text x="1062.4" y="432" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="1049.8" y="409" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="970" y="-9" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R1</text>
++<text x="970" y="0" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
++<text x="185" y="332" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M1</text>
++<text x="185" y="341" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="185" y="364" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="418" y="610" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 418 610)">R6</text>
++<text x="427" y="610" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 427 610)">1MegΩ</text>
++<text x="1089" y="730" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 1089 730)">R8</text>
++<text x="1080" y="730" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 1080 730)">1MegΩ</text>
++<text x="849" y="730" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 849 730)">R7</text>
++<text x="840" y="730" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 840 730)">1MegΩ</text>
++<text x="970" y="602" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R2</text>
++<text x="970" y="593" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
++<text x="406.6" y="332" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M2</text>
++<text x="402.4" y="341" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="389.8" y="364" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="1332.5" y="291" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">Cf</text>
++<text x="1332.5" y="300" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
++<text x="72.5" y="291" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">Cd1</text>
++<text x="72.5" y="300" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
++<text x="387.2" y="343" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="1047.2" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="421" y="100" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="184" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="1026.8" y="283" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1</text>
++<text x="961" y="-50" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="844" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="1047.2" y="403" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="64" y="73" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net1</text>
++<text x="844" y="403" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="961" y="550" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="634" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1p</text>
++<text x="184" y="343" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="126.8" y="253" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1</text>
++<text x="544" y="73" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net0</text>
++<text x="387.2" y="163" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="421" y="424" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="568" y="472" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf_bar</text>
++<text x="88" y="472" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf</text>
++<text x="328" y="592" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrfdcn</text>
++<text x="988" y="762" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlodc</text>
++<text x="328" y="-8" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrfdcp</text>
++<text x="1378" y="652" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vout_bar</text>
++<text x="1378" y="112" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vout</text>
++<text x="181" y="376" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="1010" y="127" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo_bar</text>
++<text x="181" y="148" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="1053" y="232" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo</text>
++</svg>
+diff --git a/docs/research/production-patterns/folded-switch-bank/ag-1093.target.before.svg b/docs/research/production-patterns/folded-switch-bank/ag-1093.target.before.svg
+new file mode 100644
+index 00000000..c05b6b2b
+--- /dev/null
++++ b/docs/research/production-patterns/folded-switch-bank/ag-1093.target.before.svg
+@@ -0,0 +1,372 @@
++<svg xmlns="http://www.w3.org/2000/svg" viewBox="-17.5 -92 1182.3 532" width="1182.3" height="532">
++<rect id="background" x="-17.5" y="-92" width="1182.3" height="532" fill="#16181c"/>
++<line x1="525" y1="225" x2="515" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="515" y1="215" x2="515" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="512.5" y1="215" x2="512.5" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="512.5" y1="215" x2="485" y2="215" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="512.5" y1="235" x2="485" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="485" y1="195" x2="485" y2="215" stroke="#8fb84a" stroke-width="1"/>
++<line x1="485" y1="235" x2="485" y2="255" stroke="#8fb84a" stroke-width="1"/>
++<line x1="512.5" y1="225" x2="485" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="645" y1="225" x2="655" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="655" y1="215" x2="655" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="657.5" y1="215" x2="657.5" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="657.5" y1="215" x2="685" y2="215" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="657.5" y1="235" x2="685" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="685" y1="195" x2="685" y2="215" stroke="#8fb84a" stroke-width="1"/>
++<line x1="685" y1="235" x2="685" y2="255" stroke="#8fb84a" stroke-width="1"/>
++<line x1="657.5" y1="225" x2="685" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="800" y1="225" x2="790" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="790" y1="215" x2="790" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="787.5" y1="215" x2="787.5" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="787.5" y1="215" x2="760" y2="215" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="787.5" y1="235" x2="760" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="760" y1="195" x2="760" y2="215" stroke="#8fb84a" stroke-width="1"/>
++<line x1="760" y1="235" x2="760" y2="255" stroke="#8fb84a" stroke-width="1"/>
++<line x1="787.5" y1="225" x2="760" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="655" y1="-15" x2="670" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="700" y1="-15" x2="715" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="15" x2="960" y2="42.5" stroke="#8fb84a" stroke-width="1"/>
++<line x1="960" y1="47.5" x2="960" y2="75" stroke="#8fb84a" stroke-width="1"/>
++<line x1="952.5" y1="42.5" x2="967.5" y2="42.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="952.5" y1="47.5" x2="967.5" y2="47.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="860" y1="45" x2="870" y2="45" stroke="#8fb84a" stroke-width="1"/>
++<line x1="870" y1="35" x2="870" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="35" x2="872.5" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="35" x2="900" y2="35" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="55" x2="900" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="900" y1="15" x2="900" y2="35" stroke="#8fb84a" stroke-width="1"/>
++<line x1="900" y1="55" x2="900" y2="75" stroke="#8fb84a" stroke-width="1"/>
++<line x1="872.5" y1="45" x2="900" y2="45" stroke="#8fb84a" stroke-width="1"/>
++<line x1="100" y1="45" x2="90" y2="45" stroke="#8fb84a" stroke-width="1"/>
++<line x1="90" y1="35" x2="90" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="35" x2="87.5" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="35" x2="60" y2="35" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="55" x2="60" y2="55" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="60" y1="15" x2="60" y2="35" stroke="#8fb84a" stroke-width="1"/>
++<line x1="60" y1="55" x2="60" y2="75" stroke="#8fb84a" stroke-width="1"/>
++<line x1="87.5" y1="45" x2="60" y2="45" stroke="#8fb84a" stroke-width="1"/>
++<line x1="455" y1="135" x2="470" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="500" y1="135" x2="515" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="455" y1="-15" x2="470" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="500" y1="-15" x2="515" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="160" y1="225" x2="170" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="170" y1="215" x2="170" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="172.5" y1="215" x2="172.5" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="172.5" y1="215" x2="200" y2="215" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="172.5" y1="235" x2="200" y2="235" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="200" y1="195" x2="200" y2="215" stroke="#8fb84a" stroke-width="1"/>
++<line x1="200" y1="235" x2="200" y2="255" stroke="#8fb84a" stroke-width="1"/>
++<line x1="172.5" y1="225" x2="200" y2="225" stroke="#8fb84a" stroke-width="1"/>
++<line x1="585" y1="15" x2="585" y2="30" stroke="#8fb84a" stroke-width="1"/>
++<line x1="585" y1="60" x2="585" y2="75" stroke="#8fb84a" stroke-width="1"/>
++<line x1="100" y1="345" x2="90" y2="345" stroke="#8fb84a" stroke-width="1"/>
++<line x1="90" y1="335" x2="90" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="335" x2="87.5" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="335" x2="60" y2="335" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="87.5" y1="355" x2="60" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="60" y1="315" x2="60" y2="335" stroke="#8fb84a" stroke-width="1"/>
++<line x1="60" y1="355" x2="60" y2="375" stroke="#8fb84a" stroke-width="1"/>
++<line x1="87.5" y1="345" x2="60" y2="345" stroke="#8fb84a" stroke-width="1"/>
++<line x1="655" y1="135" x2="670" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="700" y1="135" x2="715" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="245" y1="-15" x2="230" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="200" y1="-15" x2="185" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="395" y1="-15" x2="380" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="350" y1="-15" x2="335" y2="-15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1020" y1="75" x2="1020" y2="60" stroke="#8fb84a" stroke-width="1"/>
++<line x1="1020" y1="30" x2="1020" y2="15" stroke="#8fb84a" stroke-width="1"/>
++<line x1="860" y1="345" x2="870" y2="345" stroke="#8fb84a" stroke-width="1"/>
++<line x1="870" y1="335" x2="870" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="335" x2="872.5" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="335" x2="900" y2="335" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="872.5" y1="355" x2="900" y2="355" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="900" y1="315" x2="900" y2="335" stroke="#8fb84a" stroke-width="1"/>
++<line x1="900" y1="355" x2="900" y2="375" stroke="#8fb84a" stroke-width="1"/>
++<line x1="872.5" y1="345" x2="900" y2="345" stroke="#8fb84a" stroke-width="1"/>
++<line x1="320" y1="135" x2="292.5" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="287.5" y1="135" x2="260" y2="135" stroke="#8fb84a" stroke-width="1"/>
++<line x1="292.5" y1="127.5" x2="292.5" y2="142.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="287.5" y1="127.5" x2="287.5" y2="142.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="0" y1="15" x2="0" y2="42.5" stroke="#8fb84a" stroke-width="1"/>
++<line x1="0" y1="47.5" x2="0" y2="75" stroke="#8fb84a" stroke-width="1"/>
++<line x1="-7.5" y1="42.5" x2="7.5" y2="42.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="-7.5" y1="47.5" x2="7.5" y2="47.5" stroke="#8fb84a" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
++<line x1="485" y1="165" x2="485" y2="195" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="515" y1="135" x2="545" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="715" y1="-15" x2="720" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="305" y1="-15" x2="335" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="525" y1="225" x2="555" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="345" x2="860" y2="345" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="715" y1="135" x2="855" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1020" y1="75" x2="1020" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="760" y1="255" x2="760" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="200" y1="180" x2="230" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="200" y1="180" x2="200" y2="195" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1020" y1="-15" x2="1050" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="485" y1="255" x2="485" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="685" y1="255" x2="685" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="-15" x2="900" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="625" y1="-65" x2="625" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="545" y1="-65" x2="545" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="320" y1="135" x2="350" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="685" y1="165" x2="715" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="350" y1="165" x2="485" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="720" y1="45" x2="855" y2="45" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="625" y1="135" x2="655" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="230" y1="135" x2="260" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="245" y1="-15" x2="275" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="45" x2="860" y2="45" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="75" x2="900" y2="105" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="515" y1="-15" x2="545" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="120" x2="915" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="0" x2="960" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="485" y1="165" x2="585" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="570" y1="225" x2="645" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="200" y1="255" x2="200" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="285" x2="200" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1020" y1="-15" x2="1020" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="760" y1="180" x2="760" y2="195" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="-15" x2="150" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="915" y1="0" x2="915" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="1020" y1="180" x2="1050" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="130" y1="-65" x2="130" y2="45" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="585" y1="75" x2="585" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="760" y1="180" x2="1020" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="870" y1="-15" x2="900" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="425" y1="-65" x2="425" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="585" y1="-15" x2="585" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="0" y1="75" x2="0" y2="105" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="230" y1="135" x2="230" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="225" x2="160" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="800" y1="225" x2="830" y2="225" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="720" y1="-15" x2="720" y2="45" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="625" y1="-15" x2="655" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="0" y1="-65" x2="0" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="45" x2="855" y2="120" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="285" x2="900" y2="315" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="-15" x2="185" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="585" y1="165" x2="685" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="75" x2="60" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="960" y1="75" x2="960" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="230" y1="180" x2="760" y2="180" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="100" y1="345" x2="130" y2="345" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="285" x2="60" y2="315" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="-15" x2="1020" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="570" y1="225" x2="570" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="900" y1="375" x2="900" y2="405" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="200" y1="285" x2="485" y2="285" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="425" y1="-15" x2="455" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="685" y1="165" x2="685" y2="195" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="300" x2="570" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="545" y1="135" x2="625" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="135" x2="960" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="855" y1="135" x2="855" y2="345" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="375" x2="60" y2="405" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="100" y1="45" x2="130" y2="45" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="0" y1="-65" x2="130" y2="-65" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="545" y1="-65" x2="625" y2="-65" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="350" y1="135" x2="350" y2="165" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="275" y1="-15" x2="305" y2="-15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="150" y1="225" x2="150" y2="300" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="915" y1="0" x2="960" y2="0" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="130" y1="-65" x2="425" y2="-65" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="60" y1="-15" x2="60" y2="15" stroke="#4f8fc9" stroke-width="1"/>
++<line x1="425" y1="135" x2="455" y2="135" stroke="#4f8fc9" stroke-width="1"/>
++<rect x="482.5" y="192.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="522.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="482.5" y="252.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="482.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="682.5" y="192.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="642.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="682.5" y="252.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="682.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="757.5" y="192.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="797.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="757.5" y="252.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="757.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="652.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="712.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="957.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="857.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="97.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="452.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="512.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="452.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="512.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="197.5" y="192.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="157.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="197.5" y="252.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="197.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="582.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="582.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="312.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="97.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="372.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="652.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="712.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="242.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="182.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="392.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="332.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1017.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1017.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="312.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="857.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="372.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="317.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="257.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="-2.5" y="12.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="-2.5" y="72.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="682.5" y="282.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="392.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="422.5" y="132.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="757.5" y="282.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="682.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="282.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="57.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="274.5" y="-67.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="827.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="197.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="339.5" y="282.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="784.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="127.5" y="342.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="582.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="102.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="1047.5" y="-17.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="757.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="482.5" y="222.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="402.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<rect x="897.5" y="42.5" width="5" height="5" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<circle cx="60" cy="285" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="130" cy="-65" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="150" cy="225" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="200" cy="285" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="230" cy="180" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="485" cy="165" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="585" cy="165" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="685" cy="165" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="760" cy="180" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="855" cy="45" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="855" cy="135" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="900" cy="-15" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1020" cy="-15" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<circle cx="1020" cy="180" r="3.7" fill="#4f8fc9" stroke="#4f8fc9" stroke-width="1"/>
++<polyline points="670,-15 672.5,-10 677.5,-20 682.5,-10 687.5,-20 692.5,-10 697.5,-20 700,-15" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="470,135 472.5,140 477.5,130 482.5,140 487.5,130 492.5,140 497.5,130 500,135" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="470,-15 472.5,-10 477.5,-20 482.5,-10 487.5,-20 492.5,-10 497.5,-20 500,-15" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="585,30 590,32.5 580,37.5 590,42.5 580,47.5 590,52.5 580,57.5 585,60" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="670,135 672.5,140 677.5,130 682.5,140 687.5,130 692.5,140 697.5,130 700,135" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="230,-15 227.5,-10 222.5,-20 217.5,-10 212.5,-20 207.5,-10 202.5,-20 200,-15" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="380,-15 377.5,-10 372.5,-20 367.5,-10 362.5,-20 357.5,-10 352.5,-20 350,-15" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polyline points="1020,60 1025,57.5 1015,52.5 1025,47.5 1015,42.5 1025,37.5 1015,32.5 1020,30" fill="none" stroke="#8fb84a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="487.5,235 492.5,236.875 492.5,233.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="682.5,235 677.5,236.875 677.5,233.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="762.5,235 767.5,236.875 767.5,233.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="892.5,35 897.5,33.125 897.5,36.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="67.5,35 62.5,33.125 62.5,36.875" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="197.5,235 192.5,236.875 192.5,233.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="62.5,355 67.5,356.875 67.5,353.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="897.5,355 892.5,356.875 892.5,353.125" fill="#8fb84a" stroke="#8fb84a" stroke-width="1" stroke-linecap="round" stroke-linejoin="round"/>
++<polygon points="360,300 365,295 385,295 385,305 365,305" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="530,135 535,130 555,130 555,140 535,140" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="60,-15 55,-20 55,-40 65,-40 65,-20" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="1050,180 1055,175 1075,175 1075,185 1055,185" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="0,105 5,110 5,130 -5,130 -5,110" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="585,-65 590,-70 610,-70 610,-60 590,-60" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="260,-15 265,-20 285,-20 285,-10 265,-10" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="855,240 860,235 880,235 880,245 860,245" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="715,165 720,160 740,160 740,170 720,170" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="60,405 65,410 65,430 55,430 55,410" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<polygon points="555,225 560,220 580,220 580,230 560,230" fill="#e5534b" stroke="#e5534b" stroke-width="1"/>
++<text x="471.6" y="197" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M6</text>
++<text x="467.4" y="206" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="454.8" y="229" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="690" y="197" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M5</text>
++<text x="690" y="206" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="690" y="229" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="746.6" y="197" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M8</text>
++<text x="742.4" y="206" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="729.8" y="229" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="683" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 683 -5)">R4</text>
++<text x="692" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 692 -5)">1MegΩ</text>
++<text x="972.5" y="36" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">Cd2</text>
++<text x="972.5" y="45" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
++<text x="905" y="17" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M4</text>
++<text x="905" y="26" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="905" y="49" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="46.6" y="17" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M3</text>
++<text x="42.4" y="26" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">pch</text>
++<text x="29.8" y="49" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="483" y="145" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 483 145)">R5</text>
++<text x="492" y="145" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 492 145)">1MegΩ</text>
++<text x="483" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 483 -5)">R3</text>
++<text x="492" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 492 -5)">1MegΩ</text>
++<text x="205" y="197" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M7</text>
++<text x="205" y="206" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="205" y="229" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="595" y="36" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R1</text>
++<text x="595" y="45" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
++<text x="46.6" y="317" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M1</text>
++<text x="42.4" y="326" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="29.8" y="349" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="683" y="145" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 683 145)">R6</text>
++<text x="692" y="145" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 692 145)">1MegΩ</text>
++<text x="224" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 224 -5)">R8</text>
++<text x="215" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 215 -5)">1MegΩ</text>
++<text x="374" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 374 -5)">R7</text>
++<text x="365" y="-5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 365 -5)">1MegΩ</text>
++<text x="1030" y="47" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">R2</text>
++<text x="1030" y="38" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1k</text>
++<text x="905" y="317" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">M2</text>
++<text x="905" y="326" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">nch</text>
++<text x="905" y="349" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1/150m</text>
++<text x="299" y="147.5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 299 147.5)">Cf</text>
++<text x="290" y="147.5" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8" transform="rotate(90 290 147.5)">1p</text>
++<text x="12.5" y="36" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">Cd1</text>
++<text x="12.5" y="45" font-size="7" font-family="sans-serif" dominant-baseline="hanging" fill="#d0d3d8">1p</text>
++<text x="686" y="289" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1p</text>
++<text x="27.2" y="328" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="399" y="-32" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo</text>
++<text x="392.2" y="118" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf</text>
++<text x="761" y="289" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1p</text>
++<text x="904" y="328" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="689" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="901" y="265" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1p</text>
++<text x="27.2" y="28" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="281" y="-82" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net1</text>
++<text x="834" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo</text>
++<text x="204" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="346" y="268" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1</text>
++<text x="791" y="28" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">net0</text>
++<text x="134" y="328" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf</text>
++<text x="586" y="-35" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="901" y="109" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">V1p</text>
++<text x="1054" y="-32" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="727.2" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="452.2" y="208" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="901" y="409" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="904" y="28" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="388" y="292" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo_bar</text>
++<text x="558" y="127" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrfdcn</text>
++<text x="61" y="13" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vdd</text>
++<text x="1078" y="172" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vout_bar</text>
++<text x="1" y="61" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf</text>
++<text x="613" y="-73" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrfdcp</text>
++<text x="288" y="-23" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlodc</text>
++<text x="883" y="232" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vrf_bar</text>
++<text x="743" y="157" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vout</text>
++<text x="61" y="361" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">VSS</text>
++<text x="583" y="217" font-size="16" font-family="sans-serif" dominant-baseline="hanging" fill="#4f8fc9">Vlo</text>
++</svg>
+diff --git a/src/folded_bank.zig b/src/folded_bank.zig
+new file mode 100644
+index 00000000..c42e71d0
+--- /dev/null
++++ b/src/folded_bank.zig
+@@ -0,0 +1,201 @@
++//! Source-bound composition of a capacitively coupled transconductor and folded switching bank.
++//!
++//! Contents:
++//! - `pub const Request`, `pub fn collect`, `pub fn arrange`
++const std = @import("std");
++const nlmod = @import("netlist.zig");
++const regions = @import("source_regions.zig");
++const lib = @import("library.zig");
++const sch = @import("schematic.zig");
++const skeleton = @import("skeleton.zig");
++const hints = @import("hints.zig");
++const intent = @import("parent_intent.zig");
++const Edge = nlmod.EdgeId;
++const Net = nlmod.VertexId;
++
++/// Two complementary input branches, four switches, the paired input and output
++/// capacitors, both output loads and the three independently bound bias networks.
++pub const Request = struct { devices: [19]u32 };
++
++const empty = std.math.maxInt(u32);
++
++/// Selects the full cell including both external output loads and the capacitor
++/// across the two outputs. The source gate/drain roles choose the facing rows.
++pub fn collect(a: std.mem.Allocator, raw: []const u8, nl: *const nlmod.Netlist) !?Request {
++    const graph = &nl.graph;
++    if (graph.edgeCount() != 19 or std.mem.count(nlmod.DeviceKind, graph.edges.items(.kind), &.{.mosfet}) != 8) return null;
++    const inventory = try regions.collect(a, raw, nl);
++    if (inventory.regions.len != 2) return null;
++    var owner = Request{ .devices = @splat(empty) };
++    var nodes: [2]Net = undefined;
++    var upper: Net = undefined;
++    var lower: Net = undefined;
++    for (inventory.regions, 0..) |region, i| {
++        if (region.disposition != .direct_source or region.members.len != 2) return null;
++        const pins = graph.members(region.members[0]);
++        nodes[i] = pins[2];
++        if (formal(nl, nodes[i]) != null or graph.incident(nodes[i]).len != 4) return null;
++        for (graph.incident(nodes[i])) |d| {
++            const ps = graph.members(d);
++            if (graph.edges.items(.kind)[d.index()] != .mosfet or ps.len != 4) return null;
++            if (ps[2] == nodes[i]) continue;
++            if (ps[0] != nodes[i] or ps[2] != ps[3] or formal(nl, ps[3]) == null) return null;
++            const rail = lib.named(graph.vertices.items(.name)[ps[3].index()], .net);
++            const model = nl.modelType(d) orelse return null;
++            const p = std.mem.eql(u8, model, "pmos");
++            if (!p and !std.mem.eql(u8, model, "nmos")) return null;
++            if (rail != @as(@TypeOf(rail), if (p) .supply else .ground)) return null;
++            const slot = i + @as(usize, @intFromBool(p)) * 2;
++            if (owner.devices[slot] != empty) return null;
++            owner.devices[slot] = d.index();
++        }
++        if (owner.devices[i] == empty or owner.devices[i + 2] == empty) return null;
++    }
++    const input0 = graph.members(Edge.from(owner.devices[0]));
++    const input1 = graph.members(Edge.from(owner.devices[1]));
++    const ord0 = formal(nl, input0[1]) orelse return null;
++    const ord1 = formal(nl, input1[1]) orelse return null;
++    if (ord0 == ord1) return null;
++    if (ord0 > ord1) {
++        std.mem.swap(Net, &nodes[0], &nodes[1]);
++        std.mem.swap(u32, &owner.devices[0], &owner.devices[1]);
++        std.mem.swap(u32, &owner.devices[2], &owner.devices[3]);
++    }
++    lower = graph.members(Edge.from(owner.devices[0]))[3];
++    upper = graph.members(Edge.from(owner.devices[2]))[3];
++    if (graph.members(Edge.from(owner.devices[1]))[3] != lower or graph.members(Edge.from(owner.devices[3]))[3] != upper) return null;
++    if (!equal(nl, owner.devices[0], owner.devices[1]) or !equal(nl, owner.devices[2], owner.devices[3])) return null;
++    var outs: [2]Net = undefined;
++    var control: [2]Net = undefined;
++    for (nodes, 0..) |node, i| {
++        var switches: [2]u32 = undefined;
++        var count: usize = 0;
++        for (graph.incident(node)) |d| {
++            const pins = graph.members(d);
++            if (pins[2] != node) continue;
++            if (count == 2 or pins[3] != lower or !std.mem.eql(u8, nl.modelType(d) orelse return null, "nmos") or formal(nl, pins[0]) == null or formal(nl, pins[1]) == null) return null;
++            switches[count] = d.index();
++            count += 1;
++        }
++        if (count != 2) return null;
++        const x = graph.members(Edge.from(switches[0]));
++        const y = graph.members(Edge.from(switches[1]));
++        if (x[0] == y[0] or x[1] == y[1]) return null;
++        const swap = formal(nl, x[0]).? > formal(nl, y[0]).?;
++        const top = switches[@intFromBool(swap)];
++        const bottom = switches[@intFromBool(!swap)];
++        const ts = graph.members(Edge.from(top));
++        const bs = graph.members(Edge.from(bottom));
++        if (i == 0) {
++            outs = .{ ts[0], bs[0] };
++            control = .{ ts[1], bs[1] };
++        } else if (outs[0] != ts[0] or outs[1] != bs[0] or control[0] != bs[1] or control[1] != ts[1]) return null;
++        owner.devices[5 - i] = top;
++        owner.devices[7 - i] = bottom;
++    }
++    for (owner.devices[4..8]) |d| if (!equal(nl, d, owner.devices[4])) return null;
++    // Input capacitors join each PMOS gate to its branch's NMOS gate.
++    // Each of the three matching gate pairs has its own resistor-fed bias formal.
++    var bias: [3][2]Net = undefined;
++    for (0..2) |side| {
++        const ng = graph.members(Edge.from(owner.devices[side]))[1];
++        const pg = graph.members(Edge.from(owner.devices[side + 2]))[1];
++        if (formal(nl, pg) != null or graph.incident(ng).len != 3 or graph.incident(pg).len != 3 or graph.incident(control[side]).len != 3) return null;
++        owner.devices[8 + side] = between(nl, .capacitor, ng, pg) orelse return null;
++        for ([_]Net{ pg, ng, control[side] }, 0..) |gate, j| {
++            const r = single(nl, gate, .resistor) orelse return null;
++            const ps = graph.members(Edge.from(r));
++            bias[j][side] = ps[@intFromBool(ps[0] == gate)];
++            if (formal(nl, bias[j][side]) == null or graph.incident(bias[j][side]).len != 2) return null;
++            owner.devices[13 + 2 * j + side] = r;
++        }
++        if (graph.incident(outs[side]).len != 4) return null;
++        owner.devices[11 + side] = between(nl, .resistor, outs[side], upper) orelse return null;
++    }
++    owner.devices[10] = between(nl, .capacitor, outs[0], outs[1]) orelse return null;
++    for (bias) |b| if (b[0] != b[1]) return null;
++    if (bias[0][0] == bias[1][0] or bias[0][0] == bias[2][0] or bias[1][0] == bias[2][0]) return null;
++    for ([_]usize{ 8, 11, 13, 15, 17 }) |d| if (!equal(nl, owner.devices[d], owner.devices[d + 1])) return null;
++    for (owner.devices, 0..) |d, i| {
++        if (d == empty or std.mem.indexOfScalar(u32, owner.devices[0..i], d) != null) return null;
++        if (i >= 8 and (nl.params(Edge.from(d)).len != 1 or !(graph.edges.items(.value)[d] > 0) or !std.math.isFinite(graph.edges.items(.value)[d]))) return null;
++    }
++    return owner;
++}
++
++/// Sets the two output-facing rows and keeps the separate transconductor on
++/// their left with its complementary inputs in two aligned columns.
++pub fn arrange(nl: *const nlmod.Netlist, s: *sch.Schematic, sk: *const skeleton.Skeleton, at: [][2]f32, r: Request, verdicts: []const hints.Verdict) bool {
++    const unit = s.lib.unit;
++    if (at.len != 19 or (unit != 40 and unit != 60)) return false;
++    for (r.devices, 0..) |d, i| {
++        if (d >= at.len or !sk.drawn[d] or std.mem.indexOfScalar(u32, r.devices[0..i], d) != null) return false;
++        const kind: nlmod.DeviceKind = if (i < 8) .mosfet else if (i < 11) .capacitor else .resistor;
++        if (nl.graph.edges.items(.kind)[d] != kind or s.lib.at(s.devices.items(.class)[d]).terminals.len < (if (i < 8) @as(usize, 3) else 2)) return false;
++    }
++    for (nl.hints, verdicts) |h, v| if (intent.touches(nl, h, v, &r.devices, &.{})) return false;
++    const sites = [19][2]i32{ .{ 3, 6 }, .{ 7, 6 }, .{ 3, 3 }, .{ 7, 3 }, .{ 14, 3 }, .{ 18, 3 }, .{ 14, 7 }, .{ 18, 7 }, .{ 1, 5 }, .{ 9, 5 }, .{ 22, 5 }, .{ 16, 0 }, .{ 16, 10 }, .{ 3, 0 }, .{ 7, 0 }, .{ 3, 10 }, .{ 7, 10 }, .{ 14, 12 }, .{ 18, 12 } };
++    for (r.devices, sites, 0..) |d, site, i| {
++        const class = s.lib.at(s.devices.items(.class)[d]);
++        const other: usize = if (i < 8) 2 else 1;
++        if (i == 10) {
++            s.devices.items(.orientation)[d] = .vertical;
++            sch.settleDevice(s, &nl.graph, d);
++        }
++        var relative = s.devices.items(.orient)[d].apply(class.terminals[other].at.sub(class.terminals[0].at));
++        if (i < 13) {
++            if (relative.x != 0 or @abs(relative.y) != unit) return false;
++        } else if (relative.y != 0 or @abs(relative.x) != unit) return false;
++        if (i < 8) {
++            if ((relative.y < 0) != (i == 2 or i == 3 or i == 6 or i == 7)) {
++                s.devices.items(.flip_y)[d] = !s.devices.items(.flip_y)[d];
++                sch.settleDevice(s, &nl.graph, d);
++            }
++            relative = s.devices.items(.orient)[d].apply(class.terminals[1].at.sub(class.terminals[0].at));
++            if ((relative.x < 0) != (i % 2 == 0)) {
++                s.devices.items(.flip_x)[d] = !s.devices.items(.flip_x)[d];
++                sch.settleDevice(s, &nl.graph, d);
++            }
++        }
++        const info = s.devices.get(d);
++        const sum = info.orient.apply(class.terminals[0].at.add(class.terminals[other].at));
++        at[d] = (lib.Pt{ .x = site[0] * unit - @divFloor(sum.x, 2), .y = site[1] * unit - @divFloor(sum.y, 2) }).add(info.grid).toF();
++    }
++    for (r.devices, 0..) |d, i| {
++        const box = s.boxAt(d, lib.Pt.round(at[d])).grow(2);
++        for (r.devices[0..i]) |prev| if (box.intersects(s.boxAt(prev, lib.Pt.round(at[prev])))) return false;
++    }
++    return true;
++}
++
++// ---- private ----
++
++fn formal(nl: *const nlmod.Netlist, n: Net) ?usize {
++    const name = nl.graph.vertices.items(.name)[n.index()];
++    return for (nl.defs[0].ports, 0..) |p, i| {
++        if (std.mem.eql(u8, p, name)) break i;
++    } else null;
++}
++
++fn single(nl: *const nlmod.Netlist, node: Net, kind: nlmod.DeviceKind) ?u32 {
++    var found: ?u32 = null;
++    for (nl.graph.incident(node)) |d| if (nl.graph.edges.items(.kind)[d.index()] == kind) {
++        if (found != null) return null;
++        found = d.index();
++    };
++    return found;
++}
++
++fn between(nl: *const nlmod.Netlist, kind: nlmod.DeviceKind, n: Net, m: Net) ?u32 {
++    const d = single(nl, n, kind) orelse return null;
++    const ps = nl.graph.members(Edge.from(d));
++    return if ((ps[0] == n and ps[1] == m) or (ps[0] == m and ps[1] == n)) d else null;
++}
++
++fn equal(nl: *const nlmod.Netlist, a: u32, b: u32) bool {
++    const x = nl.params(Edge.from(a));
++    const y = nl.params(Edge.from(b));
++    if (x.len != y.len) return false;
++    for (x, y) |k, v| if (!std.mem.eql(u8, k, v)) return false;
++    return true;
++}
+diff --git a/src/source_layout.zig b/src/source_layout.zig
+index c6502955..e66bd757 100644
+--- a/src/source_layout.zig
++++ b/src/source_layout.zig
+@@ -5,15 +5,17 @@
+ const std = @import("std");
+ const netlist = @import("netlist.zig");
+ const bridge = @import("source_bridge.zig");
++const folded = @import("folded_bank.zig");
+ const mixer = @import("mixer_bank.zig");
+ 
+ /// Ordered handles refer to the selected graph and include every device in the room.
+-pub const Owner = union(enum) { bridge: bridge.Request, mixer: mixer.Request };
++pub const Owner = union(enum) { bridge: bridge.Request, mixer: mixer.Request, folded: folded.Request };
+ 
+ /// Binds a complete original cell to its source and passive attachments.
+ pub fn collect(a: std.mem.Allocator, raw: []const u8, nl: *const netlist.Netlist) !?Owner {
+     if (try bridge.fromSource(a, raw, nl)) |row| return .{ .bridge = row };
+     if (try mixer.collect(a, raw, nl)) |row| return .{ .mixer = row };
++    if (try folded.collect(a, raw, nl)) |row| return .{ .folded = row };
+     return null;
+ }
+ 
+@@ -22,6 +24,7 @@ pub fn arrange(row: Owner, nl: *const netlist.Netlist, s: *@import("schematic.zi
+     return switch (row) {
+         .bridge => |r| bridge.arrange(nl, s, sk, at, r, verdicts),
+         .mixer => |r| mixer.arrange(nl, s, sk, at, r, verdicts),
++        .folded => |r| folded.arrange(nl, s, sk, at, r, verdicts),
+     };
+ }
+ 
+@@ -29,7 +32,7 @@ pub fn arrange(row: Owner, nl: *const netlist.Netlist, s: *@import("schematic.zi
+ pub fn intact(row: Owner, p: *const @import("placed.zig").Placed, nl: *const netlist.Netlist, lib: *const @import("library.zig").Library) bool {
+     return switch (row) {
+         .bridge => |r| bridge.intact(p, nl, r, lib.unit),
+-        .mixer => |r| clear: {
++        inline .mixer, .folded => |r| clear: {
+             for (r.devices) |d| if (!@import("parent_stages.zig").clearDevice(p, lib, nl, d)) break :clear false;
+             break :clear true;
+         },
+diff --git a/tests/folded_bank.py b/tests/folded_bank.py
+new file mode 100644
+index 00000000..084027a3
+--- /dev/null
++++ b/tests/folded_bank.py
+@@ -0,0 +1,53 @@
++"""Read traced source roles from native output or physical Schemify primitive terminals."""
++import json
++from pathlib import Path
++import subprocess
++import sys
++import tempfile
++from source_bridge import host_records,native_records
++
++
++def relations(ps,names=None):
++    names=names or {}
++    def pins(n):return ps[names.get(n,n)]
++    def center(n):
++        p=pins(n)
++        return tuple((a+b)/2 for a,b in zip(p[0],p[2 if n[0]=='m' else 1]))
++    inputs=[center('m'+str(i)) for i in (1,2,3,4)]
++    bank=[center('m'+str(i)) for i in (5,6,8,7)]
++    return {'transconductor_left':max(x for x,y in inputs)<min(x for x,y in bank),
++        'paired_input_columns':inputs[0][0]==inputs[2][0]<inputs[1][0]==inputs[3][0] and inputs[2][1]==inputs[3][1]<inputs[0][1]==inputs[1][1],
++        'two_switch_rows':bank[0][1]==bank[1][1]<bank[2][1]==bank[3][1],
++        'two_switch_columns':bank[0][0]==bank[2][0]<bank[1][0]==bank[3][0],
++        'drains_above_and_below':all((pins('m'+str(i))[0][1]<pins('m'+str(i))[2][1]) == (i in (5,6)) for i in (5,6,8,7)),
++        'load_rails_at_opposite_ends':center('r1')[1]<bank[0][1] and bank[2][1]<center('r2')[1],
++        'output_capacitor_outside':max(x for x,y in bank)<center('cf')[0] and bank[0][1]<center('cf')[1]<bank[2][1]}
++
++
++def main(binary,file):
++    src=Path(file).read_text()
++    with tempfile.TemporaryDirectory() as tmp:
++        p=Path(tmp)
++        def draw(s):
++            (p/'in.cir').write_text(s)
++            subprocess.run([binary,'--report',p/'report',p/'in.cir',p/'out'],check=True)
++            assert not json.loads((p/'report').read_bytes())['gates']
++            return native_records(json.loads((p/'out').read_bytes()))[0]
++        baseline=relations(draw(src));assert all(baseline.values()),baseline
++        rows=src.splitlines();cards=[r.split() for r in rows if r[:1] in ('C','M','R')]
++        names={w[0].lower():w[0][0].lower()+str(30+i*11) for i,w in enumerate(cards)}
++        nets={'v1':'aa12','v1p':'bb13','net0':'cc14','net1':'dd15'}
++        rev=iter(' '.join([names[w[0].lower()],*(nets.get(k.lower(),k) for k in w[1:])]) for w in reversed(cards))
++        shuffled='\n'.join(next(rev) if r[:1] in ('C','M','R') else r for r in rows)+'\n'
++        assert all(relations(draw(shuffled),names).values())
++        changed=src.replace('.model pch pmos','.model pch pmos\n.model fake npn').replace('Vrf VSS VSS nch','Vrf VSS VSS fake').replace('Vrf_bar VSS VSS nch','Vrf_bar VSS VSS fake')
++        assert not all(relations(draw(changed)).values()),'non-MOS input model'
++        for a,b in [('Cf Vout Vout_bar','Cf Vout Vrf'),('R6 Vrfdcn Vrf_bar','R6 Vrfdcp Vrf_bar'),
++                    ('M8 Vout_bar Vlo V1p','M8 Vout_bar Vlo V1'),('Cd2 net0 Vrf_bar 1p','Cd2 net0 Vrf_bar 2p')]:
++            assert not all(relations(draw(src.replace(a,b))).values()),a
++
++
++if __name__=='__main__':
++    if sys.argv[1]=='--host':
++        result=relations(host_records(Path(sys.argv[2]),Path(sys.argv[3]))[0]);assert all(result.values()),result
++    else:main(*sys.argv[1:])
+diff --git a/tools/schemify/parent_outputs.zig b/tools/schemify/parent_outputs.zig
+index 3bd308db..e00fd21e 100644
+--- a/tools/schemify/parent_outputs.zig
++++ b/tools/schemify/parent_outputs.zig
+@@ -29,6 +29,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
+                 'r' => "res",
+                 'l' => "ind",
+                 'i' => "isource",
++                'c' => "cap",
+                 else => return .{},
+             };
+             if (!std.mem.eql(u8, rec.syms.stem.items[sym], stem)) return .{};
+@@ -38,7 +39,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
+         if ((family != .nmos and family != .pmos) or std.ascii.toLower(deck.dev_name[d][0]) != 'm' or deck.netsOf(@intCast(d)).len != 4) return .{};
+     }
+     if (passives != 0) {
+-        if (!((passives == 4 and range.len() == 7) or (passives == 9 and range.len() == 15))) return .{};
++        if (!((passives == 4 and range.len() == 7) or (passives == 9 and range.len() == 15) or (passives == 11 and range.len() == 19))) return .{};
+         for (range.lo..range.hi) |d| if (rec.syms.origin.items[rec.parts.sym.items[d]] != .core) return .{};
+     }
+     var lines: std.ArrayList(u8) = .empty;
+@@ -88,7 +89,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
+             if (ps.len != 4) return .{};
+             const pol = actual.modelType(target) orelse return .{};
+             if (!std.mem.eql(u8, pol, original.modelType(origin) orelse return .{})) return .{};
+-        } else if ((kind != .resistor and kind != .inductor and kind != .isource) or ps.len != 2) return .{};
++        } else if ((kind != .resistor and kind != .inductor and kind != .isource and kind != .capacitor) or ps.len != 2) return .{};
+         devices[origin.index()] = target.index();
+         for (ps, qs, deck.netsOf(@intCast(d))) |x, y, n| {
+             if (!std.mem.eql(u8, original.graph.vertices.items(.name)[x.index()], deck.netKey(c, n)) or !std.mem.eql(u8, actual.graph.vertices.items(.name)[y.index()], names[n])) return .{};

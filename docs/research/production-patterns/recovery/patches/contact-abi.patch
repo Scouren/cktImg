@@ -1,0 +1,86 @@
+diff --git a/include/cktimg.h b/include/cktimg.h
+index 2b87fa65..37a2e280 100644
+--- a/include/cktimg.h
++++ b/include/cktimg.h
+@@ -182,6 +182,12 @@ const char *cktimg_pin_net(const CktimgSch *sch, size_t d, size_t p);
+ bool cktimg_pin_xy(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
+                    int32_t *y);
+ 
++/* World coordinate of a visible terminal on the selected class. Returns
++ * false and leaves x/y untouched for an absent or hidden terminal or an
++ * invalid index. A contact at the class origin is a valid result. */
++bool cktimg_pin_contact(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
++                        int32_t *y);
++
+ /* ---------------------------------------------------------------------------
+  * Nets and wires. WIRE INDEX IS NET INDEX; a net drawn with no wire has 0
+  * segments. A segment is a Manhattan polyline of >= 2 points.
+diff --git a/src/abi.zig b/src/abi.zig
+index c6961ba5..7f3c34df 100644
+--- a/src/abi.zig
++++ b/src/abi.zig
+@@ -340,6 +340,16 @@ pub export fn cktimg_pin_xy(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32
+     return true;
+ }
+ 
++/// Writes the placed coordinate of a class-supported visible pin. The
++/// legacy pin coordinate query also covers electrically present hidden pins.
++pub export fn cktimg_pin_contact(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32, y: ?*i32) bool {
++    const pin = pinOf(sch, d, p) orelse return false;
++    const s = sch.?;
++    if (!s.lib.at(s.placed.dev_class[d]).shows(p)) return false;
++    put(s.placed.pin_xy[pin], x, y);
++    return true;
++}
++
+ // ---------------------------------------------------------------------------
+ // Nets, wires, dots, labels, crosses
+ // ---------------------------------------------------------------------------
+diff --git a/tests/abi_test.c b/tests/abi_test.c
+index eb4e3dd3..1c241d09 100644
+--- a/tests/abi_test.c
++++ b/tests/abi_test.c
+@@ -37,8 +37,43 @@ static int on_wire(const CktimgSch *s, size_t n, int32_t x, int32_t y) {
+   return 0;
+ }
+ 
++/* A genuine B at the class origin, a hidden B there, and an absent B can
++ * share the very same position. Visibility comes from the selected class. */
++static void check_body_contact(void) {
++  const char *deck = "body contact\n.model nch nmos\nM1 d g s well nch\nR1 well 0 1k\n";
++  for (int mode = 0; mode < 3; mode++) {
++    CktimgLib *lib = cktimg_lib_new();
++    CktimgTerminal mos[] = {{"d", 20, 0, 0}, {"g", 0, -20, 0}, {"s", -20, 0, 0},
++                            {"b", 0, 0, mode == 1 ? CKTIMG_TERM_HIDDEN : 0}};
++    int32_t lead_xy[] = {0, -3, 0, 0};
++    CktimgOp lead[] = {{CKTIMG_OP_LINE, lead_xy, 2, 0, NULL, 0}};
++    CHECK(cktimg_lib_add(lib, "nmos", CKTIMG_ROLE_NONE, mos, mode == 0 ? 3 : 4, lead, 1) != SIZE_MAX);
++    CktimgSch *s = cktimg_parse_place(lib, deck, NULL, NULL);
++    CHECK(s != NULL);
++    int found = 0;
++    for (size_t d = 0; d < cktimg_device_count(s); d++) {
++      if (strcmp(cktimg_device_name(s, d), "m1") != 0) continue;
++      int32_t x = 987, y = 654, ox, oy;
++      found++;
++      CHECK(cktimg_device_pin_count(s, d) == 4);
++      CHECK(strcmp(cktimg_pin_net(s, d, 3), "well") == 0);
++      CHECK(cktimg_device_pos(s, d, &ox, &oy));
++      CHECK(cktimg_pin_contact(s, d, 3, &x, &y) == (mode == 2));
++      CHECK(x == (mode == 2 ? ox : 987) && y == (mode == 2 ? oy : 654));
++      CHECK(cktimg_pin_xy(s, d, 3, &x, &y) && x == ox && y == oy);
++      CHECK(cktimg_pin_contact(s, d, 0, NULL, NULL));
++      CHECK(!cktimg_pin_contact(s, d, 4, NULL, NULL));
++    }
++    CHECK(found == 1);
++    cktimg_sch_free(s);
++    cktimg_lib_free(lib);
++  }
++}
++
+ int main(void) {
++  check_body_contact();
+   /* NULL is safe everywhere. */
++  CHECK(!cktimg_pin_contact(NULL, 0, 0, NULL, NULL));
+   CHECK(cktimg_device_count(NULL) == 0);
+   CHECK(cktimg_device_name(NULL, 0) == NULL);
+   CHECK(cktimg_parse_place(NULL, cs_stage, NULL, NULL) == NULL);

@@ -1,0 +1,26 @@
+* official analog canvas netlist; pdk x cards rewritten by convert.py
+.model nch nmos
+.model pch pmos
+
+.subckt dut vdd vss vbp vbn vin+ vin- vout+ vout-
+m1 net3 vin+ net0 vss nch l=0.15 w=1 nf=1 m=1
+m10 vout- vbn vss vss nch l=0.15 w=1 nf=1 m=1
+m2 net1 vin- net0 vss nch l=0.15 w=1 nf=1 m=1
+m3 net3 vbp vdd vdd pch l=0.15 w=1 nf=1 m=1
+m4 net1 vbp vdd vdd pch l=0.15 w=1 nf=1 m=1
+m5 net0 vbn vss vss nch l=0.15 w=1 nf=1 m=1
+m6 vout+ net3 net2 vdd pch l=0.15 w=1 nf=1 m=1
+m7 vout- net1 net2 vdd pch l=0.15 w=1 nf=1 m=1
+m8 net2 vbp vdd vdd pch l=0.15 w=1 nf=1 m=1
+m9 vout+ vbn vss vss nch l=0.15 w=1 nf=1 m=1
+*@ at m1 7.25 3.5 r270
+*@ at m10 15.75 5.5 r270
+*@ at m2 13.75 3.5 mr90
+*@ at m3 7.25 0.5 r90
+*@ at m4 13.75 0.5 mr270
+*@ at m5 10.5 5.5 r270
+*@ at m6 5.25 2.5 mr270
+*@ at m7 15.75 2.5 r90
+*@ at m8 10.5 0.5 mr270
+*@ at m9 5.25 5.5 mr90
+.ends dut

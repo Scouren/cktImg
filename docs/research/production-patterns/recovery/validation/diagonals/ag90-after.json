@@ -1,0 +1,29 @@
+{
+  "devices": [
+    { "name": "m1", "class": "nmos", "value": "nch l=0.15 w=1 nf=1 m=1", "rot": 3, "mirror": false, "pos": [230, 120], "pins": [{ "term": "d", "net": "vout1", "xy": [230, 100] }, { "term": "g", "net": "vin1", "xy": [210, 120] }, { "term": "s", "net": "net0", "xy": [230, 140] }], "bulk": "vss" },
+    { "name": "m2", "class": "nmos", "value": "nch l=0.15 w=1 nf=1 m=1", "rot": 1, "mirror": true, "pos": [330, 120], "pins": [{ "term": "d", "net": "vout2", "xy": [330, 100] }, { "term": "g", "net": "vin2", "xy": [350, 120] }, { "term": "s", "net": "net0", "xy": [330, 140] }], "bulk": "vss" },
+    { "name": "m3", "class": "pmos", "value": "pch l=0.15 w=1 nf=1 m=1", "rot": 1, "mirror": false, "pos": [230, 20], "pins": [{ "term": "d", "net": "vout1", "xy": [230, 40] }, { "term": "g", "net": "vout2", "xy": [250, 20] }, { "term": "s", "net": "vdd", "xy": [230, 0] }], "bulk": "vdd" },
+    { "name": "m4", "class": "pmos", "value": "pch l=0.15 w=1 nf=1 m=1", "rot": 3, "mirror": true, "pos": [330, 20], "pins": [{ "term": "d", "net": "vout2", "xy": [330, 40] }, { "term": "g", "net": "vout1", "xy": [310, 20] }, { "term": "s", "net": "vdd", "xy": [330, 0] }], "bulk": "vdd" },
+    { "name": "m5", "class": "nmos", "value": "nch l=0.15 w=1 nf=1 m=1", "rot": 3, "mirror": false, "pos": [280, 200], "pins": [{ "term": "d", "net": "net0", "xy": [280, 180] }, { "term": "g", "net": "vb1", "xy": [260, 200] }, { "term": "s", "net": "vss", "xy": [280, 220] }], "bulk": "vss" },
+    { "name": "_gnd5", "class": "gnd", "value": "", "rot": 0, "mirror": false, "pos": [280, 240], "pins": [{ "term": "p", "net": "vss", "xy": [280, 240] }] },
+    { "name": "_ipin6", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [240, 200], "pins": [{ "term": "p", "net": "vb1", "xy": [240, 200] }] },
+    { "name": "_ipin7", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [190, 120], "pins": [{ "term": "p", "net": "vin1", "xy": [190, 120] }] },
+    { "name": "_ipin8", "class": "ipin", "value": "", "rot": 0, "mirror": false, "pos": [370, 120], "pins": [{ "term": "p", "net": "vin2", "xy": [370, 120] }] },
+    { "name": "_opin9", "class": "opin", "value": "", "rot": 0, "mirror": false, "pos": [310, 60], "pins": [{ "term": "p", "net": "vout1", "xy": [310, 60] }] },
+    { "name": "_opin10", "class": "opin", "value": "", "rot": 0, "mirror": false, "pos": [350, 80], "pins": [{ "term": "p", "net": "vout2", "xy": [350, 80] }] }
+  ],
+  "nets": ["0", "vout1", "vin1", "net0", "vss", "vout2", "vin2", "vdd", "vb1"],
+  "wires": [
+    { "net": "vout1", "segments": [[[230, 40], [230, 50]], [[230, 50], [230, 60]], [[230, 60], [230, 100]], [[310, 20], [300, 20], [270, 50], [230, 50]], [[230, 60], [310, 60]]] },
+    { "net": "vin1", "segments": [[[210, 120], [190, 120]]] },
+    { "net": "net0", "segments": [[[230, 140], [230, 160]], [[330, 140], [330, 160]], [[280, 180], [280, 160]], [[230, 160], [280, 160]], [[280, 160], [330, 160]]] },
+    { "net": "vss", "segments": [[[280, 220], [280, 240]]] },
+    { "net": "vout2", "segments": [[[330, 40], [330, 50]], [[330, 50], [330, 80]], [[330, 80], [330, 100]], [[250, 20], [260, 20], [290, 50], [330, 50]], [[330, 80], [350, 80]]] },
+    { "net": "vin2", "segments": [[[350, 120], [370, 120]]] },
+    { "net": "vdd", "segments": [[[230, 0], [230, -20]], [[330, 0], [330, -20]], [[230, -20], [330, -20]], [[210, -20], [230, -20]], [[330, -20], [350, -20]]] },
+    { "net": "vb1", "segments": [[[260, 200], [240, 200]]] }
+  ],
+  "junctions": [[230, -20], [330, -20], [280, 160], [230, 50], [230, 60], [330, 50], [330, 80]],
+  "labels": [{ "net": "vdd", "at": [350, -20], "side": "right" }],
+  "no_connects": []
+}

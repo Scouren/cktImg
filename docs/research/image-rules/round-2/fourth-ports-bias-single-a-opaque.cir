@@ -1,0 +1,9 @@
+* One amplifier has two complete, private opaque-peer embeddings.
+.subckt opamp VDD VSS INN INP OUT VB1 VB2
+.ends opamp
+.subckt opaque VDD VSS NB
+.ends opaque
+.subckt dut VDD VSS INN INP OUT VB2
+XAMP VDD VSS INN INP OUT ba VB2 opamp
+XBA VDD VSS ba opaque
+.ends dut

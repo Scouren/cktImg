@@ -1,0 +1,19 @@
+Caller geometry crossed-gate quad
+.model nch nmos level=1
+.subckt dut VDD VSS INP INN OUTP OUTN
+I2 s2 VSS 1m
+I1 s1 VSS 1m
+M4 OUTN INP s2 VSS nch w=2u l=1u
+M3 OUTP INN s2 VSS nch w=2u l=1u
+M2 OUTN INN s1 VSS nch w=2u l=1u
+M1 OUTP INP s1 VSS nch w=2u l=1u
+R2 VDD OUTN 1k
+R1 VDD OUTP 1k
+*@ symmetric M1 M2
+*@ symmetric M3 M4
+*@ symmetric R1 R2
+*@ axis I1
+*@ axis I2
+*@ group pair M1 M2
+*@ group pair M3 M4
+.ends dut

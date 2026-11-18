@@ -1,0 +1,51 @@
+codegen_check: call-boundary and residue mutations passed
+FOLDED      gen_analog_output vs hand_analog_output
+  function                         instruct   vector    calls indirect   panics branches
+  gen_analog_output                      92        0        2        0        0       11
+  hand_analog_output                     92        0        2        0        0       11
+
+Build Summary: 31/31 steps succeeded; 468/468 tests passed
+test success
++- run test 97 pass (97 total) 466ms MaxRSS:11M
+|  +- compile test debug native success 5s MaxRSS:227M
+|     +- options cached
++- run test 131 pass (131 total) 1m MaxRSS:1G
+|  +- compile test debug native success 5s MaxRSS:233M
+|     +- options (reused)
++- run test 181 pass (181 total) 2m MaxRSS:30M
+|  +- compile test debug native success 5s MaxRSS:232M
+|     +- WriteFile blocks.spice cached
+|     +- WriteFile ag-1053.cir cached
+|     +- options (reused)
++- run exe abi_test success 16ms
+|  +- compile exe abi_test debug native success 380ms MaxRSS:107M
+|     +- WriteFile cached
+|     +- compile lib cktimg debug native cached 33ms MaxRSS:33M
+|     |  +- options (reused)
+|     +- compile lib cktimg debug native (+1 more reused dependencies)
++- run test 31 pass (31 total) 1s MaxRSS:9M
+|  +- compile test debug native success 5s MaxRSS:228M
+|     +- options (reused)
++- run test 22 pass (22 total) 41s MaxRSS:328M
+|  +- compile test debug native success 4s MaxRSS:229M
+|     +- options (reused)
++- test-codegen success
+|  +- run python3 success 320ms
+|  |  +- compile obj codegen-probe fast x86_64-linux success 726ms MaxRSS:119M
+|  |     +- options cached
+|  +- run python3 success 101ms
++- run python3 success 1s
+|  +- compile exe parent-census debug native success 4s MaxRSS:215M
+|     +- WriteFile symbols.zon cached
+|     +- options (reused)
++- run python3 success 4s
+|  +- compile exe cktimg-json debug native cached 27ms MaxRSS:33M
+|     +- WriteFile symbols.zon (reused)
+|     +- options (reused)
++- run python3 success 2s
+|  +- compile exe cktimg-json debug native (+2 more reused dependencies)
++- run test 6 pass (6 total) 127ms MaxRSS:10M
+   +- compile test debug native success 4s MaxRSS:221M
+      +- WriteFile symbols.zon (reused)
+      +- options (reused)
+

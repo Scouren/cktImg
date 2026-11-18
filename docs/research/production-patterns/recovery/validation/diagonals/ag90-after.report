@@ -1,0 +1,40 @@
+{
+  "gates": [],
+  "requests": [],
+  "metrics": { "crossings": 1, "bends": 6, "labelled": ["vdd"] },
+  "decisions": [
+    "*@ group cross m3 m4",
+    "*@ group pair m1 m2",
+    "*@ group stack m3 m1",
+    "*@ group stack m4 m2",
+    "*@ face m1 d up",
+    "*@ face m1 g left",
+    "*@ face m2 d up",
+    "*@ face m2 g right",
+    "*@ face m3 s up",
+    "*@ face m3 g right",
+    "*@ face m4 s up",
+    "*@ face m4 g left",
+    "*@ face m5 d up",
+    "*@ face m5 g left",
+    "*@ row m3 m4",
+    "*@ row m1 m2",
+    "*@ above m3 m1 m5",
+    "*@ order m3 m5 m4",
+    "*@ weak cell m1 -8 2",
+    "*@ weak cell m2 8 2",
+    "*@ weak cell m3 -8 0",
+    "*@ weak cell m4 8 0",
+    "*@ weak cell m5 0 4",
+    "*@ weak at m1 5.7500 3 R270",
+    "*@ weak at m2 8.2500 3 MR90",
+    "*@ weak at m3 5.7500 0.5000 R90",
+    "*@ weak at m4 8.2500 0.5000 MR270",
+    "*@ weak at m5 7 5 R270"
+  ],
+  "grid": [
+    "row 0: m3@0 m4@16",
+    "row 2: m1@0 m2@16",
+    "row 4: m5@8"
+  ]
+}

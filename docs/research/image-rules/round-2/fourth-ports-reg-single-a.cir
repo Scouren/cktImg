@@ -1,0 +1,10 @@
+* Two complete raw regulator embeddings; no caller admission yet.
+.model nch nmos
+.subckt opamp VDD VSS INN INP OUT
+.ends opamp
+.subckt dut VDD VSS VINA VREFA VOUTA VINB VREFB VOUTB
+XA VDD VSS fba VREFA gatea opamp
+MA VINA gatea VOUTA VSS nch
+RAU VOUTA fba 1k
+RAL fba VSS 1k
+.ends dut
