@@ -284,3 +284,80 @@ test "report: two admitted quad tails occupy distinct rows on the common final a
     try std.testing.expectEqualSlices(u32, &.{0}, v[1].blocked_by);
     for (v[2..]) |rest| try std.testing.expectEqual(np.hints.State.honoured, rest.state);
 }
+
+test "report: the written stack follows the final shared channel, including both pin coordinates" {
+    // The tail net is independently the source of M1 and drain of M5. The
+    // physical MOS path puts M1 above M5, even if the caller names M5 first.
+    const base =
+        \\caller stack
+        \\.model nch nmos level=1
+        \\R1 vdd outn 1k
+        \\R2 vdd outp 1k
+        \\M1 outn inp tail vss nch w=2u l=1u
+        \\M2 outp inn tail vss nch w=2u l=1u
+        \\M5 tail vb vss vss nch w=4u l=1u
+        \\
+    ;
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    for ([_]bool{ false, true }) |reverse| {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const src = try std.mem.concat(a, u8, &.{ base, if (reverse) "*@ group stack m5 m1\n" else "*@ group stack m1 m5\n" });
+        var p = try np.place(gpa, &.{}, lib, &.{src}, null);
+        defer p.deinit();
+        const nl = try np.netlist.parse(a, &.{src}, null);
+        const roles = try np.guessRoles(a, &nl);
+        const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+        const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        const u = np.checks.deviceIn(&p, "m1").?;
+        const l = np.checks.deviceIn(&p, "m5").?;
+        try std.testing.expect(p.dev_pos[u].y < p.dev_pos[l].y);
+        try std.testing.expectEqual(p.pin_xy[p.dev_pin0[u] + 2].x, p.pin_xy[p.dev_pin0[l]].x);
+        const got = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
+        try std.testing.expectEqual(if (reverse) np.hints.Code.not_drawn else .ok, got[0].code);
+        try std.testing.expectEqual(!reverse, support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
+        const decisions = try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1);
+        try std.testing.expect(for (decisions) |line| {
+            if (std.mem.eql(u8, line, "*@ group stack m1 m5")) break true;
+        } else false);
+        if (!reverse) {
+            const pins = try a.dupe(np.Pt, p.pin_xy);
+            p.pin_xy = pins;
+            pins[p.dev_pin0[l]].x += 10;
+            try std.testing.expect(!support.generatedStack(&p, "m1", "m5"));
+            try std.testing.expectEqual(false, np.checks.drawnAs(&p, &nl, nl.hints[0], lib.unit).?);
+        }
+    }
+}
+
+test "report: two controlled sources anchored to the same rail refuse both stack orders" {
+    const gpa = std.testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    const deck = "controlled sources\nE3 vdd 0 in b 1\nE5 b vdd c vdd 1\n";
+    for ([_][]const u8{ "*@ group stack e5 e3\n", "*@ group stack e3 e5\n" }) |request| {
+        var arena: std.heap.ArenaAllocator = .init(gpa);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const src = try std.mem.concat(a, u8, &.{ deck, request });
+        var p = try np.place(gpa, &.{}, lib, &.{src}, null);
+        defer p.deinit();
+        const e3 = np.checks.deviceIn(&p, "e3").?;
+        const e5 = np.checks.deviceIn(&p, "e5").?;
+        try std.testing.expectEqual(p.dev_pos[e3].y, p.dev_pos[e5].y);
+        try std.testing.expectEqual(p.pin_xy[p.dev_pin0[e3]].y, p.pin_xy[p.dev_pin0[e5] + 1].y);
+        const nl = try np.netlist.parse(a, &.{src}, null);
+        const roles = try np.guessRoles(a, &nl);
+        const st = try np.schematic.structure.analyze(a, a, &nl, roles);
+        const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        const v = (try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib))[0];
+        try std.testing.expectEqual(np.hints.State.relaxed, v.state);
+        try std.testing.expectEqual(np.hints.Code.not_drawn, v.code);
+        try std.testing.expect(!support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
+        for (try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1)) |line|
+            try std.testing.expect(!std.mem.startsWith(u8, line, "*@ group stack"));
+    }
+}

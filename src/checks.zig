@@ -47,6 +47,7 @@
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
 //! - `pub fn ways(p: *const Placed, n: usize, at: Pt) u4`, `pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt`
 //! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
+//! - `pub fn stackStep(p: *const Placed, nl: *const Netlist, upper: []const u8, lower: []const u8) bool`
 //! - `pub fn deviceIn(p: *const Placed, name: []const u8) ?usize`
 
 const std = @import("std");
@@ -275,12 +276,19 @@ pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt {
 
 /// Whether `p` draws what line `h` of `nl`'s deck asks, read from the
 /// drawing alone (y grows down): `row` one y, `above` y increasing, `order`
-/// x increasing, `face` the pin on that side of its device or its other
+/// x increasing, `stack` in written top-to-bottom order, `face` the pin on that side of its device or its other
 /// end, `label` a name on the net and `wire` none, `port` a port symbol
 /// past the net's pins on that side. Null for a line the drawing cannot
 /// show (a group, the symmetry).
 pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool {
     switch (h.verb) {
+        .stack => {
+            if (h.args.len < 2) return false;
+            for (h.args[0 .. h.args.len - 1], h.args[1..]) |upper, lower| {
+                if (!stackStep(p, nl, upper, lower)) return false;
+            }
+            return true;
+        },
         // The two orders: `order` runs along the columns (x), `row` and
         // `above` down the rows (y); a `row` stays level, the others go on.
         .row, .above, .order => {
@@ -376,6 +384,33 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
         },
         else => return null,
     }
+}
+
+/// Whether two consecutive written stack members are physically top to bottom.
+/// A unique shared conduction net must join two terminals of the same column.
+/// Blocks have no declared conduction path; their origins establish the order.
+pub fn stackStep(p: *const Placed, nl: *const Netlist, upper: []const u8, lower: []const u8) bool {
+    const u = deviceIn(p, upper) orelse return false;
+    const l = deviceIn(p, lower) orelse return false;
+    if (p.dev_pos[u].y >= p.dev_pos[l].y) return false;
+    const ue = nl.device(upper) orelse return false;
+    const le = nl.device(lower) orelse return false;
+    const us = nl.path(ue) orelse return true;
+    const ls = nl.path(le) orelse return true;
+    const kinds = nl.graph.edges.items(.kind);
+    const ut = device.of(kinds[ue.index()]).path.?;
+    const lt = device.of(kinds[le.index()]).path.?;
+    var shared: usize = 0;
+    var aligned = false;
+    for (us, ut) |un, ui| for (ls, lt) |ln, li| {
+        if (un != ln) continue;
+        const a = p.dev_pin0[u] + ui;
+        const b = p.dev_pin0[l] + li;
+        if (a >= p.dev_pin0[u + 1] or b >= p.dev_pin0[l + 1]) return false;
+        aligned = p.pin_xy[a].x == p.pin_xy[b].x;
+        shared += 1;
+    };
+    return shared != 1 or aligned;
 }
 
 /// The device of `p` named `name`, the first of that name; null for none.

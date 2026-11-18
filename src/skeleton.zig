@@ -462,7 +462,8 @@ fn endsOn(gpa: Allocator, nl: *const Netlist, drawn: []const bool, form: []const
 }
 
 /// The link to keep among `ups` over `downs`, or null: a stack block's
-/// (`stacked`, either way round: a hint lists its devices in any order),
+/// (`stacked` picks adjacent members in either order; the finished drawing
+/// certifies the caller's written top-to-bottom direction),
 /// the first by rank; else none when either side is a pair (its tail
 /// stands alone), else the best free device on each side.
 fn choose(nl: *const Netlist, st: *const Structure, upper: []const u32, lower: []const u32, roles: []const Role, chain: *const Chain, stacked: []const u32, ups: []const u32, downs: []const u32) ?struct { u32, u32 } {
