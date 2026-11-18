@@ -231,6 +231,10 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
     const lines = try netlines.read(sa, nl, s.roles, s.lib.unit, scratch);
+    const parent_verdicts: []const hints.Verdict = if (stages.len != 0 or pairs.len != 0)
+        try @import("parent_intent.zig").admitted(sa, nl, s, st, sk)
+    else
+        &.{};
     const states = try gpa.alloc(parent_parts.State, pairs.len);
     defer gpa.free(states);
     for (pairs, states) |p, *state| state.* = if (parent_parts.admitted(nl, p, &lines)) .ready else .withdrawn;
@@ -287,7 +291,13 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         wipe(s, &xy);
     }
     try keepAts(gpa, s, nl, sk, at, ats);
-    accepted.* = stages.len > 0 and try parent_stages.arrange(gpa, s, sk, at, stages);
+    var available: std.ArrayList(parent_stages.Stage) = .empty;
+    for (stages) |stage| {
+        for (nl.hints, parent_verdicts) |h, verdict| {
+            if (@import("parent_intent.zig").touches(nl, h, verdict, &stage.devices, &.{})) break;
+        } else try available.append(sa, stage);
+    }
+    accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
     // Wired; then a net crossing too many wires is named and the drawing
     // wired again without it, which may free a path for another.
     // ponytail: thinned on the finished places only, so a relaid drawing

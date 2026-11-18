@@ -72,6 +72,18 @@ def native(binary, paths):
                 for sign, *members in STAGES[file.stem]:
                     result = criteria(pins, [sign, *(names[n] for n in members)], (140, 150))
                     assert all(result.values()), (file, members, result)
+            if file.stem == 'ag-1046':
+                for directive in ['axis missing_device', 'imaginary verb', 'refdes m9 right', 'at m9 -40 -40 R0']:
+                    amended = Path(tmp) / 'request.cir'
+                    amended.write_text(file.read_text().replace('.ends dut', f'*@ {directive}\n.ends dut'))
+                    subprocess.run([binary, '--report', report, amended, out], check=True)
+                    drawing = json.loads(out.read_bytes())
+                    actual = next(r for r in json.loads(report.read_bytes())['requests']
+                                  if r['text'] == '*@ ' + directive.lower())
+                    expected = 'rejected' if directive.startswith(('axis', 'imaginary')) else 'honoured'
+                    assert actual['state'] == expected, (directive, actual)
+                    result = criteria(native_pins(drawing), STAGES[file.stem][0], (140, 150))
+                    assert all(result.values()), (directive, result)
             if file.stem == 'ag-1080':
                 held = Path(tmp) / 'held.cir'
                 held.write_text(file.read_text().replace('.ends dut', '*@ at m5 -40 -40 R270\n.ends dut'))

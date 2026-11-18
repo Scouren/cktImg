@@ -25,7 +25,7 @@ pub const Stage = struct {
 /// Only complete acyclic owners enter the trial. The shared formal control
 /// and both inputs occur only as gates, including every outside occurrence.
 pub fn collect(arena: std.mem.Allocator, ctx: context.Context, parents: local.Parents) ![]const Stage {
-    if (parents.disposition != .raw_multigroup_candidate or ctx.original_intent) return &.{};
+    if (parents.disposition != .raw_multigroup_candidate) return &.{};
     const graph = &ctx.nl.graph;
     const mate = parents.search.?.first.?.devices;
     var found: std.ArrayList(Stage) = .empty;
@@ -71,7 +71,7 @@ pub fn collect(arena: std.mem.Allocator, ctx: context.Context, parents: local.Pa
 /// group extents and all foreign symbol boxes exclude occupied rooms. Returns
 /// false when the measured default contact frame or any complete room is absent.
 pub fn arrange(a: std.mem.Allocator, s: *const sch.Schematic, sk: *const skeleton.Skeleton, at: [][2]f32, stages: []const Stage) !bool {
-    if (stages.len == 0) return false;
+    if (stages.len == 0 or !validMembers(stages, at.len)) return false;
     // The native default and Schemify core4 reference frames were measured
     // independently on the five isolated source stages (channel centers).
     const unit = s.lib.unit;
@@ -134,6 +134,7 @@ pub fn arrange(a: std.mem.Allocator, s: *const sch.Schematic, sk: *const skeleto
 /// Checks the final emitted wire segments against the open interiors of the
 /// complete selected symbol frames, after routing, off-grid leads and thinning.
 pub fn clearWires(p: *const placed.Placed, library: *const lib.Library, nl: *const netlist.Netlist, stages: []const Stage) bool {
+    if (!validMembers(stages, nl.graph.edgeCount())) return false;
     for (stages) |stage| {
         for (stage.devices) |source_device| {
             const name = nl.graph.edges.items(.name)[source_device];
@@ -155,6 +156,17 @@ pub fn clearWires(p: *const placed.Placed, library: *const lib.Library, nl: *con
 }
 
 // ---- private ----
+fn validMembers(stages: []const Stage, device_count: usize) bool {
+    if (stages.len > device_count / 5) return false;
+    for (stages, 0..) |stage, i| {
+        for (stage.devices, 0..) |id, slot| {
+            if (id >= device_count or std.mem.indexOfScalar(u32, stage.devices[0..slot], id) != null) return false;
+            for (stages[0..i]) |prior| if (std.mem.indexOfScalar(u32, &prior.devices, id) != null) return false;
+        }
+    }
+    return true;
+}
+
 fn clearRoom(s: *const sch.Schematic, sk: *const skeleton.Skeleton, at: []const [2]f32, stage: Stage, reserved: []const lib.Rect, room: lib.Rect) bool {
     for (reserved) |r| if (room.intersects(r)) return false;
     for (at, 0..) |pt, d| {
@@ -170,4 +182,18 @@ fn gateOnly(ctx: context.Context, n: netlist.VertexId) bool {
         for (ctx.nl.graph.members(e), 0..) |pin, t| if (pin == n and t != 1) return false;
     }
     return true;
+}
+
+test "disjoint in-range roles before any room write" {
+    const good = [_]Stage{
+        .{ .devices = .{ 0, 1, 2, 3, 4 }, .nmos_input = true },
+        .{ .devices = .{ 5, 6, 7, 8, 9 }, .nmos_input = false },
+    };
+    try std.testing.expect(validMembers(&good, 10));
+    for ([_]u32{ 0, 8, 10, std.math.maxInt(u32) }) |wrong| {
+        var changed = good;
+        changed[1].devices[4] = wrong;
+        try std.testing.expect(!validMembers(&changed, 10));
+    }
+    try std.testing.expect(!validMembers(&good, 9));
 }

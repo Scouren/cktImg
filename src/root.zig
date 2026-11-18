@@ -180,7 +180,20 @@ pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *co
             var findings: std.ArrayList(checks.Finding) = .empty;
             defer findings.deinit(gpa);
             try checks.find(gpa, &findings, &candidate, lib);
-            if (findings.items.len == 0 and parent_stages.clearWires(&candidate, lib, nl, stages_)) return candidate;
+            if (findings.items.len == 0 and parent_stages.clearWires(&candidate, lib, nl, stages_)) {
+                const intent = @import("parent_intent.zig");
+                if (!intent.needsDrawing(nl)) return candidate;
+                var incumbent = try placeBound(gpa, gpa, cfg, lib, nl, pairs);
+                errdefer incumbent.deinit();
+                var scratch = std.heap.ArenaAllocator.init(gpa);
+                defer scratch.deinit();
+                if (try intent.preserved(scratch.allocator(), nl, roles, cfg.layout, lib, &incumbent, &candidate)) {
+                    incumbent.deinit();
+                    return candidate;
+                }
+                candidate.deinit();
+                return incumbent;
+            }
             candidate.deinit();
         }
     }
