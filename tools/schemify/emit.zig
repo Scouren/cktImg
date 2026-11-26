@@ -20,6 +20,7 @@ const Deck = spice.Deck;
 const Recognized = recognize.Recognized;
 const Drawn = layout.Drawn;
 const Place = @import("place.zig").Place;
+const Bundle = @import("port_bundle.zig").Candidate;
 const engine = @import("NetlistParser");
 
 /// One output file.
@@ -208,6 +209,12 @@ const Writer = struct {
 /// Writes deck cell `c` (0: the bench, else a component) as file `stem`, its references
 /// as `place` puts the files; a cell it cannot reach adds a note to `warnings`.
 pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const Recognized, c: u32, stem: []const u8, drawn: *const Drawn, place: *const Place, warnings: *ArrayList([]const u8)) Allocator.Error!OutFile {
+    return cellFileWithBundle(a, source, deck, rec, c, stem, drawn, place, warnings, null);
+}
+
+/// Writes the same records with the two verified, ordered control interfaces grouped.
+pub fn cellFileWithBundle(a: Allocator, source: []const u8, deck: *const Deck, rec: *const Recognized, c: u32, stem: []const u8, drawn: *const Drawn, place: *const Place, warnings: *ArrayList([]const u8), bundle: ?Bundle) Allocator.Error!OutFile {
+    const first: ?usize = if (bundle) |b| b.row(c).?.first else null;
     const devs = deck.devs(c);
     assert(drawn.x.items.len == devs.len());
     const kind = if (c == 0) "shbench" else "shcomp";
@@ -219,7 +226,7 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
     const params = deck.params(c);
     if (c > 0) {
         const s = recognize.subSymbol(c);
-        try symbol(&w, rec, s);
+        try symbol(&w, rec, s, first, if (bundle) |b| b.expression else null);
         for (params, rec.numbers(deck, c)) |p, number| {
             if (number) {
                 try w.record(.rank1, "param", &.{ p.name, recognize.stripOuter(p.value) });
@@ -229,7 +236,7 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
             try w.attr("kind", &.{"string"});
         }
         try w.record(.rank1, "impl", &.{ "schematic", "schematic" });
-        try graphics(&w, rec, s);
+        try graphics(&w, rec, s, first, if (bundle) |b| b.caption else null);
     }
     for (devs.lo..devs.hi, 0..) |d, i| {
         const s = rec.parts.sym.items[d];
@@ -248,7 +255,9 @@ pub fn cellFile(a: Allocator, source: []const u8, deck: *const Deck, rec: *const
         try w.coords(&p);
     }
     for (drawn.mark.items) |m| {
-        const name = try recognize.pinName(a, deck.netName(c, m.net));
+        const bit = if (bundle) |b| b.row(c).?.index(m.net) else null;
+        if (bit != null and bit.? > 0) continue;
+        const name = if (bit != null) bundle.?.expression else try recognize.pinName(a, deck.netName(c, m.net));
         if (m.port) try w.record(.port, "port", &.{}) else try w.record(.label, "label", &.{});
         try w.coords(&m.at);
         try w.fields(&.{ layout.orient_words[m.orient], name });
@@ -345,19 +354,20 @@ pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32
     var w: Writer = try .init(a, "shprim", source, stem);
     try w.headerAttr("doc", doc);
     try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
-    try symbol(&w, rec, s);
+    try symbol(&w, rec, s, null, null);
     try w.record(.rank1, "param", &.{ param, try recognize.template(a, rec.syms.args_default.items[s], &.{}) });
     try w.attr("kind", &.{"string"});
     try w.record(.rank1, "impl", &.{ "spice", "spice" });
     try w.attr("format", &.{ "spice", format });
-    try graphics(&w, rec, s);
+    try graphics(&w, rec, s, null, null);
     return w.finish(try a.print("{s}.shprim", .{stem}), true);
 }
 
 /// Rank 1 pins of symbol `s`.
-fn symbol(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
-    for (rec.syms.pins(s)) |p| {
-        try w.record(.rank1, "pin", &.{ p.name, @tagName(p.dir) });
+fn symbol(w: *Writer, rec: *const Recognized, s: u32, first: ?usize, expression: ?[]const u8) Allocator.Error!void {
+    for (rec.syms.pins(s), 0..) |p, i| {
+        if (first) |f| if (i > f and i < f + 4) continue;
+        try w.record(.rank1, "pin", &.{ if (first == i) expression.? else p.name, @tagName(p.dir) });
         try w.coords(&.{ p.x, p.y });
     }
 }
@@ -368,7 +378,7 @@ fn lineRec(w: *Writer, v: [4]i32) Allocator.Error!void {
 }
 
 /// Rank 2 drawing of symbol `s`: the family's glyph, pin leads, name and cell text.
-fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
+fn graphics(w: *Writer, rec: *const Recognized, s: u32, first: ?usize, caption: ?[]const u8) Allocator.Error!void {
     const b = rec.syms.body.items[s];
     switch (rec.syms.family.items[s]) {
         .oblique_cap => try drawOps(w, &@import("polyphase_caps.zig").strokes),
@@ -392,12 +402,18 @@ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
             assert(r[0] < r[2] and r[1] < r[3]); // a box body is at least 120 x 80
             try w.record(.rank2, "rect", &.{});
             try w.coords(&r);
-            for (rec.syms.pins(s)) |p| {
+            for (rec.syms.pins(s), 0..) |p, i| {
+                if (first) |f| if (i > f and i < f + 4) continue;
                 const edge: [2]i32 = if (p.x == b[0] or p.x == b[2])
                     .{ if (p.x == b[0]) r[0] else r[2], p.y }
                 else
                     .{ p.x, if (p.y == b[1]) r[1] else r[3] };
                 try lineRec(w, .{ p.x, p.y, edge[0], edge[1] });
+                if (first == i) {
+                    try w.record(.rank2, "stext", &.{});
+                    try w.coords(&.{ if (p.x < edge[0]) edge[0] + 4 else edge[0] - 55, edge[1] - 4 });
+                    try w.fields(&.{ "R0", caption.? });
+                }
             }
         },
         .vcxs, .vsw, .tline => {

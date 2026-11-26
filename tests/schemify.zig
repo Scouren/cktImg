@@ -231,3 +231,25 @@ test "steered oblique capacitor has two real tips; another cell cannot bind thos
     }
     return error.MissingCapabilityDiagnostic;
 }
+
+test "a closed switched-varactor control bus keeps four exact scalar names in one host contact" {
+    // Oracle: the editable host expands this ordered comma expression to these four
+    // literal names, independently netlisted from AG1146. A second scalar consumer
+    // or a differently ordered call must retain the complete scalar representation.
+    const text = "* bus\n.subckt Varactor_Switched_caps Von Vop B_3_ B_2_ B_1_ B_0_ Vcn Vcp\n.ends\n.subckt osc Von Vop Vcn Vcp B_3_ B_2_ B_1_ B_0_\nXbank Von Vop B_3_ B_2_ B_1_ B_0_ Vcn Vcp Varactor_Switched_caps\n";
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const bus = "pin B_3_,B_2_,B_1_,B_0_ ";
+    for ([_][]const u8{ ".ends\n", "Rextra B_1_ Vcn 1k\n.ends\n", ".ends\nXtop p n c d z y x w osc\n", "*@ label B_2_\n.ends\n", "*@ port B_2_ unknown-side\n.ends\n" }, 0..) |suffix, i| {
+        const files = try bytesOf(std.testing.allocator, a, "bank.sp", try std.mem.concat(a, u8, &.{ text, suffix }));
+        try std.testing.expectEqual(@as(usize, if (i == 0 or i == 4) 2 else 0), std.mem.count(u8, files, bus));
+        if (i == 0 or i == 4) {
+            try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, " B_3_,B_2_,B_1_,B_0_\n"));
+            try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, " B<3:0>\n"));
+        } else try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, "pin B_1_ "));
+    }
+    const reordered = try std.mem.replaceOwned(u8, a, text, "Xbank Von Vop B_3_ B_2_", "Xbank Von Vop B_2_ B_3_");
+    const files = try bytesOf(std.testing.allocator, a, "bank.sp", try std.mem.concat(a, u8, &.{ reordered, ".ends\n" }));
+    try std.testing.expectEqual(@as(usize, 0), std.mem.count(u8, files, bus));
+}

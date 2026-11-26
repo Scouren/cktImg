@@ -188,3 +188,7 @@ A requested axis through two independent tail sources is checked on the final de
 The degeneration census checks which source resistors and current sources belong to each branch. [Source regions and their attachments](source-regions/README.md)
 
 In AG220, the two equal source resistors meet at a horizontal T above the tail. Both renderers preserve each branch’s electrical identity. [Source-degeneration bridge](two-arm-bridge/README.md)
+
+## Four switched-capacitor control bits on one contact
+
+The Schemify editor shows one control lead on AG1146's bank while its netlister preserves each original scalar slot. [Published circuit, editor exports and ordered checks](control-bus/README.md)
