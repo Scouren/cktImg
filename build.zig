@@ -233,6 +233,12 @@ pub fn build(b: *std.Build) void {
     mixer_check.addFileInput(b.path("tests/source_bridge.py"));
     mixer_check.addFileArg(b.path("external/examples/analoggenie/ag-517.cir"));
     test_step.dependOn(&mixer_check.step);
+    const folded_check = b.addSystemCommand(&.{"python3"});
+    folded_check.addFileArg(b.path("tests/folded_bank.py"));
+    folded_check.addArtifactArg(json_exe);
+    folded_check.addFileInput(b.path("tests/source_bridge.py"));
+    folded_check.addFileArg(b.path("external/examples/analoggenie/ag-1093.cir"));
+    test_step.dependOn(&folded_check.step);
     const bridge_check = b.addSystemCommand(&.{"python3"});
     bridge_check.addFileArg(b.path("tests/source_bridge.py"));
     bridge_check.addArtifactArg(json_exe);

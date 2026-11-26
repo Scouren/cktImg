@@ -29,6 +29,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
                 'r' => "res",
                 'l' => "ind",
                 'i' => "isource",
+                'c' => "cap",
                 else => return .{},
             };
             if (!std.mem.eql(u8, rec.syms.stem.items[sym], stem)) return .{};
@@ -38,7 +39,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
         if ((family != .nmos and family != .pmos) or std.ascii.toLower(deck.dev_name[d][0]) != 'm' or deck.netsOf(@intCast(d)).len != 4) return .{};
     }
     if (passives != 0) {
-        if (!((passives == 4 and range.len() == 7) or (passives == 9 and range.len() == 15))) return .{};
+        if (!((passives == 4 and range.len() == 7) or (passives == 9 and range.len() == 15) or (passives == 11 and range.len() == 19))) return .{};
         for (range.lo..range.hi) |d| if (rec.syms.origin.items[rec.parts.sym.items[d]] != .core) return .{};
     }
     var lines: std.ArrayList(u8) = .empty;
@@ -88,7 +89,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
             if (ps.len != 4) return .{};
             const pol = actual.modelType(target) orelse return .{};
             if (!std.mem.eql(u8, pol, original.modelType(origin) orelse return .{})) return .{};
-        } else if ((kind != .resistor and kind != .inductor and kind != .isource) or ps.len != 2) return .{};
+        } else if ((kind != .resistor and kind != .inductor and kind != .isource and kind != .capacitor) or ps.len != 2) return .{};
         devices[origin.index()] = target.index();
         for (ps, qs, deck.netsOf(@intCast(d))) |x, y, n| {
             if (!std.mem.eql(u8, original.graph.vertices.items(.name)[x.index()], deck.netKey(c, n)) or !std.mem.eql(u8, actual.graph.vertices.items(.name)[y.index()], names[n])) return .{};

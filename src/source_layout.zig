@@ -5,15 +5,17 @@
 const std = @import("std");
 const netlist = @import("netlist.zig");
 const bridge = @import("source_bridge.zig");
+const folded = @import("folded_bank.zig");
 const mixer = @import("mixer_bank.zig");
 
 /// Ordered handles refer to the selected graph and include every device in the room.
-pub const Owner = union(enum) { bridge: bridge.Request, mixer: mixer.Request };
+pub const Owner = union(enum) { bridge: bridge.Request, mixer: mixer.Request, folded: folded.Request };
 
 /// Binds a complete original cell to its source and passive attachments.
 pub fn collect(a: std.mem.Allocator, raw: []const u8, nl: *const netlist.Netlist) !?Owner {
     if (try bridge.fromSource(a, raw, nl)) |row| return .{ .bridge = row };
     if (try mixer.collect(a, raw, nl)) |row| return .{ .mixer = row };
+    if (try folded.collect(a, raw, nl)) |row| return .{ .folded = row };
     return null;
 }
 
@@ -22,6 +24,7 @@ pub fn arrange(row: Owner, nl: *const netlist.Netlist, s: *@import("schematic.zi
     return switch (row) {
         .bridge => |r| bridge.arrange(nl, s, sk, at, r, verdicts),
         .mixer => |r| mixer.arrange(nl, s, sk, at, r, verdicts),
+        .folded => |r| folded.arrange(nl, s, sk, at, r, verdicts),
     };
 }
 
@@ -29,7 +32,7 @@ pub fn arrange(row: Owner, nl: *const netlist.Netlist, s: *@import("schematic.zi
 pub fn intact(row: Owner, p: *const @import("placed.zig").Placed, nl: *const netlist.Netlist, lib: *const @import("library.zig").Library) bool {
     return switch (row) {
         .bridge => |r| bridge.intact(p, nl, r, lib.unit),
-        .mixer => |r| clear: {
+        inline .mixer, .folded => |r| clear: {
             for (r.devices) |d| if (!@import("parent_stages.zig").clearDevice(p, lib, nl, d)) break :clear false;
             break :clear true;
         },
