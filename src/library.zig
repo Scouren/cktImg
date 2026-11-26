@@ -75,7 +75,8 @@
 //!   two ports of a two-port side in 1,137 of 1,261 (two units, a row left
 //!   empty between them, in 13). `blockFor`
 //!
-//! Contents (the geometry and `Class`; what follows them is not listed yet):
+//! Contents (geometry and class registration):
+//! - `pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool`
 //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
 //! - `pub const Rect = struct`, `Rect.intersects(a: Rect, b: Rect) bool`, `Rect.contains(r: Rect, p: Pt) bool`, `Rect.merge(a: Rect, b: Rect) Rect`, `Rect.point(p: Pt) Rect`, `Rect.fromCorners(a: Pt, b: Pt) Rect`, `Rect.translate(r: Rect, by: Pt) Rect`, `Rect.grow(r: Rect, d: i32) Rect`
 //! - `pub const Orient = packed struct(u8)`, `Orient.r0`, `Orient.left`, `Orient.apply(o: Orient, p: Pt) Pt`, `Orient.applyRect(o: Orient, r: Rect) Rect`, `Orient.flipped(base: Orient, flip_x: bool, flip_y: bool) Orient`
@@ -308,6 +309,8 @@ pub const DrawOp = union(enum) {
 };
 
 pub const Class = struct {
+    /// An explicitly registered compatible variant with a routable MOS body.
+    body_variant: ?ClassId = null,
     name: []const u8,
     role: Role = .none,
     terminals: []const Terminal,
@@ -362,6 +365,8 @@ pub const ClassId = enum(u32) {
 /// What a caller supplies to register a class. Every slice is copied, so a
 /// spec may live on the stack.
 pub const Spec = struct {
+    /// Compact class this four-contact variant extends; register the compact class first.
+    body_for: ?[]const u8 = null,
     name: []const u8,
     role: Role = .none,
     terminals: []const Terminal,
@@ -372,6 +377,8 @@ pub const Spec = struct {
 pub const RegisterError = error{
     /// A class needs at least one terminal.
     NoTerminals,
+    /// A body variant must preserve its compact class's D/G/S and supply a visible B.
+    IncompatibleBody,
     /// Two terminals share an anchor: two nets on one point.
     CollidingTerminals,
     /// The name is registered already, with other terminals. Register the
@@ -408,10 +415,13 @@ pub const Library = struct {
         for (spec.terminals, 0..) |a, i| for (spec.terminals[i + 1 ..]) |b| {
             if (a.at.eql(b.at)) return error.CollidingTerminals;
         };
+        const compact = if (spec.body_for) |name| try @import("mos_bodies.zig").compactFor(self, name, spec) else null;
         for (self.classes.items, 0..) |c, i| {
             if (!std.ascii.eqlIgnoreCase(c.name, spec.name)) continue;
             if (!sameTerminals(c.terminals, spec.terminals) or c.role != spec.role) return error.GeometryChanged;
-            return @fromBackingInt(@intCast(i));
+            const id: ClassId = @fromBackingInt(@intCast(i));
+            if (compact) |base| self.classes.items[base.i()].body_variant = id;
+            return id;
         }
         try self.classes.ensureUnusedCapacity(self.arena.child_allocator, 1);
         const a = self.arena.allocator();
@@ -421,7 +431,9 @@ pub const Library = struct {
         for (spec.terminals, terms) |s, *d| d.* = .{ .name = try a.dupeSentinel(u8, s.name, 0), .at = s.at, .hidden = s.hidden, .ground_ref = s.ground_ref, .side = s.side };
         const draw = if (spec.draw.len > 0) try copyOps(a, spec.draw) else try box(a, terms, name);
         self.classes.appendAssumeCapacity(.{ .name = name, .role = spec.role, .terminals = terms, .draw = draw });
-        return @fromBackingInt(@intCast(self.classes.items.len - 1));
+        const id: ClassId = @fromBackingInt(@intCast(self.classes.items.len - 1));
+        if (compact) |base| self.classes.items[base.i()].body_variant = id;
+        return id;
     }
 
     pub fn at(self: *const Library, id: ClassId) Class {
@@ -495,12 +507,12 @@ pub const Library = struct {
         for (order, 0..) |*o, k| o.* = k;
         // ponytail: insertion sort, quadratic, for a block's handful of
         // ports; `std.mem.sort` costs the plugin 6 KB more. Both are stable.
-        std.sort.insertion(usize, order, def, struct {
-            fn lt(d: *const netlist.Subckt, x: usize, y: usize) bool {
-                return d.order[x] < d.order[y];
-            }
-        }.lt);
-        for (order) |k| try per[@backingInt(def.sides[k] orelse defaultSide(def.ports[k]))].append(a, k);
+        const slots = block_symbols.boxSlots(def.name, def.ports);
+        block_symbols.orderBoxPorts(def, slots, order);
+        for (order) |k| {
+            const side = def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) netlist.PortSide.left else .right) else defaultSide(def.ports[k]);
+            try per[@backingInt(side)].append(a, k);
+        }
         // An amplifier's inverting input above the other, as people tend
         // to draw one (448 of 678 blocks with both inputs on one upright
         // side in 5,263 hand-drawn schematics), where no directive of the
@@ -591,6 +603,14 @@ pub const Library = struct {
 };
 
 pub const ZonDiagnostic = struct { class: []const u8, err: anyerror };
+
+/// Equality of ordered class terminal names, coordinates and routing policies.
+pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
+    if (a.len != b.len) return false;
+    for (a, b) |x, y| if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or
+        x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
+    return true;
+}
 
 /// A block port's role by name (`portRole`): a non-inverting, an inverting
 /// or a single input, an output, a rail, anything else.
@@ -739,14 +759,6 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
         .coupling => "coupling",
         .subckt => "subckt", // by definition: see `Library.blockFor`
     };
-}
-
-fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
-    if (a.len != b.len) return false;
-    for (a, b) |x, y| {
-        if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
-    }
-    return true;
 }
 
 fn copyOps(a: Allocator, ops: []const DrawOp) Allocator.Error![]DrawOp {

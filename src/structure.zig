@@ -29,8 +29,9 @@
 //!   symmetry satisfies together, the strongest stand and the rest are
 //!   dropped; `symmetry off` drops them all: the deck's own ranking of
 //!   its lines. `mates`
-//! - structure.5 (invariant) A `group` line's devices are drawn as one
-//!   block of the kind it names, as written (a stack top to bottom); a
+//! - structure.5 (invariant) An admitted `group` names one block and keeps
+//!   a stack's declared top-to-bottom order. The final report checks that
+//!   order against the drawing. A
 //!   device a `nogroup` line names is in no block; `grouping off` leaves
 //!   only the named groups. `groupLines`
 //! - structure.6 (choice) Of `group` lines that name one device, the
@@ -136,7 +137,7 @@ pub const Structure = struct {
     net_mate: []const u32,
     block_kind: []const BlockKind,
     /// Block b's members are `block_devices[block_start[b]..block_start[b + 1]]`:
-    /// a stack's top to bottom, any other's in canonical order.
+    /// a stack's declared or inferred order, any other's in canonical order.
     block_start: []const u32,
     block_devices: []const u32,
     /// `*@ symmetry off`: no mates, not even a block's.

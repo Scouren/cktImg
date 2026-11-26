@@ -8,6 +8,10 @@ clean. You steer it on a **ladder** of rungs, from the names in the deck down
 to lines that override what it recognizes. Work from the top and **descend**
 one rung only for a **complaint** the rung above cannot fix.
 
+For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
+top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
+`--config` options to compare the two drawings.
+
 ## Steps
 
 1. **Write the deck so its names carry its meaning** (Roles, below): matched
@@ -102,6 +106,14 @@ on a device overrides the relations on it.
   net most parts end on becomes its bottom wire, drawn with no ground
   symbol. `*@ role <net> ground` names another, with ground symbols. A
   `vee*` net is drawn with the supply glyph below its pin.
+- **MOS bodies.** The built-in symbols show a body contact when the fourth
+  net differs from that device's source and has a non-rail role. Use
+  `*@ class M1 nmos_body` or `pmos_body` to show any B, or the matching
+  compact class `nmos` or `pmos` to suppress routing to it. The native
+  report lists distinct non-rail bodies a selected class cannot show under
+  `unshown_bodies`. A custom symbol file can supply either class on its
+  own, or register a visible D/G/S/B variant after its compact class with
+  `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:

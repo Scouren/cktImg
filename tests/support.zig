@@ -9,6 +9,7 @@
 //! - `pub fn freeLibrary(gpa: std.mem.Allocator, lib: *np.Library) void`
 //! - `pub fn shorts(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
 //! - `pub fn dots(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32`
+//! - `pub fn generatedStack(p: *const np.Placed, upper: []const u8, lower: []const u8) bool`
 //! - `pub fn expectConnected(p: *const np.Placed, lib: *const np.Library) !void`
 
 const std = @import("std");
@@ -84,6 +85,35 @@ pub fn dots(gpa: std.mem.Allocator, p: *const np.Placed, print: bool) !u32 {
 }
 
 /// Every net is one piece, read the way a netlister reads the JSON
+/// A two-primitive stack seen directly in the emitted drawing. The random
+/// generator emits MOS D/G/S and otherwise two-terminal paths or E/G output
+/// pairs in SPICE order. A single common path terminal must share its x.
+pub fn generatedStack(p: *const np.Placed, upper: []const u8, lower: []const u8) bool {
+    const top = np.checks.deviceIn(p, upper) orelse return false;
+    const bottom = np.checks.deviceIn(p, lower) orelse return false;
+    if (p.dev_pos[top].y >= p.dev_pos[bottom].y) return false;
+    var pins: [2][2]u32 = undefined;
+    for ([_]usize{ top, bottom }, &pins) |dev, *ends| {
+        const last: u32 = switch (p.dev_name[dev][0]) {
+            'm' => 2,
+            'r', 'c', 'v', 'e', 'g' => 1,
+            else => unreachable, // The generator's card families above.
+        };
+        const first = p.dev_pin0[dev];
+        if (first + last >= p.dev_pin0[dev + 1]) return false;
+        ends.* = .{ first, first + last };
+    }
+    var shared: u8 = 0;
+    var aligned: u8 = 0;
+    for (pins[0]) |a| for (pins[1]) |b| {
+        if (p.pin_net[a] == p.pin_net[b]) {
+            shared += 1;
+            aligned += @intFromBool(p.pin_xy[a].x == p.pin_xy[b].x);
+        }
+    };
+    return shared != 1 or aligned == 1;
+}
+
 /// (`np.checks.connected`).
 pub fn expectConnected(p: *const np.Placed, lib: *const np.Library) !void {
     // Its own scratch, so the fuzzer (no test runner) checks with it too.

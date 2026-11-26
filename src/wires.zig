@@ -59,9 +59,9 @@
 //!   `Canvas.labelAt` would.
 //! - wires.11 (habit) A bias net of two gates facing each other on one row
 //!   is one straight gate line between them, a port symbol hanging from
-//!   its middle, never a written name (a name at its first pin only when no
-//!   stub fits at the middle). People: a port symbol on 197 of 264 such
-//!   gate lines in 5,263 hand-drawn schematics. `ported`
+//!   its middle. If the midpoint is occupied, two MOS gates allow a
+//!   tap one quarter unit to either side, strictly inside the span, before
+//!   falling back to a name. AG725 retains one VB3 feed this way. `ported`
 //! - wires.12 (habit) An input's or a bias's pins standing near each other
 //!   (the box round them no more than 6 units around half) are one wire
 //!   with one port at a free end. People wire 87% of their inputs of two
@@ -112,7 +112,7 @@
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -127,6 +127,7 @@ const trunk = @import("trunk.zig");
 const power_loops = @import("power_loops.zig");
 const power_loop_wires = @import("power_loop_wires.zig");
 const NetLines = netlines.NetLines;
+const parent_parts = @import("parent_parts.zig");
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -184,7 +185,7 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen, no input styled as a wire. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group) Allocator.Error!void {
+pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -203,12 +204,12 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     defer gpa.free(order);
     for (order, 0..) |*o, i| o.* = @intCast(i);
     const Order = struct { roles: []const Role, rank: []const u32, pins_of: []const std.ArrayList(u32) };
-    std.mem.sort(u32, order, Order{ .roles = s.roles, .rank = net_rank, .pins_of = pins_of }, struct {
+    std.sort.heap(u32, order, Order{ .roles = s.roles, .rank = net_rank, .pins_of = pins_of }, struct {
         fn lt(o: Order, x: u32, y: u32) bool {
             const fx = drawStep(o.roles[x], o.pins_of[x].items.len);
             const fy = drawStep(o.roles[y], o.pins_of[y].items.len);
             if (fx != fy) return fx < fy;
-            return o.rank[x] < o.rank[y];
+            return o.rank[x] < o.rank[y] or (o.rank[x] == o.rank[y] and x < y);
         }
     }.lt);
     // Pinned routes and vias claim their room before anything else.
@@ -226,6 +227,8 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         order[lead] = net;
         lead += 1;
     }
+    var gate_labels: std.ArrayList(u32) = .empty;
+    defer gate_labels.deinit(gpa);
     var waiting: std.ArrayList(u32) = .empty;
     defer waiting.deinit(gpa);
     // Bias nets a line wires: each named once, as a gate line is, so its
@@ -243,10 +246,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const anchors: []u32 = if (loops.len != 0) try gpa.alloc(u32, n_nets) else &.{};
     defer gpa.free(anchors);
     @memset(anchors, sch.none);
-    var seeded = loops.len == 0;
-    for (order) |net| {
-        if (!seeded and !s.roles[net].isRail()) {
-            try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
+    var seeded = loops.len == 0 and trial.pairs.len == 0;
+    for (order, 0..) |net, position| {
+        if (!seeded and position >= lead and !s.roles[net].isRail()) {
+            if (loops.len != 0) try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
+            try trial.draw(&c, lines, pins_of, routed, drawn);
             seeded = true;
         }
         const pins = pins_of[net].items;
@@ -270,6 +274,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             s.labeled[net] = true;
             continue;
         }
+        if (bridged_t and style == .auto and lines.port[net] == null and s.roles[net].isPort()) {
+            if (try @import("passive_filters.zig").port(&c, net, pins)) continue;
+        }
         switch (Drawn.of(s.roles[net])) {
             // A rail's pins face out along the rows, a supply's up and a
             // ground's down: a symbol at each, or one bar past them all.
@@ -280,7 +287,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             },
             // A bias a line wires (never an input) is a wire like any
             // other, named once.
-            .port => if (style == .auto) try ported(&c, net, pins, anchor) else {
+            .port => if (style == .auto) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
                 assert(s.roles[net] == .bias);
                 if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
@@ -309,6 +316,10 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         const of = pins_of[net].items;
         try c.labelAt(of[topLeft(s, of)]);
     };
+    for (gate_labels.items) |label| {
+        const net = s.pins.items(.net)[label];
+        try routes.gatePort(&c, net, pins_of[net].items, label);
+    }
     assert(xy.items.len == s.nodes.len);
 }
 
@@ -640,7 +651,7 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
 /// a gate line between them, named at its middle. A successfully seeded
 /// input tree gets its boundary port before nearby outside pins attach;
 /// distant outside pins retain their ordinary input patterns and ports.
-fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
+fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32, gate_labels: ?*std.ArrayList(u32)) !void {
     const s = c.s;
     assert(all.len >= 1);
     const bias = s.roles[net] == .bias;
@@ -661,11 +672,16 @@ fn ported(c: *Canvas, net: u32, all: []const u32, anchor: u32) !void {
         const sb = s.pins.items(.side)[pins[1]];
         const facing = a.y == b.y and ((a.x < b.x and sa == .right and sb == .left) or (b.x < a.x and sb == .right and sa == .left));
         if (facing and try c.commit(net, &.{ a, b })) {
-            // A port hanging from its middle, never a written name (people
-            // 197 of 264); a name at its first pin when no stub fits there.
+            // Keep the gate line intact when another wire crosses its midpoint.
             const mid: Pt = .{ .x = @divFloor(a.x + b.x, 2), .y = a.y };
             for ([_]Side{ .down, .up }) |t| if (try c.stub(.terminal, net, mid, t, c.len.terminal)) return;
             try c.labelAt(pins[0]);
+            if (gate_labels) |list| {
+                for (pins) |pin| {
+                    const d = s.pins.items(.device)[pin];
+                    if (d == sch.none or s.device_kind[d] != .mosfet or s.pins.items(.index)[pin] != 1) break;
+                } else try list.append(c.gpa, @intCast(s.pins.len - 1));
+            }
             return;
         }
     }

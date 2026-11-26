@@ -3,9 +3,13 @@
 //!
 //! The library knows no devices, so this tool brings its own: the symbol set
 //! embedded at build time (`tests/symbols.zon`), or `--symbols file.zon`.
+//!
+//! Contents:
+//! - `pub fn main(init: std.process.Init) !void`
 
 const std = @import("std");
 const np = @import("NetlistParser");
+const native = @import("json.zig");
 const default_symbols = @import("symbols").text;
 
 const usage =
@@ -39,6 +43,7 @@ const Options = struct {
     lint: bool = false,
 };
 
+/// Reads one source deck and writes its selected schematic as TikZ.
 pub fn main(init: std.process.Init) !void {
     const gpa = init.gpa;
     const io = init.io;
@@ -71,7 +76,7 @@ pub fn main(init: std.process.Init) !void {
     if (sym_diags.items.len > 0) std.process.exit(1);
 
     var diag: np.netlist.Diagnostic = .{};
-    var placed = np.place(gpa, &cfg, &lib, &.{text}, &diag) catch |err| switch (err) {
+    var placed = placeDeck(gpa, arena, &cfg, &lib, opts.netlist, text, opts.symbols != null, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -103,6 +108,13 @@ pub fn main(init: std.process.Init) !void {
         ew.interface.flush() catch {};
         if (any_err) std.process.exit(2);
     }
+}
+
+// ---- private ----
+
+fn placeDeck(gpa: std.mem.Allocator, arena: std.mem.Allocator, cfg: *const np.Config, lib: *np.Library, path: []const u8, raw: []const u8, custom_symbols: bool, diag: *np.netlist.Diagnostic) !np.Placed {
+    const sources = try native.deckSources(gpa, arena, lib, path, raw, diag);
+    return native.placeSelected(gpa, arena, cfg, lib, sources, raw, custom_symbols, diag);
 }
 
 fn parseArgs(io: std.Io, argv: []const [:0]const u8) ?Options {

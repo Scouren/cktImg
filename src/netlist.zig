@@ -68,6 +68,9 @@
 //!     *@ bottom vss
 //!     ...
 //!     .ends
+//!
+//! Contents:
+//! - `pub const OriginalCards`, `OriginalCards.init`, `OriginalCards.next`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -85,6 +88,24 @@ pub const Analysis = analysis.Analysis;
 pub const ground: VertexId = @fromBackingInt(@intCast(0));
 
 pub const DeviceKind = device_mod.DeviceKind;
+
+/// The parser's logical-card scanner before declarations are normalized.
+/// `text` stays live and should be lowercased for ordinary SPICE identity.
+pub const OriginalCards = struct {
+    cards: Cards,
+    fields: std.ArrayList([]const u8) = .empty,
+
+    /// `has_title` follows the same first-line rule as `parse`.
+    pub fn init(text: []const u8, has_title: bool) OriginalCards {
+        return .{ .cards = Cards.init(text, has_title) };
+    }
+
+    /// The fields borrow text and a reusable scratch row, valid until the
+    /// next call. The caller supplies a scratch arena for that row.
+    pub fn next(self: *OriginalCards, arena: Allocator) Allocator.Error!?[]const []const u8 {
+        return self.cards.logical(arena, &self.fields);
+    }
+};
 
 /// A `.subckt` definition.
 pub const Subckt = struct {
@@ -170,6 +191,10 @@ pub const Diagnostic = struct {
 // ===========================================================================
 
 pub const Netlist = struct {
+    /// Optional resolved symbol alternatives for this drawing. The caller
+    /// retains the rows; device handles refer to this exact parsed graph.
+    pub const BlockFrame = struct { device: EdgeId, class: @import("library.zig").ClassId };
+    block_frames: []const BlockFrame = &.{},
     /// Owns the lowercased source text, token pool, name maps and analyses.
     arena: std.heap.ArenaAllocator,
     /// First line of the first source, original case.
@@ -994,6 +1019,22 @@ const Cards = struct {
     /// Next logical card's fields, or null at end of text or `.end`.
     /// `.control ... .endc` and `.subckt ... .ends` are skipped whole.
     fn next(c: *Cards, gpa: Allocator, fields: *std.ArrayList([]const u8)) Allocator.Error!?[]const []const u8 {
+        while (try c.logical(gpa, fields)) |f| {
+            if (eql(f[0], ".end")) return null;
+            if (eql(f[0], ".control")) {
+                c.skipBlock(".control", ".endc");
+                continue;
+            }
+            if (eql(f[0], ".subckt")) {
+                c.skipBlock(".subckt", ".ends");
+                continue;
+            }
+            return f;
+        }
+        return null;
+    }
+
+    fn logical(c: *Cards, gpa: Allocator, fields: *std.ArrayList([]const u8)) Allocator.Error!?[]const []const u8 {
         while (c.nextLine()) |raw| {
             const line = content(raw) orelse continue;
             if (line[0] == '+') continue; // stray continuation: nothing to continue
@@ -1005,15 +1046,6 @@ const Cards = struct {
 
             const f = fields.items;
             if (f.len == 0) continue;
-            if (eql(f[0], ".end")) return null;
-            if (eql(f[0], ".control")) {
-                c.skipBlock(".control", ".endc");
-                continue;
-            }
-            if (eql(f[0], ".subckt")) {
-                c.skipBlock(".subckt", ".ends");
-                continue;
-            }
             return f;
         }
         return null;

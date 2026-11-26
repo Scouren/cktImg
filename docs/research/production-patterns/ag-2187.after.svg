@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="602" height="564" viewBox="0 0 602 564" font-family="Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+<polyline points="476.8,283.2 476.8,251.2 "/>
+<polyline points="412.8,219.2 412.8,251.2 "/>
+<polyline points="412.8,283.2 412.8,251.2 "/>
+<polyline points="412.8,251.2 476.8,251.2 "/>
+<polyline points="476.8,251.2 508.8,251.2 "/>
+<polyline points="476.8,347.2 476.8,411.2 "/>
+<polyline points="412.8,155.2 412.8,123.2 "/>
+<polyline points="380.8,187.2 348.8,187.2 "/>
+<polyline points="316.8,187.2 348.8,187.2 "/>
+<polyline points="220.8,283.2 220.8,315.2 "/>
+<polyline points="412.8,347.2 412.8,379.2 "/>
+<polyline points="412.8,411.2 412.8,379.2 "/>
+<polyline points="124.8,219.2 92.8,219.2 92.8,379.2 "/>
+<polyline points="92.8,379.2 412.8,379.2 "/>
+<polyline points="220.8,91.2 220.8,59.2 "/>
+<polyline points="124.8,155.2 92.8,155.2 "/>
+<polyline points="476.8,283.2 476.8,310.4 "/>
+<polyline points="476.8,320.0 476.8,347.2 "/>
+<polyline points="464.0,310.4 489.6,310.4 "/>
+<polyline points="464.0,320.0 489.6,320.0 "/>
+<polyline points="412.8,155.2 412.8,174.4 408.0,174.4 "/>
+<polyline points="412.8,219.2 412.8,200.0 408.0,200.0 "/>
+<polyline points="408.0,171.2 408.0,203.2 "/>
+<polyline points="401.6,174.4 401.6,200.0 "/>
+<polyline points="380.8,187.2 401.6,187.2 "/>
+<polyline points="412.8,283.2 412.8,296.0 "/>
+<polyline points="412.8,334.4 412.8,347.2 "/>
+<polyline points="412.8,296.0 419.2,300.8 406.4,305.6 419.2,310.4 406.4,315.2 419.2,320.0 406.4,324.8 419.2,329.6 412.8,334.4 "/>
+<polyline points="412.8,411.2 412.8,424.0 "/>
+<polyline points="412.8,462.4 412.8,475.2 "/>
+<polyline points="412.8,424.0 419.2,428.8 406.4,433.6 419.2,438.4 406.4,443.2 419.2,448.0 406.4,452.8 419.2,457.6 412.8,462.4 "/>
+<polyline points="476.8,411.2 476.8,424.0 "/>
+<polyline points="476.8,462.4 476.8,475.2 "/>
+<polyline points="476.8,424.0 483.2,428.8 470.4,433.6 483.2,438.4 470.4,443.2 483.2,448.0 470.4,452.8 483.2,457.6 476.8,462.4 "/>
+<polyline points="156.8,123.2 284.8,187.2 156.8,251.2 156.8,123.2 "/>
+<polyline points="220.8,91.2 220.8,155.2 "/>
+<polyline points="220.8,283.2 220.8,219.2 "/>
+<polyline points="124.8,219.2 156.8,219.2 "/>
+<text x="172.8" y="222.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">-</text>
+<polyline points="124.8,155.2 156.8,155.2 "/>
+<text x="172.8" y="158.2" text-anchor="middle" font-size="11" fill="#1d2330" stroke="none">+</text>
+<polyline points="316.8,187.2 284.8,187.2 "/>
+<polyline points="206.4,59.2 235.2,59.2 "/>
+<text x="239.8" y="63.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vdd</text>
+<polyline points="398.4,475.2 427.2,475.2 "/>
+<polyline points="403.2,480.0 422.4,480.0 "/>
+<polyline points="409.6,484.8 416.0,484.8 "/>
+<polyline points="462.4,475.2 491.2,475.2 "/>
+<polyline points="467.2,480.0 486.4,480.0 "/>
+<polyline points="473.6,484.8 480.0,484.8 "/>
+<polyline points="206.4,315.2 235.2,315.2 "/>
+<polyline points="211.2,320.0 230.4,320.0 "/>
+<polyline points="217.6,324.8 224.0,324.8 "/>
+<circle cx="412.8" cy="123.2" r="4.8" fill="#ffffff"/>
+<text x="412.8" y="117.2" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">vin</text>
+<circle cx="92.8" cy="155.2" r="4.8" fill="#ffffff"/>
+<text x="85.8" y="159.2" text-anchor="end" font-size="12" fill="#1d2330" stroke="none">vref</text>
+<circle cx="508.8" cy="251.2" r="4.8" fill="#ffffff"/>
+<text x="515.8" y="255.2" text-anchor="start" font-size="12" fill="#1d2330" stroke="none">vout</text>
+</g>
+<circle cx="412.8" cy="379.2" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="476.8" cy="251.2" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="412.8" cy="251.2" r="3.8" fill="#1d2330" stroke="none"/>
+<text x="494.4" y="315.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">cl</text>
+<text x="417.6" y="187.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">mnp</text>
+<text x="424.0" y="315.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r1</text>
+<text x="424.0" y="443.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r2</text>
+<text x="488.0" y="443.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r3</text>
+<text x="321.6" y="168.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">x1</text>
+<text x="40.0" y="558.0" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
+</svg>
