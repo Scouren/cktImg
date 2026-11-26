@@ -158,3 +158,5 @@ on a device overrides the relations on it.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.
+
+For an editable scalar drawing with an optional grouped control-bus view, pass `--bundles` to `cktimg-json`. Its `port_bundles` lists each display contact and every original terminal slot, net and coordinate. The optional SVG uses that grouping. [Example and limits](../../docs/research/production-patterns/control-bus/README.md)

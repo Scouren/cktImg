@@ -213,6 +213,13 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "tests/shared_frames/mixed.cir", "tests/shared_frames/uniform.cir", "tests/symbols.zon" }) |file|
         signed_frames.addFileInput(b.path(file));
     test_step.dependOn(&signed_frames.step);
+
+    const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
+    control_bus.addFileArg(b.path("tests/control_bus_native.py"));
+    control_bus.addArtifactArg(json_exe);
+    _ = control_bus.addOutputDirectoryArg("control-bus");
+    control_bus.addFileInput(b.path("external/examples/analoggenie/ag-1146.cir"));
+    test_step.dependOn(&control_bus.step);
     b.installArtifact(json_exe);
     const body_check = b.addSystemCommand(&.{"python3"});
     body_check.addFileArg(b.path("tests/mos_bodies.py"));

@@ -2,7 +2,7 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--bundles] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
@@ -33,6 +33,7 @@ const std = @import("std");
 const np = @import("NetlistParser");
 const symbols = @import("symbols").text;
 const svg = @import("svg");
+const native_bundle = @import("native_bundle.zig");
 
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
@@ -49,6 +50,7 @@ const usage =
     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
     \\                    add a "target" block to the document
     \\  --svg <path>      also draw the placed schematic as SVG
+    \\  --bundles         add ordered port_bundles to JSON and group their SVG contacts
     \\  --report <path>   also write the decision report: findings, each *@ line's
     \\                    verdict, scores, the engine's decisions, the lattice rows
     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
@@ -70,6 +72,7 @@ const Options = struct {
     symbols: ?[]const u8 = null,
     target: ?[]const u8 = null,
     svg: ?[]const u8 = null,
+    bundles: bool = false,
     report: ?[]const u8 = null,
     decisions: ?[]const u8 = null,
     from: ?[]const u8 = null,
@@ -136,8 +139,9 @@ pub fn main(init: std.process.Init) !void {
     };
     defer placed.deinit();
 
+    const view = if (opts.bundles and opts.symbols == null) try native_bundle.select(arena, raw, srcs, &placed, &lib) else null;
     if (opts.svg) |path| {
-        const pic = try svg.alloc(gpa, &placed, &lib, .{});
+        const pic = try svg.alloc(gpa, &placed, &lib, .{ .bundle = view });
         defer gpa.free(pic);
         cwd.writeFile(io, .{ .sub_path = path, .data = pic }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
     }
@@ -187,6 +191,9 @@ pub fn main(init: std.process.Init) !void {
     if (block) |b| {
         // `json.write` ends the document with "\n}\n": add one member before it.
         doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"target\": ", b, "\n}\n" });
+    }
+    if (opts.bundles) {
+        doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"port_bundles\": ", try native_bundle.json(arena, &placed, &lib, view), "\n}\n" });
     }
     if (opts.out) |path| {
         cwd.writeFile(io, .{ .sub_path = path, .data = doc }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
@@ -453,6 +460,10 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
         if (std.mem.eql(u8, a, "-h") or std.mem.eql(u8, a, "--help")) {
             std.debug.print("{s}", .{usage});
             return null;
+        }
+        if (std.mem.eql(u8, a, "--bundles")) {
+            opts.bundles = true;
+            continue;
         }
         const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;
         if (slot) |s| {
