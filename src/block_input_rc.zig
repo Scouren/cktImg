@@ -58,7 +58,9 @@ pub const Batch = struct {
     }
 };
 
-comptime { assert(@sizeOf(Group) == 28); }
+comptime {
+    assert(@sizeOf(Group) == 28);
+}
 
 /// Collects complete unheld groups before relay consumes weak stays.
 /// Every slice spans the original graph; hidden/undrawn competitors count.
@@ -102,11 +104,14 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
             for (members(group)) |a| for (members(other)) |b| if (a == b) break :overlap true;
         } else false;
         if (overlaps) continue;
-        groups.items[kept] = group; kept += 1;
+        groups.items[kept] = group;
+        kept += 1;
     }
     groups.items = groups.items[0..kept];
     std.sort.heap(Group, groups.items, st.device_rank, struct {
-        fn less(rank: []const u32, a: Group, b: Group) bool { return rank[a.block.index()] < rank[b.block.index()]; }
+        fn less(rank: []const u32, a: Group, b: Group) bool {
+            return rank[a.block.index()] < rank[b.block.index()];
+        }
     }.less);
     const coordinates = try gpa.alloc([2]i32, 2 * order_pair_capacity * groups.items.len);
     errdefer gpa.free(coordinates);
@@ -115,7 +120,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
 }
 
 /// Five owned devices: capacitor INP/INN, resistor INP/INN, then bias choke.
-pub fn members(group: Group) [5]EdgeId { return .{ group.caps[0], group.caps[1], group.resistors[0], group.resistors[1], group.choke }; }
+pub fn members(group: Group) [5]EdgeId {
+    return .{ group.caps[0], group.caps[1], group.resistors[0], group.resistors[1], group.choke };
+}
 
 /// Raw 0/1 endpoint toward the block input, or toward resistor bias for the choke.
 /// Requires a complete group; the five-member order is defined by members().
@@ -160,8 +167,16 @@ fn find(nl: *const Netlist, roles: []const sch.Role, block: EdgeId) ?Group {
             const p = c.members(edge);
             if (p.len != 2 or p[0] == p[1]) return null;
             switch (c.edges.items(.kind)[edge.index()]) {
-                .capacitor => { if (cap != null) return null; cap = edge; upstream[i] = if (p[0] == net) p[1] else p[0]; },
-                .resistor => { if (resistor != null) return null; resistor = edge; bias[i] = if (p[0] == net) p[1] else p[0]; },
+                .capacitor => {
+                    if (cap != null) return null;
+                    cap = edge;
+                    upstream[i] = if (p[0] == net) p[1] else p[0];
+                },
+                .resistor => {
+                    if (resistor != null) return null;
+                    resistor = edge;
+                    bias[i] = if (p[0] == net) p[1] else p[0];
+                },
                 else => return null,
             }
         }
@@ -255,7 +270,7 @@ test "block input topology: literal raw incidences and upstream contracts exclud
         defer arena.deinit();
         const a = arena.allocator();
         const offset = std.mem.indexOf(u8, body, change.from).?;
-        const text = try std.mem.concat(a, u8, &.{ header, body[0..offset], change.to, body[offset+change.from.len..] });
+        const text = try std.mem.concat(a, u8, &.{ header, body[0..offset], change.to, body[offset + change.from.len ..] });
         var nl = try netlist.parse(a, &.{text}, null);
         const roles = try sch.guessRoles(a, &nl);
         try testing.expect(find(&nl, roles, nl.device("x1").?) == null);
@@ -283,7 +298,6 @@ test "block input topology: declaration and passive-card permutations retain sem
         roles[index] = old;
     }
 }
-
 
 test "block input topology: the choke far end stays outside all five local signal and bias nets" {
     const testing = std.testing;

@@ -51,24 +51,24 @@ const Frame = [23]np.Pt;
 const Named = struct { device: []const u8, terminal: []const u8, net: []const u8 };
 const named = [_]Named{
     .{ .device = "xlp", .terminal = "n1", .net = "net10" }, .{ .device = "xlp", .terminal = "n2", .net = "net8" }, .{ .device = "xlp", .terminal = "n3", .net = "vcc" },
-    .{ .device = "q1", .terminal = "c", .net = "net10" }, .{ .device = "q1", .terminal = "b", .net = "net7" }, .{ .device = "q1", .terminal = "e", .net = "net5" },
-    .{ .device = "q2", .terminal = "c", .net = "net8" }, .{ .device = "q2", .terminal = "b", .net = "net6" }, .{ .device = "q2", .terminal = "e", .net = "net3" },
-    .{ .device = "q3", .terminal = "c", .net = "net8" }, .{ .device = "q3", .terminal = "b", .net = "net8" }, .{ .device = "q3", .terminal = "e", .net = "net10" },
-    .{ .device = "q4", .terminal = "c", .net = "net10" }, .{ .device = "q4", .terminal = "b", .net = "net10" }, .{ .device = "q4", .terminal = "e", .net = "net8" },
-    .{ .device = "c1", .terminal = "", .net = "net10" }, .{ .device = "c1", .terminal = "", .net = "net6" },
-    .{ .device = "c2", .terminal = "", .net = "net7" }, .{ .device = "c2", .terminal = "", .net = "net8" },
-    .{ .device = "lb1a", .terminal = "", .net = "net7" }, .{ .device = "lb1a", .terminal = "", .net = "vb1" },
-    .{ .device = "lb1b", .terminal = "", .net = "vb1" }, .{ .device = "lb1b", .terminal = "", .net = "net6" },
+    .{ .device = "q1", .terminal = "c", .net = "net10" },   .{ .device = "q1", .terminal = "b", .net = "net7" },   .{ .device = "q1", .terminal = "e", .net = "net5" },
+    .{ .device = "q2", .terminal = "c", .net = "net8" },    .{ .device = "q2", .terminal = "b", .net = "net6" },   .{ .device = "q2", .terminal = "e", .net = "net3" },
+    .{ .device = "q3", .terminal = "c", .net = "net8" },    .{ .device = "q3", .terminal = "b", .net = "net8" },   .{ .device = "q3", .terminal = "e", .net = "net10" },
+    .{ .device = "q4", .terminal = "c", .net = "net10" },   .{ .device = "q4", .terminal = "b", .net = "net10" },  .{ .device = "q4", .terminal = "e", .net = "net8" },
+    .{ .device = "c1", .terminal = "", .net = "net10" },    .{ .device = "c1", .terminal = "", .net = "net6" },    .{ .device = "c2", .terminal = "", .net = "net7" },
+    .{ .device = "c2", .terminal = "", .net = "net8" },     .{ .device = "lb1a", .terminal = "", .net = "net7" },  .{ .device = "lb1a", .terminal = "", .net = "vb1" },
+    .{ .device = "lb1b", .terminal = "", .net = "vb1" },    .{ .device = "lb1b", .terminal = "", .net = "net6" },
 };
 const trees = [_][]const usize{ &.{ 0, 3, 11, 12, 13, 15 }, &.{ 1, 6, 9, 10, 14, 18 }, &.{ 4, 17, 19 }, &.{ 7, 16, 22 }, &.{ 20, 21 } };
 const source: Frame = .{
-    .{ .x = 130, .y = 0 }, .{ .x = 230, .y = 0 }, .{ .x = 180, .y = -20 },
-    .{ .x = -10, .y = 170 }, .{ .x = 20, .y = 190 }, .{ .x = -10, .y = 210 },
+    .{ .x = 130, .y = 0 },   .{ .x = 230, .y = 0 },   .{ .x = 180, .y = -20 },
+    .{ .x = -10, .y = 170 }, .{ .x = 20, .y = 190 },  .{ .x = -10, .y = 210 },
     .{ .x = 370, .y = 170 }, .{ .x = 340, .y = 190 }, .{ .x = 370, .y = 210 },
-    .{ .x = 90, .y = 50 }, .{ .x = 70, .y = 20 }, .{ .x = 50, .y = 50 },
-    .{ .x = 270, .y = 80 }, .{ .x = 290, .y = 110 }, .{ .x = 310, .y = 80 },
-    .{ .x = 20, .y = 130 }, .{ .x = 60, .y = 130 }, .{ .x = 300, .y = 130 }, .{ .x = 340, .y = 130 },
-    .{ .x = 80, .y = 240 }, .{ .x = 120, .y = 240 }, .{ .x = 240, .y = 240 }, .{ .x = 280, .y = 240 },
+    .{ .x = 90, .y = 50 },   .{ .x = 70, .y = 20 },   .{ .x = 50, .y = 50 },
+    .{ .x = 270, .y = 80 },  .{ .x = 290, .y = 110 }, .{ .x = 310, .y = 80 },
+    .{ .x = 20, .y = 130 },  .{ .x = 60, .y = 130 },  .{ .x = 300, .y = 130 },
+    .{ .x = 340, .y = 130 }, .{ .x = 80, .y = 240 },  .{ .x = 120, .y = 240 },
+    .{ .x = 240, .y = 240 }, .{ .x = 280, .y = 240 },
 };
 
 // ---- private ----
@@ -323,7 +323,13 @@ test "CT feedback stage: full incidence raw competitors and invalid models keep 
     for (extras) |extra| {
         const text = try std.fmt.allocPrint(a, "{s}\n{s}", .{ ag1149, extra });
         defer a.free(text);
-        const name = switch (extra[0]) { 'R' => "rextra", 'Q' => "qextra", 'X' => "xextra", 'C' => "cextra", else => unreachable };
+        const name = switch (extra[0]) {
+            'R' => "rextra",
+            'Q' => "qextra",
+            'X' => "xextra",
+            'C' => "cextra",
+            else => unreachable,
+        };
         for ([_]bool{ false, true }) |compact| try ordinary(text, compact, null, &.{}, name);
     }
 }

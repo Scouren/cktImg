@@ -42,7 +42,9 @@ const Canvas = canvas.Canvas;
 const Pt = library.Pt;
 const Branch = [6]EdgeId; // Owned R/D, external input device, R, N, P.
 
-comptime { assert(@sizeOf(Branch) == 24); }
+comptime {
+    assert(@sizeOf(Branch) == 24);
+}
 
 /// Returns the same sole successful Pair slice or empty. Both complete
 /// interfaces and original admitted requests are checked without allocation.
@@ -63,8 +65,7 @@ pub fn qualify(nl: *const Netlist, roles: []const sch.Role, pairs: []const Pair,
                 if (verdict.state != .honoured and verdict.state != .relaxed) continue;
                 switch (hint.verb) {
                     .off, .symmetry_off, .axis => return &.{},
-                    .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric,
-                    .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
+                    .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric, .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
                     else => continue,
                 }
                 for (hint.args) |name| if ((nl.device(name) orelse continue) == edge) return &.{};
@@ -107,8 +108,8 @@ pub fn parts(c: *Canvas, nl: *const Netlist, pairs: []const Pair, lines: *const 
 fn branch(nl: *const Netlist, roles: []const sch.Role, pair: Pair, i: usize) ?Branch {
     assert(i < 2 and roles.len == nl.graph.vertexCount());
     const c = &nl.graph;
-    const r = pair[1][1+i];
-    const d = pair[1][3+i];
+    const r = pair[1][1 + i];
+    const d = pair[1][3 + i];
     const net = c.members(d)[0];
     const local = c.members(r);
     if (local.len != 2 or local[0] == local[1] or (local[0] != net and local[1] != net)) return null;
@@ -118,9 +119,16 @@ fn branch(nl: *const Netlist, roles: []const sch.Role, pair: Pair, i: usize) ?Br
     var have_d = false;
     var remote: ?EdgeId = null;
     for (incident) |edge| {
-        if (edge == r) { if (have_r) return null; have_r = true; }
-        else if (edge == d) { if (have_d) return null; have_d = true; }
-        else { if (remote != null) return null; remote = edge; }
+        if (edge == r) {
+            if (have_r) return null;
+            have_r = true;
+        } else if (edge == d) {
+            if (have_d) return null;
+            have_d = true;
+        } else {
+            if (remote != null) return null;
+            remote = edge;
+        }
     }
     if (!have_r or !have_d) return null;
     const gate = remote orelse return null;
@@ -135,7 +143,11 @@ fn branch(nl: *const Netlist, roles: []const sch.Role, pair: Pair, i: usize) ?Br
     var drain = false;
     for (output) |edge| {
         const ports = c.members(edge);
-        if (edge == gate) { if (drain) return null; drain = true; continue; }
+        if (edge == gate) {
+            if (drain) return null;
+            drain = true;
+            continue;
+        }
         if (inside(pair, edge)) return null;
         if (c.edges.items(.kind)[edge.index()] == .resistor) {
             if (out[3].index() != sch.none or ports.len != 2 or ports[0] == ports[1]) return null;
@@ -151,7 +163,7 @@ fn branch(nl: *const Netlist, roles: []const sch.Role, pair: Pair, i: usize) ?Br
     }
     if (!drain) return null;
     for (out) |edge| if (edge.index() == sch.none) return null;
-    for (out, 0..) |edge, j| for (out[j+1..]) |other| if (edge == other) return null;
+    for (out, 0..) |edge, j| for (out[j + 1 ..]) |other| if (edge == other) return null;
     return out;
 }
 fn known(nl: *const Netlist, edge: EdgeId, model: []const u8) bool {
@@ -190,4 +202,6 @@ fn map(c: *const Canvas, nl: *const Netlist, members: Branch, net: u32, pins: []
     return out;
 }
 
-test { _ = @import("resistor_downstream_test.zig"); }
+test {
+    _ = @import("resistor_downstream_test.zig");
+}

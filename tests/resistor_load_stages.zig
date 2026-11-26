@@ -102,7 +102,6 @@ const ag1052 =
     \\*@ weak role q_bar output
 ;
 
-
 const Frame = [16]np.Pt;
 const Stage = struct {
     deck: []const u8,
@@ -111,26 +110,27 @@ const Stage = struct {
 };
 const stages = [_]Stage{
     .{ .deck = ag1048, .names = .{ "m19", "r1", "r2", "m15", "m16", "m20" }, .binding = .{
-        .{ "net3", "net3", "vdd", "vdd" }, .{ "net3", "vout1", "", "" }, .{ "net3", "vout2", "", "" },
+        .{ "net3", "net3", "vdd", "vdd" },  .{ "net3", "vout1", "", "" },       .{ "net3", "vout2", "", "" },
         .{ "vout1", "vm1", "net1", "vss" }, .{ "vout2", "vp1", "net1", "vss" }, .{ "net1", "vb2", "vss", "vss" },
     } },
     .{ .deck = ag1052, .names = .{ "m12", "r3", "r4", "m13", "m14", "m15" }, .binding = .{
-        .{ "net4", "net4", "vdd", "vdd" }, .{ "net4", "vm2", "", "" }, .{ "net4", "vp2", "", "" },
+        .{ "net4", "net4", "vdd", "vdd" }, .{ "net4", "vm2", "", "" },         .{ "net4", "vp2", "", "" },
         .{ "vm2", "net9", "net3", "vss" }, .{ "vp2", "net15", "net3", "vss" }, .{ "net3", "vb2", "vss", "vss" },
     } },
     .{ .deck = ag1052, .names = .{ "m8", "r1", "r2", "m9", "m10", "m11" }, .binding = .{
-        .{ "net7", "net7", "vdd", "vdd" }, .{ "net7", "net9", "", "" }, .{ "net7", "net15", "", "" },
+        .{ "net7", "net7", "vdd", "vdd" },  .{ "net7", "net9", "", "" },          .{ "net7", "net15", "", "" },
         .{ "net9", "net1", "net2", "vss" }, .{ "net15", "net11", "net2", "vss" }, .{ "net2", "vb2", "vss", "vss" },
     } },
 };
 const trees = [_][]const usize{ &.{ 0, 1, 3, 5 }, &.{ 4, 7 }, &.{ 6, 10 }, &.{ 9, 12, 13 } };
 const corridors = [_][2]usize{ .{ 3, 5 }, .{ 4, 7 }, .{ 6, 10 } };
 const source: Frame = .{
-    .{ .x = 260, .y = 20 }, .{ .x = 290, .y = 0 }, .{ .x = 260, .y = -20 },
-    .{ .x = 220, .y = 40 }, .{ .x = 220, .y = 80 }, .{ .x = 300, .y = 40 }, .{ .x = 300, .y = 80 },
-    .{ .x = 220, .y = 120 }, .{ .x = 190, .y = 140 }, .{ .x = 220, .y = 160 },
-    .{ .x = 300, .y = 120 }, .{ .x = 330, .y = 140 }, .{ .x = 300, .y = 160 },
-    .{ .x = 260, .y = 200 }, .{ .x = 230, .y = 220 }, .{ .x = 260, .y = 240 },
+    .{ .x = 260, .y = 20 },  .{ .x = 290, .y = 0 },   .{ .x = 260, .y = -20 },
+    .{ .x = 220, .y = 40 },  .{ .x = 220, .y = 80 },  .{ .x = 300, .y = 40 },
+    .{ .x = 300, .y = 80 },  .{ .x = 220, .y = 120 }, .{ .x = 190, .y = 140 },
+    .{ .x = 220, .y = 160 }, .{ .x = 300, .y = 120 }, .{ .x = 330, .y = 140 },
+    .{ .x = 300, .y = 160 }, .{ .x = 260, .y = 200 }, .{ .x = 230, .y = 220 },
+    .{ .x = 260, .y = 240 },
 };
 
 // ---- private ----
@@ -356,7 +356,6 @@ test "resistor load stages: straight-ink oracle rejects named gaps and accepts a
     try testing.expect(!straight(&p, 0, 1));
 }
 
-
 test "resistor load stages: linked pair owns separate local axes and matching semantic rows" {
     const lib = try support.library(testing.allocator);
     defer support.freeLibrary(testing.allocator, lib);
@@ -415,67 +414,67 @@ test "resistor load stages: both complete interstage output trees preserve sourc
     }
 }
 
-
 test "resistor load stages: reversed resistor cards keep the same source corridors" {
-    const gpa=testing.allocator;
+    const gpa = testing.allocator;
     for (stages) |stage| {
-        var reversed=try gpa.dupe(u8,stage.deck);
+        var reversed = try gpa.dupe(u8, stage.deck);
         defer gpa.free(reversed);
         for (1..3) |i| {
-            const before=try std.fmt.allocPrint(gpa,"{s} {s} {s}",.{stage.names[i],stage.binding[i][0],stage.binding[i][1]});
+            const before = try std.fmt.allocPrint(gpa, "{s} {s} {s}", .{ stage.names[i], stage.binding[i][0], stage.binding[i][1] });
             defer gpa.free(before);
-            const after=try std.fmt.allocPrint(gpa,"{s} {s} {s}",.{stage.names[i],stage.binding[i][1],stage.binding[i][0]});
+            const after = try std.fmt.allocPrint(gpa, "{s} {s} {s}", .{ stage.names[i], stage.binding[i][1], stage.binding[i][0] });
             defer gpa.free(after);
             // Parse is case-insensitive; normalize the literal deck for this
             // transformation, preserving values and every other card.
-            for(reversed) |*c| c.*=std.ascii.toLower(c.*);
-            const next=try std.mem.replaceOwned(u8,gpa,reversed,before,after);
-            gpa.free(reversed); reversed=next;
+            for (reversed) |*c| c.* = std.ascii.toLower(c.*);
+            const next = try std.mem.replaceOwned(u8, gpa, reversed, before, after);
+            gpa.free(reversed);
+            reversed = next;
         }
-        const lib=try support.library(gpa);
-        defer support.freeLibrary(gpa,lib);
-        for([_]bool{false,true}) |compact| {
-            var p=try np.place(gpa,&.{.layout=.{.compact=compact,.shelf=8}},lib,&.{reversed},null);
+        const lib = try support.library(gpa);
+        defer support.freeLibrary(gpa, lib);
+        for ([_]bool{ false, true }) |compact| {
+            var p = try np.place(gpa, &.{ .layout = .{ .compact = compact, .shelf = 8 } }, lib, &.{reversed}, null);
             defer p.deinit();
-            const ids=try pins(&p,lib,stage);
-            var frame: Frame=undefined;
-            for(ids,&frame) |id,*point| point.*=p.pin_xy[id];
+            const ids = try pins(&p, lib, stage);
+            var frame: Frame = undefined;
+            for (ids, &frame) |id, *point| point.* = p.pin_xy[id];
             try testing.expect(geometry(frame));
-            try clear(&p,lib,stage);
-            for(corridors) |pair| try testing.expect(straight(&p,ids[pair[0]],ids[pair[1]]));
-            try electrical(&p,lib);
+            try clear(&p, lib, stage);
+            for (corridors) |pair| try testing.expect(straight(&p, ids[pair[0]], ids[pair[1]]));
+            try electrical(&p, lib);
         }
     }
 }
 
 test "resistor load stages: shifted long caller frames preserve actual leads and class identity" {
-    const gpa=testing.allocator;
-    const lib=try support.library(gpa);
-    defer support.freeLibrary(gpa,lib);
-    const r=try lib.register(.{.name="load_shift_r",.terminals=&.{
-        .{.name="a",.at=.{.x = -50,.y=15},.side=.left},
-        .{.name="b",.at=.{.x=30,.y=15},.side=.right},
-    },.draw=&.{.{.line=.{.a=.{.x = -50,.y=15},.b=.{.x=30,.y=15}}}}});
-    const m=try lib.register(.{.name="load_shift_m",.terminals=&.{
-        .{.name="d",.at=.{.x=50,.y=15},.side=.right},
-        .{.name="g",.at=.{.x=10,.y = -15},.side=.up},
-        .{.name="s",.at=.{.x = -30,.y=15},.side=.left},
-        .{.name="b",.at=.{.x=10,.y=15},.hidden=true},
-    },.draw=&.{
-        .{.line=.{.a=.{.x = -30,.y=15},.b=.{.x=50,.y=15}}},
-        .{.line=.{.a=.{.x=10,.y = -15},.b=.{.x=10,.y=15}}},
-    }});
-    const deck=ag1048++"\n*@ class m19 load_shift_m\n*@ class m15 load_shift_m\n*@ class m16 load_shift_m\n*@ class m20 load_shift_m\n*@ class r1 load_shift_r\n*@ class r2 load_shift_r\n";
-    for([_]bool{false,true}) |compact| {
-        var p=try np.place(gpa,&.{.layout=.{.compact=compact,.shelf=8}},lib,&.{deck},null);
+    const gpa = testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    const r = try lib.register(.{ .name = "load_shift_r", .terminals = &.{
+        .{ .name = "a", .at = .{ .x = -50, .y = 15 }, .side = .left },
+        .{ .name = "b", .at = .{ .x = 30, .y = 15 }, .side = .right },
+    }, .draw = &.{.{ .line = .{ .a = .{ .x = -50, .y = 15 }, .b = .{ .x = 30, .y = 15 } } }} });
+    const m = try lib.register(.{ .name = "load_shift_m", .terminals = &.{
+        .{ .name = "d", .at = .{ .x = 50, .y = 15 }, .side = .right },
+        .{ .name = "g", .at = .{ .x = 10, .y = -15 }, .side = .up },
+        .{ .name = "s", .at = .{ .x = -30, .y = 15 }, .side = .left },
+        .{ .name = "b", .at = .{ .x = 10, .y = 15 }, .hidden = true },
+    }, .draw = &.{
+        .{ .line = .{ .a = .{ .x = -30, .y = 15 }, .b = .{ .x = 50, .y = 15 } } },
+        .{ .line = .{ .a = .{ .x = 10, .y = -15 }, .b = .{ .x = 10, .y = 15 } } },
+    } });
+    const deck = ag1048 ++ "\n*@ class m19 load_shift_m\n*@ class m15 load_shift_m\n*@ class m16 load_shift_m\n*@ class m20 load_shift_m\n*@ class r1 load_shift_r\n*@ class r2 load_shift_r\n";
+    for ([_]bool{ false, true }) |compact| {
+        var p = try np.place(gpa, &.{ .layout = .{ .compact = compact, .shelf = 8 } }, lib, &.{deck}, null);
         defer p.deinit();
-        const ids=try pins(&p,lib,stages[0]);
-        var frame: Frame=undefined;
-        for(ids,&frame) |id,*point| point.*=p.pin_xy[id];
+        const ids = try pins(&p, lib, stages[0]);
+        var frame: Frame = undefined;
+        for (ids, &frame) |id, *point| point.* = p.pin_xy[id];
         try testing.expect(geometry(frame));
-        try clear(&p,lib,stages[0]);
-        for(stages[0].names,0..) |name,i| try testing.expectEqual(if(i==1 or i==2) r else m,p.dev_class[np.checks.deviceIn(&p,name).?]);
-        for(corridors) |pair| try testing.expect(straight(&p,ids[pair[0]],ids[pair[1]]));
-        try electrical(&p,lib);
+        try clear(&p, lib, stages[0]);
+        for (stages[0].names, 0..) |name, i| try testing.expectEqual(if (i == 1 or i == 2) r else m, p.dev_class[np.checks.deviceIn(&p, name).?]);
+        for (corridors) |pair| try testing.expect(straight(&p, ids[pair[0]], ids[pair[1]]));
+        try electrical(&p, lib);
     }
 }

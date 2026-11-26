@@ -90,8 +90,7 @@ pub fn held(nl: *const Netlist, verdicts: []const ?hints.Verdict, a: EdgeId, b: 
     for (nl.hints, verdicts) |hint, verdict| {
         if ((verdict orelse continue).state != .honoured) continue;
         switch (hint.verb) {
-            .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric, .axis,
-            .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
+            .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric, .axis, .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
             .off => return true,
             else => continue,
         }

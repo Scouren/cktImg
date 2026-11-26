@@ -122,7 +122,9 @@ pub fn findBank(nl: *const Netlist, roles: []const sch.Role, rank: []const u32, 
 pub fn chains(nl: *const Netlist, roles: []const sch.Role, pair: Pair) ?Chain {
     const c = &nl.graph;
     var ends: [2][2]VertexId = undefined;
-    for (pair, &ends) |bank, *out| for (bank.pins[0][0..2], out) |pin, *net| { net.* = c.members(bank.devices[0])[pin]; };
+    for (pair, &ends) |bank, *out| for (bank.pins[0][0..2], out) |pin, *net| {
+        net.* = c.members(bank.devices[0])[pin];
+    };
     for (ends[0]) |a| for (ends[1]) |b| {
         var count: usize = 0;
         for (c.edges.items(.kind), 0..) |kind, d| {
@@ -163,17 +165,20 @@ pub fn chains(nl: *const Netlist, roles: []const sch.Role, pair: Pair) ?Chain {
     }
     for (out.devices, 0..) |d, i| {
         for (out.devices[0..i]) |other_d| if (d == other_d) return null;
-        for (pair) |bank| for (bank.devices) |member| { if (d == member) return null; };
+        for (pair) |bank| for (bank.devices) |member| {
+            if (d == member) return null;
+        };
     }
     return out;
 }
-
 
 /// Returns the unique direct/cross switches of a complete chain context.
 pub fn bridges(nl: *const Netlist, roles: []const sch.Role, pair: Pair) ?Bridges {
     _ = chains(nl, roles, pair) orelse return null;
     var ends: [2][2]netlist.VertexId = undefined;
-    for (pair, &ends) |bank, *out| for (bank.pins[0][0..2], out) |pin, *net| { net.* = nl.graph.members(bank.devices[0])[pin]; };
+    for (pair, &ends) |bank, *out| for (bank.pins[0][0..2], out) |pin, *net| {
+        net.* = nl.graph.members(bank.devices[0])[pin];
+    };
     var out: Bridges = .{ .parent = pair[0].devices[0], .devices = undefined, .first = undefined };
     for ([_][4]usize{ .{ 0, 0, 1, 0 }, .{ 0, 1, 1, 1 }, .{ 0, 0, 1, 1 }, .{ 1, 0, 0, 1 } }, 0..) |ij, i| {
         const a, const b = .{ ends[ij[0]][ij[1]], ends[ij[2]][ij[3]] };
@@ -188,7 +193,9 @@ pub fn bridges(nl: *const Netlist, roles: []const sch.Role, pair: Pair) ?Bridges
         }
         if (count != 1) return null;
     }
-    for (out.devices, 0..) |d, i| for (out.devices[0..i]) |other| { if (d == other) return null; };
+    for (out.devices, 0..) |d, i| for (out.devices[0..i]) |other| {
+        if (d == other) return null;
+    };
     return out;
 }
 
@@ -212,10 +219,14 @@ pub fn preferred(nl: *const Netlist, roles: []const sch.Role, rank: []const u32)
     }
     if (count != pair.len) return null;
     if (rank[pair[0].devices[0].index()] > rank[pair[1].devices[0].index()]) std.mem.swap(Bank, &pair[0], &pair[1]);
-    for (pair[0].devices) |a| for (pair[1].devices) |b| { if (a == b) return null; };
+    for (pair[0].devices) |a| for (pair[1].devices) |b| {
+        if (a == b) return null;
+    };
     const left_ends = c.members(pair[0].devices[0]);
     const right_ends = c.members(pair[1].devices[0]);
-    for (pair[0].pins[0][0..2]) |x| for (pair[1].pins[0][0..2]) |y| { if (left_ends[x] == right_ends[y]) return null; };
+    for (pair[0].pins[0][0..2]) |x| for (pair[1].pins[0][0..2]) |y| {
+        if (left_ends[x] == right_ends[y]) return null;
+    };
     const cs = chains(nl, roles, pair) orelse return null;
     const bs = bridges(nl, roles, pair) orelse return null;
     var out: Reflection = undefined;
@@ -227,7 +238,9 @@ pub fn preferred(nl: *const Netlist, roles: []const sch.Role, rank: []const u32)
     }
     out[11] = .{ bs.devices[2], bs.devices[3] };
     for (out, 0..) |ends, i| for (out[0..i]) |old| {
-        for (ends) |a| for (old) |b| { if (a == b) return null; };
+        for (ends) |a| for (old) |b| {
+            if (a == b) return null;
+        };
     };
     return out;
 }
@@ -236,7 +249,9 @@ pub fn preferred(nl: *const Netlist, roles: []const sch.Role, rank: []const u32)
 
 fn private(roles: []const sch.Role, ends: [2][2]VertexId, net: VertexId) bool {
     if (roles[net.index()].isRail()) return false;
-    for (ends) |pair| for (pair) |other_net| { if (net == other_net) return false; };
+    for (ends) |pair| for (pair) |other_net| {
+        if (net == other_net) return false;
+    };
     return true;
 }
 

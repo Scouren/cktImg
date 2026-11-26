@@ -94,7 +94,9 @@ fn attempt(s: *sch.Schematic, nl: *const netlist.Netlist, sk: *const skeleton.Sk
     var before: [6]sch.DeviceInfo = undefined;
     for (owner.devices, &before) |d, *old| old.* = s.devices.get(d.index());
     var committed = false;
-    defer if (!committed) { for (owner.devices, before) |d, old| s.devices.set(d.index(), old); };
+    defer if (!committed) {
+        for (owner.devices, before) |d, old| s.devices.set(d.index(), old);
+    };
     const a = Pt.round(at[pair[0].devices[0].index()]);
     const b = Pt.round(at[pair[1].devices[0].index()]);
     const axis2 = @as(i64, a.x) + b.x;
@@ -124,7 +126,10 @@ fn attempt(s: *sch.Schematic, nl: *const netlist.Netlist, sk: *const skeleton.Sk
             const pin = bank.pins[i][0];
             const p = anchor.add(tip(s, d.index(), pin));
             const distance = @abs(2 * @as(i64, p.x) - axis2);
-            if (distance < nearest) { nearest = distance; columns[bi] = p.x; }
+            if (distance < nearest) {
+                nearest = distance;
+                columns[bi] = p.x;
+            }
         }
     }
     var proposed: [6]Pt = undefined;
@@ -146,7 +151,9 @@ fn attempt(s: *sch.Schematic, nl: *const netlist.Netlist, sk: *const skeleton.Sk
         var last: ?i32 = null;
         for (row * 3..row * 3 + 3) |i| for (0..2) |j| {
             const p = proposed[i].add(tip(s, owner.devices[i].index(), end(owner, i, j)));
-            if (last) |x| { if (if (forward) p.x <= x else p.x >= x) return false; }
+            if (last) |x| {
+                if (if (forward) p.x <= x else p.x >= x) return false;
+            }
             last = p.x;
         };
     }
@@ -190,14 +197,18 @@ fn turn(s: *sch.Schematic, nl: *const netlist.Netlist, owner: Owner, i: usize, f
     return false;
 }
 
-fn end(owner: Owner, i: usize, j: usize) u1 { return if (j == 0) owner.first[i] else 1 - owner.first[i]; }
+fn end(owner: Owner, i: usize, j: usize) u1 {
+    return if (j == 0) owner.first[i] else 1 - owner.first[i];
+}
 
 fn tip(s: *const sch.Schematic, d: u32, pin: usize) Pt {
     const info = s.devices.get(d);
     return info.orient.apply(s.lib.at(info.class).terminals[pin].at).sub(info.grid);
 }
 
-fn current(s: *const sch.Schematic, d: u32, pin: usize) Pt { return Pt.round(s.xy[s.deviceNode(d).?]).add(tip(s, d, pin)); }
+fn current(s: *const sch.Schematic, d: u32, pin: usize) Pt {
+    return Pt.round(s.xy[s.deviceNode(d).?]).add(tip(s, d, pin));
+}
 
 fn contains(owner: Owner, d: usize) bool {
     for (owner.devices) |edge| if (edge.index() == d) return true;
@@ -211,4 +222,6 @@ fn keep(storage: [][2]i32, count: *usize, a: i32, b: i32) void {
     count.* += 1;
 }
 
-test { _ = @import("coil_chain_place_test.zig"); }
+test {
+    _ = @import("coil_chain_place_test.zig");
+}

@@ -119,7 +119,9 @@ fn prepare(s: *sch.Schematic, nl: *const Netlist, sk: *const Skeleton, len: Leng
     assert(owned.len == saved.len);
     assert(at.len == sk.drawn.len and at.len == s.devices.len);
     var accepted = false;
-    defer if (!accepted) for (owned, saved) |edge, row| { s.devices.set(edge.index(), row); };
+    defer if (!accepted) for (owned, saved) |edge, row| {
+        s.devices.set(edge.index(), row);
+    };
     for (outputs) |group| {
         const points = tanks.propose(s, nl, len, group) orelse return false;
         if (!located(at, group.block, &.{ group.pair.coil, group.pair.cap }, &points)) return false;

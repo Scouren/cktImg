@@ -41,7 +41,9 @@ pub const Geo = struct { xs: []const i32, ys: []const i32 };
 /// callers own this immediate request slice; no cell or device row changes.
 pub const Room = struct { anchor: EdgeId, bounds: library.Rect };
 
-comptime { assert(@sizeOf(Room) == 20); }
+comptime {
+    assert(@sizeOf(Room) == 20);
+}
 
 /// Each lattice column as wide as its widest device's reach on each side,
 /// plus room for a port, label or rail symbol (its stub and a unit) where a

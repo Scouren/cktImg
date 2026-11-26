@@ -74,7 +74,6 @@ pub fn leadSide(s: *const sch.Schematic, d: u32, pin: u8) ?Side {
     return if (body and attached and c.side(pin, o) == actual) actual else null;
 }
 
-
 // ---- private ----
 
 fn project(p: Pt, direction: Side) i32 {

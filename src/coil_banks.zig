@@ -89,9 +89,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         const shelf = sk.shelf[d];
         const blocked = blocked: for (pair) |bank| {
             for (bank.devices) |edge| {
-            const i = edge.index();
-            if (!sk.drawn[i] or ats[i] != null or sk.shelf[i] != shelf or held(nl, sk, st, i)) break :blocked true;
-            if (nl.defOf(edge)) |def| for (def.sides) |side| if (side != null) break :blocked true;
+                const i = edge.index();
+                if (!sk.drawn[i] or ats[i] != null or sk.shelf[i] != shelf or held(nl, sk, st, i)) break :blocked true;
+                if (nl.defOf(edge)) |def| for (def.sides) |side| if (side != null) break :blocked true;
             }
         } else false;
         if (blocked) continue;
@@ -128,7 +128,6 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
 }
 
 // ---- private ----
-
 
 fn image(nl: *const Netlist, st: *const structure.Structure, a: Bank, b: *Bank) bool {
     if (st.device_mate[a.devices[0].index()] == b.devices[1].index()) {

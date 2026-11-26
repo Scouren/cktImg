@@ -62,7 +62,9 @@ pub const Batch = struct {
     }
 };
 
-comptime { assert(@sizeOf(Owner) == 36); }
+comptime {
+    assert(@sizeOf(Owner) == 36);
+}
 
 /// Collects unheld topology before any geometry writes. Parent keys remain
 /// stable if the bank owner later removes unsuccessful placements. All
@@ -78,7 +80,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         const shared = shared: for (parents) |other| {
             if (other[0].devices[0] == owner.parent) continue;
             const candidate = topology(nl, s.roles, other) orelse continue;
-            for (owner.devices) |d| for (candidate.devices) |e| { if (d == e) break :shared true; };
+            for (owner.devices) |d| for (candidate.devices) |e| {
+                if (d == e) break :shared true;
+            };
         } else false;
         if (shared) continue;
         const blocked = blocked: for (owner.devices, 0..) |edge, i| {
@@ -116,4 +120,3 @@ pub fn held(nl: *const Netlist, sk: *const skeleton.Skeleton, st: *const structu
     }
     return false;
 }
-

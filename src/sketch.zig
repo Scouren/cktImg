@@ -342,7 +342,9 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     @memset(at, .{ 0, 0 });
     var placed_all = true;
     var block_reserved = false;
-    const fresh = along == null and for (ats) |fixed| { if (fixed != null) break false; } else true;
+    const fresh = along == null and for (ats) |fixed| {
+        if (fixed != null) break false;
+    } else true;
     if (fresh and (block_loads.groups.items.len > 0 or block_inputs.groups.items.len > 0)) {
         block_reserved = try block_rooms.lattice(gpa, s, nl, sk, len, at, &block_loads, &block_inputs, &tanks.pairs);
         placed_all = false;
@@ -563,7 +565,9 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []cons
         const base = sch.form(info.items(.orientation)[d]);
         const clamp = if (vertical) null else if (antiparallel.placedMate(s, nl, sk, ats, EdgeId.from(d))) |m| m.index() else null;
         const gate_side = if (vertical) null else if (clamp) |m|
-            (if (sk.y[d] < sk.y[m]) Side.up else Side.down) else controlSide(nl, s.roles, sk, @intCast(d));
+            (if (sk.y[d] < sk.y[m]) Side.up else Side.down)
+        else
+            controlSide(nl, s.roles, sk, @intCast(d));
         for (flips) |f| {
             if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical, gate_side, clamp)) continue;
             info.items(.flip_x)[d] = f[0];

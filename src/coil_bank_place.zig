@@ -106,7 +106,9 @@ pub fn axis(s: *const sch.Schematic, pairs: []const Pair) ?i32 {
         for (a, b) |x, y| {
             const sum = @as(i64, x.x) + y.x;
             if (sum < std.math.minInt(i32) or sum > std.math.maxInt(i32) or x.y != y.y) return null;
-            if (result) |old| { if (old != sum) return null; } else result = @intCast(sum);
+            if (result) |old| {
+                if (old != sum) return null;
+            } else result = @intCast(sum);
         }
     }
     return result;
@@ -116,10 +118,14 @@ pub fn axis(s: *const sch.Schematic, pairs: []const Pair) ?i32 {
 
 fn attempt(s: *sch.Schematic, nl: *const netlist.Netlist, sk: *const skeleton.Skeleton, ats: []const ?pinned.At, len: Lengths, at: [][2]f32, pair: Pair, core: Rect, axis2: i32, row: i32, first_left: bool) bool {
     var before: [10]sch.DeviceInfo = undefined;
-    for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| { before[bi * 5 + i] = s.devices.get(d.index()); };
+    for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| {
+        before[bi * 5 + i] = s.devices.get(d.index());
+    };
     var committed = false;
     defer if (!committed) {
-        for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| { s.devices.set(d.index(), before[bi * 5 + i]); };
+        for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| {
+            s.devices.set(d.index(), before[bi * 5 + i]);
+        };
     };
     for (pair, 0..) |bank, bi| {
         const left = (bi == 0) == first_left;
@@ -148,7 +154,9 @@ fn attempt(s: *sch.Schematic, nl: *const netlist.Netlist, sk: *const skeleton.Sk
             if (candidate.intersects(s.boxAt(other.index(), proposed[bj * 5 + j]))) return false;
         };
     };
-    for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| { at[d.index()] = proposed[bi * 5 + i].toF(); };
+    for (pair, 0..) |bank, bi| for (bank.devices, 0..) |d, i| {
+        at[d.index()] = proposed[bi * 5 + i].toF();
+    };
     committed = true;
     return true;
 }
@@ -233,7 +241,10 @@ fn points(s: *const sch.Schematic, bank: Bank, out: *[14]Pt) void {
     for (bank.devices, 0..) |d, i| {
         const at = Pt.round(s.xy[s.deviceNode(d.index()).?]);
         const count: usize = if (i == 2) 2 else 3;
-        for (0..count) |j| { out[next] = at.add(tip(s, d.index(), pin(bank, i, j))); next += 1; }
+        for (0..count) |j| {
+            out[next] = at.add(tip(s, d.index(), pin(bank, i, j)));
+            next += 1;
+        }
     }
     assert(next == out.len);
 }

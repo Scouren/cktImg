@@ -50,8 +50,8 @@ fn pins(p: *const np.Placed, lib: *const np.Library, group: usize) ![9]usize {
     const ns = nets[group];
     const named = [9][2][]const u8{
         .{ ds[0], ns[0] }, .{ ds[0], ns[1] }, .{ ds[0], ns[2] },
-        .{ ds[1], ns[0] }, .{ ds[1], ns[3] }, .{ ds[2], ns[1] }, .{ ds[2], ns[4] },
-        .{ ds[3], ns[3] }, .{ ds[3], ns[4] },
+        .{ ds[1], ns[0] }, .{ ds[1], ns[3] }, .{ ds[2], ns[1] },
+        .{ ds[2], ns[4] }, .{ ds[3], ns[3] }, .{ ds[3], ns[4] },
     };
     var result: [9]usize = undefined;
     for (named, &result) |want, *out| {
@@ -139,7 +139,8 @@ test "CT series tanks: reordered declaration and reversed passive cards preserve
         .{ "ct_inductor n1 n2 n3 params:", "ct_inductor n3 n2 n1 params:" },
         .{ "XL1 P4 M4 Vdd ct_inductor", "XL1 Vdd M4 P4 ct_inductor" },
         .{ "XL2 P3 M3 Vdd ct_inductor", "XL2 Vdd M3 P3 ct_inductor" },
-        .{ "C1 M2 P2 1p", "C1 P2 M2 1p" }, .{ "C2 M1 P1 1p", "C2 P1 M1 1p" },
+        .{ "C1 M2 P2 1p", "C1 P2 M2 1p" },
+        .{ "C2 M1 P1 1p", "C2 P1 M1 1p" },
         .{ "LS1 P2 P4 1n\nLS2 M2 M4 1n", "LS2 M4 M2 1n\nLS1 P4 P2 1n" },
         .{ "LS3 P3 P1 1n\nLS4 M3 M1 1n", "LS4 M1 M3 1n\nLS3 P1 P3 1n" },
     }) |pair| {
@@ -153,13 +154,13 @@ test "CT series tanks: reordered declaration and reversed passive cards preserve
         var p = try np.place(testing.allocator, &.{ .layout = .{ .compact = compact, .shelf = 8 } }, lib, &.{changed}, null);
         defer p.deinit();
         for (groups, 0..) |group, index| {
-            errdefer std.debug.print("series reordered {s}, compact={}\n", .{group[0], compact});
+            errdefer std.debug.print("series reordered {s}, compact={}\n", .{ group[0], compact });
             const actual = try pins(&p, lib, index);
             var points: Frame = undefined;
             for (actual, &points) |pin, *point| point.* = p.pin_xy[pin];
             try testing.expect(geometry(points));
-            for ([_][2]usize{ .{0,3}, .{1,5}, .{4,7}, .{6,8} }) |pair| {
-                try testing.expect(try ink.connected(testing.allocator, &p, &.{actual[pair[0]], actual[pair[1]]}));
+            for ([_][2]usize{ .{ 0, 3 }, .{ 1, 5 }, .{ 4, 7 }, .{ 6, 8 } }) |pair| {
+                try testing.expect(try ink.connected(testing.allocator, &p, &.{ actual[pair[0]], actual[pair[1]] }));
             }
         }
     }
@@ -184,7 +185,7 @@ test "CT series tanks: explicit absolute passive pose remains honoured" {
         const verdicts = try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib);
         try testing.expectEqual(np.hints.State.honoured, verdicts[6].state);
         const d = np.checks.deviceIn(&p, "ls1").?;
-        try testing.expectEqualDeep(np.Pt{ .x=-100*lib.unit, .y=-100*lib.unit }, p.dev_pos[d]);
+        try testing.expectEqualDeep(np.Pt{ .x = -100 * lib.unit, .y = -100 * lib.unit }, p.dev_pos[d]);
         try testing.expectEqualDeep(np.library.Orient.r0, p.dev_orient[d]);
     }
 }

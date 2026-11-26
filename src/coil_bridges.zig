@@ -64,7 +64,9 @@ pub const Batch = struct {
     }
 };
 
-comptime { assert(@sizeOf(Owner) == 24); }
+comptime {
+    assert(@sizeOf(Owner) == 24);
+}
 
 /// Collects complete four-switch contexts before geometry mutation. The
 /// parent collector already enforces outer-net style and bank precedence.
@@ -80,7 +82,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         const shared = shared: for (parents) |other| {
             if (other[0].devices[0] == owner.parent) continue;
             const candidate = network.bridges(nl, s.roles, other) orelse continue;
-            for (owner.devices) |d| for (candidate.devices) |e| { if (d == e) break :shared true; };
+            for (owner.devices) |d| for (candidate.devices) |e| {
+                if (d == e) break :shared true;
+            };
         } else false;
         if (shared) continue;
         const blocked = blocked: for (owner.devices, 0..) |edge, i| {
@@ -147,7 +151,6 @@ pub fn orders(s: *const sch.Schematic, parents: []const banks.Pair, owners: []co
 
 // ---- private ----
 
-
 fn parent(parents: []const banks.Pair, owner: Owner) ?banks.Pair {
     for (parents) |pair| if (pair[0].devices[0] == owner.parent) return pair;
     return null;
@@ -157,7 +160,9 @@ fn attempt(s: *sch.Schematic, nl: *const Netlist, sk: *const skeleton.Skeleton, 
     var old: [4]sch.DeviceInfo = undefined;
     for (owner.devices, &old) |d, *row| row.* = s.devices.get(d.index());
     var committed = false;
-    defer if (!committed) { for (owner.devices, old) |d, row| s.devices.set(d.index(), row); };
+    defer if (!committed) {
+        for (owner.devices, old) |d, row| s.devices.set(d.index(), row);
+    };
     const ca, const cb = .{ Pt.round(at[pair[0].devices[0].index()]), Pt.round(at[pair[1].devices[0].index()]) };
     const axis2 = @as(i64, ca.x) + cb.x;
     if (ca.x == cb.x or ca.y != cb.y or @mod(axis2, 2) != 0) return false;
@@ -222,7 +227,10 @@ fn turn(s: *sch.Schematic, nl: *const Netlist, owner: Owner, i: usize, forward: 
         if (i < 2) {
             if (a.y != b.y or (if (forward) a.x >= b.x else a.x <= b.x) or @mod(@as(i64, a.x) + b.x, 2) != 0) continue;
             if (s.pinSide(d, owner.first[i]) != (if (forward) library.Side.left else library.Side.right) or s.pinSide(d, 1 - owner.first[i]) != (if (forward) library.Side.right else library.Side.left)) continue;
-            if (skip) { skip = false; continue; }
+            if (skip) {
+                skip = false;
+                continue;
+            }
             anchor = .{ .x = @intCast(@divTrunc(@as(i64, a.x) + b.x, 2)), .y = a.y };
         } else {
             if (a.x != b.x or a.y >= b.y or s.pinSide(d, owner.first[i]) != .up or s.pinSide(d, 1 - owner.first[i]) != .down) continue;
@@ -247,14 +255,18 @@ fn turn(s: *sch.Schematic, nl: *const Netlist, owner: Owner, i: usize, forward: 
     return false;
 }
 
-fn end(owner: Owner, i: usize, j: usize) u1 { return if (j == 0) owner.first[i] else 1 - owner.first[i]; }
+fn end(owner: Owner, i: usize, j: usize) u1 {
+    return if (j == 0) owner.first[i] else 1 - owner.first[i];
+}
 
 fn tip(s: *const sch.Schematic, d: u32, pin: usize) Pt {
     const info = s.devices.get(d);
     return info.orient.apply(s.lib.at(info.class).terminals[pin].at).sub(info.grid);
 }
 
-fn current(s: *const sch.Schematic, d: u32, pin: usize) Pt { return Pt.round(s.xy[s.deviceNode(d).?]).add(tip(s, d, pin)); }
+fn current(s: *const sch.Schematic, d: u32, pin: usize) Pt {
+    return Pt.round(s.xy[s.deviceNode(d).?]).add(tip(s, d, pin));
+}
 
 fn contains(owner: Owner, d: usize) bool {
     for (owner.devices) |edge| if (edge.index() == d) return true;
@@ -268,4 +280,6 @@ fn keep(storage: [][2]i32, count: *usize, a: i32, b: i32) void {
     count.* += 1;
 }
 
-test { _ = @import("coil_bridges_test.zig"); }
+test {
+    _ = @import("coil_bridges_test.zig");
+}

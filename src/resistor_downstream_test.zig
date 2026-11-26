@@ -78,15 +78,15 @@ fn qualified(deck: []const u8, extra: []const u8, expected: usize, copies: usize
     // source tests separately exercise real parser/admission behavior.
     if (extra.len != 0) {
         try testing.expect(nl.hints.len != 0);
-        if (dv[dv.len-1] == null) sv[sv.len-1] = if (admitted) .of(.ok) else .of(.unknown_name);
+        if (dv[dv.len - 1] == null) sv[sv.len - 1] = if (admitted) .of(.ok) else .of(.unknown_name);
     }
     var pair: loads.Pair = undefined;
-    for (names, 0..) |name, i| pair[i/6][i%6] = nl.device(name).?;
+    for (names, 0..) |name, i| pair[i / 6][i % 6] = nl.device(name).?;
     var owners = [_]loads.Pair{ pair, pair };
     if (copies == 2) for (names, 0..) |name, i| {
         const second = try std.fmt.allocPrint(a, "{s}_b", .{name});
-        owners[1][i/6][i%6] = nl.device(second).?;
-        try testing.expect(owners[1][i/6][i%6] != owners[0][i/6][i%6]);
+        owners[1][i / 6][i % 6] = nl.device(second).?;
+        try testing.expect(owners[1][i / 6][i % 6] != owners[0][i / 6][i % 6]);
     };
     const result = routing.qualify(&nl, roles, owners[0..copies], sv, tv, dv, &lines);
     try testing.expectEqual(expected, result.len);
@@ -120,10 +120,10 @@ test "resistor downstream: raw extra pins aliases and every supply/body boundary
 
 test "resistor downstream: original net and every external member geometry request wins" {
     for ([_][]const u8{
-        "*@ label c", "*@ wire c trunk", "*@ role c input\n*@ port c left", "*@ first c",
-        "*@ face mi g right", "*@ face mf g right", "*@ face mp g right", "*@ upright ri",
-        "*@ at mj 100 100", "*@ cell mg 2 2", "*@ group bank mq mp", "*@ order ri rj",
-        "*@ grouping off", "*@ symmetry off",
+        "*@ label c",         "*@ wire c trunk",    "*@ role c input\n*@ port c left", "*@ first c",
+        "*@ face mi g right", "*@ face mf g right", "*@ face mp g right",              "*@ upright ri",
+        "*@ at mj 100 100",   "*@ cell mg 2 2",     "*@ group bank mq mp",             "*@ order ri rj",
+        "*@ grouping off",    "*@ symmetry off",
     }) |line| try qualified(cards, line, 0, 1, true);
     try qualified(cards, "*@ face absent g left", 1, 1, false);
     try qualified(cards, "*@ face m1 g left", 1, 1, true); // Successful owner already owns this earlier qualification.

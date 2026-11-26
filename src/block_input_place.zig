@@ -81,8 +81,8 @@ pub fn propose(s: *sch.Schematic, nl: *const Netlist, len: Lengths, group: Group
         if (!turn(s, nl, edge, first, if (i < 2 or i == 4) u else w, offset)) return null;
     }
     // Shared planes are actual lead constraints, including custom lengths.
-    if (project(tip(s, edges[0], 1-input.nearPin(nl, group, 0)), u) != project(tip(s, edges[1], 1-input.nearPin(nl, group, 1)), u)) return null;
-    if (project(tip(s, edges[2], 1-input.nearPin(nl, group, 2)), w) != project(tip(s, edges[3], 1-input.nearPin(nl, group, 3)), w)) return null;
+    if (project(tip(s, edges[0], 1 - input.nearPin(nl, group, 0)), u) != project(tip(s, edges[1], 1 - input.nearPin(nl, group, 1)), u)) return null;
+    if (project(tip(s, edges[2], 1 - input.nearPin(nl, group, 2)), w) != project(tip(s, edges[3], 1 - input.nearPin(nl, group, 3)), w)) return null;
     var boxes: [5]library.Rect = undefined;
     for (edges, &boxes) |edge, *box| box.* = s.boxAt(edge.index(), .zero);
     const gap: i64 = @max(len.stack, len.clearance + 1);
@@ -116,13 +116,13 @@ pub fn orders(s: *const sch.Schematic, nl: *const Netlist, batch: *input.Batch) 
         points[1] = current(s, group.block, group.pins[1]);
         for (input.members(group), 0..) |edge, i| {
             const first = input.nearPin(nl, group, i);
-            points[2+2*i] = current(s, edge, first);
-            points[3+2*i] = current(s, edge, 1-first);
+            points[2 + 2 * i] = current(s, edge, first);
+            points[3 + 2 * i] = current(s, edge, 1 - first);
         }
         const u = actual_lead.leadSide(s, group.block.index(), group.pins[0]).?;
         const w = Side.of(points[1].sub(points[0])).?;
-        for ([_][2]usize{ .{0,8}, .{8,6}, .{6,2}, .{2,3}, .{6,10}, .{10,11} }) |ij| keep(storage, &counts, u, points[ij[0]], points[ij[1]]);
-        for ([_][2]usize{ .{0,1}, .{1,6}, .{6,7}, .{7,10} }) |ij| keep(storage, &counts, w, points[ij[0]], points[ij[1]]);
+        for ([_][2]usize{ .{ 0, 8 }, .{ 8, 6 }, .{ 6, 2 }, .{ 2, 3 }, .{ 6, 10 }, .{ 10, 11 } }) |ij| keep(storage, &counts, u, points[ij[0]], points[ij[1]]);
+        for ([_][2]usize{ .{ 0, 1 }, .{ 1, 6 }, .{ 6, 7 }, .{ 7, 10 } }) |ij| keep(storage, &counts, w, points[ij[0]], points[ij[1]]);
     }
     return .{ storage[0][0..counts[0]], storage[1][0..counts[1]] };
 }
@@ -133,13 +133,13 @@ fn turn(s: *sch.Schematic, nl: *const Netlist, edge: EdgeId, first: u1, forward:
     const class = s.lib.at(s.devices.items(.class)[edge.index()]);
     if (class.terminals.len != 2) return false;
     for (class.terminals) |terminal| if (terminal.hidden or terminal.ground_ref) return false;
-    for ([_]sch.Orientation{ .horizontal, .vertical }) |form| for ([_][2]bool{ .{false,false}, .{true,false}, .{false,true}, .{true,true} }) |flips| {
+    for ([_]sch.Orientation{ .horizontal, .vertical }) |form| for ([_][2]bool{ .{ false, false }, .{ true, false }, .{ false, true }, .{ true, true } }) |flips| {
         s.devices.items(.orientation)[edge.index()] = form;
         s.devices.items(.flip_x)[edge.index()] = flips[0];
         s.devices.items(.flip_y)[edge.index()] = flips[1];
         sch.settleDevice(s, &nl.graph, edge.index());
-        const a, const b = .{ tip(s, edge, first), tip(s, edge, 1-first) };
-        if ((a.x != b.x and a.y != b.y) or Side.of(b.sub(a)) != forward or s.pinSide(edge.index(), first) != forward.opposite() or s.pinSide(edge.index(), 1-first) != forward) continue;
+        const a, const b = .{ tip(s, edge, first), tip(s, edge, 1 - first) };
+        if ((a.x != b.x and a.y != b.y) or Side.of(b.sub(a)) != forward or s.pinSide(edge.index(), first) != forward.opposite() or s.pinSide(edge.index(), 1 - first) != forward) continue;
         actual_anchor.move(s, nl, edge.index(), a.sub(offset));
         return actual_anchor.representable(s, nl, edge.index());
     };
@@ -150,14 +150,25 @@ fn tip(s: *const sch.Schematic, edge: EdgeId, pin: usize) Pt {
     const row = s.devices.get(edge.index());
     return row.orient.apply(s.lib.at(row.class).terminals[pin].at).sub(row.grid);
 }
-fn current(s: *const sch.Schematic, edge: EdgeId, pin: usize) Pt { return Pt.round(s.xy[s.deviceNode(edge.index()).?]).add(tip(s, edge, pin)); }
-fn project(p: Pt, side: Side) i64 { const v = side.unit(); return @as(i64,p.x)*v.x + @as(i64,p.y)*v.y; }
-fn low(r: library.Rect, side: Side) i64 { return @min(project(r.min, side), project(r.max, side)); }
-fn high(r: library.Rect, side: Side) i64 { return @max(project(r.min, side), project(r.max, side)); }
-fn along(side: Side, distance: i64) ?Pt { return combine(side, distance, if (side.isHorizontal()) .up else .left, 0); }
+fn current(s: *const sch.Schematic, edge: EdgeId, pin: usize) Pt {
+    return Pt.round(s.xy[s.deviceNode(edge.index()).?]).add(tip(s, edge, pin));
+}
+fn project(p: Pt, side: Side) i64 {
+    const v = side.unit();
+    return @as(i64, p.x) * v.x + @as(i64, p.y) * v.y;
+}
+fn low(r: library.Rect, side: Side) i64 {
+    return @min(project(r.min, side), project(r.max, side));
+}
+fn high(r: library.Rect, side: Side) i64 {
+    return @max(project(r.min, side), project(r.max, side));
+}
+fn along(side: Side, distance: i64) ?Pt {
+    return combine(side, distance, if (side.isHorizontal()) .up else .left, 0);
+}
 fn combine(u: Side, a: i64, w: Side, b: i64) ?Pt {
     const v, const t = .{ u.unit(), w.unit() };
-    const x, const y = .{ v.x*a+t.x*b, v.y*a+t.y*b };
+    const x, const y = .{ v.x * a + t.x * b, v.y * a + t.y * b };
     if (x < std.math.minInt(i32) or x > std.math.maxInt(i32) or y < std.math.minInt(i32) or y > std.math.maxInt(i32)) return null;
     return .{ .x = @intCast(x), .y = @intCast(y) };
 }
@@ -165,6 +176,6 @@ fn keep(storage: [2][][2]i32, count: *[2]usize, side: Side, a: Pt, b: Pt) void {
     assert(project(a, side) < project(b, side));
     const axis: usize = @intFromBool(!side.isHorizontal());
     assert(count[axis] < storage[axis].len);
-    storage[axis][count[axis]] = if (axis == 0) .{ @min(a.x,b.x), @max(a.x,b.x) } else .{ @min(a.y,b.y), @max(a.y,b.y) };
+    storage[axis][count[axis]] = if (axis == 0) .{ @min(a.x, b.x), @max(a.x, b.x) } else .{ @min(a.y, b.y), @max(a.y, b.y) };
     count[axis] += 1;
 }

@@ -54,6 +54,32 @@ AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> afte
   directions +6, x +58, y +70, symbols +2; AG1016 and AG364 unchanged. Tests 468/468 and
   469/469; `netlist-import.wasm` 550,891 bytes.
 
+Merged on 2026-11-26 at the owner's request to bring every branch and worktree into `main`
+without per-change scoring: taken to stop the work living in uncommitted trees and recovery
+patches. None of these lines is measured against the hand drawings yet; the corpus scores and
+the size cap below are the open follow-ups.
+
+- Interleaved control groups in a switch bank, after the folded bank (AG1093; recovery patch of
+  #22).
+- A rejected caller row request keeps the ordinary drawing; an accepted strong position is still
+  honoured (AG762, P24; recovery patch of #22).
+- Eight oblique two-terminal capacitor symbols for four-phase RC networks (AG493; recovery patch
+  of #22).
+- Grouped varactor controls as one bus contact in the editor, and the same grouping for native
+  `--bundles` (AG1146; recovery patches of #22).
+- `--allow-45`: optional 45-degree feedback crossovers (P21/P23; the in-progress recovery patch
+  of #22, merged onto `source_layout` and `--bundles`).
+- A switch bank is admitted only when its switches stand alone among the source's channel
+  rectangles; a quad-slot census for AG80, AG82, AG517 and AG1093 (rest-groups work in
+  progress).
+- A solid `filled_circle` symbol op through the Zig API, the C ABI (`CKTIMG_OP_FILLED_CIRCLE`),
+  SVG, TikZ and Schemify (`fill true`); host audit tests (human-layout-release work in progress).
+- Center-tap symbols, tanks, chains and four-sided stages; coil banks, chains, bridges and
+  tanks; resistor loads and their downstream parts; block input RC and block tanks; antiparallel
+  clamps and their anchors; pin escapes; with their research notes and figures (the main
+  checkout's uncommitted work since 4f69956). The 117 MB `docs/research/image-rules` study is
+  kept on the `snapshot/main-checkout` branch, not in the tree.
+
 ### Changed
 
 Schemify plugin (what users see never names the engine):

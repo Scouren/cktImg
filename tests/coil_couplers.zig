@@ -91,11 +91,17 @@ fn pins(p: *const np.Placed) ![26]usize {
         out[2 * i + 1] = try pinOn(p, inner, nets[1]);
     }
     const exact = [_][2][]const u8{
-        .{ "m1", "net4" }, .{ "m2", "net5" },
-        .{ "c1", "net4" }, .{ "c1", "net6" }, .{ "s1", "net6" }, .{ "s1", "net3" }, .{ "c2", "net3" }, .{ "c2", "net2" },
-        .{ "c3", "net5" }, .{ "c3", "net0" }, .{ "s2", "net0" }, .{ "s2", "net1" }, .{ "c4", "net1" }, .{ "c4", "net7" },
-        .{ "se1", "net4" }, .{ "se1", "net2" }, .{ "se2", "net5" }, .{ "se2", "net7" },
-        .{ "so1", "net4" }, .{ "so1", "net7" }, .{ "so2", "net2" }, .{ "so2", "net5" },
+        .{ "m1", "net4" },  .{ "m2", "net5" },
+        .{ "c1", "net4" },  .{ "c1", "net6" },
+        .{ "s1", "net6" },  .{ "s1", "net3" },
+        .{ "c2", "net3" },  .{ "c2", "net2" },
+        .{ "c3", "net5" },  .{ "c3", "net0" },
+        .{ "s2", "net0" },  .{ "s2", "net1" },
+        .{ "c4", "net1" },  .{ "c4", "net7" },
+        .{ "se1", "net4" }, .{ "se1", "net2" },
+        .{ "se2", "net5" }, .{ "se2", "net7" },
+        .{ "so1", "net4" }, .{ "so1", "net7" },
+        .{ "so2", "net2" }, .{ "so2", "net5" },
     };
     for (exact, out[4..]) |named, *pin| pin.* = try pinOn(p, named[0], named[1]);
     return out;
@@ -115,7 +121,10 @@ fn normalized(points: Frame) ?[26][2]i64 {
     for (points, &q) |p, *v| v.* = if (vertical) .{ p.y, p.x } else .{ p.x, p.y };
     const along: i64 = if (q[1][0] > q[0][0]) 1 else -1;
     const across: i64 = if (q[2][1] > q[0][1]) 1 else -1;
-    for (&q) |*v| { v[0] *= along; v[1] *= across; }
+    for (&q) |*v| {
+        v[0] *= along;
+        v[1] *= across;
+    }
     if (q[0][1] != q[1][1] or q[2][1] != q[3][1] or q[0][1] >= q[2][1]) return null;
     if (q[0][0] != q[2][0] or q[1][0] != q[3][0]) return null;
     if (q[4][0] >= q[0][0] or q[5][0] <= q[1][0]) return null;
@@ -188,18 +197,22 @@ fn sameMembers(a: *const np.Placed, b: *const np.Placed) !void {
 
 test "coil couplers: literal source leads and rigid transforms define independent relations" {
     const original: Frame = .{
-        .{ .x = 180, .y = -50 }, .{ .x = 180, .y = 50 }, .{ .x = 380, .y = -50 }, .{ .x = 380, .y = 50 },
-        .{ .x = 20, .y = -60 }, .{ .x = 20, .y = 60 },
-        .{ .x = 180, .y = -100 }, .{ .x = 220, .y = -100 }, .{ .x = 260, .y = -100 }, .{ .x = 300, .y = -100 }, .{ .x = 340, .y = -100 }, .{ .x = 380, .y = -100 },
-        .{ .x = 180, .y = 100 }, .{ .x = 220, .y = 100 }, .{ .x = 260, .y = 100 }, .{ .x = 300, .y = 100 }, .{ .x = 340, .y = 100 }, .{ .x = 380, .y = 100 },
-        .{ .x = 260, .y = -60 }, .{ .x = 300, .y = -60 }, .{ .x = 260, .y = 60 }, .{ .x = 300, .y = 60 },
-        .{ .x = 240, .y = -60 }, .{ .x = 240, .y = -20 }, .{ .x = 320, .y = -60 }, .{ .x = 320, .y = -20 },
+        .{ .x = 180, .y = -50 },  .{ .x = 180, .y = 50 },   .{ .x = 380, .y = -50 },  .{ .x = 380, .y = 50 },
+        .{ .x = 20, .y = -60 },   .{ .x = 20, .y = 60 },    .{ .x = 180, .y = -100 }, .{ .x = 220, .y = -100 },
+        .{ .x = 260, .y = -100 }, .{ .x = 300, .y = -100 }, .{ .x = 340, .y = -100 }, .{ .x = 380, .y = -100 },
+        .{ .x = 180, .y = 100 },  .{ .x = 220, .y = 100 },  .{ .x = 260, .y = 100 },  .{ .x = 300, .y = 100 },
+        .{ .x = 340, .y = 100 },  .{ .x = 380, .y = 100 },  .{ .x = 260, .y = -60 },  .{ .x = 300, .y = -60 },
+        .{ .x = 260, .y = 60 },   .{ .x = 300, .y = 60 },   .{ .x = 240, .y = -60 },  .{ .x = 240, .y = -20 },
+        .{ .x = 320, .y = -60 },  .{ .x = 320, .y = -20 },
     };
     for (0..4) |turns| for ([_]bool{ false, true }) |mirror| {
         var points = original;
         for (&points) |*p| {
             if (mirror) p.x = -p.x;
-            for (0..turns) |_| { const old = p.*; p.* = .{ .x = -old.y, .y = old.x }; }
+            for (0..turns) |_| {
+                const old = p.*;
+                p.* = .{ .x = -old.y, .y = old.x };
+            }
             p.x += 137;
             p.y -= 49;
         }
@@ -298,7 +311,8 @@ test "coil couplers: ambiguous private incidence and a held member abstain as on
     const a = testing.allocator;
     for ([_][]const u8{
         "CEXTRA net6 net4 1p\n", "REXTRA net6 VSS 1k\n",
-        "*@ at c1 -12 -10 r0\n", "*@ cell s1 -4 -6\n", "*@ nogroup c1\n", "*@ grouping off\n",
+        "*@ at c1 -12 -10 r0\n", "*@ cell s1 -4 -6\n",
+        "*@ nogroup c1\n",       "*@ grouping off\n",
     }) |extra| {
         const text = try std.mem.concat(a, u8, &.{ full, extra });
         defer a.free(text);

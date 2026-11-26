@@ -63,7 +63,9 @@ pub const Batch = struct {
     }
 };
 
-comptime { assert(@sizeOf(Group) == 24); }
+comptime {
+    assert(@sizeOf(Group) == 24);
+}
 
 /// Collects caller-unheld groups before relay consumes weak stays. Every
 /// device/net slice spans nl; all allocations finish before geometry writes.
@@ -103,7 +105,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         if (!styled) groups.appendAssumeCapacity(group);
     }
     std.sort.heap(Group, groups.items, st.device_rank, struct {
-        fn less(rank: []const u32, a: Group, b: Group) bool { return rank[a[0].index()] < rank[b[0].index()]; }
+        fn less(rank: []const u32, a: Group, b: Group) bool {
+            return rank[a[0].index()] < rank[b[0].index()];
+        }
     }.less);
     const coordinates = try gpa.alloc([2]i32, 16 * groups.items.len);
     return .{ .groups = groups, .coordinates = coordinates };
@@ -124,7 +128,8 @@ pub fn place(s: *const sch.Schematic, sk: *const skeleton.Skeleton, ats: []const
                 if (!visible or other == group[0].index() or other == group[1].index()) continue;
                 const box = if (ats[other]) |fixed|
                     s.lib.at(s.devices.items(.class)[other]).box(fixed.orient orelse s.devices.items(.orient)[other], fixed.origin)
-                else s.boxAt(other, Pt.round(xy));
+                else
+                    s.boxAt(other, Pt.round(xy));
                 if (candidate.intersects(box)) break :blocked true;
             }
         } else false;
@@ -181,7 +186,11 @@ fn find(nl: *const Netlist, roles: []const sch.Role, d: EdgeId) ?Group {
             if (p[0] != net and p[2] != net) continue;
             count += 1;
             if (count > 2 or c.edges.items(.kind)[e.index()] != .mosfet or p[0] != net or p[2] == ends[0] or p[2] == ends[1]) return null;
-            const polarity: usize = switch (device.polarity(nl.modelType(e))) { .p => 0, .n => 1, .other => return null };
+            const polarity: usize = switch (device.polarity(nl.modelType(e))) {
+                .p => 0,
+                .n => 1,
+                .other => return null,
+            };
             if (seen[polarity]) return null;
             seen[polarity] = true;
             out[2 + 2 * polarity + i] = e;
@@ -256,7 +265,9 @@ fn proposal(s: *const sch.Schematic, group: Group, len: Lengths, positions: []co
     return result;
 }
 
-test { _ = @import("clamp_anchors_test.zig"); }
+test {
+    _ = @import("clamp_anchors_test.zig");
+}
 
 test "clamp anchors: exact complementary channel endpoints and ambiguity boundaries" {
     // Oracle: literal four-anchor cards; form and model visibility cannot
@@ -266,7 +277,7 @@ test "clamp anchors: exact complementary channel endpoints and ambiguity boundar
         "M0 a a b 0 nn\nM1 b b a 0 nn\nM2 a ga high 0 pp\nM3 b gb high 0 pp\n" ++
         "M4 a gc low 0 nn\nM5 b gd low 0 nn\n";
     const extra = [_]struct { []const u8, bool }{
-        .{ "", true }, .{ "M6 c a d b nn\n", true },
+        .{ "", true },                      .{ "M6 c a d b nn\n", true },
         .{ "M6 a g c 0 unknown\n", false }, .{ "M6 c g a 0 nn\n", false },
         .{ "Q6 a g c 0 unknown\n", false }, .{ "J6 a g c unknown\n", false },
     };

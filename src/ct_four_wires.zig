@@ -67,7 +67,6 @@ comptime {
     }
 }
 
-
 /// Borrows the successful owner slice or an empty slice. Read the original
 /// admitted net-line verdicts before scaffolding defers paths or thinning
 /// changes styles. The caller owns all inputs; this allocates nothing.
@@ -135,7 +134,6 @@ pub fn parts(c: *Canvas, nl: *const Netlist, groups: []const Group, lines: *cons
 
 // ---- private ----
 
-
 fn sizes(c: *const Canvas, nl: *const Netlist, groups: []const Group, lines: *const NetLines, requests: Requests, pins: []const std.ArrayList(u32), routed: []const bool, drawn: []const bool) void {
     assert(groups.len <= 1 and requests.ats.len == nl.graph.edgeCount());
     assert(pins.len == c.s.net_name.len and lines.style.len == pins.len);
@@ -192,4 +190,6 @@ fn existing(c: *const Canvas, net: u32) bool {
     return false;
 }
 
-test { _ = @import("ct_four_wires_test.zig"); }
+test {
+    _ = @import("ct_four_wires_test.zig");
+}

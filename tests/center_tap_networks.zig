@@ -96,11 +96,11 @@ fn retained(deck: []const u8, pairs: []const Pair) !void {
         try testing.expectEqual(0, try support.shorts(testing.allocator, &p, true));
         if (compact) {
             for (pairs) |pair| {
-            errdefer std.debug.print("center-tap source path {s}.{}--{s}.{}\n", .{ pair.left.name, pair.left.index, pair.right.name, pair.right.index });
-            const a = np.checks.deviceIn(&p, pair.left.name).?;
-            const b = np.checks.deviceIn(&p, pair.right.name).?;
-            const pins = [_]usize{ p.dev_pin0[a] + pair.left.index, p.dev_pin0[b] + pair.right.index };
-            try testing.expect(try ink.connected(testing.allocator, &p, &pins));
+                errdefer std.debug.print("center-tap source path {s}.{}--{s}.{}\n", .{ pair.left.name, pair.left.index, pair.right.name, pair.right.index });
+                const a = np.checks.deviceIn(&p, pair.left.name).?;
+                const b = np.checks.deviceIn(&p, pair.right.name).?;
+                const pins = [_]usize{ p.dev_pin0[a] + pair.left.index, p.dev_pin0[b] + pair.right.index };
+                try testing.expect(try ink.connected(testing.allocator, &p, &pins));
             }
         }
     }

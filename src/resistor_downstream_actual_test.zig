@@ -52,16 +52,24 @@ fn run(gpa: std.mem.Allocator, change: Change) !void {
     defer s.deinit();
     const sa = s.arena.allocator();
     var pair: loads.Pair = undefined;
-    for (names[0..12], 0..) |name, i| pair[i/6][i%6] = nl.device(name).?;
+    for (names[0..12], 0..) |name, i| pair[i / 6][i % 6] = nl.device(name).?;
     var xy: std.ArrayList([2]f32) = .empty;
     var boxes: [20]library.Rect = undefined;
     for (0..s.devices.len) |d| {
-        const member = for (names, 0..) |name, i| { if (nl.device(name).?.index() == d) break i; } else unreachable;
+        const member = for (names, 0..) |name, i| {
+            if (nl.device(name).?.index() == d) break i;
+        } else unreachable;
         var at: Pt = .{ .x = -1500 + @as(i32, @intCast(member)) * 80, .y = 500 };
         at = switch (member) {
-            6 => .{ .x = 450, .y = -200 }, 7 => .{ .x = 400, .y = -20 }, 8 => .{ .x = 500, .y = -20 },
-            9 => .{ .x = 400, .y = 60 }, 10 => .{ .x = 500, .y = 60 }, 11 => .{ .x = 450, .y = 120 },
-            12 => .{ .x = 200, .y = 250 }, 16 => .{ .x = 600, .y = 250 }, else => at,
+            6 => .{ .x = 450, .y = -200 },
+            7 => .{ .x = 400, .y = -20 },
+            8 => .{ .x = 500, .y = -20 },
+            9 => .{ .x = 400, .y = 60 },
+            10 => .{ .x = 500, .y = 60 },
+            11 => .{ .x = 450, .y = 120 },
+            12 => .{ .x = 200, .y = 250 },
+            16 => .{ .x = 600, .y = 250 },
+            else => at,
         };
         const class = lib.at(s.devices.items(.class)[d]);
         s.devices.set(d, .{ .kept = true, .driver = false, .orientation = .horizontal, .flip_x = false, .flip_y = false, .class = s.devices.items(.class)[d], .orient = .{}, .grid = .zero, .reach = @splat(20) });
@@ -116,14 +124,22 @@ fn run(gpa: std.mem.Allocator, change: Change) !void {
     try testing.expect(try c.commit(foreign, &.{ .{ .x = -2000, .y = -500 }, .{ .x = -1960, .y = -500 } }));
     c.wall();
     if (change == .existing) try testing.expect(try c.commit(net, &.{ .{ .x = 1000, .y = 1000 }, .{ .x = 1040, .y = 1000 } }));
-    const styles = try a.alloc(netlines.Style, roles.len); @memset(styles, .auto);
-    const ports = try a.alloc(?library.Side, roles.len); @memset(ports, null);
-    const rails = try a.alloc(netlines.Rail, roles.len); @memset(rails, .auto);
+    const styles = try a.alloc(netlines.Style, roles.len);
+    @memset(styles, .auto);
+    const ports = try a.alloc(?library.Side, roles.len);
+    @memset(ports, null);
+    const rails = try a.alloc(netlines.Rail, roles.len);
+    @memset(rails, .auto);
     var lines: netlines.NetLines = .{ .style = styles, .port = ports, .rail = rails, .first = &.{}, .routes = &.{} };
     const owners = [_]loads.Pair{pair};
     const qualified = routing.qualify(&nl, roles, &owners, &.{}, &.{}, &.{}, &lines);
     try testing.expectEqual(@as(usize, 1), qualified.len);
-    styles[net] = switch (change) { .cut => .cut, .label => .label, .wire => .wire, else => .auto };
+    styles[net] = switch (change) {
+        .cut => .cut,
+        .label => .label,
+        .wire => .wire,
+        else => .auto,
+    };
     if (change == .port) ports[net] = .left;
     if (change == .first) lines.first = &.{net};
     if (change == .output) {
@@ -131,11 +147,14 @@ fn run(gpa: std.mem.Allocator, change: Change) !void {
         s.roles = roles; // initDevices copied the original roles before this mutation.
         try testing.expectEqual(sch.Role.output, c.s.roles[net]);
     }
-    const ats = try a.alloc(?pinned.At, s.devices.len); @memset(ats, null);
+    const ats = try a.alloc(?pinned.At, s.devices.len);
+    @memset(ats, null);
     if (change == .at) ats[nl.device("mg").?.index()] = .{ .origin = .{ .x = 100, .y = 100 }, .orient = null, .line = 0 };
     const routes = [_]netlines.Route{.{ .net = net, .pts = &.{ .{ .x = 0, .y = 0 }, .{ .x = 40, .y = 0 } }, .via = false, .line = 0 }};
-    const routed = try a.alloc(bool, roles.len); @memset(routed, false);
-    const drawn = try a.alloc(bool, roles.len); @memset(drawn, false);
+    const routed = try a.alloc(bool, roles.len);
+    @memset(routed, false);
+    const drawn = try a.alloc(bool, roles.len);
+    @memset(drawn, false);
     drawn[other] = true; // An earlier independent net is already consumed.
     if (change == .routed) routed[net] = true;
     if (change == .drawn) drawn[net] = true;
@@ -146,7 +165,10 @@ fn run(gpa: std.mem.Allocator, change: Change) !void {
         return err;
     };
     const success = change == .none or change == .permutation or change == .cut;
-    if (!success) { try before.matches(&c, drawn); return; }
+    if (!success) {
+        try before.matches(&c, drawn);
+        return;
+    }
     try testing.expect(drawn[net]);
     try testing.expect(try oracle.joined(&c, ids[0], ids[1]));
     try testing.expect(!try oracle.joined(&c, ids[0], ids[2]));
@@ -166,7 +188,9 @@ fn run(gpa: std.mem.Allocator, change: Change) !void {
     }
 }
 
-fn oom(gpa: std.mem.Allocator) !void { try run(gpa, .none); }
+fn oom(gpa: std.mem.Allocator) !void {
+    try run(gpa, .none);
+}
 
 test "resistor downstream actual: real local ink remote name and current cut retain two components" {
     for ([_]Change{ .none, .permutation, .cut }) |change| try run(testing.allocator, change);

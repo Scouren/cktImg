@@ -189,7 +189,12 @@ test "CT common controls: extra incidence raw ambiguity and incomplete bias stag
         errdefer std.debug.print("CT boundary appended card: {s}", .{extra});
         const text = try std.fmt.allocPrint(a, "{s}\n{s}", .{ ag1114, extra });
         defer a.free(text);
-        const name = switch (extra[0]) { 'R' => "rextra", 'Q' => "qextra", 'X' => "xextra", else => unreachable };
+        const name = switch (extra[0]) {
+            'R' => "rextra",
+            'Q' => "qextra",
+            'X' => "xextra",
+            else => unreachable,
+        };
         for ([_]bool{ false, true }) |compact| try compare(text, compact, null, .{ .extra = name });
     }
 }

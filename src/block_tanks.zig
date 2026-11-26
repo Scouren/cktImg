@@ -76,7 +76,9 @@ pub const Batch = struct {
 
 const Proposal = struct { side: Side, points: [2]Pt };
 
-comptime { assert(@sizeOf(Group) == 20); }
+comptime {
+    assert(@sizeOf(Group) == 20);
+}
 
 /// Collects complete unheld groups before relay consumes weak stays.
 /// Input slices span the graph; all allocations precede geometry writes.
@@ -108,7 +110,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         if (!styled) groups.appendAssumeCapacity(group);
     }
     std.sort.heap(Group, groups.items, st.device_rank, struct {
-        fn less(rank: []const u32, a: Group, b: Group) bool { return rank[a.pair.coil.index()] < rank[b.pair.coil.index()]; }
+        fn less(rank: []const u32, a: Group, b: Group) bool {
+            return rank[a.pair.coil.index()] < rank[b.pair.coil.index()];
+        }
     }.less);
     const coordinates = try gpa.alloc([2]i32, 6 * groups.items.len);
     errdefer gpa.free(coordinates);
@@ -191,7 +195,7 @@ pub fn fits(s: *sch.Schematic, nl: *const Netlist, sk: *const skeleton.Skeleton,
                 if (!visible or ownedBy(groups, d)) continue;
                 if (box.intersects(s.boxAt(@intCast(d), Pt.round(xy)))) return false;
             }
-            for (groups[i+1..]) |other| {
+            for (groups[i + 1 ..]) |other| {
                 const previous = save(s, other);
                 defer restore(s, other, previous);
                 const candidate = prepare(s, nl, len, other) orelse return false;
@@ -246,7 +250,7 @@ pub fn orders(s: *const sch.Schematic, groups: []const Group, storage: [][2]i32)
         const side = actual_lead.leadSide(s, group.block.index(), group.pins[0]) orelse continue;
         const axis: usize = @intFromBool(!side.isHorizontal());
         const points = [_]Pt{
-            current(s, group.block, group.pins[0]), current(s, group.pair.cap, group.pair.first),
+            current(s, group.block, group.pins[0]),          current(s, group.pair.cap, group.pair.first),
             current(s, group.pair.coil, group.pair.pins[0]), current(s, group.pair.coil, group.pair.pins[2]),
         };
         for (points[0..3], points[1..]) |a, b| {
@@ -270,7 +274,9 @@ fn fill(at: [][2]f32, sk: *const skeleton.Skeleton, geo: geometry.Geo) void {
 fn consume(groups: []const Group, fallback: *std.ArrayList(coil_tanks.Pair)) void {
     var kept: usize = 0;
     for (fallback.items) |pair| {
-        const consumed = for (groups) |group| { if (group.pair.coil == pair.coil) break true; } else false;
+        const consumed = for (groups) |group| {
+            if (group.pair.coil == pair.coil) break true;
+        } else false;
         if (consumed) continue;
         fallback.items[kept] = pair;
         kept += 1;
@@ -425,9 +431,14 @@ fn tip(s: *const sch.Schematic, d: EdgeId, pin: usize) Pt {
     return row.orient.apply(s.lib.at(row.class).terminals[pin].at).sub(row.grid);
 }
 
-fn current(s: *const sch.Schematic, d: EdgeId, pin: usize) Pt { return Pt.round(s.xy[s.deviceNode(d.index()).?]).add(tip(s, d, pin)); }
+fn current(s: *const sch.Schematic, d: EdgeId, pin: usize) Pt {
+    return Pt.round(s.xy[s.deviceNode(d.index()).?]).add(tip(s, d, pin));
+}
 
-fn project(p: Pt, side: Side) i32 { const v = side.unit(); return p.x * v.x + p.y * v.y; }
+fn project(p: Pt, side: Side) i32 {
+    const v = side.unit();
+    return p.x * v.x + p.y * v.y;
+}
 
 test "block tanks topology: complete incidence before roles or visibility excludes ambiguity" {
     const testing = std.testing;
@@ -435,7 +446,7 @@ test "block tanks topology: complete incidence before roles or visibility exclud
         ".subckt stage inp outp outn\n.ends\n.subckt opaque a b\n.ends\n";
     const body = "XL a b bias ct_inductor\nC1 a b 1p\nX1 input a b stage\nC2 a other 1p\nRref reference 0 1k\n";
     const mutations = [_][]const u8{
-        "", "C3 b a 1p\n", "XX b a bias ct_inductor\n", "X2 other a b stage\n",
+        "",                "C3 b a 1p\n",     "XX b a bias ct_inductor\n",          "X2 other a b stage\n",
         "X2 a b opaque\n", "R1 a other 1k\n", "Q1 a b other 0 qn\n.model qn npn\n",
     };
     for (mutations, 0..) |addition, i| {
@@ -468,4 +479,6 @@ test "block tanks topology: complete incidence before roles or visibility exclud
     }
 }
 
-test { _ = @import("block_tanks_test.zig"); }
+test {
+    _ = @import("block_tanks_test.zig");
+}

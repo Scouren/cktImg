@@ -162,7 +162,9 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
     for (order) |d| {
         if (!drawn[d] or form[d] != .horizontal or placed[d]) continue;
         const clamp = if (antiparallel.find(nl, roles, EdgeId.from(d))) |m|
-            (if (!antiparallel.held(nl, st.verdicts, EdgeId.from(d), m)) m.index() else null) else null;
+            (if (!antiparallel.held(nl, st.verdicts, EdgeId.from(d), m)) m.index() else null)
+        else
+            null;
         const candidate = clamp orelse transmission.mate(nl, d);
         const pair = if (candidate) |m| (if (drawn[m] and form[m] == .horizontal and !placed[m]) m else null) else null;
         const power = if (power_paths.series(nl, roles, drawn, form, d)) |members| available: {

@@ -60,9 +60,9 @@ fn onNet(p: *const np.Placed, name: []const u8, net: []const u8) !usize {
 
 fn indices(p: *const np.Placed, lib: *const np.Library, group: Group) ![6]usize {
     return .{
-        try named(p, lib, group.block, "inp"), try named(p, lib, group.block, "inn"),
+        try named(p, lib, group.block, "inp"),        try named(p, lib, group.block, "inn"),
         try onNet(p, group.resistors[0], group.bias), try onNet(p, group.resistors[1], group.bias),
-        try onNet(p, group.choke, group.bias), try onNet(p, group.choke, "v_bias"),
+        try onNet(p, group.choke, group.bias),        try onNet(p, group.choke, "v_bias"),
     };
 }
 
@@ -182,7 +182,6 @@ test "block input chokes: explicit choke position and upright form remain author
         }
     }
 }
-
 
 test "block input chokes: the three same-label remote bias branches preserve source separation" {
     const lib = try support.library(testing.allocator);

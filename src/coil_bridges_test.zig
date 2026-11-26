@@ -84,7 +84,8 @@ test "coil bridge transaction: alternate controls fit, both blocked candidates r
     @memset(mates, sch.none);
     for ([_][2][]const u8{
         .{ "xle1", "xle2" }, .{ "xlo1", "xlo2" }, .{ "ct1", "ct2" }, .{ "m1", "m3" }, .{ "m2", "m4" },
-        .{ "c1", "c2" }, .{ "c3", "c4" }, .{ "s1", "s1" }, .{ "s2", "s2" }, .{ "se1", "se1" }, .{ "se2", "se2" }, .{ "so1", "so2" },
+        .{ "c1", "c2" },     .{ "c3", "c4" },     .{ "s1", "s1" },   .{ "s2", "s2" }, .{ "se1", "se1" },
+        .{ "se2", "se2" },   .{ "so1", "so2" },
     }) |names| {
         const x, const y = .{ nl.device(names[0]).?.index(), nl.device(names[1]).?.index() };
         mates[x] = y;

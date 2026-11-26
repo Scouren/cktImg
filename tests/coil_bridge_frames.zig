@@ -182,8 +182,8 @@ test "coil bridge frames: shifted complete glyphs keep actual paths and visible 
 test "coil bridge frames: one caller request or topology competitor holds all four members" {
     const a = testing.allocator;
     for ([_][]const u8{
-        "*@ at se1 -20 -20\n", "*@ cell so1 -5 -5\n", "*@ upright so1\n*@ face so1 a down\n",
-        "*@ upright se1\n", "*@ grouping off\n", "*@ label net4\n",
+        "*@ at se1 -20 -20\n",                "*@ cell so1 -5 -5\n",   "*@ upright so1\n*@ face so1 a down\n",
+        "*@ upright se1\n",                   "*@ grouping off\n",     "*@ label net4\n",
         "SX net4 net2 se vss ideal_switch\n", "REXTRA net6 vss 10k\n",
     }) |extra| {
         const lib = try support.library(a);
@@ -205,7 +205,6 @@ test "coil bridge frames: one caller request or topology competitor holds all fo
         }
     }
 }
-
 
 test "coil bridge frames: a rejected horizontal four-pin face does not hold automatic placement" {
     const a = testing.allocator;

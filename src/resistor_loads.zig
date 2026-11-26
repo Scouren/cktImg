@@ -57,7 +57,9 @@ pub const Batch = struct {
     }
 };
 
-comptime { assert(@sizeOf(Group) == 24 and @sizeOf(Pair) == 48); }
+comptime {
+    assert(@sizeOf(Group) == 24 and @sizeOf(Pair) == 48);
+}
 
 /// Collects whole unheld owners. All device/net slices span nl; allocation
 /// failure leaves every borrowed table unchanged. Forty order slots per
@@ -69,7 +71,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
     var raw: std.ArrayList(Group) = .empty;
     defer raw.deinit(gpa);
     var capacity: usize = 0;
-    for (c.edges.items(.kind), 0..) |kind, d| if (kind == .mosfet and known(nl, .from(d), "pmos")) { capacity += 1; };
+    for (c.edges.items(.kind), 0..) |kind, d| if (kind == .mosfet and known(nl, .from(d), "pmos")) {
+        capacity += 1;
+    };
     try raw.ensureTotalCapacity(gpa, capacity);
     for (c.edges.items(.kind), 0..) |kind, d| {
         if (kind != .mosfet) continue;
@@ -79,7 +83,9 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
         }
     }
     std.sort.heap(Group, raw.items, st.device_rank, struct {
-        fn less(rank: []const u32, a: Group, b: Group) bool { return rank[a[0].index()] < rank[b[0].index()]; }
+        fn less(rank: []const u32, a: Group, b: Group) bool {
+            return rank[a[0].index()] < rank[b[0].index()];
+        }
     }.less);
     var singles: std.ArrayList(Group) = .empty;
     errdefer singles.deinit(gpa);
@@ -88,19 +94,24 @@ pub fn collect(gpa: Allocator, nl: *const Netlist, s: *const sch.Schematic, sk: 
     try singles.ensureTotalCapacity(gpa, raw.items.len);
     try pairs.ensureTotalCapacity(gpa, raw.items.len / 2);
     if (!st.symmetry_off) for (raw.items) |a| {
-        if (overlaps(raw.items,a)) continue;
+        if (overlaps(raw.items, a)) continue;
         var linked: ?Group = null;
         var links: usize = 0;
         for (raw.items) |b| {
             if (a[0] == b[0]) continue;
-            if (drives(nl, a, b) or drives(nl, b, a)) { links += 1; linked = b; }
+            if (drives(nl, a, b) or drives(nl, b, a)) {
+                links += 1;
+                linked = b;
+            }
         }
         if (links > 1) continue;
         if (linked) |b| {
-            if (overlaps(raw.items,b)) continue;
+            if (overlaps(raw.items, b)) continue;
             if (!drives(nl, a, b) or drives(nl, b, a)) continue;
             var reverse_links: usize = 0;
-            for (raw.items) |other| if (other[0] != b[0] and (drives(nl, b, other) or drives(nl, other, b))) { reverse_links += 1; };
+            for (raw.items) |other| if (other[0] != b[0] and (drives(nl, b, other) or drives(nl, other, b))) {
+                reverse_links += 1;
+            };
             if (reverse_links != 1) continue;
             const pair: Pair = .{ a, b };
             if (admitted(nl, sk, st, ats, lines, &pair)) pairs.appendAssumeCapacity(pair);
@@ -130,12 +141,13 @@ fn find(nl: *const Netlist, roles: []const sch.Role, rank: []const u32, load: Ed
         if (n == 2 or c.edges.items(.kind)[edge.index()] != .resistor) return null;
         const q = c.members(edge);
         if (q.len != 2 or q[0] == q[1]) return null;
-        group[1+n] = edge; n += 1;
+        group[1 + n] = edge;
+        n += 1;
     }
     if (n != 2 or group[1] == group[2]) return null;
     if (rank[group[1].index()] > rank[group[2].index()]) std.mem.swap(EdgeId, &group[1], &group[2]);
     for (0..2) |i| {
-        const r = c.members(group[1+i]);
+        const r = c.members(group[1 + i]);
         const out = if (r[0] == p[0]) r[1] else r[0];
         if (roles[out.index()].isRail()) return null;
         var count: usize = 0;
@@ -143,10 +155,11 @@ fn find(nl: *const Netlist, roles: []const sch.Role, rank: []const u32, load: Ed
             const edge: EdgeId = .from(d);
             const q = c.members(edge);
             if (!device.isTransistor(kind) or q.len < 3 or q[0] != out) continue;
-            count += 1; group[3+i] = edge;
+            count += 1;
+            group[3 + i] = edge;
         }
-        if (count != 1 or !known(nl, group[3+i], "nmos")) return null;
-        const q = c.members(group[3+i]);
+        if (count != 1 or !known(nl, group[3 + i], "nmos")) return null;
+        const q = c.members(group[3 + i]);
         if (q[0] == q[1] or q[0] == q[2] or q[1] == q[2] or roles[q[3].index()] != .sink) return null;
     }
     const a, const b = .{ c.members(group[3]), c.members(group[4]) };
@@ -154,7 +167,8 @@ fn find(nl: *const Netlist, roles: []const sch.Role, rank: []const u32, load: Ed
     n = 0;
     for (c.incident(a[2])) |edge| {
         if (edge == group[3] or edge == group[4]) continue;
-        n += 1; group[5] = edge;
+        n += 1;
+        group[5] = edge;
     }
     if (n != 1 or !known(nl, group[5], "nmos")) return null;
     const tail = c.members(group[5]);
@@ -198,14 +212,19 @@ fn admitted(nl: *const Netlist, sk: *const skeleton.Skeleton, st: *const structu
     for (st.block_kind, 0..) |kind, bi| {
         const members = st.members(bi);
         var hits: usize = 0;
-        for (members) |d| for (groups) |group| if (contains(group, d)) { hits += 1; };
+        for (members) |d| for (groups) |group| if (contains(group, d)) {
+            hits += 1;
+        };
         if (hits == 0) continue;
         if (members.len != 2 or hits != 2) return false;
         const pair = for (groups) |group| {
             if (same(members, group[3], group[4])) break true;
         } else false;
         if (kind == .pair and pair) continue;
-        if (kind == .bank and groups.len == 2 and same(members, groups[0][5], groups[1][5]) and !bank) { bank = true; continue; }
+        if (kind == .bank and groups.len == 2 and same(members, groups[0][5], groups[1][5]) and !bank) {
+            bank = true;
+            continue;
+        }
         return false;
     }
     return (groups.len == 2) == bank;
@@ -214,15 +233,17 @@ fn admitted(nl: *const Netlist, sk: *const skeleton.Skeleton, st: *const structu
 fn same(members: []const u32, a: EdgeId, b: EdgeId) bool {
     return (members[0] == a.index() and members[1] == b.index()) or (members[0] == b.index() and members[1] == a.index());
 }
-fn contains(group: Group, d: u32) bool { for (group) |edge| if (edge.index() == d) return true; return false; }
+fn contains(group: Group, d: u32) bool {
+    for (group) |edge| if (edge.index() == d) return true;
+    return false;
+}
 fn held(nl: *const Netlist, sk: *const skeleton.Skeleton, st: *const structure.Structure, edge: EdgeId) bool {
     for (nl.hints, sk.verdicts, st.verdicts) |hint, sv, tv| {
         const verdict = sv orelse tv orelse continue;
         if (verdict.state != .honoured and verdict.state != .relaxed) continue;
         switch (hint.verb) {
             .off, .symmetry_off, .axis => return true,
-            .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric,
-            .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
+            .pair, .mirror, .bank, .stack, .cross, .nogroup, .symmetric, .row, .above, .order, .cell, .face, .upright, .bridge, .at => {},
             else => continue,
         }
         for (hint.args) |name| if ((nl.device(name) orelse continue) == edge) return true;

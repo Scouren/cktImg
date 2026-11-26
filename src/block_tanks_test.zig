@@ -40,7 +40,9 @@ fn classes(lib: *library.Library, frame: Frame) !void {
         .{ .name = "outn", .at = .{ .x = 60, .y = 27 }, .side = .right },
     }, .draw = &.{
         .{ .polyline = &.{ .{ .x = -30, .y = -40 }, .{ .x = 50, .y = -40 }, .{ .x = 50, .y = 40 }, .{ .x = -30, .y = 40 }, .{ .x = -30, .y = -40 } } },
-        .ln(-40, -30, -30, -30), .ln(50, -13, 60, -13), .ln(if (frame == .malformed_lead) 70 else 50, 27, 60, 27),
+        .ln(-40, -30, -30, -30),
+        .ln(50, -13, 60, -13),
+        .ln(if (frame == .malformed_lead) 70 else 50, 27, 60, 27),
     } });
     _ = try lib.register(.{ .name = "ct_inductor", .terminals = &.{
         .{ .name = "n1", .at = .{ .x = -43, .y = 11 }, .side = .left },
@@ -72,7 +74,10 @@ fn expected(s: *const sch.Schematic, at: []const [2]f32, group: owner.Group) !vo
     const q = [_]Pt{ a, b, n1, n2, tap, ca, cb };
     var along: [7]i64 = undefined;
     var across: [7]i64 = undefined;
-    for (q, &along, &across) |p, *x, *y| { x.* = @as(i64, p.x) * v.x + @as(i64, p.y) * v.y; y.* = @as(i64, p.x) * w.x + @as(i64, p.y) * w.y; }
+    for (q, &along, &across) |p, *x, *y| {
+        x.* = @as(i64, p.x) * v.x + @as(i64, p.y) * v.y;
+        y.* = @as(i64, p.x) * w.x + @as(i64, p.y) * w.y;
+    }
     try testing.expect(along[0] == along[1] and along[2] == along[3] and along[5] == along[6]);
     try testing.expect(across[0] + across[1] == across[2] + across[3]);
     try testing.expect(across[0] + across[1] == across[5] + across[6]);
@@ -138,13 +143,19 @@ fn roomChecks(nl: *const netlist.Netlist, s: *sch.Schematic, sk: *const skeleton
     for (old, 0..) |row, i| try testing.expectEqualDeep(row, s.devices.get(i));
     var x: [4]i32 = undefined;
     var y: [4]i32 = undefined;
-    x[group.block.index()] = 0; y[group.block.index()] = 0;
-    x[group.pair.coil.index()] = 2; y[group.pair.coil.index()] = 2;
-    x[group.pair.cap.index()] = 2; y[group.pair.cap.index()] = 1;
+    x[group.block.index()] = 0;
+    y[group.block.index()] = 0;
+    x[group.pair.coil.index()] = 2;
+    y[group.pair.coil.index()] = 2;
+    x[group.pair.cap.index()] = 2;
+    y[group.pair.cap.index()] = 1;
     const obstruction = nl.device("r1").?.index();
-    x[obstruction] = 1; y[obstruction] = 0;
+    x[obstruction] = 1;
+    y[obstruction] = 0;
     var cells = sk.*;
-    cells.x = &x; cells.y = &y; cells.axis2 = null;
+    cells.x = &x;
+    cells.y = &y;
+    cells.axis2 = null;
     for ([_]bool{ true, false }) |succeeds| {
         if (!succeeds) {
             // A caller body extending far beyond its two lead tips can
@@ -277,7 +288,8 @@ test "block tanks rooms: future peer envelopes replace stale passive boxes in ei
     var groups: [2]owner.Group = undefined;
     for ([_][3][]const u8{ .{ "xl", "c1", "x1" }, .{ "xl2", "c2", "x2" } }, &groups) |names, *group| group.* = .{
         .pair = .{ .coil = nl.device(names[0]).?, .cap = nl.device(names[1]).?, .pins = .{ 0, 1, 2 }, .first = 0 },
-        .block = nl.device(names[2]).?, .pins = .{ 1, 2 },
+        .block = nl.device(names[2]).?,
+        .pins = .{ 1, 2 },
     };
     var before: [7]sch.DeviceInfo = undefined;
     for (&before, 0..) |*row, d| row.* = s.devices.get(d);

@@ -207,8 +207,7 @@ fn group(p: *const np.Placed, names: [2][]const u8) !void {
     // Reversed channel identities: top C/D and bottom E/S are one net.
     try testing.expectEqual(p.pin_net[a], p.pin_net[b + 2]);
     try testing.expectEqual(p.pin_net[a + 2], p.pin_net[b]);
-    try testing.expectEqual(p.pin_xy[a].x < p.pin_xy[a + 2].x,
-        p.pin_xy[b + 2].x < p.pin_xy[b].x);
+    try testing.expectEqual(p.pin_xy[a].x < p.pin_xy[a + 2].x, p.pin_xy[b + 2].x < p.pin_xy[b].x);
     try connected(p, a, a + 1);
     try connected(p, b, b + 1);
     try connected(p, a, b + 2);
@@ -286,8 +285,7 @@ test "antiparallel clamps: explicit upright and exact caller poses take preceden
         "M1 left left right vss nch\nM2 right right left vss nch\n";
     const lib = try support.library(testing.allocator);
     defer support.freeLibrary(testing.allocator, lib);
-    for ([_][]const u8{ "*@ upright m1 m2\n", "*@ upright m1\n",
-        "*@ at m1 -2 -2 R90\n" }) |hint| {
+    for ([_][]const u8{ "*@ upright m1 m2\n", "*@ upright m1\n", "*@ at m1 -2 -2 R90\n" }) |hint| {
         const deck = try std.mem.concat(testing.allocator, u8, &.{ base, hint });
         defer testing.allocator.free(deck);
         var p = try np.place(testing.allocator, &.default, lib, &.{deck}, null);

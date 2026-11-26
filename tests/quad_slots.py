@@ -32,7 +32,7 @@ def main(binary,files):
         assert len(overlap)==3 and not shape['uncontested']
     if files:
         rows=[json.loads(r) for r in subprocess.check_output([binary,*files]).splitlines()]
-        names={Path(r['path']).stem: r['switch_rectangles']['rows'] for r in rows}
+        names={r['id']: r['switch_rectangles']['rows'] for r in rows}
         assert set(names)=={'ag-80','ag-82','ag-517','ag-1093'}
         for n,rs in names.items():
             shape,=[r for r in rs if not r['reasons']]

@@ -173,11 +173,11 @@ fn reverseCards(a: std.mem.Allocator) ![]u8 {
 
 test "shared coil banks: actual source geometry and reflected mutations define the oracle" {
     const original = [14]np.Pt{
-        .{ .x = 180, .y = -50 }, .{ .x = 180, .y = 50 }, .{ .x = 200, .y = 0 },
-        .{ .x = 110, .y = -50 }, .{ .x = 110, .y = 50 }, .{ .x = 130, .y = 0 },
-        .{ .x = 60, .y = -20 }, .{ .x = 60, .y = 20 },
-        .{ .x = 20, .y = -60 }, .{ .x = 0, .y = -30 }, .{ .x = -20, .y = -60 },
-        .{ .x = 20, .y = 60 }, .{ .x = 0, .y = 30 }, .{ .x = -20, .y = 60 },
+        .{ .x = 180, .y = -50 }, .{ .x = 180, .y = 50 },  .{ .x = 200, .y = 0 },
+        .{ .x = 110, .y = -50 }, .{ .x = 110, .y = 50 },  .{ .x = 130, .y = 0 },
+        .{ .x = 60, .y = -20 },  .{ .x = 60, .y = 20 },   .{ .x = 20, .y = -60 },
+        .{ .x = 0, .y = -30 },   .{ .x = -20, .y = -60 }, .{ .x = 20, .y = 60 },
+        .{ .x = 0, .y = 30 },    .{ .x = -20, .y = 60 },
     };
     for ([_]bool{ false, true }) |swap| for ([_]bool{ false, true }) |mirror| {
         var points = original;
@@ -223,7 +223,7 @@ test "shared coil banks: actual geometry and reflection are independent of physi
             for (pins, &points) |pin, *point| point.* = p.pin_xy[pin];
             const upper = try ink.connected(testing.allocator, &p, &.{ pins[0], pins[3], pins[6], pins[8], pins[12] });
             const lower = try ink.connected(testing.allocator, &p, &.{ pins[1], pins[4], pins[7], pins[9], pins[11] });
-            std.debug.print("bank geometry {s} compact={} shelf={d}: relation={} upper_ink={} lower_ink={}\n", .{ bank.cap, compact, shelf, relative(points), upper, lower });
+            try testing.expect(upper and lower);
             try testing.expect(relative(points));
         }
         try expectReflection(&p, lib);

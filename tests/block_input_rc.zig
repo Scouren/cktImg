@@ -276,7 +276,7 @@ test "block input RC: renamed drivers and permuted declarations retain actual na
             var tips: [10]np.Pt = undefined;
             for (pins, &tips) |pin, *point| point.* = p.pin_xy[pin];
             try testing.expect(relative(tips, outward));
-            for (0..2) |i| try testing.expect(try ink.connected(testing.allocator, &p, &.{ pins[i], pins[2+2*i], pins[6+2*i] }));
+            for (0..2) |i| try testing.expect(try ink.connected(testing.allocator, &p, &.{ pins[i], pins[2 + 2 * i], pins[6 + 2 * i] }));
             try testing.expect(try ink.connected(testing.allocator, &p, &.{ pins[7], pins[9] }));
         }
     }

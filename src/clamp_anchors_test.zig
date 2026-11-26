@@ -29,8 +29,9 @@ fn classes(lib: *library.Library, skew: bool) !void {
         .{ .name = "s", .at = .{ .x = -10, .y = if (skew) 12 else 7 }, .side = .left },
     };
     for ([_][]const u8{ "nmos", "pmos" }) |name| _ = try lib.register(.{
-        .name = name, .terminals = &terminals,
-        .draw = &.{ .{ .line = .{ .a = .{ .x = -10, .y = 7 }, .b = .{ .x = 30, .y = 7 } } } },
+        .name = name,
+        .terminals = &terminals,
+        .draw = &.{.{ .line = .{ .a = .{ .x = -10, .y = 7 }, .b = .{ .x = 30, .y = 7 } } }},
     });
 }
 
@@ -238,7 +239,10 @@ test "clamp anchors: inferred reciprocal mates close locally but caller symmetry
             @memset(mates, sch.none);
             mates[m0] = outside[0];
             mates[m1] = outside[1];
-            if (outside[0] == m2) { mates[m2] = m0; mates[m3] = m1; }
+            if (outside[0] == m2) {
+                mates[m2] = m0;
+                mates[m3] = m1;
+            }
             var held = try owner.collect(gpa, &nl, &s, &sk, &st, ats, &lines);
             defer held.deinit(gpa);
             try testing.expectEqual(@as(usize, 0), held.groups.items.len);

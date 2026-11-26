@@ -116,10 +116,9 @@ fn named(p: *const np.Placed, lib: *const np.Library, device: []const u8, port: 
 
 fn pins(p: *const np.Placed, lib: *const np.Library) ![7]usize {
     const out: [7]usize = .{
-        try named(p, lib, "x1", "outp"), try named(p, lib, "x1", "outn"),
-        try named(p, lib, "xl1", "n1"), try named(p, lib, "xl1", "n2"),
-        try named(p, lib, "xl1", "n3"),
-        p.dev_pin0[np.checks.deviceIn(p, "c1").?],
+        try named(p, lib, "x1", "outp"),               try named(p, lib, "x1", "outn"),
+        try named(p, lib, "xl1", "n1"),                try named(p, lib, "xl1", "n2"),
+        try named(p, lib, "xl1", "n3"),                p.dev_pin0[np.checks.deviceIn(p, "c1").?],
         p.dev_pin0[np.checks.deviceIn(p, "c1").?] + 1,
     };
     for ([_][3]usize{ .{ 0, 2, 5 }, .{ 1, 3, 6 } }, [_][]const u8{ "net9", "net8" }) |group, net| {
@@ -170,9 +169,9 @@ fn honoured(text: []const u8, p: *const np.Placed, lib: *const np.Library) !void
 test "block tanks: literal source geometry rejects skew wrong order and shifted midpoint" {
     const q = [7]np.Pt{
         .{ .x = 460, .y = 30 }, .{ .x = 460, .y = 70 },
-        .{ .x = 520, .y = 0 }, .{ .x = 520, .y = 100 },
-        .{ .x = 540, .y = 50 },
-        .{ .x = 480, .y = 30 }, .{ .x = 480, .y = 70 },
+        .{ .x = 520, .y = 0 },  .{ .x = 520, .y = 100 },
+        .{ .x = 540, .y = 50 }, .{ .x = 480, .y = 30 },
+        .{ .x = 480, .y = 70 },
     };
     try testing.expect(relative(q));
     for ([_]usize{ 2, 4, 5 }) |i| {

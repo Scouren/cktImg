@@ -276,7 +276,6 @@ pub fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: 
 
 // ---- private ----
 
-
 fn controlNets(nl: *const Netlist, members: [3]u32) [4]u32 {
     const ends = nl.path(EdgeId.from(members[1])).?;
     return .{ ends[0], ends[1], nl.graph.members(EdgeId.from(members[0]))[1].index(), nl.graph.members(EdgeId.from(members[2]))[1].index() };

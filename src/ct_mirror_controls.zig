@@ -120,8 +120,14 @@ fn find(nl: *const Netlist, roles: []const sch.Role, gate: VertexId) ?Stage {
     var ref_count: u3 = 0;
     var out_count: u3 = 0;
     for (bridge) |d| {
-        if (d == out.reference) { ref_count += 1; continue; }
-        if (d == out.output) { out_count += 1; continue; }
+        if (d == out.reference) {
+            ref_count += 1;
+            continue;
+        }
+        if (d == out.output) {
+            out_count += 1;
+            continue;
+        }
         if (previous != no_edge) return null;
         previous = d;
     }
@@ -138,7 +144,10 @@ fn find(nl: *const Netlist, roles: []const sch.Role, gate: VertexId) ?Stage {
     var count: u2 = 0;
     var driving: u2 = 0;
     for (loads) |d| {
-        if (d == out.output) { driving += 1; continue; }
+        if (d == out.output) {
+            driving += 1;
+            continue;
+        }
         const p = g.members(d);
         if (count == 2 or g.edges.items(.kind)[d.index()] != .mosfet or p.len != 4 or p[2] != load_net) return null;
         pair[count] = d;
@@ -173,7 +182,9 @@ fn find(nl: *const Netlist, roles: []const sch.Role, gate: VertexId) ?Stage {
         for (nets[i + 1 ..]) |other| if (v == other) return null;
     }
     const stage: Stage = .{ .devices = .{ first.reference, first.output, out.reference, out.output, pair[0], pair[1], coil } };
-    for (stage.devices, 0..) |d, i| for (stage.devices[i + 1 ..]) |other| { if (d == other) return null; };
+    for (stage.devices, 0..) |d, i| for (stage.devices[i + 1 ..]) |other| {
+        if (d == other) return null;
+    };
     return stage;
 }
 

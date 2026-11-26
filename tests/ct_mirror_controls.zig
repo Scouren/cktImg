@@ -83,8 +83,8 @@ fn segments(p: *const np.Placed) ![][4]i32 {
     var out: std.ArrayList([4]i32) = .empty;
     errdefer out.deinit(testing.allocator);
     var it = p.segments(p.pin_net[pin(p, "m3", 1)]);
-    while (it.next()) |poly| for (poly[0..poly.len - 1], poly[1..]) |a, b| {
-        try out.append(testing.allocator, .{ @min(a.x,b.x), @min(a.y,b.y), @max(a.x,b.x), @max(a.y,b.y) });
+    while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+        try out.append(testing.allocator, .{ @min(a.x, b.x), @min(a.y, b.y), @max(a.x, b.x), @max(a.y, b.y) });
     };
     std.sort.heap([4]i32, out.items, {}, segmentLess);
     return out.toOwnedSlice(testing.allocator);
