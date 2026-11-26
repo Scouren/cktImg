@@ -236,7 +236,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(requested_places);
     // A circuit of amplifier blocks and parts is placed along its signal
     // (`opamp.zig`), every device, unless a line of the deck places one.
-    const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
+    const along = try opamp.place(sa, nl, s.roles, st, sk, s.lib, s.devices.items(.class));
     if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk, ats);

@@ -246,6 +246,11 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "ag-364.cir", "ag-1016.cir" }) |name|
         interleaved.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
     test_step.dependOn(&interleaved.step);
+    const amp_check = b.addSystemCommand(&.{"python3"});
+    amp_check.addFileArg(b.path("tests/amplifier_steering.py"));
+    amp_check.addArtifactArg(json_exe);
+    amp_check.addFileArg(b.path("external/examples/analoggenie/ag-762.cir"));
+    test_step.dependOn(&amp_check.step);
     const bridge_check = b.addSystemCommand(&.{"python3"});
     bridge_check.addFileArg(b.path("tests/source_bridge.py"));
     bridge_check.addArtifactArg(json_exe);

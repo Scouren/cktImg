@@ -211,9 +211,12 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     const n = c.edgeCount();
     // An op-amp circuit is placed along its signal, not on the lattice
     // (`opamp.zig`): its places are the decision, every device's.
-    if (p != null and !opamp.steered(nl) and opamp.applies(nl, try sch.guessRoles(arena, nl), sk.drawn)) {
-        try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, p.?, unit);
-        return out.items;
+    if (p) |drawing| {
+        const roles = try sch.guessRoles(arena, nl);
+        if (opamp.applies(nl, roles, sk.drawn) and !try opamp.steered(arena, nl, roles, st, sk)) {
+            try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, drawing, unit);
+            return out.items;
+        }
     }
     // Forms of the two-pin devices.
     for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
