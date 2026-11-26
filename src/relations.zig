@@ -200,12 +200,17 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .upright and h.verb != .bridge) continue;
-        verdicts[i] = .of(for (h.args) |name| {
+        var at: u32 = hints.no_arg;
+        verdicts[i] = .at(for (h.args, 0..) |name, k| {
+            at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             const a, const b = nl.path(EdgeId.from(d)) orelse break .not_placeable;
             const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
             if (!drawn[d] or !takes or a == b) break .not_placeable;
-        } else if (h.args.len == 0) .bad_args else .ok);
+        } else done: {
+            at = hints.no_arg;
+            break :done if (h.args.len == 0) .bad_args else .ok;
+        }, at);
         if (verdicts[i].?.state != .honoured) continue;
         for (h.args) |name| form[nl.device(name).?.index()] = if (h.verb == .upright) .vertical else .horizontal;
     }
@@ -266,7 +271,9 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         var devs: std.ArrayList(u32) = .empty;
         var spans: usize = 0;
+        var at: u32 = hints.no_arg;
         const bad: ?hints.Code = each: for (h.args, 0..) |name, k| {
+            at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             if (!drawn[d]) break .not_placeable;
             for (h.args[0..k]) |seen| if (std.mem.eql(u8, seen, name)) break :each .bad_args;
@@ -276,9 +283,12 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
                 continue;
             }
             try devs.append(arena, d);
-        } else null;
+        } else done: {
+            at = hints.no_arg;
+            break :done null;
+        };
         if (bad orelse if (devs.items.len == 0) @as(?hints.Code, .not_placeable) else null) |code| {
-            verdicts[i] = .of(code);
+            verdicts[i] = .at(code, at);
             continue;
         }
         if (devs.items.len == 1 and spans == 0) {

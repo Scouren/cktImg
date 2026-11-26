@@ -22,7 +22,9 @@
 //! a file whose first line is `.subckt` has no title line, so the file name
 //! is used as one; and a deck with no top-level devices draws the body of
 //! its last `.subckt` (the top cell), its ports as nets, its instances as
-//! blocks and its voltage sources in the circuit (a cell has no bench).
+//! blocks and its voltage sources in the circuit (a cell has no bench). A
+//! `*@` line outside every `.subckt` is then the top cell's, and the report
+//! numbers each line as the file does.
 //!
 //! Contents:
 //! - `pub fn main`
@@ -37,6 +39,7 @@ const svg = @import("svg");
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
 const Value = std.json.Value;
+const assert = std.debug.assert;
 
 const usage =
     \\cktimg-json — place a SPICE netlist and write the geometry as JSON
@@ -152,7 +155,9 @@ pub fn main(init: std.process.Init) !void {
         defer gpa.free(roles);
         if (opts.report) |path| {
             var rw: Writer.Allocating = .init(arena);
-            try np.report.write(gpa, &rw.writer, &placed, &lib, &nl, roles, cfg.layout);
+            var own = nl;
+            own.hints = try fileLines(arena, nl.hints, raw);
+            try np.report.write(gpa, &rw.writer, &placed, &lib, &own, roles, cfg.layout);
             cwd.writeFile(io, .{ .sub_path = path, .data = rw.written() }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
         }
         if (rung) |r| {
@@ -200,19 +205,79 @@ pub fn main(init: std.process.Init) !void {
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
 pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
-    const first = std.mem.trimStart(u8, raw, " \t\r\n");
-    const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
+    const text = if (titled(raw)) raw else try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw });
     var nl = try np.netlist.parse(gpa, &.{text}, diag);
     defer nl.deinit(gpa);
     if (nl.graph.edgeCount() > 0 or nl.defs.len == 0) return try arena.dupe([]const u8, &.{text});
     const top = nl.defs[nl.defs.len - 1];
     const title_end = std.mem.indexOfScalar(u8, text, '\n') orelse text.len;
     const rest = text[@min(title_end + 1, text.len)..];
-    const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
+    const body = try topCell(arena, text);
     const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
     const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
+}
+
+/// Whether deck `raw` has a title line: it does not start with `.subckt`.
+fn titled(raw: []const u8) bool {
+    return !std.ascii.startsWithIgnoreCase(std.mem.trimStart(u8, raw, " \t\r\n"), ".subckt");
+}
+
+/// `hints` (of `deckSources(raw)`'s first source) numbered as the file `raw`
+/// numbers its lines: one back where its path was read as the title, and 0
+/// for a line this tool added (the top cell's sources and port roles,
+/// `--from`'s stays), which the report leaves out of `requests`.
+fn fileLines(arena: Allocator, hints: []const np.hints.Hint, raw: []const u8) Allocator.Error![]const np.hints.Hint {
+    const shift = @intFromBool(!titled(raw));
+    const count = std.mem.count(u8, raw, "\n") + 1;
+    const out = try arena.dupe(np.hints.Hint, hints);
+    for (out) |*h| {
+        assert(h.line > shift);
+        h.line = if (h.line - shift > count) 0 else h.line - shift;
+    }
+    return out;
+}
+
+/// `text` (a deck with a title line) with every line blanked but the title,
+/// the top-level `*@` lines and the body of the last top-level `.subckt`
+/// (the top cell): the top cell's deck, each line kept on its own line
+/// number, and a line outside every `.subckt` one of the top cell's.
+/// ponytail: the last header is the top cell; a second definition of its
+/// name is not told apart (the parser keeps the first).
+fn topCell(arena: Allocator, text: []const u8) Allocator.Error![]const u8 {
+    const nesting = np.hints.nesting;
+    const out = try arena.dupe(u8, text);
+    // Two passes over the lines after the title: find the last top-level
+    // header, then keep what the top cell's deck holds.
+    var last: usize = text.len;
+    for (0..2) |pass| {
+        var depth: u32 = 0;
+        // In the top cell: 1 on its header and continuations, 2 in its body.
+        var top: u2 = 0;
+        var pos = (std.mem.indexOfScalar(u8, text, '\n') orelse text.len) + 1;
+        var steps: usize = 0;
+        while (pos < text.len) : (steps += 1) {
+            assert(steps <= text.len);
+            const end = std.mem.indexOfScalarPos(u8, text, pos, '\n') orelse text.len;
+            defer pos = end + 1;
+            const line = text[pos..end];
+            var words = std.mem.tokenizeAny(u8, line, " \t\r");
+            const head = words.next() orelse "";
+            const was = depth;
+            depth = nesting(depth, head, ".subckt", ".ends");
+            if (was == 0 and depth == 1) {
+                if (pass == 0) last = pos;
+                if (pos == last) top = 1;
+            } else if (top == 1 and head.len > 0 and head[0] != '+') top = 2;
+            if (depth == 0) top = 0;
+            if (pass == 0) continue;
+            const keep = top == 2 or (was == 0 and depth == 0 and std.mem.startsWith(u8, std.mem.trimStart(u8, line, " \t"), "*@"));
+            if (!keep) @memset(out[pos..end], ' ');
+        }
+    }
+    assert(out.len == text.len);
+    return out;
 }
 
 /// Places the selected original cell. A caller-supplied symbol library must

@@ -3,10 +3,12 @@
 //! next one.
 //!
 //! - `gates`: every finding of `checks.find`; none is the guarantee.
-//! - `requests`: each `*@` line of the deck, by line number: honoured,
-//!   relaxed, dropped or rejected, why, and the lines that blocked it. An
-//!   honoured line the finished drawing does not show (`checks.drawnAs`) is
-//!   reported relaxed, `not_drawn`: a bug.
+//! - `requests`: each `*@` line of the deck, by its 1-based line in the
+//!   file: honoured, relaxed, dropped or rejected, why, the argument at
+//!   fault (`name`, when one of several is) and the lines that blocked it.
+//!   An honoured line the finished drawing does not show (`checks.drawnAs`)
+//!   is reported relaxed, `not_drawn`: a bug. A line a front end added (its
+//!   `Hint.line` 0) is no line of the deck, and is left out.
 //! - `unshown_bodies`: device, terminal and net of a distinct non-rail body
 //!   whose selected symbol has no B contact or marks its B hidden.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
@@ -81,8 +83,9 @@ const Lattice = struct {
 /// takes yet. Of lines setting one value (a device's gate side, a net's
 /// style, ...), the preferred stands and the rest are dropped, blocked by
 /// it. With `p`, an honoured line `p` does not show is `relaxed`:
-/// `no_room` for a `wire` or `port` that fell back to names, else
-/// `not_drawn`, a bug.
+/// `no_room` for a `wire` or `port` that fell back to names or a `face`
+/// that turned a port's pin where a name stands for it, else `not_drawn`,
+/// a bug.
 pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict {
     assert(st.verdicts.len == nl.hints.len and sk.verdicts.len == nl.hints.len);
     const drawn = try arena.alloc(?Verdict, nl.hints.len);
@@ -135,6 +138,10 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
             .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
             else => .{ .state = .relaxed, .code = .not_drawn },
         };
+    }
+    // A pin turned where its port had no room: a name stands on it instead.
+    for (out, nl.hints) |*v, h| {
+        if (v.state == .honoured and h.verb == .face and portNamed(drawing, nl, roles, h)) v.* = .{ .state = .relaxed, .code = .no_room };
     }
     // A later exact pose may break an admitted symmetry. Check the finished
     // poses first, so a discarded weak stay can never become a blocker.
@@ -296,18 +303,27 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
 
     try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
     try w.writeAll("  \"requests\": [");
-    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
-        try w.writeAll(if (i == 0) "\n    " else ",\n    ");
+    var listed: usize = 0;
+    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib)) |h, v| {
+        if (h.line == 0) continue;
+        try w.writeAll(if (listed == 0) "\n    " else ",\n    ");
+        listed += 1;
         try w.print("{{ \"line\": {d}, \"text\": ", .{h.line});
         try std.json.Stringify.value(h.text, .{}, w);
-        try w.print(", \"state\": \"{t}\", \"code\": \"{t}\", \"blocked_by\": [", .{ v.state, v.code });
+        try w.print(", \"state\": \"{t}\", \"code\": \"{t}\", ", .{ v.state, v.code });
+        if (v.arg < h.args.len) {
+            try w.writeAll("\"name\": ");
+            try std.json.Stringify.value(h.args[v.arg], .{}, w);
+            try w.writeAll(", ");
+        }
+        try w.writeAll("\"blocked_by\": [");
         for (v.blocked_by, v.alone, 0..) |b, solo, k| {
             if (k > 0) try w.writeAll(", ");
             try w.print("{{ \"line\": {d}, \"alone\": {} }}", .{ nl.hints[b].line, solo });
         }
         try w.writeAll("] }");
     }
-    try w.writeAll(if (nl.hints.len == 0) "],\n" else "\n  ],\n");
+    try w.writeAll(if (listed == 0) "],\n" else "\n  ],\n");
 
     try w.print("  \"metrics\": {{ \"crossings\": {d}, \"bends\": {d}, \"labelled\": [", .{ crossings(p), bends(p) });
     var first = true;
@@ -366,6 +382,20 @@ fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed
         .unknown => return .of(.unknown_verb),
         else => return .of(.not_built),
     }
+}
+
+/// Whether `face` line `h` turned a pin of an input's or output's net
+/// where `p` draws a name on that pin: its port had no room there.
+fn portNamed(p: *const Placed, nl: *const Netlist, roles: []const Role, h: hints.Hint) bool {
+    if (h.args.len != 3) return false;
+    const e = nl.device(h.args[0]) orelse return false;
+    const pin = relations.pinIndex(nl, e.index(), h.args[1]) orelse return false;
+    if (!roles[nl.graph.members(e)[pin].index()].isPort()) return false;
+    const d = checks.deviceIn(p, h.args[0]) orelse return false;
+    const lo, const hi = p.pinRange(d);
+    if (lo + pin >= hi) return false;
+    for (p.labels) |l| if (l.at.eql(p.pin_xy[lo + pin])) return true;
+    return false;
 }
 
 /// The value a line sets, when one line can override another: its kind of
