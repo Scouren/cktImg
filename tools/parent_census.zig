@@ -26,6 +26,7 @@ pub fn main(init: std.process.Init) !void {
         const r = try np.local_parents.collect(a, ctx, .{});
         var j = J{ .writer = &sw.interface };
         try write(&j, path, &nl, r);
+        try @import("quad_inventory.zig").write(&j, a, raw, &nl);
         const source_regions = try np.source_regions.collect(a, raw, &nl);
         try j.objectField("source_region_scope");
         try j.write(@tagName(source_regions.scope));

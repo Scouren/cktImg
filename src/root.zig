@@ -18,6 +18,7 @@
 //! Contents (shared symbol and source-qualified layout entries):
 //! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
 //! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`
+//! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`, `pub const switch_rectangles`
 //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
@@ -41,6 +42,8 @@ pub const parent_stages = @import("parent_stages.zig");
 pub const source_regions = @import("source_regions.zig");
 /// An ordered horizontal two-arm source-degeneration bridge.
 pub const source_bridge = @import("source_bridge.zig");
+/// Original four-MOS channel rectangles, retaining every competing slot.
+pub const switch_rectangles = @import("switch_rectangles.zig");
 /// Complete source-certified mixed-device arrangements.
 pub const source_layout = @import("source_layout.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.

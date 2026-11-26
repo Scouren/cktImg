@@ -14,9 +14,22 @@ pub const Owner = union(enum) { bridge: bridge.Request, mixer: mixer.Request, fo
 /// Binds a complete original cell to its source and passive attachments.
 pub fn collect(a: std.mem.Allocator, raw: []const u8, nl: *const netlist.Netlist) !?Owner {
     if (try bridge.fromSource(a, raw, nl)) |row| return .{ .bridge = row };
-    if (try mixer.collect(a, raw, nl)) |row| return .{ .mixer = row };
-    if (try folded.collect(a, raw, nl)) |row| return .{ .folded = row };
-    return null;
+    const row: Owner = if (try mixer.collect(a, raw, nl)) |m| .{ .mixer = m } else if (try folded.collect(a, raw, nl)) |f| .{ .folded = f } else return null;
+    const switches = switch (row) {
+        .mixer => |*m| m.devices[5..9],
+        .folded => |*f| f.devices[4..8],
+        .bridge => unreachable,
+    };
+    const graph = &nl.graph;
+    var mos: [8]netlist.EdgeId = undefined;
+    var n: usize = 0;
+    for (graph.edges.items(.kind), 0..) |kind, i| if (kind == .mosfet) {
+        if (n == mos.len) return null;
+        mos[n] = netlist.EdgeId.from(i);
+        n += 1;
+    };
+    const rects = @import("switch_rectangles.zig");
+    return if (rects.alone(try rects.fromDevices(a, nl, mos[0..n]), switches)) row else null;
 }
 
 /// Applies the admitted room before routing using the resolved caller requests.

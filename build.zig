@@ -201,6 +201,12 @@ pub fn build(b: *std.Build) void {
     census_run.addPassthruArgs();
     census_run.has_side_effects = true;
     b.step("parent-census", "Examine selected-cell MOS parents (one JSON record per input deck)").dependOn(&census_run.step);
+    const quad_check = b.addSystemCommand(&.{"python3"});
+    quad_check.addFileArg(b.path("tests/quad_slots.py"));
+    quad_check.addArtifactArg(census);
+    for ([_][]const u8{ "ag-80.cir", "ag-82.cir", "ag-517.cir", "ag-1093.cir" }) |name|
+        quad_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    test_step.dependOn(&quad_check.step);
     const source_check = b.addSystemCommand(&.{"python3"});
     source_check.addFileArg(b.path("tests/source_regions.py"));
     source_check.addArtifactArg(census);
