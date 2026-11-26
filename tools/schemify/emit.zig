@@ -335,7 +335,7 @@ pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32
         try w.headerAttr("doc", "Capacitor with oblique plates and leads in a four-phase RC network");
         try w.headerAttr("prefix", "C");
         try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
-        try symbol(&w, rec, s);
+        try symbol(&w, rec, s, null, null);
         try w.record(.rank1, "param", &.{ "value", "1p" });
         try w.attr("kind", &.{"string"});
         try w.attr("unit", &.{"F"});
@@ -343,7 +343,7 @@ pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32
         try w.record(.rank1, "impl", &.{ "spice", "spice" });
         try w.attr("format", &.{ "spice", "{name} {p} {n} {value} m={m}" });
         try w.attr("format", &.{ "spectre", "{name} ({p} {n}) capacitor c={num(value)} m={m}" });
-        try graphics(&w, rec, s);
+        try graphics(&w, rec, s, null, null);
         return w.finish(try a.print("{s}.shprim", .{stem}), true);
     }
     const own = rec.syms.format.items[s];

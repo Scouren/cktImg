@@ -42,6 +42,7 @@ fn same(x: np.library.Class, y: np.library.Class) bool {
         switch (a) {
             .line => |op| if (!op.a.eql(b.line.a) or !op.b.eql(b.line.b)) return false,
             .circle => |op| if (!op.c.eql(b.circle.c) or op.r != b.circle.r) return false,
+            .filled_circle => |op| if (!op.c.eql(b.filled_circle.c) or op.r != b.filled_circle.r) return false,
             .text => |op| if (!op.at.eql(b.text.at) or op.size != b.text.size or !eql(u8, op.s, b.text.s)) return false,
             .polyline => |path| {
                 if (path.len != b.polyline.len) return false;
