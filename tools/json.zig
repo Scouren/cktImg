@@ -224,8 +224,8 @@ pub fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, li
     if (srcs.len == 2 and nl.defs.len != 0)
         nl.block_frames = try @import("regulator.zig").instances(arena, &nl, nl.defs[nl.defs.len - 1].ports, lib, cfg);
     if (std.meta.eql(cfg.layout, np.Config.default.layout)) {
-        if (try np.source_bridge.fromSource(arena, source, &nl)) |request| {
-            if (!custom_symbols or try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeSourceBridge(gpa, cfg, lib, &nl, request);
+        if (try np.source_layout.collect(arena, source, &nl)) |request| {
+            if (!custom_symbols or try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeSourceLayout(gpa, cfg, lib, &nl, request);
             return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
         }
     }

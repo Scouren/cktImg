@@ -17,7 +17,7 @@
 //!
 //! Contents (shared symbol and source-qualified layout entries):
 //! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
-//! - `pub const source_regions`, `pub const source_bridge`
+//! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`
 //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
@@ -40,6 +40,8 @@ pub const parent_stages = @import("parent_stages.zig");
 pub const source_regions = @import("source_regions.zig");
 /// An ordered horizontal two-arm source-degeneration bridge.
 pub const source_bridge = @import("source_bridge.zig");
+/// Complete source-certified mixed-device arrangements.
+pub const source_layout = @import("source_layout.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -172,6 +174,12 @@ pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *co
 
 /// Draws a certified complete two-arm bridge, with ordinary layout as fallback.
 pub fn placeSourceBridge(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_bridge.Request) PlaceError!Placed {
+    return placeSourceLayout(gpa, cfg, lib, nl, .{ .bridge = request });
+}
+
+/// Draws a complete mixed-device room, retaining the ordinary result if a
+/// selected symbol, original request, or final electrical gate declines it.
+pub fn placeSourceLayout(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_layout.Owner) PlaceError!Placed {
     return placeQualified(gpa, cfg, lib, nl, &.{}, &.{}, request);
 }
 
@@ -185,7 +193,7 @@ fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sou
     return placeBound(tmp, out, cfg, lib, &nl, &.{});
 }
 
-fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_bridge.Request) PlaceError!Placed {
+fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_layout.Owner) PlaceError!Placed {
     if (stages_.len > 0 or bridge != null) {
         const roles = try guessRoles(gpa, nl);
         defer gpa.free(roles);
@@ -201,7 +209,7 @@ fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const 
                 var findings: std.ArrayList(checks.Finding) = .empty;
                 defer findings.deinit(gpa);
                 try checks.find(gpa, &findings, &candidate, lib);
-                const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
+                const bridge_intact = if (bridge) |r| source_layout.intact(r, &candidate, nl, lib) else true;
                 const receivers_clear = if (panels) clear: {
                     for (pairs) |pair| for (pair) |o| {
                         if (!parent_stages.clearDevice(&candidate, lib, nl, o.pmos) or !parent_stages.clearDevice(&candidate, lib, nl, o.nmos)) break :clear false;

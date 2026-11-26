@@ -11,7 +11,7 @@ const names_ = @import("names.zig");
 const Allocator = std.mem.Allocator;
 
 /// Qualified owner identities mapped to the actual generated graph.
-pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_bridge.Request = null };
+pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_layout.Owner = null };
 
 /// The first target scope is one original subcircuit with complete, recognized
 /// four-pin MOS devices. Both original and emitted graphs are checked against
@@ -20,18 +20,25 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
     if (source.len == 0 or c != 1 or deck.cells() != 2 or deck.devs(0).len() != 0) return .{};
     const range = deck.devs(c);
     if (range.len() < 5 or range.len() > 128 or actual.graph.edgeCount() != range.len()) return .{};
-    var resistors: usize = 0;
+    var passives: usize = 0;
     for (range.lo..range.hi) |d| {
         const sym = rec.parts.sym.items[d];
         const family = rec.syms.family.items[sym];
-        if (family == .two and rec.syms.origin.items[sym] == .core and std.mem.eql(u8, rec.syms.stem.items[sym], "res") and std.ascii.toLower(deck.dev_name[d][0]) == 'r' and deck.netsOf(@intCast(d)).len == 2) {
-            resistors += 1;
+        if (family == .two and rec.syms.origin.items[sym] == .core and deck.netsOf(@intCast(d)).len == 2) {
+            const stem = switch (std.ascii.toLower(deck.dev_name[d][0])) {
+                'r' => "res",
+                'l' => "ind",
+                'i' => "isource",
+                else => return .{},
+            };
+            if (!std.mem.eql(u8, rec.syms.stem.items[sym], stem)) return .{};
+            passives += 1;
             continue;
         }
         if ((family != .nmos and family != .pmos) or std.ascii.toLower(deck.dev_name[d][0]) != 'm' or deck.netsOf(@intCast(d)).len != 4) return .{};
     }
-    if (resistors != 0) {
-        if (resistors != 4 or range.len() != 7) return .{};
+    if (passives != 0) {
+        if (!((passives == 4 and range.len() == 7) or (passives == 9 and range.len() == 15))) return .{};
         for (range.lo..range.hi) |d| if (rec.syms.origin.items[rec.parts.sym.items[d]] != .core) return .{};
     }
     var lines: std.ArrayList(u8) = .empty;
@@ -51,8 +58,8 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
     defer original.deinit(gpa);
     if (original.graph.edgeCount() != actual.graph.edgeCount()) return .{};
     var owners: Bound = .{};
-    if (resistors != 0) {
-        owners.bridge = (try np.source_bridge.fromSource(a, source, &original)) orelse return .{};
+    if (passives != 0) {
+        owners.bridge = (try np.source_layout.collect(a, source, &original)) orelse return .{};
     } else {
         const ctx = try np.parent_context.bind(a, source, &original, &np.parent_context.standard_rails);
         if (ctx.reasons.count() != 0) return .{};
@@ -81,7 +88,7 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
             if (ps.len != 4) return .{};
             const pol = actual.modelType(target) orelse return .{};
             if (!std.mem.eql(u8, pol, original.modelType(origin) orelse return .{})) return .{};
-        } else if (kind != .resistor or ps.len != 2) return .{};
+        } else if ((kind != .resistor and kind != .inductor and kind != .isource) or ps.len != 2) return .{};
         devices[origin.index()] = target.index();
         for (ps, qs, deck.netsOf(@intCast(d))) |x, y, n| {
             if (!std.mem.eql(u8, original.graph.vertices.items(.name)[x.index()], deck.netKey(c, n)) or !std.mem.eql(u8, actual.graph.vertices.items(.name)[y.index()], names[n])) return .{};
@@ -99,7 +106,11 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
         for (stage.devices, &dest.devices) |d, *mapped_id| mapped_id.* = devices[d];
     }
     if (owners.bridge) |*bridge| {
-        for (&bridge.devices) |*d| d.* = devices[d.*];
+        switch (bridge.*) {
+            inline else => |*r| for (&r.devices) |*d| {
+                d.* = devices[d.*];
+            },
+        }
     }
     return .{ .pairs = mapped, .stages = target_stages, .bridge = owners.bridge };
 }

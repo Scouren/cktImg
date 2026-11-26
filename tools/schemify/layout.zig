@@ -383,7 +383,7 @@ fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Libr
     var nl = try engine.netlist.parse(gpa, &.{text}, diag);
     defer nl.deinit(gpa);
     const owners = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
-    if (owners.bridge) |request| return engine.placeSourceBridge(gpa, &.default, lib, &nl, request);
+    if (owners.bridge) |request| return engine.placeSourceLayout(gpa, &.default, lib, &nl, request);
     return engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
 }
 
