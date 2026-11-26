@@ -23,6 +23,7 @@ const usage =
     \\Options:
     \\  --standalone      a complete \documentclass{standalone} document
     \\  --config <path>   layout, render and lint settings from a lint.zon file
+    \\  --allow-45        allow certified 45-degree feedback wires
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --lint            run the lint.zon rules and report on stderr
     \\  -h, --help        this message
@@ -35,6 +36,7 @@ const usage =
 ;
 
 const Options = struct {
+    allow_45: bool = false,
     netlist: []const u8,
     out: ?[]const u8 = null,
     config: ?[]const u8 = null,
@@ -56,7 +58,7 @@ pub fn main(init: std.process.Init) !void {
 
     const text = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
     // A config named on the command line must exist: it was asked for.
-    const cfg: np.Config = if (opts.config) |path| blk: {
+    var cfg: np.Config = if (opts.config) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
         var diags: std.ArrayList(np.config.Diagnostic) = .empty;
         const c = try np.Config.parse(arena, t, &diags);
@@ -64,6 +66,7 @@ pub fn main(init: std.process.Init) !void {
         break :blk c;
     } else .default;
 
+    if (opts.allow_45) cfg.geometry = .allow_45;
     var lib = np.Library.init(gpa);
     defer lib.deinit();
     const symbols = if (opts.symbols) |path|
@@ -126,6 +129,8 @@ fn parseArgs(io: std.Io, argv: []const [:0]const u8) ?Options {
         if (std.mem.eql(u8, a, "-h") or std.mem.eql(u8, a, "--help")) {
             writeUsage(io, .stdout());
             return null;
+        } else if (std.mem.eql(u8, a, "--allow-45")) {
+            o.allow_45 = true;
         } else if (std.mem.eql(u8, a, "--standalone")) {
             o.standalone = true;
         } else if (std.mem.eql(u8, a, "--lint")) {

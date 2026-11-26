@@ -46,6 +46,7 @@ const usage =
     \\
     \\Options:
     \\  --config <path>   layout settings and lint severities from a lint.zon file
+    \\  --allow-45        allow certified 45-degree feedback wires
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
     \\                    add a "target" block to the document
@@ -55,6 +56,7 @@ const usage =
     \\                    verdict, scores, the engine's decisions, the lattice rows
     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
     \\                    *@ lines to stdout
+    \\  --allow-45         permit 45-degree interiors on certified reciprocal gate wires
     \\  --from <path>     relay the deck from its last drawing (this tool's JSON):
     \\                    devices stay where it has them, and only what the deck's
     \\                    structure moves, or is new to it, is laid again
@@ -66,6 +68,7 @@ const usage =
 ;
 
 const Options = struct {
+    allow_45: bool = false,
     netlist: []const u8,
     out: ?[]const u8 = null,
     config: ?[]const u8 = null,
@@ -89,13 +92,14 @@ pub fn main(init: std.process.Init) !void {
     const opts = parseArgs(try init.minimal.args.toSlice(arena)) orelse return;
 
     const raw = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
-    const cfg: np.Config = if (opts.config) |path| blk: {
+    var cfg: np.Config = if (opts.config) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
         var diags: std.ArrayList(np.config.Diagnostic) = .empty;
         const c = try np.Config.parse(arena, t, &diags);
         for (diags.items) |d| std.log.warn("{s}:{d}: {t} '{s}'", .{ path, d.line, d.kind, d.key });
         break :blk c;
     } else .default;
+    if (opts.allow_45) cfg.geometry = .allow_45;
     // Read before placing: a manifest typo is reported before any work.
     const target: ?Target = if (opts.target) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 22)) catch |err| fatal("cannot read target manifest '{s}': {t}", .{ path, err });
@@ -463,6 +467,10 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
         }
         if (std.mem.eql(u8, a, "--bundles")) {
             opts.bundles = true;
+            continue;
+        }
+        if (std.mem.eql(u8, a, "--allow-45")) {
+            opts.allow_45 = true;
             continue;
         }
         const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;

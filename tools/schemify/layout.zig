@@ -348,6 +348,11 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
 
 /// Draws the cell with its original, unprojected source available to local-parent analysis.
 pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
+    return drawSourceGeometry(gpa, a, source, lib, deck, rec, c, budget, .manhattan);
+}
+
+/// Draws one cell using the caller’s supported wire direction set.
+pub fn drawSourceGeometry(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32, mode: engine.wire_geometry.Mode) Allocator.Error!Drawn {
     const devs = deck.devs(c);
     const names = try netNames(a, deck, c);
     var out: Drawn = .{};
@@ -368,7 +373,7 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
     }
     const text = try cellDeck(a, deck, rec, c, names);
     var diag: engine.netlist.Diagnostic = .{};
-    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag) catch |e| switch (e) {
+    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag, mode) catch |e| switch (e) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });
@@ -392,12 +397,15 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
     return out;
 }
 
-fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic) engine.PlaceError!engine.Placed {
+fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic, mode: engine.wire_geometry.Mode) engine.PlaceError!engine.Placed {
     var nl = try engine.netlist.parse(gpa, &.{text}, diag);
     defer nl.deinit(gpa);
-    const owners = try @import("parent_outputs.zig").forCell(gpa, a, source, deck, rec, c, names, &nl);
+    const owners = try @import("parent_outputs.zig").forCellGeometry(gpa, a, source, deck, rec, c, names, &nl, mode);
     if (owners.bridge) |request| return engine.placeSourceLayout(gpa, &.default, lib, &nl, request);
-    return engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
+    var result = try engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
+    errdefer result.deinit();
+    if (owners.crossover) |pair| _ = try engine.crossover.apply(gpa, lib, &result, &nl, pair);
+    return result;
 }
 
 /// Places the node-less devices of cell `c` (nothing to wire, so the engine never sees

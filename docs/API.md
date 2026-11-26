@@ -128,6 +128,8 @@ The JSON, SVG and TeX commands can select the last subcircuit in a file containi
 
 A Zig caller that retains the original source can use `parent_context.bind` and `local_parents.collect` before choosing a layout. `placeBound` accepts the qualified output-wire pairs. `placeOrganized` also accepts qualified local stages. `source_bridge.fromSource` and `placeSourceBridge` cover the equal-resistor source bridge. The geometry proposals require compatible actual symbols and the default layout. The native CLI and editor call sites show those checks and the ordinary-layout fallback. [Native selection](../tools/json.zig) · [Schemify selection](../tools/schemify/parent_outputs.zig) · [Production comparisons](research/production-patterns/README.md)
 
+A consumer that accepts integer 45-degree wire segments can set `cfg.geometry = .allow_45`. The C entry point is `cktimg_parse_place_geometry(lib, src, zon, CKTIMG_ALLOW_45, &report)`. The ordinary C entry point and the default Zig configuration produce Manhattan wires. A matching differential stage may receive two crossing feedback segments between cardinal terminal leads. A through-crossing of distinct nets has no junction, including when it falls halfway between integer coordinates. The wire point and pin APIs retain integer coordinates.
+
 ### 4. Many documents, one set of pages
 
 ```zig

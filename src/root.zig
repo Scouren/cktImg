@@ -61,6 +61,8 @@ pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
 /// Exact integer membership for horizontal, vertical and 45-degree wire records.
+/// Optional 45-degree reciprocal gate connections after ordinary routing.
+pub const crossover = @import("crossover.zig");
 pub const wire_geometry = @import("wire_geometry.zig");
 pub const lint = @import("lint.zig");
 /// The drawing's guarantees, checked on a finished `Placed`.
@@ -166,7 +168,12 @@ pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Libr
     defer tmp.free(roles);
     var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
     defer s.deinit();
-    return Placed.init(out, &s, nl);
+    var p = try Placed.init(out, &s, nl);
+    errdefer p.deinit();
+    if (cfg.geometry == .allow_45) if (crossover.collect(nl, roles)) |pair| {
+        _ = try crossover.apply(tmp, lib, &p, nl, pair);
+    };
+    return p;
 }
 
 /// Draws certified stages; a failed local room, mandatory route or final

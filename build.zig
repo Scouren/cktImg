@@ -106,7 +106,9 @@ pub fn build(b: *std.Build) void {
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
     test_step.dependOn(&b.addRunArtifact(cases).step);
     test_step.dependOn(&b.addRunArtifact(api).step);
-    test_step.dependOn(&b.addRunArtifact(abi_test).step);
+    const abi_run = b.addRunArtifact(abi_test);
+    abi_run.addFileArg(b.path("tests/symbols.zon"));
+    test_step.dependOn(&abi_run.step);
     test_step.dependOn(&b.addRunArtifact(plugin_tests).step);
     test_step.dependOn(&b.addRunArtifact(fixture_tests).step);
 
@@ -273,6 +275,13 @@ pub fn build(b: *std.Build) void {
     bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.cir"));
     bridge_check.addFileArg(b.path("external/examples/amsnet/amsnet-530.human.json"));
     test_step.dependOn(&bridge_check.step);
+
+    const diagonal_check = b.addSystemCommand(&.{"python3"});
+    diagonal_check.addFileArg(b.path("tests/diagonal_feedback.py"));
+    diagonal_check.addArtifactArg(json_exe);
+    for ([_][]const u8{ "ag-90.cir", "ag-404.cir", "ag-647.cir", "ag-493.cir", "ag-1080.cir" }) |name|
+        diagonal_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    test_step.dependOn(&diagonal_check.step);
     test_step.dependOn(&b.addRunArtifact(b.addTest(.{ .root_module = json_mod })).step);
 
     if (latex_renderer) {

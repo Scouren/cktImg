@@ -135,6 +135,14 @@ bool cktimg_lib_load_zon(CktimgLib *lib, const char *text, char **out_report);
 CktimgSch *cktimg_parse_place(CktimgLib *lib, const char *src, const char *zon,
                               char **out_report);
 
+/* Legacy placement emits Manhattan wires. Pass CKTIMG_ALLOW_45 to admit a
+ * verified reciprocal gate pair with two interior diagonals; all coordinates
+ * are still int32_t, and no layout is required to contain a diagonal.
+ * Unknown geometry values return NULL. */
+enum { CKTIMG_MANHATTAN = 0, CKTIMG_ALLOW_45 = 1 };
+CktimgSch *cktimg_parse_place_geometry(CktimgLib *lib, const char *src, const char *zon,
+                                       uint8_t geometry, char **out_report);
+
 void cktimg_sch_free(CktimgSch *sch);
 void cktimg_string_free(char *s);
 
@@ -190,7 +198,7 @@ bool cktimg_pin_contact(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
 
 /* ---------------------------------------------------------------------------
  * Nets and wires. WIRE INDEX IS NET INDEX; a net drawn with no wire has 0
- * segments. A segment is a Manhattan polyline of >= 2 points.
+ * segments. A segment is a polyline of >= 2 points using the admitted wire geometry.
  * ------------------------------------------------------------------------- */
 
 size_t cktimg_net_count(const CktimgSch *sch);

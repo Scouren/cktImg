@@ -16,15 +16,11 @@
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Human Rules:
-//! - report.1 (choice) A crossing is a level wire of one net and an upright
-//!   wire of another meeting strictly inside both; a touch at an end, a T or
-//!   a bend is none: it is the measure the drawings are compared by.
-//!   `crossings`
-//! - report.2 (choice) A corner is a point with no pin on it that a net's
-//!   wire leaves exactly two ways at a right angle; a T, a net's crossing of
-//!   its own and a straight joint are none, and a trunk drawn in pieces has
-//!   its corners where two pieces end: it is the measure the drawings are
-//!   compared by. `bends`
+//! - report.1: Two distinct nets cross where nonparallel segments meet strictly
+//!   inside both segments. Opt-in diagonals can cross at half-grid points.
+//! - report.2: A corner has exactly two noncollinear wire arms of one net
+//!   and no terminal. A shared endpoint between pieces can be a corner.
+//!   `crossings`, `bends`
 //!   Both agree with the scorer the 5,263 hand-drawn reference schematics
 //!   are compared by: on 200 of its drawings, 305 crossings and 1,178
 //!   corners either way, none differing.
@@ -46,6 +42,7 @@ const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
 const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
+const wire_geometry = @import("wire_geometry.zig");
 const drawn_symmetry = @import("drawn_symmetry.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
@@ -476,12 +473,10 @@ fn crossings(p: *const Placed) u32 {
     for (0..p.netCount()) |n| {
         var h = p.segments(n);
         while (h.next()) |hp| for (hp[0 .. hp.len - 1], hp[1..]) |a, b| {
-            if (a.y != b.y) continue;
-            for (0..p.netCount()) |m| {
-                if (m == n) continue;
+            for (n + 1..p.netCount()) |m| {
                 var v = p.segments(m);
                 while (v.next()) |vp| for (vp[0 .. vp.len - 1], vp[1..]) |c, d| {
-                    count += @intFromBool(checks.crossing(a, b, c, d) != null);
+                    count += @intFromBool(wire_geometry.properCross(a, b, c, d) != null);
                 };
             }
         };
@@ -508,11 +503,11 @@ fn bends(p: *const Placed) u32 {
             } else false;
             if (seen) continue;
             // The ways out: bits 0 and 1 along the row, 2 and 3 along the column.
-            const ways = checks.ways(p, n, at);
+            const ways = checks.wireRays(p, n, at);
             const on_pin = for (p.pin_xy, p.pin_net) |q, net| {
                 if (net == n and q.eql(at)) break true;
             } else false;
-            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways & 3 != 0 and ways & 12 != 0);
+            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways != 3 and ways != 12 and ways != 48 and ways != 192);
         };
     }
     return count;

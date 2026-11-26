@@ -173,6 +173,11 @@ pub export fn cktimg_lib_load_zon(lib: ?*CktimgLib, text: ?[*:0]const u8, out_re
 /// defaults). NULL on a netlist the parser rejects, with the reason in
 /// `*out_report`. `lib` must outlive the handle.
 pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
+    return cktimg_parse_place_geometry(lib, src, zon, 0, out_report);
+}
+
+/// Places a drawing with the caller's wire capability. Unknown capabilities return null.
+pub export fn cktimg_parse_place_geometry(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, geometry: u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
     if (out_report) |r| r.* = null;
     const l = lib orelse return null;
     const s = src orelse return null;
@@ -193,6 +198,7 @@ pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*
         for (diags.items) |d| report.writer.print("config:{d}: {s} '{s}'\n", .{ d.line, @tagName(d.kind), d.key }) catch return null;
     }
     var diag: netlist.Diagnostic = .{};
+    sch.cfg.geometry = std.enums.fromInt(root.wire_geometry.Mode, geometry) orelse return null;
     sch.placed = root.place(gpa, &sch.cfg, l, &.{std.mem.span(s)}, &diag) catch |err| {
         if (out_report) |r| {
             var w: std.Io.Writer.Allocating = .init(gpa);

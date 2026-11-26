@@ -11,12 +11,17 @@ const names_ = @import("names.zig");
 const Allocator = std.mem.Allocator;
 
 /// Qualified owner identities mapped to the actual generated graph.
-pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_layout.Owner = null };
+pub const Bound = struct { pairs: []const np.parent_outputs.Pair = &.{}, stages: []const np.parent_stages.Stage = &.{}, bridge: ?np.source_layout.Owner = null, crossover: ?np.crossover.Pair = null };
 
 /// The first target scope is one original subcircuit with complete, recognized
 /// four-pin MOS devices. Both original and emitted graphs are checked against
 /// every selected Deck device and each of its four ordered original net ids.
 pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const spice.Deck, rec: *const recognize.Recognized, c: u32, names: []const []const u8, actual: *const np.netlist.Netlist) Allocator.Error!Bound {
+    return forCellGeometry(gpa, a, source, deck, rec, c, names, actual, .manhattan);
+}
+
+/// Includes the verified reciprocal loads when the output target accepts their wire directions.
+pub fn forCellGeometry(gpa: Allocator, a: Allocator, source: []const u8, deck: *const spice.Deck, rec: *const recognize.Recognized, c: u32, names: []const []const u8, actual: *const np.netlist.Netlist, mode: np.wire_geometry.Mode) Allocator.Error!Bound {
     if (source.len == 0 or c != 1 or deck.cells() != 2 or deck.devs(0).len() != 0) return .{};
     const range = deck.devs(c);
     if (range.len() < 5 or range.len() > 128 or actual.graph.edgeCount() != range.len()) return .{};
@@ -65,10 +70,15 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
         const ctx = try np.parent_context.bind(a, source, &original, &np.parent_context.standard_rails);
         if (ctx.reasons.count() != 0) return .{};
         const parents = try np.local_parents.collect(a, ctx, .{});
-        if (parents.disposition != .raw_multigroup_candidate) return .{};
-        owners.pairs = try np.parent_outputs.collect(a, ctx, parents);
-        owners.stages = try np.parent_stages.collect(a, ctx, parents);
-        if (owners.pairs.len == 0 and owners.stages.len == 0) return .{};
+        if (mode == .allow_45 and original.graph.edgeCount() == 5) {
+            const roles = try np.guessRoles(a, &original);
+            owners.crossover = np.crossover.collect(&original, roles);
+        }
+        if (parents.disposition == .raw_multigroup_candidate) {
+            owners.pairs = try np.parent_outputs.collect(a, ctx, parents);
+            owners.stages = try np.parent_stages.collect(a, ctx, parents);
+        }
+        if (owners.pairs.len == 0 and owners.stages.len == 0 and owners.crossover == null) return .{};
     }
     const devices = try a.alloc(u32, range.len());
     const nets = try a.alloc(u32, original.graph.vertexCount());
@@ -113,5 +123,9 @@ pub fn forCell(gpa: Allocator, a: Allocator, source: []const u8, deck: *const sp
             },
         }
     }
-    return .{ .pairs = mapped, .stages = target_stages, .bridge = owners.bridge };
+    if (owners.crossover) |*pair| {
+        for (&pair.loads) |*d| d.* = devices[d.*];
+        for (&pair.inputs) |*d| d.* = devices[d.*];
+    }
+    return .{ .pairs = mapped, .stages = target_stages, .bridge = owners.bridge, .crossover = owners.crossover };
 }

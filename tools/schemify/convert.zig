@@ -60,6 +60,8 @@ pub const Conversion = struct {
 /// A conversion in progress: parsed and recognized, its cells drawn one `step` at a time.
 /// Stepping to the end and `finish` give exactly what `convert` gives.
 pub const Converter = struct {
+    /// The command that started the import admits the final wire geometry.
+    allow_45: bool = false,
     gpa: Allocator,
     a: Allocator,
     source: []const u8,
@@ -127,7 +129,7 @@ pub const Converter = struct {
         const a = c.a;
         const cell = c.todo.pop().?;
         const stem = if (cell == 0) c.bench else c.rec.syms.stem.items[recognize.subSymbol(cell)];
-        const drawn = try layout.drawSource(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget);
+        const drawn = try layout.drawSourceGeometry(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget, if (c.allow_45) .allow_45 else .manhattan);
         if (drawn.fallback) |why| try c.out.warnings.append(a, try a.print("{s}: drawn with labels only ({s})", .{ stem, why }));
         if (drawn.strays > 0) try c.out.warnings.append(a, try a.print("{s}: the engine left {d} pins unconnected; labelled", .{ stem, drawn.strays }));
         for (drawn.notes.items) |note| try c.out.warnings.append(a, try a.print("{s}: {s}", .{ stem, note }));

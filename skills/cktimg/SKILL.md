@@ -12,6 +12,8 @@ For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
 top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
 `--config` options to compare the two drawings.
 
+Use `--allow-45` with `cktimg-json` or `cktimg-tex` when the consuming editor or figure accepts oblique wires. In Schemify, pass `netlist.import --allow-45 n2s/deck.sp`. This enables a pair of 45-degree feedback segments in a verified reciprocal differential stage. A wire or label instruction on either output retains the caller's routing. The ordinary invocation uses Manhattan wires.
+
 ## Steps
 
 1. **Write the deck so its names carry its meaning** (Roles, below): matched
