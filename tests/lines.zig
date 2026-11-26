@@ -60,6 +60,14 @@ const Run = struct {
         return r.p.pin_xy[r.p.pinRange(r.device(name))[0] + k];
     }
 
+    /// The box around device `name`'s pins.
+    fn pins(r: *const Run, name: []const u8) np.Rect {
+        const a, const b = r.p.pinRange(r.device(name));
+        var box: np.Rect = .point(r.p.pin_xy[a]);
+        for (r.p.pin_xy[a..b]) |q| box = box.merge(.point(q));
+        return box;
+    }
+
     fn net(r: *const Run, name: []const u8) u32 {
         for (r.p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
         unreachable;
@@ -545,6 +553,29 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
     const o = try run(f.arena(), f.lib, ota, on);
     try expectState(o.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
     try std.testing.expect(o.at("m4").eql(base.at("m4")));
+}
+
+test "lines: above and row stand blocks and flat parts by their anchor" {
+    // Oracle: the lines themselves, read off the finished drawing's pins:
+    // the feedback part over the block has every pin above the block's and
+    // spans the block's centre; the part under it, every pin below.
+    // Blocks and flat parts have no row among the columns', and the engine
+    // rejected every such line `not_placeable` (four decks of the hinting
+    // trials: ar-3201, ag-1094, ag-1067, ag-1168).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Feedback over a block\n.model nch nmos\n.subckt dda p1 n1 o1 o2\n.ends dda\n.subckt buf a y\n.ends buf\n" ++
+        "M1 n1 vin 0 0 nch\nR1 vdd n1 1k\nR2 n1 o1 1k\nR3 p1 o2 1k\nX1 p1 n1 o1 o2 dda\nX2 o1 y buf\nR4 y 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ above r2 x1 r3\n*@ above x1 x2\n");
+    for ([_][]const u8{ "*@ above r2 x1 r3", "*@ above x1 x2" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    const r2 = r.pins("r2");
+    const x1 = r.pins("x1");
+    try std.testing.expect(r2.max.y < x1.min.y and r2.min.x <= r.at("x1").x and r.at("x1").x <= r2.max.x);
+    try std.testing.expect(r.pins("r3").min.y > x1.max.y);
+    try std.testing.expect(r.pins("x2").min.y > x1.max.y);
+    // A row of blocks and a flat part alone: level with its first block.
+    const level = try run(f.arena(), f.lib, deck, "*@ row x1 r2 x2\n");
+    try expectState(level.verdict("*@ row x1 r2 x2"), .honoured, .ok);
 }
 
 test "lines: a row line and an above line on a loop of two devices are both held" {

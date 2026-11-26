@@ -21,7 +21,7 @@ when two pins share a net (a diode-connected gate).
 | 1 | `symmetric <a> <b>` (devices or nets), `axis <dev or net>`, `symmetry off` | the left-right mates; what maps to itself; `off` drops every mate, the blocks' too | an involution; mates of one kind and pin count | strong |
 | 1 | `driver <dev> apart\|inline` | a source drawn apart (R3) or in the circuit | a V source | strong |
 | 1 | `expand <instance>` | one instance flattened (the definition's `*@ expand` does all) | an `X` of a defined `.subckt` | strong |
-| 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A bridge named in `row` goes on that device row | no cycle with column links (I1) | strong |
+| 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A flat device (a bridge, an `X` block) has no row of its own: in `row` it takes the row of the line's anchor, in `above` it stands in the anchor's column, above or below its neighbour (`above r5 x1 r4`: feedback over the block, a part under it). The anchor is the first upright device named, else the first block, else the first device | no cycle with column links (I1) | strong |
 | 2 | `order <devs>` | columns left to right. The devices named stand in different columns, so a link the engine chose between them is dropped; a bridge named goes in the channel between its neighbours | no cycle | strong |
 | 2 | `group stack <devs>` | a column's chain, top to bottom (built) | shared nets, no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form | upright: a transistor, or a two-pin device on two nets | strong |

@@ -81,7 +81,8 @@ Work down this list. Stop at the first round whose picture meets the target.
    between the rows, which is usually where a person draws it.
 
 7. **Blocks.** Set the port sides in the child `.subckt` before any line on
-   the block's neighbours. A three-port part with two ends (a centre-tapped
+   the block's neighbours. Then `above <part> <block> <part>` puts feedback
+   parts over and under the block, and `above <block> <block>` stacks two. A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
 
 8. **`rail <supply> each`** when a wire must pass over the top, or when the

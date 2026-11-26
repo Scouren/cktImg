@@ -23,10 +23,12 @@
 //! - relations.4 (invariant) `face <dev> <end> up|down` puts that end of
 //!   an upright device up or down. `ends`
 //! - relations.5 (invariant) The upright devices a `row` line names stand
-//!   on one row; a bridge it names takes the row of its first upright
-//!   device. `rows`
+//!   on one row; a bridge or block it names takes the row of the line's
+//!   anchor (`anchored.anchor`: its first upright device, else its first
+//!   block, else its first device). `rows`
 //! - relations.6 (invariant) Each upright device an `above` line names
-//!   stands on a row above the next one's. `rows`
+//!   stands on a row above the next one's; its flat devices stand by
+//!   their anchor (`anchored.zig`). `rows`
 //! - relations.7 (choice) Of `row` and `above` lines that close a cycle,
 //!   the strongest stand and the rest are dropped with their preferred
 //!   conflict: the deck's own ranking of its lines. `rows`
@@ -68,6 +70,7 @@ const device = @import("device.zig");
 const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
+const anchored = @import("anchored.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -247,9 +250,10 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
     }
 }
 
-/// Admits the `row` and `above` lines; their devices must be drawn column
-/// devices, but a `row` line's may bridge (it takes the row of the line's
-/// first column device).
+/// Admits the `row` and `above` lines; their devices must be drawn. A
+/// flat one (a bridge, a block) takes no part in the rows' constraints: in
+/// a `row` it takes the row of the line's anchor (`anchored.anchor`), in an
+/// `above` its anchor's column (`anchored.place`).
 pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Relations {
     const n = nl.graph.edgeCount();
     // The valid lines' constraints, by hint: `[a, b, eq]`.
@@ -271,13 +275,12 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             if (!drawn[d]) break .not_placeable;
             for (h.args[0..k]) |seen| if (std.mem.eql(u8, seen, name)) break :each .bad_args;
             if (form[d] != .vertical) {
-                if (h.verb != .row) break .not_placeable;
                 spans += 1;
                 continue;
             }
             try devs.append(arena, d);
         } else null;
-        if (bad orelse if (devs.items.len == 0) @as(?hints.Code, .not_placeable) else null) |code| {
+        if (bad) |code| {
             verdicts[i] = .of(code);
             continue;
         }
@@ -287,11 +290,11 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         var cs: std.ArrayList([3]u32) = .empty;
         const eq: u32 = @intFromBool(h.verb == .row);
-        for (devs.items[0 .. devs.items.len - 1], devs.items[1..]) |a, b| {
+        if (devs.items.len >= 2) for (devs.items[0 .. devs.items.len - 1], devs.items[1..]) |a, b| {
             if (a == b) continue;
             assert(devs.items.len >= 2);
             try cs.append(arena, .{ if (eq == 1) devs.items[0] else a, b, eq });
-        }
+        };
         own[i] = cs.items;
     }
     var admitted: std.ArrayList(u32) = .empty;
@@ -337,14 +340,10 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .row or verdicts[i] == null or verdicts[i].?.state != .honoured) continue;
-        var first: u32 = none;
-        for (h.args) |name| {
-            const d = nl.device(name).?.index();
-            if (form[d] == .vertical and first == none) first = d;
-        }
+        const first = nl.device(h.args[anchored.anchor(nl, form, h.args)]).?.index();
         for (h.args) |name| {
             const b = nl.device(name).?.index();
-            if (form[b] == .vertical) continue;
+            if (form[b] == .vertical or b == first) continue;
             bridge_row[b] = first;
             const mb = st.device_mate[b];
             const mf = st.device_mate[first];

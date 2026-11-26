@@ -88,6 +88,7 @@ const levels = @import("levels.zig");
 const bridges = @import("bridges.zig");
 const block_symbols = @import("block_symbols.zig");
 const relations = @import("relations.zig");
+const anchored = @import("anchored.zig");
 const sequence = @import("sequence.zig");
 const mates = @import("mates.zig");
 const wrap = @import("wrap.zig");
@@ -352,6 +353,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
         mated = mated or (m.* != none and drawn[d] and form[d] == .vertical);
     }
     try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, mate, seq.pairs, if (mated) 0 else null, x, y);
+    try anchored.place(gpa, nl, drawn, form, x, y, verdicts);
     try sequence.bridges(gpa, &seq, rel.bridge_row, devices_by_rank, drawn, form, x, y, verdicts);
     try cells.apply(gpa, arena, nl, drawn, mate, x, y, verdicts);
     mated = false;
