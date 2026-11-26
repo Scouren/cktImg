@@ -128,7 +128,8 @@ pub export fn cktimg_lib_add(
                 }
             }.f;
             // An op's kind is its `DrawOp` tag, as `cktimg_device_op_kind` hands it back.
-            const d: library.DrawOp = switch (std.enums.fromInt(std.meta.Tag(library.DrawOp), op.kind) orelse return fail) {
+            const kind = std.enums.fromInt(std.meta.Tag(library.DrawOp), op.kind) orelse return fail;
+            const d: library.DrawOp = switch (kind) {
                 .line => .{ .line = .{ .a = pt(xy, 0), .b = pt(xy, 1) } },
                 .polyline => blk: {
                     if (op.count < 2) return fail;
@@ -136,7 +137,18 @@ pub export fn cktimg_lib_add(
                     for (ps, 0..) |*q, k| q.* = pt(xy, k);
                     break :blk .{ .polyline = ps };
                 },
-                .circle => .{ .circle = .{ .c = pt(xy, 0), .r = op.r } },
+                .circle, .filled_circle => blk: {
+                    if (op.r < 0) return fail;
+                    const center = pt(xy, 0);
+                    for ([_]i32{ center.x, center.y }) |v| {
+                        _ = std.math.add(i32, v, op.r) catch return fail;
+                        _ = std.math.sub(i32, v, op.r) catch return fail;
+                    }
+                    break :blk if (kind == .circle)
+                        .{ .circle = .{ .c = center, .r = op.r } }
+                    else
+                        .{ .filled_circle = .{ .c = center, .r = op.r } };
+                },
                 .text => .{ .text = .{ .at = pt(xy, 0), .s = std.mem.span(op.text orelse return fail), .size = op.size } },
             };
             draw.append(a, d) catch return fail;
@@ -478,10 +490,11 @@ pub export fn cktimg_device_op_points(sch: ?*const CktimgSch, d: usize, o: usize
     };
     return pts.len;
 }
+/// World center and radius for hollow or filled circles; `op_kind` selects fill.
 pub export fn cktimg_device_op_circle(sch: ?*const CktimgSch, d: usize, o: usize, cx: ?*i32, cy: ?*i32, r: ?*i32) bool {
     const op = opOf(sch, d, o) orelse return false;
     const c = switch (op) {
-        .circle => |c| c,
+        .circle, .filled_circle => |c| c,
         else => return false,
     };
     const s = sch.?;

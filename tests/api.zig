@@ -527,6 +527,8 @@ test {
     _ = @import("driven_banks.zig");
     _ = @import("reference_gate_tree.zig");
     _ = @import("bias_block_neighbors.zig");
+    _ = @import("filled_circles.zig");
+    _ = @import("filled_circle_body_bounds.zig");
 }
 
 test {

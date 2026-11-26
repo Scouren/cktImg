@@ -38,6 +38,15 @@ or load a whole symbol file (`tests/symbols.zon` is the set the tests use):
 try lib.loadZon(arena, symbols_text, &diags);
 ```
 
+Body strokes include hollow `.circle` and solid `.filled_circle`, both
+with a local center `c: Pt` and radius `r: i32`. For example,
+`.{ .filled_circle = .{ .c = .{ .x = 6, .y = -4 }, .r = 3 } }` adds a
+solid disk. Class registration copies its geometry; placement transforms
+the center with the rest of the class and includes the disk in its bounds.
+The radius must be nonnegative, and each center coordinate plus or minus
+the radius must fit `i32`. SVG and TikZ preserve hollow versus filled ink;
+Schemify emits a circle record with a local `fill true` attribute for a disk.
+
 Which class a device gets is decided by name: `res`, `cap`, `ind`,
 `vsource`, `isource`, `cvsource` (E), `cisource` (G), `ccvs` (H), `cccs` (F),
 `vcvs` (an E that is a dependent source and no ideal amplifier, when the
@@ -193,6 +202,13 @@ for (size_t d = 0; d < cktimg_device_count(sch); d++) { ... cktimg_device_pos(sc
 cktimg_sch_free(sch);
 cktimg_lib_free(lib);
 ```
+
+`CKTIMG_OP_FILLED_CIRCLE` is tag 4; existing line, polyline, hollow circle
+and text tags remain 0–3. It uses the existing `CktimgOp` record: `xy` is
+the center, `count` is 1, and `r` is the radius. `cktimg_lib_add` rejects a
+negative radius or an unrepresentable circle extent before registering
+the class. `cktimg_device_op_circle` returns the placed center and radius
+for either circle kind; `cktimg_device_op_kind` distinguishes their fill.
 
 Same accessors as cktImg's (devices, pins, nets, wires, junctions, labels,
 bounds, placed draw ops, JSON into your buffer), plus device roles, label

@@ -102,6 +102,15 @@ pub fn build(b: *std.Build) void {
     abi_test.root_module.addIncludePath(b.path("include"));
     abi_test.root_module.linkLibrary(static);
 
+    const filled_circle_abi = b.addExecutable(.{ .name = "filled_circle_abi", .root_module = b.createModule(.{
+        .target = target,
+        .optimize = optimize,
+        .link_libc = true,
+    }) });
+    filled_circle_abi.root_module.addCSourceFile(.{ .file = b.path("tests/filled_circle_abi.c"), .flags = &.{ "-std=c99", "-Wall", "-Wextra", "-Werror", "-DCKTIMG_TEST_PUBLISHED_FILLED_CIRCLE=1" } });
+    filled_circle_abi.root_module.addIncludePath(b.path("include"));
+    filled_circle_abi.root_module.linkLibrary(static);
+
     const test_step = b.step("test", "Run tests");
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
     test_step.dependOn(&b.addRunArtifact(cases).step);
@@ -109,6 +118,7 @@ pub fn build(b: *std.Build) void {
     const abi_run = b.addRunArtifact(abi_test);
     abi_run.addFileArg(b.path("tests/symbols.zon"));
     test_step.dependOn(&abi_run.step);
+    test_step.dependOn(&b.addRunArtifact(filled_circle_abi).step);
     test_step.dependOn(&b.addRunArtifact(plugin_tests).step);
     test_step.dependOn(&b.addRunArtifact(fixture_tests).step);
 

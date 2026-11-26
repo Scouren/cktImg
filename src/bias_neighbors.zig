@@ -301,8 +301,9 @@ fn leadSide(s: *const Schematic, d: u32, pin: u4) ?Side {
     };
     const delta = t.sub(attachment orelse return null);
     const side = Side.of(delta).?;
-    for (c.draw) |op| if (op == .circle) {
-        if (project(op.circle.c.sub(t), side) + op.circle.r >= 0) return null;
+    for (c.draw) |op| switch (op) {
+        .circle, .filled_circle => |circle| if (project(circle.c.sub(t), side) + circle.r >= 0) return null,
+        else => {},
     };
     var body = false;
     var attached = false;

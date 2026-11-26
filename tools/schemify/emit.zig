@@ -453,9 +453,10 @@ fn drawOps(w: *Writer, ops: []const engine.library.DrawOp) Allocator.Error!void 
             try w.record(.rank2, "poly", &.{});
             for (ps) |p| try w.coords(&.{ p.x, p.y });
         },
-        .circle => |c| {
+        .circle, .filled_circle => |c| {
             try w.record(.rank2, "circle", &.{});
             try w.coords(&.{ c.c.x, c.c.y, c.r });
+            if (op == .filled_circle) try w.attr("fill", &.{"true"});
         },
         .text => |t| {
             try w.record(.rank2, "stext", &.{});
@@ -497,4 +498,24 @@ test "ids sort like their text" {
     try testing.expectEqual(mem.lessThan(u8, &idText(x), &idText(y)), idOrder(x) < idOrder(y));
     const again = try importId(a, key, 0, &taken);
     try testing.expect(!mem.eql(u8, &idText(again), &idText(x))); // a taken id is redrawn
+}
+
+test "filled-circle records retain local fill and hollow neighbors" {
+    // Oracle: literal rank-2 records, including both neighboring hollow
+    // circles. No symbol recognizer or renderer generates the expectation.
+    if (comptime @hasField(engine.library.DrawOp, "filled_circle")) {
+        var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+        defer arena.deinit();
+        var w = try Writer.init(arena.allocator(), "shprim", "disk.sp", "disk");
+        try drawOps(&w, &.{
+            .circ(-7, 11, 3),
+            .{ .filled_circle = .{ .c = .{ .x = 70, .y = 17 }, .r = 9 } },
+            .circ(5, -6, 4),
+        });
+        const out = try w.finish("disk.shprim", false);
+        try testing.expectEqualStrings(
+            "schemify 1 shprim\n\ncircle -7 11 3\ncircle 70 17 9\n  fill true\ncircle 5 -6 4\n",
+            out.bytes,
+        );
+    } else try testing.expect(false);
 }

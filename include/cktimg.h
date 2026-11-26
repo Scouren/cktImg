@@ -83,8 +83,9 @@ typedef struct {
 typedef enum {
   CKTIMG_OP_LINE = 0,     /* xy: x0,y0,x1,y1                        */
   CKTIMG_OP_POLYLINE = 1, /* xy: count points; closed repeats first */
-  CKTIMG_OP_CIRCLE = 2,   /* xy: centre; r                          */
+  CKTIMG_OP_CIRCLE = 2,   /* xy: centre; r; hollow outline          */
   CKTIMG_OP_TEXT = 3,     /* xy: centre; text, size (drawn upright) */
+  CKTIMG_OP_FILLED_CIRCLE = 4, /* xy: centre; r; solid ink disk      */
   CKTIMG_OP_NONE = 255
 } CktimgOpKind;
 
@@ -110,7 +111,8 @@ size_t cktimg_lib_count(const CktimgLib *lib);
  * drawn around the terminals. Returns the class index, which never changes
  * meaning, or SIZE_MAX (no terminals, two terminals on one point, a name
  * already added with other terminals, bad arguments, out of memory). An
- * exact repeat returns the existing index. */
+ * exact repeat returns the existing index. Circle radii must be nonnegative
+ * and centre +/- radius must fit int32_t on both axes. */
 size_t cktimg_lib_add(CktimgLib *lib, const char *name, uint8_t role,
                       const CktimgTerminal *terms, size_t n_terms,
                       const CktimgOp *ops, size_t n_ops);
@@ -243,6 +245,7 @@ size_t cktimg_device_op_count(const CktimgSch *sch, size_t d);
 uint8_t cktimg_device_op_kind(const CktimgSch *sch, size_t d, size_t o);
 size_t cktimg_device_op_points(const CktimgSch *sch, size_t d, size_t o,
                                int32_t *xy, size_t cap);
+/* Both circle kinds; use op_kind to distinguish hollow from solid. */
 bool cktimg_device_op_circle(const CktimgSch *sch, size_t d, size_t o,
                              int32_t *cx, int32_t *cy, int32_t *r);
 const char *cktimg_device_op_text(const CktimgSch *sch, size_t d, size_t o,

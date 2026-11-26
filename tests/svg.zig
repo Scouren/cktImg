@@ -137,6 +137,7 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
                 try pen.polyline(buf[0..n]);
             },
             .circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"#ffffff\""),
+            .filled_circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"" ++ ink ++ "\" stroke=\"none\""),
             .text => |t| try pen.text(place(o, base, t.at), 0, 3, t.s, "middle", @floatFromInt(t.size + 4), ink, false),
         }
     }
