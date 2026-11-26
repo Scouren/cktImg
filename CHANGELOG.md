@@ -11,6 +11,38 @@ The engine work since 2.1.0: 143 commits from 2026-11-06 to 2026-11-13, mostly p
 wiring rules measured against 5,263 hand-drawn reference circuits, and a pattern study on the
 AnalogGenie corpus (#8).
 
+### Merged
+
+Each merge into `main` since 2026-11-26, why it was taken, and what it measured on the merged
+tree. Corpus numbers are `corpus_score.py` against the cached hand drawings (AnalogGenie 2,202,
+AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> after.
+
+- Human layout patterns, 33 commits (#22): taken because it moves the drawings toward the hand
+  layouts with no new gate findings. Decks matching every scored relation: AnalogGenie 290 -> 293,
+  AMS-Net 243 -> 246; gate directions, gates, orientations and x/y positions each gain, none
+  lose. 196 of 5,274 drawings change, 0 -> 0 with gate findings. AnalogGenie crossings 4,987 ->
+  4,982 and written names 3,964 -> 3,917 (people 2,691 and 1,397); the cost is corners 20,658 ->
+  20,731 (people 20,590). Tests 468/468 without LaTeX and 469/469 with; `netlist-import.wasm`
+  rebuilt byte-identical at 540,819 bytes (was 558,406). Its parts:
+  - Reciprocal MOS loads stand on their input branches; a bias gate line keeps a visible port
+    when its middle is taken; passive ladders and bridged Ts sit around their tapped path;
+    sampling diodes in two polarity columns beside the hold capacitor; a parallel LC across drive
+    and output; the regulator reference above its feedback lead.
+  - Bias taps are added after routing, so existing ports and wire partitions survive (57 of
+    5,274 decks gain one).
+  - Comparators: drain pairs joined and remote gates named in both renderers; preamplifier rows
+    above the latch (AG1079, AG1080); four-bias amplifiers and clocked comparators with every
+    ordered terminal.
+  - Common-control input stages on two branches around the tail; paired source-degeneration
+    arms joined at a T over the tail.
+  - Caller geometry: requested tail sources stay on the mirror axis, series stacks report their
+    real order, admitted caller geometry is kept, rejected directives no longer move a drawing.
+  - Hidden electrical peers replace misleading no-connect crosses at pins; rounded-gate supply
+    leads end exactly on the outline; PFD and DAC box contacts on their observed sides.
+  - MOS bodies as distinct native and editor contacts, and a C query for a physical pin.
+  - A signed amplifier frame per native use, shared by qualifying editor symbols.
+  - Guest size: full LTO, pinned Binaryen, and deterministic heap ordering (-26,904 bytes).
+
 ### Changed
 
 Schemify plugin (what users see never names the engine):
