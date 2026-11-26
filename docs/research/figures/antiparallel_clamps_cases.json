@@ -1,0 +1,8725 @@
+{
+  "ag1149_regression_paths": [
+    {
+      "id": "ag-1149",
+      "net": "net7",
+      "pins": [
+        [
+          "c2",
+          1
+        ],
+        [
+          "q1",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "c2",
+            "card_index": 1,
+            "native_term": "b",
+            "net": "net7",
+            "source_term": "2",
+            "xy": [
+              300.0,
+              130.0
+            ]
+          },
+          {
+            "card": "q1",
+            "card_index": 1,
+            "native_term": "b",
+            "net": "net7",
+            "source_term": "B",
+            "xy": [
+              20.0,
+              190.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-6ec5b4ae-0e0b-4dd3-b6ed-8213dbbb8ff8-from-junction",
+              "xy": [
+                60.0,
+                190.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                20.0,
+                190.0
+              ],
+              [
+                60,
+                190
+              ]
+            ],
+            [
+              [
+                60,
+                190
+              ],
+              [
+                150,
+                190
+              ]
+            ],
+            [
+              [
+                150,
+                190
+              ],
+              [
+                210,
+                130
+              ]
+            ],
+            [
+              [
+                210,
+                130
+              ],
+              [
+                300.0,
+                130.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              300.0,
+              130.0
+            ],
+            [
+              20.0,
+              190.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "c2": {
+            "object": "instance-e2ec7801-2ebb-45e8-9650-b8e4b2d97253",
+            "terminals": {
+              "1": [
+                340.0,
+                130.0
+              ],
+              "2": [
+                300.0,
+                130.0
+              ]
+            }
+          },
+          "q1": {
+            "object": "instance-dbd6398c-3f35-4a5f-8bb0-a679b5f3594d",
+            "terminals": {
+              "B": [
+                20.0,
+                190.0
+              ],
+              "C": [
+                -10.0,
+                170.0
+              ],
+              "E": [
+                -10.0,
+                210.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              300,
+              130
+            ],
+            [
+              210,
+              130
+            ]
+          ],
+          [
+            [
+              210,
+              130
+            ],
+            [
+              150,
+              190
+            ]
+          ],
+          [
+            [
+              150,
+              190
+            ],
+            [
+              60,
+              190
+            ]
+          ],
+          [
+            [
+              60,
+              190
+            ],
+            [
+              20,
+              190
+            ]
+          ],
+          [
+            [
+              60,
+              190
+            ],
+            [
+              60,
+              240
+            ]
+          ],
+          [
+            [
+              60,
+              240
+            ],
+            [
+              80,
+              240
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "b",
+        "b"
+      ]
+    },
+    {
+      "id": "ag-1149",
+      "net": "net8",
+      "pins": [
+        [
+          "q3",
+          0
+        ],
+        [
+          "xlp",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "q3",
+            "card_index": 0,
+            "native_term": "c",
+            "net": "net8",
+            "source_term": "C",
+            "xy": [
+              90.0,
+              50.0
+            ]
+          },
+          {
+            "card": "xlp",
+            "card_index": 1,
+            "native_term": "n2",
+            "net": "net8",
+            "source_term": "n2",
+            "xy": [
+              230.0,
+              0.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-c53cc18a-6c0b-4bed-b645-0880b772c38b-to-junction",
+              "xy": [
+                370.0,
+                50.0
+              ]
+            },
+            {
+              "object": "wire-2f36e701-38e7-4216-a2fb-fad09b96069a-to-junction",
+              "xy": [
+                370.0,
+                80.0
+              ]
+            },
+            {
+              "object": "wire-e783d900-eed9-44e5-8f58-c774267017f7-to-junction",
+              "xy": [
+                370.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-c5e351e9-dc81-45d9-a38a-8b2314bf81d2-to-junction",
+              "xy": [
+                110.0,
+                50.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                90.0,
+                50.0
+              ],
+              [
+                110,
+                50
+              ]
+            ],
+            [
+              [
+                110,
+                50
+              ],
+              [
+                370,
+                50
+              ]
+            ],
+            [
+              [
+                230.0,
+                0.0
+              ],
+              [
+                370,
+                0
+              ]
+            ],
+            [
+              [
+                370,
+                0
+              ],
+              [
+                370,
+                50
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              90.0,
+              50.0
+            ],
+            [
+              230.0,
+              0.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "q3": {
+            "object": "instance-fb17a2dd-b784-4ded-8d0f-00a3c91bef1e",
+            "terminals": {
+              "B": [
+                70.0,
+                20.0
+              ],
+              "C": [
+                90.0,
+                50.0
+              ],
+              "E": [
+                50.0,
+                50.0
+              ]
+            }
+          },
+          "xlp": {
+            "actual_named_port_certificates": {
+              "n1": {
+                "endpoint": [
+                  130.0,
+                  0.0
+                ],
+                "method": "declared N1/N2/N3 matches actual center-tap SVG lead"
+              },
+              "n2": {
+                "endpoint": [
+                  230.0,
+                  0.0
+                ],
+                "method": "declared N1/N2/N3 matches actual center-tap SVG lead"
+              },
+              "n3": {
+                "endpoint": [
+                  180.0,
+                  -20.0
+                ],
+                "method": "declared N1/N2/N3 matches actual center-tap SVG lead"
+              }
+            },
+            "missing_source_geometry": [],
+            "object": "instance-ed13bb5a-45d4-45c9-afa5-00a2fe85b117",
+            "source_sha256": {
+              ".cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+              ".human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+              ".svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              230,
+              0
+            ],
+            [
+              370,
+              0
+            ]
+          ],
+          [
+            [
+              370,
+              0
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              370,
+              50
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              370,
+              80
+            ],
+            [
+              370,
+              130
+            ]
+          ],
+          [
+            [
+              370,
+              130
+            ],
+            [
+              370,
+              170
+            ]
+          ],
+          [
+            [
+              90,
+              50
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              110,
+              50
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              70,
+              20
+            ],
+            [
+              110,
+              20
+            ]
+          ],
+          [
+            [
+              110,
+              20
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              310,
+              80
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              340,
+              130
+            ],
+            [
+              370,
+              130
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "c",
+        "n2"
+      ]
+    }
+  ],
+  "ams_selected_names": [],
+  "corpus_names": {
+    "amsnet": [
+      "amsnet-0",
+      "amsnet-1",
+      "amsnet-10",
+      "amsnet-100",
+      "amsnet-101",
+      "amsnet-102",
+      "amsnet-103",
+      "amsnet-104",
+      "amsnet-105",
+      "amsnet-106",
+      "amsnet-107",
+      "amsnet-108",
+      "amsnet-109",
+      "amsnet-11",
+      "amsnet-110",
+      "amsnet-111",
+      "amsnet-112",
+      "amsnet-113",
+      "amsnet-114",
+      "amsnet-115",
+      "amsnet-116",
+      "amsnet-117",
+      "amsnet-118",
+      "amsnet-12",
+      "amsnet-120",
+      "amsnet-121",
+      "amsnet-122",
+      "amsnet-123",
+      "amsnet-124",
+      "amsnet-125",
+      "amsnet-126",
+      "amsnet-127",
+      "amsnet-128",
+      "amsnet-129",
+      "amsnet-13",
+      "amsnet-130",
+      "amsnet-131",
+      "amsnet-132",
+      "amsnet-133",
+      "amsnet-134",
+      "amsnet-135",
+      "amsnet-136",
+      "amsnet-138",
+      "amsnet-139",
+      "amsnet-14",
+      "amsnet-140",
+      "amsnet-141",
+      "amsnet-142",
+      "amsnet-143",
+      "amsnet-144",
+      "amsnet-145",
+      "amsnet-146",
+      "amsnet-147",
+      "amsnet-148",
+      "amsnet-149",
+      "amsnet-15",
+      "amsnet-150",
+      "amsnet-151",
+      "amsnet-152",
+      "amsnet-153",
+      "amsnet-154",
+      "amsnet-156",
+      "amsnet-157",
+      "amsnet-158",
+      "amsnet-159",
+      "amsnet-16",
+      "amsnet-160",
+      "amsnet-161",
+      "amsnet-162",
+      "amsnet-163",
+      "amsnet-164",
+      "amsnet-165",
+      "amsnet-166",
+      "amsnet-167",
+      "amsnet-168",
+      "amsnet-169",
+      "amsnet-17",
+      "amsnet-170",
+      "amsnet-171",
+      "amsnet-172",
+      "amsnet-173",
+      "amsnet-174",
+      "amsnet-175",
+      "amsnet-176",
+      "amsnet-177",
+      "amsnet-178",
+      "amsnet-179",
+      "amsnet-18",
+      "amsnet-180",
+      "amsnet-181",
+      "amsnet-182",
+      "amsnet-183",
+      "amsnet-184",
+      "amsnet-185",
+      "amsnet-186",
+      "amsnet-187",
+      "amsnet-188",
+      "amsnet-189",
+      "amsnet-19",
+      "amsnet-190",
+      "amsnet-191",
+      "amsnet-192",
+      "amsnet-193",
+      "amsnet-194",
+      "amsnet-195",
+      "amsnet-196",
+      "amsnet-197",
+      "amsnet-198",
+      "amsnet-199",
+      "amsnet-2",
+      "amsnet-20",
+      "amsnet-200",
+      "amsnet-201",
+      "amsnet-202",
+      "amsnet-203",
+      "amsnet-204",
+      "amsnet-205",
+      "amsnet-206",
+      "amsnet-207",
+      "amsnet-208",
+      "amsnet-209",
+      "amsnet-21",
+      "amsnet-210",
+      "amsnet-211",
+      "amsnet-212",
+      "amsnet-213",
+      "amsnet-214",
+      "amsnet-215",
+      "amsnet-216",
+      "amsnet-217",
+      "amsnet-218",
+      "amsnet-219",
+      "amsnet-22",
+      "amsnet-220",
+      "amsnet-221",
+      "amsnet-222",
+      "amsnet-223",
+      "amsnet-224",
+      "amsnet-225",
+      "amsnet-226",
+      "amsnet-228",
+      "amsnet-229",
+      "amsnet-23",
+      "amsnet-230",
+      "amsnet-231",
+      "amsnet-232",
+      "amsnet-233",
+      "amsnet-234",
+      "amsnet-235",
+      "amsnet-236",
+      "amsnet-237",
+      "amsnet-238",
+      "amsnet-239",
+      "amsnet-24",
+      "amsnet-240",
+      "amsnet-241",
+      "amsnet-242",
+      "amsnet-243",
+      "amsnet-244",
+      "amsnet-245",
+      "amsnet-246",
+      "amsnet-247",
+      "amsnet-248",
+      "amsnet-249",
+      "amsnet-25",
+      "amsnet-250",
+      "amsnet-251",
+      "amsnet-252",
+      "amsnet-253",
+      "amsnet-254",
+      "amsnet-255",
+      "amsnet-256",
+      "amsnet-257",
+      "amsnet-258",
+      "amsnet-259",
+      "amsnet-26",
+      "amsnet-260",
+      "amsnet-261",
+      "amsnet-262",
+      "amsnet-263",
+      "amsnet-264",
+      "amsnet-265",
+      "amsnet-266",
+      "amsnet-267",
+      "amsnet-268",
+      "amsnet-269",
+      "amsnet-27",
+      "amsnet-270",
+      "amsnet-271",
+      "amsnet-272",
+      "amsnet-273",
+      "amsnet-274",
+      "amsnet-275",
+      "amsnet-276",
+      "amsnet-277",
+      "amsnet-278",
+      "amsnet-279",
+      "amsnet-28",
+      "amsnet-280",
+      "amsnet-281",
+      "amsnet-282",
+      "amsnet-283",
+      "amsnet-284",
+      "amsnet-285",
+      "amsnet-286",
+      "amsnet-287",
+      "amsnet-288",
+      "amsnet-289",
+      "amsnet-29",
+      "amsnet-290",
+      "amsnet-291",
+      "amsnet-292",
+      "amsnet-293",
+      "amsnet-294",
+      "amsnet-295",
+      "amsnet-296",
+      "amsnet-297",
+      "amsnet-298",
+      "amsnet-299",
+      "amsnet-3",
+      "amsnet-30",
+      "amsnet-300",
+      "amsnet-301",
+      "amsnet-302",
+      "amsnet-303",
+      "amsnet-304",
+      "amsnet-305",
+      "amsnet-306",
+      "amsnet-307",
+      "amsnet-308",
+      "amsnet-309",
+      "amsnet-31",
+      "amsnet-310",
+      "amsnet-311",
+      "amsnet-312",
+      "amsnet-313",
+      "amsnet-314",
+      "amsnet-315",
+      "amsnet-316",
+      "amsnet-317",
+      "amsnet-318",
+      "amsnet-319",
+      "amsnet-32",
+      "amsnet-320",
+      "amsnet-321",
+      "amsnet-322",
+      "amsnet-323",
+      "amsnet-324",
+      "amsnet-325",
+      "amsnet-326",
+      "amsnet-327",
+      "amsnet-328",
+      "amsnet-329",
+      "amsnet-33",
+      "amsnet-330",
+      "amsnet-331",
+      "amsnet-332",
+      "amsnet-333",
+      "amsnet-334",
+      "amsnet-335",
+      "amsnet-336",
+      "amsnet-337",
+      "amsnet-338",
+      "amsnet-339",
+      "amsnet-34",
+      "amsnet-340",
+      "amsnet-341",
+      "amsnet-342",
+      "amsnet-343",
+      "amsnet-344",
+      "amsnet-345",
+      "amsnet-346",
+      "amsnet-347",
+      "amsnet-348",
+      "amsnet-349",
+      "amsnet-35",
+      "amsnet-350",
+      "amsnet-351",
+      "amsnet-352",
+      "amsnet-353",
+      "amsnet-354",
+      "amsnet-355",
+      "amsnet-356",
+      "amsnet-357",
+      "amsnet-358",
+      "amsnet-359",
+      "amsnet-36",
+      "amsnet-360",
+      "amsnet-361",
+      "amsnet-362",
+      "amsnet-363",
+      "amsnet-364",
+      "amsnet-365",
+      "amsnet-366",
+      "amsnet-367",
+      "amsnet-368",
+      "amsnet-369",
+      "amsnet-37",
+      "amsnet-370",
+      "amsnet-371",
+      "amsnet-372",
+      "amsnet-373",
+      "amsnet-374",
+      "amsnet-375",
+      "amsnet-376",
+      "amsnet-377",
+      "amsnet-38",
+      "amsnet-383",
+      "amsnet-384",
+      "amsnet-385",
+      "amsnet-386",
+      "amsnet-387",
+      "amsnet-388",
+      "amsnet-389",
+      "amsnet-39",
+      "amsnet-393",
+      "amsnet-394",
+      "amsnet-395",
+      "amsnet-396",
+      "amsnet-397",
+      "amsnet-398",
+      "amsnet-4",
+      "amsnet-40",
+      "amsnet-401",
+      "amsnet-402",
+      "amsnet-403",
+      "amsnet-404",
+      "amsnet-405",
+      "amsnet-406",
+      "amsnet-407",
+      "amsnet-408",
+      "amsnet-409",
+      "amsnet-41",
+      "amsnet-410",
+      "amsnet-411",
+      "amsnet-412",
+      "amsnet-413",
+      "amsnet-414",
+      "amsnet-415",
+      "amsnet-416",
+      "amsnet-417",
+      "amsnet-418",
+      "amsnet-419",
+      "amsnet-42",
+      "amsnet-420",
+      "amsnet-421",
+      "amsnet-422",
+      "amsnet-423",
+      "amsnet-424",
+      "amsnet-425",
+      "amsnet-426",
+      "amsnet-427",
+      "amsnet-428",
+      "amsnet-429",
+      "amsnet-43",
+      "amsnet-430",
+      "amsnet-431",
+      "amsnet-432",
+      "amsnet-433",
+      "amsnet-434",
+      "amsnet-437",
+      "amsnet-438",
+      "amsnet-439",
+      "amsnet-44",
+      "amsnet-444",
+      "amsnet-445",
+      "amsnet-446",
+      "amsnet-447",
+      "amsnet-449",
+      "amsnet-45",
+      "amsnet-450",
+      "amsnet-451",
+      "amsnet-452",
+      "amsnet-453",
+      "amsnet-454",
+      "amsnet-455",
+      "amsnet-456",
+      "amsnet-457",
+      "amsnet-458",
+      "amsnet-459",
+      "amsnet-46",
+      "amsnet-460",
+      "amsnet-461",
+      "amsnet-463",
+      "amsnet-464",
+      "amsnet-465",
+      "amsnet-466",
+      "amsnet-467",
+      "amsnet-469",
+      "amsnet-47",
+      "amsnet-470",
+      "amsnet-471",
+      "amsnet-472",
+      "amsnet-474",
+      "amsnet-476",
+      "amsnet-477",
+      "amsnet-479",
+      "amsnet-48",
+      "amsnet-481",
+      "amsnet-482",
+      "amsnet-483",
+      "amsnet-484",
+      "amsnet-486",
+      "amsnet-487",
+      "amsnet-488",
+      "amsnet-49",
+      "amsnet-495",
+      "amsnet-496",
+      "amsnet-497",
+      "amsnet-498",
+      "amsnet-499",
+      "amsnet-5",
+      "amsnet-50",
+      "amsnet-500",
+      "amsnet-501",
+      "amsnet-502",
+      "amsnet-503",
+      "amsnet-505",
+      "amsnet-506",
+      "amsnet-507",
+      "amsnet-508",
+      "amsnet-509",
+      "amsnet-51",
+      "amsnet-510",
+      "amsnet-511",
+      "amsnet-512",
+      "amsnet-513",
+      "amsnet-514",
+      "amsnet-515",
+      "amsnet-516",
+      "amsnet-517",
+      "amsnet-518",
+      "amsnet-519",
+      "amsnet-52",
+      "amsnet-520",
+      "amsnet-521",
+      "amsnet-522",
+      "amsnet-523",
+      "amsnet-524",
+      "amsnet-525",
+      "amsnet-526",
+      "amsnet-527",
+      "amsnet-528",
+      "amsnet-529",
+      "amsnet-53",
+      "amsnet-530",
+      "amsnet-531",
+      "amsnet-532",
+      "amsnet-533",
+      "amsnet-534",
+      "amsnet-535",
+      "amsnet-536",
+      "amsnet-538",
+      "amsnet-539",
+      "amsnet-54",
+      "amsnet-540",
+      "amsnet-541",
+      "amsnet-542",
+      "amsnet-544",
+      "amsnet-545",
+      "amsnet-546",
+      "amsnet-547",
+      "amsnet-548",
+      "amsnet-549",
+      "amsnet-55",
+      "amsnet-550",
+      "amsnet-554",
+      "amsnet-555",
+      "amsnet-556",
+      "amsnet-557",
+      "amsnet-558",
+      "amsnet-559",
+      "amsnet-56",
+      "amsnet-560",
+      "amsnet-561",
+      "amsnet-562",
+      "amsnet-564",
+      "amsnet-565",
+      "amsnet-566",
+      "amsnet-567",
+      "amsnet-568",
+      "amsnet-569",
+      "amsnet-57",
+      "amsnet-570",
+      "amsnet-576",
+      "amsnet-577",
+      "amsnet-578",
+      "amsnet-579",
+      "amsnet-58",
+      "amsnet-580",
+      "amsnet-581",
+      "amsnet-582",
+      "amsnet-583",
+      "amsnet-584",
+      "amsnet-585",
+      "amsnet-586",
+      "amsnet-587",
+      "amsnet-588",
+      "amsnet-589",
+      "amsnet-59",
+      "amsnet-590",
+      "amsnet-591",
+      "amsnet-592",
+      "amsnet-593",
+      "amsnet-594",
+      "amsnet-595",
+      "amsnet-596",
+      "amsnet-597",
+      "amsnet-598",
+      "amsnet-599",
+      "amsnet-6",
+      "amsnet-60",
+      "amsnet-600",
+      "amsnet-601",
+      "amsnet-602",
+      "amsnet-604",
+      "amsnet-605",
+      "amsnet-606",
+      "amsnet-607",
+      "amsnet-608",
+      "amsnet-609",
+      "amsnet-61",
+      "amsnet-610",
+      "amsnet-611",
+      "amsnet-612",
+      "amsnet-613",
+      "amsnet-614",
+      "amsnet-615",
+      "amsnet-616",
+      "amsnet-617",
+      "amsnet-618",
+      "amsnet-619",
+      "amsnet-62",
+      "amsnet-620",
+      "amsnet-621",
+      "amsnet-622",
+      "amsnet-624",
+      "amsnet-625",
+      "amsnet-626",
+      "amsnet-627",
+      "amsnet-63",
+      "amsnet-631",
+      "amsnet-632",
+      "amsnet-633",
+      "amsnet-634",
+      "amsnet-635",
+      "amsnet-636",
+      "amsnet-639",
+      "amsnet-64",
+      "amsnet-640",
+      "amsnet-641",
+      "amsnet-642",
+      "amsnet-643",
+      "amsnet-645",
+      "amsnet-647",
+      "amsnet-649",
+      "amsnet-65",
+      "amsnet-650",
+      "amsnet-651",
+      "amsnet-652",
+      "amsnet-654",
+      "amsnet-655",
+      "amsnet-656",
+      "amsnet-657",
+      "amsnet-659",
+      "amsnet-66",
+      "amsnet-664",
+      "amsnet-669",
+      "amsnet-67",
+      "amsnet-670",
+      "amsnet-671",
+      "amsnet-672",
+      "amsnet-673",
+      "amsnet-674",
+      "amsnet-675",
+      "amsnet-676",
+      "amsnet-677",
+      "amsnet-678",
+      "amsnet-68",
+      "amsnet-680",
+      "amsnet-681",
+      "amsnet-682",
+      "amsnet-683",
+      "amsnet-684",
+      "amsnet-685",
+      "amsnet-686",
+      "amsnet-687",
+      "amsnet-689",
+      "amsnet-69",
+      "amsnet-690",
+      "amsnet-692",
+      "amsnet-693",
+      "amsnet-694",
+      "amsnet-695",
+      "amsnet-696",
+      "amsnet-697",
+      "amsnet-698",
+      "amsnet-699",
+      "amsnet-7",
+      "amsnet-70",
+      "amsnet-700",
+      "amsnet-701",
+      "amsnet-702",
+      "amsnet-703",
+      "amsnet-704",
+      "amsnet-705",
+      "amsnet-706",
+      "amsnet-707",
+      "amsnet-708",
+      "amsnet-709",
+      "amsnet-71",
+      "amsnet-710",
+      "amsnet-711",
+      "amsnet-712",
+      "amsnet-713",
+      "amsnet-714",
+      "amsnet-715",
+      "amsnet-716",
+      "amsnet-717",
+      "amsnet-718",
+      "amsnet-719",
+      "amsnet-72",
+      "amsnet-720",
+      "amsnet-721",
+      "amsnet-722",
+      "amsnet-723",
+      "amsnet-724",
+      "amsnet-725",
+      "amsnet-726",
+      "amsnet-727",
+      "amsnet-728",
+      "amsnet-729",
+      "amsnet-73",
+      "amsnet-730",
+      "amsnet-732",
+      "amsnet-733",
+      "amsnet-734",
+      "amsnet-735",
+      "amsnet-736",
+      "amsnet-737",
+      "amsnet-738",
+      "amsnet-739",
+      "amsnet-74",
+      "amsnet-740",
+      "amsnet-741",
+      "amsnet-743",
+      "amsnet-744",
+      "amsnet-745",
+      "amsnet-746",
+      "amsnet-747",
+      "amsnet-749",
+      "amsnet-75",
+      "amsnet-751",
+      "amsnet-752",
+      "amsnet-753",
+      "amsnet-754",
+      "amsnet-755",
+      "amsnet-756",
+      "amsnet-76",
+      "amsnet-760",
+      "amsnet-761",
+      "amsnet-762",
+      "amsnet-764",
+      "amsnet-765",
+      "amsnet-767",
+      "amsnet-768",
+      "amsnet-769",
+      "amsnet-77",
+      "amsnet-770",
+      "amsnet-771",
+      "amsnet-772",
+      "amsnet-773",
+      "amsnet-774",
+      "amsnet-775",
+      "amsnet-776",
+      "amsnet-777",
+      "amsnet-778",
+      "amsnet-779",
+      "amsnet-78",
+      "amsnet-780",
+      "amsnet-784",
+      "amsnet-785",
+      "amsnet-786",
+      "amsnet-787",
+      "amsnet-788",
+      "amsnet-79",
+      "amsnet-790",
+      "amsnet-791",
+      "amsnet-792",
+      "amsnet-796",
+      "amsnet-797",
+      "amsnet-8",
+      "amsnet-80",
+      "amsnet-800",
+      "amsnet-801",
+      "amsnet-802",
+      "amsnet-803",
+      "amsnet-804",
+      "amsnet-805",
+      "amsnet-806",
+      "amsnet-807",
+      "amsnet-808",
+      "amsnet-81",
+      "amsnet-811",
+      "amsnet-813",
+      "amsnet-815",
+      "amsnet-816",
+      "amsnet-817",
+      "amsnet-818",
+      "amsnet-819",
+      "amsnet-82",
+      "amsnet-820",
+      "amsnet-821",
+      "amsnet-822",
+      "amsnet-823",
+      "amsnet-824",
+      "amsnet-83",
+      "amsnet-84",
+      "amsnet-85",
+      "amsnet-86",
+      "amsnet-87",
+      "amsnet-88",
+      "amsnet-89",
+      "amsnet-9",
+      "amsnet-90",
+      "amsnet-91",
+      "amsnet-92",
+      "amsnet-93",
+      "amsnet-94",
+      "amsnet-95",
+      "amsnet-96",
+      "amsnet-97",
+      "amsnet-98",
+      "amsnet-99"
+    ],
+    "analoggenie": [
+      "ag-100",
+      "ag-1000",
+      "ag-1001",
+      "ag-1002",
+      "ag-1003",
+      "ag-1004",
+      "ag-1005",
+      "ag-1006",
+      "ag-1007",
+      "ag-1008",
+      "ag-1009",
+      "ag-1010",
+      "ag-1011",
+      "ag-1012",
+      "ag-1013",
+      "ag-1014",
+      "ag-1015",
+      "ag-1016",
+      "ag-1017",
+      "ag-1018",
+      "ag-1019",
+      "ag-102",
+      "ag-1020",
+      "ag-1021",
+      "ag-1022",
+      "ag-1023",
+      "ag-1024",
+      "ag-1025",
+      "ag-1026",
+      "ag-1027",
+      "ag-1028",
+      "ag-1029",
+      "ag-1030",
+      "ag-1031",
+      "ag-1032",
+      "ag-1033",
+      "ag-1034",
+      "ag-1035",
+      "ag-1036",
+      "ag-1037",
+      "ag-1038",
+      "ag-1039",
+      "ag-104",
+      "ag-1040",
+      "ag-1041",
+      "ag-1042",
+      "ag-1043",
+      "ag-1044",
+      "ag-1045",
+      "ag-1046",
+      "ag-1047",
+      "ag-1048",
+      "ag-1049",
+      "ag-1050",
+      "ag-1051",
+      "ag-1052",
+      "ag-1053",
+      "ag-1054",
+      "ag-1055",
+      "ag-1056",
+      "ag-1057",
+      "ag-1058",
+      "ag-1059",
+      "ag-106",
+      "ag-1060",
+      "ag-1061",
+      "ag-1062",
+      "ag-1063",
+      "ag-1064",
+      "ag-1065",
+      "ag-1066",
+      "ag-1067",
+      "ag-1068",
+      "ag-1069",
+      "ag-1070",
+      "ag-1071",
+      "ag-1072",
+      "ag-1073",
+      "ag-1074",
+      "ag-1075",
+      "ag-1076",
+      "ag-1077",
+      "ag-1078",
+      "ag-1079",
+      "ag-108",
+      "ag-1080",
+      "ag-1081",
+      "ag-1082",
+      "ag-1083",
+      "ag-1084",
+      "ag-1085",
+      "ag-1086",
+      "ag-1087",
+      "ag-1088",
+      "ag-1089",
+      "ag-1090",
+      "ag-1091",
+      "ag-1092",
+      "ag-1093",
+      "ag-1094",
+      "ag-1095",
+      "ag-1096",
+      "ag-1097",
+      "ag-1098",
+      "ag-1099",
+      "ag-110",
+      "ag-1100",
+      "ag-1101",
+      "ag-1102",
+      "ag-1103",
+      "ag-1104",
+      "ag-1105",
+      "ag-1106",
+      "ag-1107",
+      "ag-1108",
+      "ag-1109",
+      "ag-1110",
+      "ag-1111",
+      "ag-1112",
+      "ag-1113",
+      "ag-1114",
+      "ag-1115",
+      "ag-1116",
+      "ag-1117",
+      "ag-1118",
+      "ag-1119",
+      "ag-112",
+      "ag-1120",
+      "ag-1121",
+      "ag-1122",
+      "ag-1123",
+      "ag-1124",
+      "ag-1125",
+      "ag-1126",
+      "ag-1127",
+      "ag-1128",
+      "ag-1129",
+      "ag-1130",
+      "ag-1131",
+      "ag-1132",
+      "ag-1133",
+      "ag-1134",
+      "ag-1135",
+      "ag-1136",
+      "ag-1137",
+      "ag-1138",
+      "ag-1139",
+      "ag-114",
+      "ag-1140",
+      "ag-1141",
+      "ag-1142",
+      "ag-1143",
+      "ag-1144",
+      "ag-1145",
+      "ag-1146",
+      "ag-1147",
+      "ag-1148",
+      "ag-1149",
+      "ag-1150",
+      "ag-1151",
+      "ag-1152",
+      "ag-1153",
+      "ag-1154",
+      "ag-1155",
+      "ag-1156",
+      "ag-1157",
+      "ag-1158",
+      "ag-1159",
+      "ag-116",
+      "ag-1160",
+      "ag-1161",
+      "ag-1162",
+      "ag-1163",
+      "ag-1164",
+      "ag-1165",
+      "ag-1166",
+      "ag-1167",
+      "ag-1168",
+      "ag-1169",
+      "ag-1170",
+      "ag-1171",
+      "ag-1172",
+      "ag-1173",
+      "ag-1174",
+      "ag-1175",
+      "ag-1177",
+      "ag-1179",
+      "ag-1180",
+      "ag-1181",
+      "ag-1182",
+      "ag-1183",
+      "ag-1184",
+      "ag-1185",
+      "ag-1186",
+      "ag-1187",
+      "ag-1188",
+      "ag-1189",
+      "ag-1190",
+      "ag-1191",
+      "ag-1192",
+      "ag-1193",
+      "ag-1194",
+      "ag-1196",
+      "ag-1197",
+      "ag-1198",
+      "ag-1199",
+      "ag-120",
+      "ag-1201",
+      "ag-1202",
+      "ag-1203",
+      "ag-1206",
+      "ag-1207",
+      "ag-1208",
+      "ag-1210",
+      "ag-1211",
+      "ag-1213",
+      "ag-1214",
+      "ag-1215",
+      "ag-1217",
+      "ag-1219",
+      "ag-1221",
+      "ag-1222",
+      "ag-1223",
+      "ag-1224",
+      "ag-1225",
+      "ag-1227",
+      "ag-123",
+      "ag-1232",
+      "ag-1233",
+      "ag-1234",
+      "ag-1235",
+      "ag-1236",
+      "ag-1237",
+      "ag-1239",
+      "ag-1240",
+      "ag-1241",
+      "ag-1242",
+      "ag-1244",
+      "ag-1245",
+      "ag-1247",
+      "ag-1248",
+      "ag-1249",
+      "ag-125",
+      "ag-1250",
+      "ag-1251",
+      "ag-1252",
+      "ag-1253",
+      "ag-1254",
+      "ag-1255",
+      "ag-1256",
+      "ag-1257",
+      "ag-1258",
+      "ag-1259",
+      "ag-1260",
+      "ag-1261",
+      "ag-1262",
+      "ag-1263",
+      "ag-1264",
+      "ag-1265",
+      "ag-1266",
+      "ag-1267",
+      "ag-1268",
+      "ag-1269",
+      "ag-127",
+      "ag-1270",
+      "ag-1272",
+      "ag-1273",
+      "ag-1274",
+      "ag-1275",
+      "ag-1276",
+      "ag-1277",
+      "ag-1278",
+      "ag-1279",
+      "ag-1280",
+      "ag-1281",
+      "ag-1282",
+      "ag-1283",
+      "ag-1284",
+      "ag-1285",
+      "ag-1286",
+      "ag-1287",
+      "ag-1288",
+      "ag-1289",
+      "ag-129",
+      "ag-1290",
+      "ag-1291",
+      "ag-1292",
+      "ag-1293",
+      "ag-1294",
+      "ag-1295",
+      "ag-1296",
+      "ag-1297",
+      "ag-1298",
+      "ag-1299",
+      "ag-1300",
+      "ag-1301",
+      "ag-1302",
+      "ag-1303",
+      "ag-1304",
+      "ag-1305",
+      "ag-1306",
+      "ag-1307",
+      "ag-1308",
+      "ag-1309",
+      "ag-1310",
+      "ag-1311",
+      "ag-1312",
+      "ag-1313",
+      "ag-1314",
+      "ag-1315",
+      "ag-1316",
+      "ag-1317",
+      "ag-1318",
+      "ag-1319",
+      "ag-132",
+      "ag-1320",
+      "ag-1321",
+      "ag-1322",
+      "ag-1323",
+      "ag-1324",
+      "ag-1325",
+      "ag-1326",
+      "ag-1327",
+      "ag-1328",
+      "ag-1329",
+      "ag-1330",
+      "ag-1331",
+      "ag-1332",
+      "ag-1333",
+      "ag-1334",
+      "ag-1335",
+      "ag-1336",
+      "ag-1337",
+      "ag-1338",
+      "ag-1339",
+      "ag-134",
+      "ag-1340",
+      "ag-1341",
+      "ag-1342",
+      "ag-1343",
+      "ag-1344",
+      "ag-1345",
+      "ag-1346",
+      "ag-1347",
+      "ag-1348",
+      "ag-1349",
+      "ag-1350",
+      "ag-1351",
+      "ag-1352",
+      "ag-1353",
+      "ag-1354",
+      "ag-1355",
+      "ag-1356",
+      "ag-1357",
+      "ag-1358",
+      "ag-1359",
+      "ag-136",
+      "ag-1360",
+      "ag-1361",
+      "ag-1362",
+      "ag-1363",
+      "ag-1364",
+      "ag-1365",
+      "ag-1366",
+      "ag-1367",
+      "ag-1368",
+      "ag-1369",
+      "ag-1370",
+      "ag-1371",
+      "ag-1372",
+      "ag-1373",
+      "ag-1374",
+      "ag-1375",
+      "ag-1376",
+      "ag-1377",
+      "ag-1378",
+      "ag-1379",
+      "ag-138",
+      "ag-1380",
+      "ag-1381",
+      "ag-1382",
+      "ag-1383",
+      "ag-1384",
+      "ag-1385",
+      "ag-1386",
+      "ag-1387",
+      "ag-1388",
+      "ag-1389",
+      "ag-1390",
+      "ag-1391",
+      "ag-1392",
+      "ag-1393",
+      "ag-1394",
+      "ag-1395",
+      "ag-1396",
+      "ag-1397",
+      "ag-1398",
+      "ag-1399",
+      "ag-14",
+      "ag-140",
+      "ag-1400",
+      "ag-1401",
+      "ag-1402",
+      "ag-1403",
+      "ag-1404",
+      "ag-1405",
+      "ag-1406",
+      "ag-1407",
+      "ag-1408",
+      "ag-1409",
+      "ag-1410",
+      "ag-1411",
+      "ag-1412",
+      "ag-1413",
+      "ag-1414",
+      "ag-1415",
+      "ag-1416",
+      "ag-1417",
+      "ag-1418",
+      "ag-1419",
+      "ag-142",
+      "ag-1420",
+      "ag-1421",
+      "ag-1422",
+      "ag-1423",
+      "ag-1424",
+      "ag-1425",
+      "ag-1426",
+      "ag-1427",
+      "ag-1428",
+      "ag-1429",
+      "ag-1430",
+      "ag-1431",
+      "ag-1432",
+      "ag-1433",
+      "ag-1434",
+      "ag-1435",
+      "ag-1436",
+      "ag-1437",
+      "ag-1438",
+      "ag-1439",
+      "ag-144",
+      "ag-1440",
+      "ag-1441",
+      "ag-1442",
+      "ag-1443",
+      "ag-1444",
+      "ag-1445",
+      "ag-1446",
+      "ag-1447",
+      "ag-1448",
+      "ag-1449",
+      "ag-1450",
+      "ag-1451",
+      "ag-1452",
+      "ag-1453",
+      "ag-1454",
+      "ag-1455",
+      "ag-1456",
+      "ag-1457",
+      "ag-1458",
+      "ag-1459",
+      "ag-146",
+      "ag-1460",
+      "ag-1461",
+      "ag-1462",
+      "ag-1463",
+      "ag-1464",
+      "ag-1465",
+      "ag-1466",
+      "ag-1467",
+      "ag-1468",
+      "ag-1469",
+      "ag-1470",
+      "ag-1471",
+      "ag-1472",
+      "ag-1473",
+      "ag-1474",
+      "ag-1475",
+      "ag-1476",
+      "ag-1477",
+      "ag-1478",
+      "ag-1479",
+      "ag-148",
+      "ag-1480",
+      "ag-1481",
+      "ag-1482",
+      "ag-1483",
+      "ag-1484",
+      "ag-1485",
+      "ag-1486",
+      "ag-1487",
+      "ag-1488",
+      "ag-1489",
+      "ag-1490",
+      "ag-1491",
+      "ag-1492",
+      "ag-1493",
+      "ag-1494",
+      "ag-1495",
+      "ag-1496",
+      "ag-1497",
+      "ag-1498",
+      "ag-1499",
+      "ag-150",
+      "ag-1500",
+      "ag-1501",
+      "ag-1502",
+      "ag-1503",
+      "ag-1504",
+      "ag-1505",
+      "ag-1506",
+      "ag-1507",
+      "ag-1508",
+      "ag-1509",
+      "ag-1510",
+      "ag-1511",
+      "ag-1512",
+      "ag-1513",
+      "ag-1514",
+      "ag-1515",
+      "ag-1516",
+      "ag-1517",
+      "ag-1518",
+      "ag-1519",
+      "ag-152",
+      "ag-1520",
+      "ag-1521",
+      "ag-1522",
+      "ag-1523",
+      "ag-1524",
+      "ag-1525",
+      "ag-1526",
+      "ag-1527",
+      "ag-1528",
+      "ag-1529",
+      "ag-1530",
+      "ag-1531",
+      "ag-1532",
+      "ag-1533",
+      "ag-1534",
+      "ag-1535",
+      "ag-1536",
+      "ag-1537",
+      "ag-1538",
+      "ag-1539",
+      "ag-1540",
+      "ag-1541",
+      "ag-1542",
+      "ag-1543",
+      "ag-1544",
+      "ag-1545",
+      "ag-1546",
+      "ag-1547",
+      "ag-1548",
+      "ag-1549",
+      "ag-155",
+      "ag-1550",
+      "ag-1551",
+      "ag-1552",
+      "ag-1553",
+      "ag-1554",
+      "ag-1555",
+      "ag-1556",
+      "ag-1557",
+      "ag-1558",
+      "ag-1559",
+      "ag-1560",
+      "ag-1561",
+      "ag-1562",
+      "ag-1563",
+      "ag-1564",
+      "ag-1565",
+      "ag-1566",
+      "ag-1567",
+      "ag-1568",
+      "ag-1569",
+      "ag-157",
+      "ag-1570",
+      "ag-1571",
+      "ag-1572",
+      "ag-1573",
+      "ag-1574",
+      "ag-1575",
+      "ag-1576",
+      "ag-1577",
+      "ag-1578",
+      "ag-1579",
+      "ag-1580",
+      "ag-1581",
+      "ag-1582",
+      "ag-1583",
+      "ag-1584",
+      "ag-1585",
+      "ag-1586",
+      "ag-1587",
+      "ag-1588",
+      "ag-1589",
+      "ag-1590",
+      "ag-1591",
+      "ag-1592",
+      "ag-1593",
+      "ag-1594",
+      "ag-1595",
+      "ag-1596",
+      "ag-1597",
+      "ag-1598",
+      "ag-1599",
+      "ag-160",
+      "ag-1600",
+      "ag-1601",
+      "ag-1602",
+      "ag-1603",
+      "ag-1604",
+      "ag-1605",
+      "ag-1606",
+      "ag-1607",
+      "ag-1608",
+      "ag-1609",
+      "ag-161",
+      "ag-1610",
+      "ag-1611",
+      "ag-1612",
+      "ag-1613",
+      "ag-1614",
+      "ag-1615",
+      "ag-1616",
+      "ag-1617",
+      "ag-1618",
+      "ag-1619",
+      "ag-162",
+      "ag-1620",
+      "ag-1621",
+      "ag-1622",
+      "ag-1623",
+      "ag-1624",
+      "ag-1625",
+      "ag-1626",
+      "ag-1627",
+      "ag-1628",
+      "ag-1629",
+      "ag-163",
+      "ag-1630",
+      "ag-1631",
+      "ag-1632",
+      "ag-1633",
+      "ag-1634",
+      "ag-1635",
+      "ag-1636",
+      "ag-1637",
+      "ag-1638",
+      "ag-1639",
+      "ag-1640",
+      "ag-1641",
+      "ag-1642",
+      "ag-1643",
+      "ag-1644",
+      "ag-1645",
+      "ag-1646",
+      "ag-1647",
+      "ag-1648",
+      "ag-1649",
+      "ag-165",
+      "ag-1650",
+      "ag-1651",
+      "ag-1652",
+      "ag-1653",
+      "ag-1654",
+      "ag-1655",
+      "ag-1656",
+      "ag-1657",
+      "ag-1658",
+      "ag-1659",
+      "ag-166",
+      "ag-1660",
+      "ag-1661",
+      "ag-1662",
+      "ag-1663",
+      "ag-1664",
+      "ag-1665",
+      "ag-1666",
+      "ag-1667",
+      "ag-1668",
+      "ag-1669",
+      "ag-167",
+      "ag-1670",
+      "ag-1671",
+      "ag-1672",
+      "ag-1673",
+      "ag-1674",
+      "ag-1675",
+      "ag-1676",
+      "ag-1677",
+      "ag-1678",
+      "ag-1679",
+      "ag-168",
+      "ag-1680",
+      "ag-1681",
+      "ag-1682",
+      "ag-1683",
+      "ag-1684",
+      "ag-1685",
+      "ag-1686",
+      "ag-1687",
+      "ag-1688",
+      "ag-1689",
+      "ag-169",
+      "ag-1690",
+      "ag-1691",
+      "ag-1692",
+      "ag-1693",
+      "ag-1694",
+      "ag-1695",
+      "ag-1696",
+      "ag-1697",
+      "ag-1698",
+      "ag-1699",
+      "ag-17",
+      "ag-170",
+      "ag-1700",
+      "ag-1701",
+      "ag-1702",
+      "ag-1703",
+      "ag-1704",
+      "ag-1705",
+      "ag-1706",
+      "ag-1707",
+      "ag-1708",
+      "ag-1709",
+      "ag-171",
+      "ag-1710",
+      "ag-1711",
+      "ag-1712",
+      "ag-1713",
+      "ag-1714",
+      "ag-1715",
+      "ag-1716",
+      "ag-1717",
+      "ag-1718",
+      "ag-1719",
+      "ag-172",
+      "ag-1720",
+      "ag-1721",
+      "ag-1722",
+      "ag-1723",
+      "ag-1724",
+      "ag-1725",
+      "ag-1726",
+      "ag-1727",
+      "ag-1728",
+      "ag-1729",
+      "ag-1730",
+      "ag-1731",
+      "ag-1732",
+      "ag-1733",
+      "ag-1734",
+      "ag-1735",
+      "ag-1736",
+      "ag-1737",
+      "ag-1738",
+      "ag-1739",
+      "ag-174",
+      "ag-1740",
+      "ag-1741",
+      "ag-1742",
+      "ag-1743",
+      "ag-1744",
+      "ag-1745",
+      "ag-1746",
+      "ag-1747",
+      "ag-1748",
+      "ag-1749",
+      "ag-175",
+      "ag-1750",
+      "ag-1751",
+      "ag-1752",
+      "ag-1753",
+      "ag-1754",
+      "ag-1755",
+      "ag-1756",
+      "ag-1757",
+      "ag-1758",
+      "ag-1759",
+      "ag-176",
+      "ag-1760",
+      "ag-1761",
+      "ag-1762",
+      "ag-1763",
+      "ag-1764",
+      "ag-1765",
+      "ag-1766",
+      "ag-1767",
+      "ag-1768",
+      "ag-1769",
+      "ag-177",
+      "ag-1770",
+      "ag-1771",
+      "ag-1772",
+      "ag-1773",
+      "ag-1774",
+      "ag-1775",
+      "ag-1776",
+      "ag-1777",
+      "ag-1778",
+      "ag-1779",
+      "ag-178",
+      "ag-1780",
+      "ag-179",
+      "ag-180",
+      "ag-181",
+      "ag-182",
+      "ag-183",
+      "ag-186",
+      "ag-187",
+      "ag-188",
+      "ag-189",
+      "ag-190",
+      "ag-191",
+      "ag-192",
+      "ag-193",
+      "ag-194",
+      "ag-195",
+      "ag-198",
+      "ag-199",
+      "ag-20",
+      "ag-200",
+      "ag-201",
+      "ag-202",
+      "ag-203",
+      "ag-204",
+      "ag-205",
+      "ag-206",
+      "ag-207",
+      "ag-208",
+      "ag-209",
+      "ag-210",
+      "ag-211",
+      "ag-213",
+      "ag-214",
+      "ag-215",
+      "ag-217",
+      "ag-218",
+      "ag-2181",
+      "ag-2182",
+      "ag-2183",
+      "ag-2184",
+      "ag-2185",
+      "ag-2186",
+      "ag-2187",
+      "ag-2188",
+      "ag-2189",
+      "ag-219",
+      "ag-2190",
+      "ag-2191",
+      "ag-2192",
+      "ag-2193",
+      "ag-2194",
+      "ag-2195",
+      "ag-2196",
+      "ag-2197",
+      "ag-2198",
+      "ag-2199",
+      "ag-22",
+      "ag-220",
+      "ag-2200",
+      "ag-2201",
+      "ag-2202",
+      "ag-2203",
+      "ag-2204",
+      "ag-2205",
+      "ag-2206",
+      "ag-2207",
+      "ag-2208",
+      "ag-2209",
+      "ag-221",
+      "ag-2210",
+      "ag-2211",
+      "ag-2212",
+      "ag-2213",
+      "ag-2214",
+      "ag-2215",
+      "ag-2216",
+      "ag-2217",
+      "ag-2218",
+      "ag-2219",
+      "ag-222",
+      "ag-2220",
+      "ag-2221",
+      "ag-2222",
+      "ag-2223",
+      "ag-2224",
+      "ag-2225",
+      "ag-2226",
+      "ag-2227",
+      "ag-2228",
+      "ag-2229",
+      "ag-223",
+      "ag-2230",
+      "ag-2231",
+      "ag-2232",
+      "ag-2233",
+      "ag-2234",
+      "ag-2235",
+      "ag-2236",
+      "ag-2237",
+      "ag-2238",
+      "ag-2239",
+      "ag-224",
+      "ag-2240",
+      "ag-2241",
+      "ag-2242",
+      "ag-2243",
+      "ag-2244",
+      "ag-2245",
+      "ag-2246",
+      "ag-2247",
+      "ag-2248",
+      "ag-2249",
+      "ag-2250",
+      "ag-2251",
+      "ag-2252",
+      "ag-2253",
+      "ag-2254",
+      "ag-2255",
+      "ag-2256",
+      "ag-2257",
+      "ag-2258",
+      "ag-2259",
+      "ag-226",
+      "ag-2260",
+      "ag-2261",
+      "ag-2262",
+      "ag-2263",
+      "ag-2264",
+      "ag-2265",
+      "ag-2266",
+      "ag-2267",
+      "ag-2268",
+      "ag-2269",
+      "ag-227",
+      "ag-2270",
+      "ag-2271",
+      "ag-2272",
+      "ag-2273",
+      "ag-2274",
+      "ag-2275",
+      "ag-2276",
+      "ag-2277",
+      "ag-2278",
+      "ag-2279",
+      "ag-2280",
+      "ag-2281",
+      "ag-2282",
+      "ag-2283",
+      "ag-2284",
+      "ag-2285",
+      "ag-2286",
+      "ag-2287",
+      "ag-2288",
+      "ag-2289",
+      "ag-229",
+      "ag-2290",
+      "ag-2291",
+      "ag-2292",
+      "ag-2293",
+      "ag-2294",
+      "ag-2295",
+      "ag-2296",
+      "ag-2297",
+      "ag-2298",
+      "ag-2299",
+      "ag-230",
+      "ag-2300",
+      "ag-2301",
+      "ag-2302",
+      "ag-2303",
+      "ag-2304",
+      "ag-2305",
+      "ag-2306",
+      "ag-2307",
+      "ag-2308",
+      "ag-2309",
+      "ag-231",
+      "ag-2310",
+      "ag-2311",
+      "ag-2312",
+      "ag-2313",
+      "ag-2314",
+      "ag-2315",
+      "ag-2316",
+      "ag-2317",
+      "ag-2318",
+      "ag-2319",
+      "ag-232",
+      "ag-2320",
+      "ag-2321",
+      "ag-2322",
+      "ag-2323",
+      "ag-2324",
+      "ag-2325",
+      "ag-2326",
+      "ag-2327",
+      "ag-2328",
+      "ag-2329",
+      "ag-2330",
+      "ag-2331",
+      "ag-2332",
+      "ag-2333",
+      "ag-2334",
+      "ag-2335",
+      "ag-2336",
+      "ag-2337",
+      "ag-2338",
+      "ag-2339",
+      "ag-2340",
+      "ag-2341",
+      "ag-2342",
+      "ag-2343",
+      "ag-2344",
+      "ag-2345",
+      "ag-2346",
+      "ag-2347",
+      "ag-2348",
+      "ag-2349",
+      "ag-235",
+      "ag-2350",
+      "ag-2351",
+      "ag-2352",
+      "ag-2353",
+      "ag-2354",
+      "ag-2355",
+      "ag-2356",
+      "ag-2357",
+      "ag-2358",
+      "ag-2359",
+      "ag-236",
+      "ag-2360",
+      "ag-2361",
+      "ag-2362",
+      "ag-2363",
+      "ag-2364",
+      "ag-2365",
+      "ag-2366",
+      "ag-2367",
+      "ag-2368",
+      "ag-2369",
+      "ag-237",
+      "ag-2370",
+      "ag-2371",
+      "ag-2372",
+      "ag-2373",
+      "ag-2374",
+      "ag-2375",
+      "ag-2376",
+      "ag-2377",
+      "ag-2378",
+      "ag-2379",
+      "ag-238",
+      "ag-2380",
+      "ag-2381",
+      "ag-2382",
+      "ag-2383",
+      "ag-2384",
+      "ag-2385",
+      "ag-2386",
+      "ag-2387",
+      "ag-2388",
+      "ag-2389",
+      "ag-239",
+      "ag-2390",
+      "ag-2391",
+      "ag-2392",
+      "ag-2393",
+      "ag-2394",
+      "ag-2395",
+      "ag-2396",
+      "ag-2397",
+      "ag-2398",
+      "ag-2399",
+      "ag-24",
+      "ag-240",
+      "ag-2400",
+      "ag-2401",
+      "ag-2402",
+      "ag-2403",
+      "ag-2404",
+      "ag-2405",
+      "ag-2406",
+      "ag-2407",
+      "ag-2408",
+      "ag-2409",
+      "ag-2410",
+      "ag-2411",
+      "ag-2412",
+      "ag-2413",
+      "ag-2414",
+      "ag-2415",
+      "ag-2416",
+      "ag-2417",
+      "ag-2418",
+      "ag-2419",
+      "ag-242",
+      "ag-2420",
+      "ag-2421",
+      "ag-2422",
+      "ag-2423",
+      "ag-2424",
+      "ag-2425",
+      "ag-2426",
+      "ag-2427",
+      "ag-2428",
+      "ag-2429",
+      "ag-243",
+      "ag-2430",
+      "ag-2431",
+      "ag-2432",
+      "ag-2433",
+      "ag-2434",
+      "ag-2435",
+      "ag-2436",
+      "ag-2437",
+      "ag-2438",
+      "ag-2439",
+      "ag-2440",
+      "ag-2441",
+      "ag-2442",
+      "ag-2443",
+      "ag-2444",
+      "ag-2445",
+      "ag-2446",
+      "ag-2447",
+      "ag-2448",
+      "ag-2449",
+      "ag-245",
+      "ag-2450",
+      "ag-2451",
+      "ag-2452",
+      "ag-2453",
+      "ag-2454",
+      "ag-2455",
+      "ag-2456",
+      "ag-2457",
+      "ag-2458",
+      "ag-2459",
+      "ag-2460",
+      "ag-2461",
+      "ag-2462",
+      "ag-2463",
+      "ag-2464",
+      "ag-2465",
+      "ag-2466",
+      "ag-2467",
+      "ag-2468",
+      "ag-2469",
+      "ag-247",
+      "ag-2470",
+      "ag-2471",
+      "ag-2472",
+      "ag-2473",
+      "ag-2474",
+      "ag-2475",
+      "ag-2476",
+      "ag-2477",
+      "ag-2478",
+      "ag-2479",
+      "ag-248",
+      "ag-2480",
+      "ag-2481",
+      "ag-2482",
+      "ag-2483",
+      "ag-2484",
+      "ag-2485",
+      "ag-2486",
+      "ag-2487",
+      "ag-2488",
+      "ag-2489",
+      "ag-249",
+      "ag-2490",
+      "ag-2491",
+      "ag-2492",
+      "ag-2493",
+      "ag-2494",
+      "ag-2495",
+      "ag-2496",
+      "ag-2497",
+      "ag-2498",
+      "ag-2499",
+      "ag-2500",
+      "ag-2501",
+      "ag-2502",
+      "ag-2503",
+      "ag-2504",
+      "ag-2505",
+      "ag-2506",
+      "ag-2507",
+      "ag-2508",
+      "ag-2509",
+      "ag-251",
+      "ag-2510",
+      "ag-2511",
+      "ag-2512",
+      "ag-2513",
+      "ag-2514",
+      "ag-2515",
+      "ag-2516",
+      "ag-2517",
+      "ag-2518",
+      "ag-2519",
+      "ag-252",
+      "ag-2520",
+      "ag-2521",
+      "ag-2522",
+      "ag-2523",
+      "ag-2524",
+      "ag-2525",
+      "ag-2526",
+      "ag-2527",
+      "ag-2528",
+      "ag-2529",
+      "ag-2530",
+      "ag-2531",
+      "ag-2532",
+      "ag-2533",
+      "ag-2534",
+      "ag-2535",
+      "ag-2536",
+      "ag-2537",
+      "ag-2538",
+      "ag-2539",
+      "ag-254",
+      "ag-2540",
+      "ag-2541",
+      "ag-2542",
+      "ag-2543",
+      "ag-2544",
+      "ag-2545",
+      "ag-2546",
+      "ag-2547",
+      "ag-2548",
+      "ag-2549",
+      "ag-2550",
+      "ag-2551",
+      "ag-2552",
+      "ag-2553",
+      "ag-2554",
+      "ag-2555",
+      "ag-2556",
+      "ag-2557",
+      "ag-2558",
+      "ag-2559",
+      "ag-2560",
+      "ag-2561",
+      "ag-2562",
+      "ag-2563",
+      "ag-2564",
+      "ag-2565",
+      "ag-2566",
+      "ag-2567",
+      "ag-2568",
+      "ag-2569",
+      "ag-257",
+      "ag-2570",
+      "ag-2571",
+      "ag-2572",
+      "ag-2573",
+      "ag-2574",
+      "ag-2575",
+      "ag-2576",
+      "ag-2577",
+      "ag-2578",
+      "ag-2579",
+      "ag-2580",
+      "ag-2581",
+      "ag-2582",
+      "ag-2583",
+      "ag-2584",
+      "ag-2585",
+      "ag-2586",
+      "ag-2587",
+      "ag-2588",
+      "ag-2589",
+      "ag-259",
+      "ag-2590",
+      "ag-2591",
+      "ag-2592",
+      "ag-2593",
+      "ag-2594",
+      "ag-2595",
+      "ag-2596",
+      "ag-2597",
+      "ag-2598",
+      "ag-2599",
+      "ag-260",
+      "ag-2600",
+      "ag-2601",
+      "ag-2602",
+      "ag-2603",
+      "ag-2604",
+      "ag-2605",
+      "ag-2606",
+      "ag-2607",
+      "ag-2608",
+      "ag-2609",
+      "ag-261",
+      "ag-2610",
+      "ag-2611",
+      "ag-2612",
+      "ag-2613",
+      "ag-2614",
+      "ag-2615",
+      "ag-2617",
+      "ag-262",
+      "ag-2623",
+      "ag-263",
+      "ag-2637",
+      "ag-264",
+      "ag-265",
+      "ag-2652",
+      "ag-2657",
+      "ag-2658",
+      "ag-266",
+      "ag-2661",
+      "ag-2665",
+      "ag-2683",
+      "ag-269",
+      "ag-2697",
+      "ag-2699",
+      "ag-27",
+      "ag-2703",
+      "ag-2708",
+      "ag-271",
+      "ag-2712",
+      "ag-2713",
+      "ag-2721",
+      "ag-2726",
+      "ag-273",
+      "ag-2736",
+      "ag-2737",
+      "ag-274",
+      "ag-2746",
+      "ag-2749",
+      "ag-275",
+      "ag-2753",
+      "ag-2754",
+      "ag-2757",
+      "ag-276",
+      "ag-2761",
+      "ag-277",
+      "ag-278",
+      "ag-2781",
+      "ag-2782",
+      "ag-2783",
+      "ag-279",
+      "ag-2791",
+      "ag-280",
+      "ag-2803",
+      "ag-2806",
+      "ag-2808",
+      "ag-281",
+      "ag-2812",
+      "ag-2815",
+      "ag-282",
+      "ag-283",
+      "ag-2831",
+      "ag-2838",
+      "ag-284",
+      "ag-2851",
+      "ag-2857",
+      "ag-2859",
+      "ag-2861",
+      "ag-2868",
+      "ag-287",
+      "ag-2874",
+      "ag-2880",
+      "ag-289",
+      "ag-2891",
+      "ag-2896",
+      "ag-29",
+      "ag-290",
+      "ag-2905",
+      "ag-2909",
+      "ag-2910",
+      "ag-2913",
+      "ag-2919",
+      "ag-2920",
+      "ag-2923",
+      "ag-2926",
+      "ag-293",
+      "ag-2935",
+      "ag-2936",
+      "ag-2937",
+      "ag-294",
+      "ag-2947",
+      "ag-295",
+      "ag-2953",
+      "ag-2955",
+      "ag-296",
+      "ag-2969",
+      "ag-297",
+      "ag-2975",
+      "ag-2980",
+      "ag-299",
+      "ag-2999",
+      "ag-300",
+      "ag-3007",
+      "ag-3008",
+      "ag-3013",
+      "ag-3014",
+      "ag-302",
+      "ag-3022",
+      "ag-303",
+      "ag-3030",
+      "ag-3036",
+      "ag-304",
+      "ag-3042",
+      "ag-3044",
+      "ag-305",
+      "ag-3050",
+      "ag-306",
+      "ag-3060",
+      "ag-3061",
+      "ag-3062",
+      "ag-3068",
+      "ag-307",
+      "ag-3079",
+      "ag-308",
+      "ag-3084",
+      "ag-3085",
+      "ag-3086",
+      "ag-309",
+      "ag-3092",
+      "ag-31",
+      "ag-310",
+      "ag-3101",
+      "ag-3103",
+      "ag-311",
+      "ag-3111",
+      "ag-312",
+      "ag-3121",
+      "ag-3134",
+      "ag-3137",
+      "ag-314",
+      "ag-3142",
+      "ag-3145",
+      "ag-315",
+      "ag-3151",
+      "ag-316",
+      "ag-317",
+      "ag-3177",
+      "ag-318",
+      "ag-319",
+      "ag-3190",
+      "ag-3198",
+      "ag-320",
+      "ag-3207",
+      "ag-321",
+      "ag-3214",
+      "ag-3215",
+      "ag-322",
+      "ag-3222",
+      "ag-3223",
+      "ag-3226",
+      "ag-3227",
+      "ag-3228",
+      "ag-323",
+      "ag-3237",
+      "ag-324",
+      "ag-3242",
+      "ag-3247",
+      "ag-3249",
+      "ag-325",
+      "ag-3254",
+      "ag-3257",
+      "ag-3259",
+      "ag-326",
+      "ag-3265",
+      "ag-327",
+      "ag-3271",
+      "ag-3275",
+      "ag-328",
+      "ag-3282",
+      "ag-3286",
+      "ag-3289",
+      "ag-329",
+      "ag-3295",
+      "ag-3296",
+      "ag-3298",
+      "ag-3302",
+      "ag-3303",
+      "ag-3308",
+      "ag-3309",
+      "ag-331",
+      "ag-3314",
+      "ag-3318",
+      "ag-332",
+      "ag-3323",
+      "ag-3326",
+      "ag-3327",
+      "ag-3328",
+      "ag-333",
+      "ag-3332",
+      "ag-3337",
+      "ag-334",
+      "ag-3340",
+      "ag-3342",
+      "ag-3349",
+      "ag-335",
+      "ag-3352",
+      "ag-336",
+      "ag-3365",
+      "ag-3369",
+      "ag-337",
+      "ag-3370",
+      "ag-3375",
+      "ag-338",
+      "ag-3388",
+      "ag-3395",
+      "ag-3397",
+      "ag-340",
+      "ag-3400",
+      "ag-3401",
+      "ag-3402",
+      "ag-3405",
+      "ag-341",
+      "ag-342",
+      "ag-3420",
+      "ag-3423",
+      "ag-3425",
+      "ag-3427",
+      "ag-343",
+      "ag-3430",
+      "ag-3435",
+      "ag-3437",
+      "ag-3438",
+      "ag-344",
+      "ag-345",
+      "ag-346",
+      "ag-3473",
+      "ag-348",
+      "ag-349",
+      "ag-3492",
+      "ag-3493",
+      "ag-3495",
+      "ag-35",
+      "ag-350",
+      "ag-351",
+      "ag-352",
+      "ag-353",
+      "ag-354",
+      "ag-355",
+      "ag-356",
+      "ag-357",
+      "ag-358",
+      "ag-359",
+      "ag-360",
+      "ag-361",
+      "ag-362",
+      "ag-363",
+      "ag-364",
+      "ag-365",
+      "ag-366",
+      "ag-367",
+      "ag-368",
+      "ag-369",
+      "ag-37",
+      "ag-370",
+      "ag-371",
+      "ag-372",
+      "ag-373",
+      "ag-374",
+      "ag-375",
+      "ag-376",
+      "ag-377",
+      "ag-378",
+      "ag-379",
+      "ag-38",
+      "ag-380",
+      "ag-381",
+      "ag-382",
+      "ag-383",
+      "ag-384",
+      "ag-385",
+      "ag-386",
+      "ag-387",
+      "ag-388",
+      "ag-389",
+      "ag-390",
+      "ag-391",
+      "ag-392",
+      "ag-393",
+      "ag-394",
+      "ag-395",
+      "ag-396",
+      "ag-397",
+      "ag-398",
+      "ag-399",
+      "ag-4",
+      "ag-400",
+      "ag-401",
+      "ag-402",
+      "ag-403",
+      "ag-404",
+      "ag-405",
+      "ag-406",
+      "ag-407",
+      "ag-408",
+      "ag-409",
+      "ag-41",
+      "ag-410",
+      "ag-412",
+      "ag-413",
+      "ag-417",
+      "ag-418",
+      "ag-419",
+      "ag-420",
+      "ag-421",
+      "ag-422",
+      "ag-424",
+      "ag-425",
+      "ag-426",
+      "ag-427",
+      "ag-428",
+      "ag-429",
+      "ag-43",
+      "ag-430",
+      "ag-431",
+      "ag-432",
+      "ag-433",
+      "ag-434",
+      "ag-435",
+      "ag-436",
+      "ag-437",
+      "ag-438",
+      "ag-439",
+      "ag-440",
+      "ag-441",
+      "ag-442",
+      "ag-443",
+      "ag-444",
+      "ag-446",
+      "ag-447",
+      "ag-448",
+      "ag-449",
+      "ag-450",
+      "ag-451",
+      "ag-452",
+      "ag-453",
+      "ag-454",
+      "ag-455",
+      "ag-456",
+      "ag-457",
+      "ag-458",
+      "ag-459",
+      "ag-46",
+      "ag-460",
+      "ag-461",
+      "ag-462",
+      "ag-463",
+      "ag-464",
+      "ag-465",
+      "ag-466",
+      "ag-467",
+      "ag-468",
+      "ag-469",
+      "ag-470",
+      "ag-471",
+      "ag-472",
+      "ag-473",
+      "ag-474",
+      "ag-475",
+      "ag-476",
+      "ag-477",
+      "ag-478",
+      "ag-479",
+      "ag-48",
+      "ag-480",
+      "ag-481",
+      "ag-482",
+      "ag-483",
+      "ag-484",
+      "ag-485",
+      "ag-486",
+      "ag-487",
+      "ag-488",
+      "ag-489",
+      "ag-491",
+      "ag-492",
+      "ag-493",
+      "ag-494",
+      "ag-495",
+      "ag-496",
+      "ag-497",
+      "ag-498",
+      "ag-50",
+      "ag-500",
+      "ag-501",
+      "ag-503",
+      "ag-504",
+      "ag-505",
+      "ag-506",
+      "ag-507",
+      "ag-508",
+      "ag-509",
+      "ag-510",
+      "ag-511",
+      "ag-512",
+      "ag-513",
+      "ag-514",
+      "ag-515",
+      "ag-516",
+      "ag-517",
+      "ag-518",
+      "ag-519",
+      "ag-52",
+      "ag-520",
+      "ag-521",
+      "ag-522",
+      "ag-524",
+      "ag-525",
+      "ag-526",
+      "ag-527",
+      "ag-528",
+      "ag-529",
+      "ag-530",
+      "ag-531",
+      "ag-532",
+      "ag-533",
+      "ag-534",
+      "ag-535",
+      "ag-536",
+      "ag-537",
+      "ag-538",
+      "ag-539",
+      "ag-54",
+      "ag-540",
+      "ag-541",
+      "ag-542",
+      "ag-543",
+      "ag-544",
+      "ag-545",
+      "ag-546",
+      "ag-547",
+      "ag-548",
+      "ag-549",
+      "ag-550",
+      "ag-551",
+      "ag-552",
+      "ag-553",
+      "ag-554",
+      "ag-555",
+      "ag-556",
+      "ag-557",
+      "ag-558",
+      "ag-559",
+      "ag-560",
+      "ag-561",
+      "ag-562",
+      "ag-563",
+      "ag-564",
+      "ag-565",
+      "ag-566",
+      "ag-567",
+      "ag-568",
+      "ag-569",
+      "ag-57",
+      "ag-570",
+      "ag-571",
+      "ag-572",
+      "ag-573",
+      "ag-574",
+      "ag-575",
+      "ag-576",
+      "ag-577",
+      "ag-578",
+      "ag-579",
+      "ag-580",
+      "ag-581",
+      "ag-582",
+      "ag-583",
+      "ag-584",
+      "ag-585",
+      "ag-586",
+      "ag-587",
+      "ag-588",
+      "ag-589",
+      "ag-59",
+      "ag-590",
+      "ag-591",
+      "ag-592",
+      "ag-593",
+      "ag-594",
+      "ag-595",
+      "ag-596",
+      "ag-597",
+      "ag-598",
+      "ag-599",
+      "ag-6",
+      "ag-600",
+      "ag-601",
+      "ag-602",
+      "ag-603",
+      "ag-604",
+      "ag-605",
+      "ag-606",
+      "ag-607",
+      "ag-608",
+      "ag-609",
+      "ag-61",
+      "ag-610",
+      "ag-611",
+      "ag-612",
+      "ag-613",
+      "ag-614",
+      "ag-615",
+      "ag-616",
+      "ag-617",
+      "ag-618",
+      "ag-619",
+      "ag-620",
+      "ag-621",
+      "ag-622",
+      "ag-623",
+      "ag-624",
+      "ag-625",
+      "ag-626",
+      "ag-628",
+      "ag-629",
+      "ag-63",
+      "ag-630",
+      "ag-632",
+      "ag-633",
+      "ag-634",
+      "ag-635",
+      "ag-636",
+      "ag-637",
+      "ag-638",
+      "ag-640",
+      "ag-641",
+      "ag-642",
+      "ag-643",
+      "ag-645",
+      "ag-646",
+      "ag-647",
+      "ag-648",
+      "ag-649",
+      "ag-65",
+      "ag-650",
+      "ag-651",
+      "ag-652",
+      "ag-653",
+      "ag-654",
+      "ag-655",
+      "ag-656",
+      "ag-657",
+      "ag-658",
+      "ag-659",
+      "ag-660",
+      "ag-661",
+      "ag-662",
+      "ag-663",
+      "ag-664",
+      "ag-665",
+      "ag-666",
+      "ag-667",
+      "ag-668",
+      "ag-67",
+      "ag-670",
+      "ag-671",
+      "ag-672",
+      "ag-674",
+      "ag-675",
+      "ag-676",
+      "ag-677",
+      "ag-678",
+      "ag-679",
+      "ag-680",
+      "ag-681",
+      "ag-682",
+      "ag-683",
+      "ag-684",
+      "ag-687",
+      "ag-688",
+      "ag-689",
+      "ag-69",
+      "ag-690",
+      "ag-691",
+      "ag-692",
+      "ag-693",
+      "ag-694",
+      "ag-695",
+      "ag-696",
+      "ag-697",
+      "ag-698",
+      "ag-699",
+      "ag-700",
+      "ag-701",
+      "ag-702",
+      "ag-703",
+      "ag-704",
+      "ag-705",
+      "ag-706",
+      "ag-707",
+      "ag-708",
+      "ag-709",
+      "ag-71",
+      "ag-710",
+      "ag-711",
+      "ag-712",
+      "ag-713",
+      "ag-714",
+      "ag-715",
+      "ag-716",
+      "ag-717",
+      "ag-718",
+      "ag-719",
+      "ag-720",
+      "ag-721",
+      "ag-722",
+      "ag-723",
+      "ag-724",
+      "ag-725",
+      "ag-726",
+      "ag-727",
+      "ag-728",
+      "ag-729",
+      "ag-730",
+      "ag-731",
+      "ag-732",
+      "ag-733",
+      "ag-734",
+      "ag-735",
+      "ag-736",
+      "ag-738",
+      "ag-739",
+      "ag-740",
+      "ag-741",
+      "ag-742",
+      "ag-743",
+      "ag-744",
+      "ag-745",
+      "ag-746",
+      "ag-747",
+      "ag-748",
+      "ag-749",
+      "ag-75",
+      "ag-750",
+      "ag-751",
+      "ag-752",
+      "ag-753",
+      "ag-754",
+      "ag-755",
+      "ag-757",
+      "ag-758",
+      "ag-759",
+      "ag-760",
+      "ag-761",
+      "ag-762",
+      "ag-763",
+      "ag-764",
+      "ag-765",
+      "ag-766",
+      "ag-767",
+      "ag-768",
+      "ag-769",
+      "ag-77",
+      "ag-770",
+      "ag-771",
+      "ag-772",
+      "ag-773",
+      "ag-774",
+      "ag-775",
+      "ag-776",
+      "ag-777",
+      "ag-778",
+      "ag-779",
+      "ag-780",
+      "ag-781",
+      "ag-782",
+      "ag-783",
+      "ag-784",
+      "ag-785",
+      "ag-786",
+      "ag-787",
+      "ag-788",
+      "ag-789",
+      "ag-790",
+      "ag-791",
+      "ag-792",
+      "ag-794",
+      "ag-795",
+      "ag-796",
+      "ag-797",
+      "ag-799",
+      "ag-80",
+      "ag-800",
+      "ag-801",
+      "ag-802",
+      "ag-803",
+      "ag-804",
+      "ag-805",
+      "ag-806",
+      "ag-807",
+      "ag-808",
+      "ag-809",
+      "ag-810",
+      "ag-811",
+      "ag-812",
+      "ag-813",
+      "ag-814",
+      "ag-815",
+      "ag-816",
+      "ag-817",
+      "ag-818",
+      "ag-819",
+      "ag-82",
+      "ag-820",
+      "ag-821",
+      "ag-822",
+      "ag-823",
+      "ag-824",
+      "ag-825",
+      "ag-826",
+      "ag-827",
+      "ag-828",
+      "ag-829",
+      "ag-830",
+      "ag-831",
+      "ag-832",
+      "ag-833",
+      "ag-834",
+      "ag-835",
+      "ag-836",
+      "ag-837",
+      "ag-839",
+      "ag-84",
+      "ag-840",
+      "ag-841",
+      "ag-842",
+      "ag-843",
+      "ag-844",
+      "ag-845",
+      "ag-846",
+      "ag-847",
+      "ag-848",
+      "ag-849",
+      "ag-850",
+      "ag-852",
+      "ag-853",
+      "ag-854",
+      "ag-855",
+      "ag-856",
+      "ag-857",
+      "ag-858",
+      "ag-859",
+      "ag-86",
+      "ag-860",
+      "ag-861",
+      "ag-862",
+      "ag-863",
+      "ag-864",
+      "ag-865",
+      "ag-866",
+      "ag-867",
+      "ag-868",
+      "ag-869",
+      "ag-870",
+      "ag-871",
+      "ag-872",
+      "ag-873",
+      "ag-874",
+      "ag-875",
+      "ag-876",
+      "ag-877",
+      "ag-878",
+      "ag-879",
+      "ag-88",
+      "ag-880",
+      "ag-881",
+      "ag-882",
+      "ag-883",
+      "ag-884",
+      "ag-885",
+      "ag-886",
+      "ag-887",
+      "ag-888",
+      "ag-889",
+      "ag-890",
+      "ag-891",
+      "ag-892",
+      "ag-893",
+      "ag-894",
+      "ag-895",
+      "ag-896",
+      "ag-897",
+      "ag-898",
+      "ag-899",
+      "ag-9",
+      "ag-90",
+      "ag-900",
+      "ag-901",
+      "ag-902",
+      "ag-903",
+      "ag-904",
+      "ag-905",
+      "ag-906",
+      "ag-907",
+      "ag-908",
+      "ag-909",
+      "ag-910",
+      "ag-911",
+      "ag-912",
+      "ag-913",
+      "ag-914",
+      "ag-915",
+      "ag-916",
+      "ag-917",
+      "ag-918",
+      "ag-919",
+      "ag-92",
+      "ag-920",
+      "ag-921",
+      "ag-922",
+      "ag-923",
+      "ag-924",
+      "ag-925",
+      "ag-926",
+      "ag-927",
+      "ag-928",
+      "ag-929",
+      "ag-930",
+      "ag-931",
+      "ag-932",
+      "ag-933",
+      "ag-934",
+      "ag-935",
+      "ag-936",
+      "ag-937",
+      "ag-938",
+      "ag-939",
+      "ag-94",
+      "ag-940",
+      "ag-941",
+      "ag-942",
+      "ag-943",
+      "ag-944",
+      "ag-945",
+      "ag-946",
+      "ag-947",
+      "ag-948",
+      "ag-949",
+      "ag-950",
+      "ag-951",
+      "ag-952",
+      "ag-953",
+      "ag-954",
+      "ag-955",
+      "ag-956",
+      "ag-957",
+      "ag-958",
+      "ag-959",
+      "ag-96",
+      "ag-960",
+      "ag-961",
+      "ag-962",
+      "ag-963",
+      "ag-964",
+      "ag-965",
+      "ag-966",
+      "ag-967",
+      "ag-968",
+      "ag-969",
+      "ag-97",
+      "ag-970",
+      "ag-971",
+      "ag-972",
+      "ag-973",
+      "ag-974",
+      "ag-975",
+      "ag-976",
+      "ag-977",
+      "ag-978",
+      "ag-979",
+      "ag-980",
+      "ag-981",
+      "ag-982",
+      "ag-983",
+      "ag-984",
+      "ag-985",
+      "ag-986",
+      "ag-987",
+      "ag-988",
+      "ag-989",
+      "ag-990",
+      "ag-991",
+      "ag-992",
+      "ag-993",
+      "ag-994",
+      "ag-995",
+      "ag-996",
+      "ag-997",
+      "ag-998",
+      "ag-999"
+    ]
+  },
+  "corpus_sha256": {
+    "amsnet": "c0d304c90b355b63e2d69655f4a68d51e10b9910f907416dfa4c418c5393c725",
+    "analoggenie": "f193fdb23c88b87ca27329d8c671d7519dda026da20c5945e950d14fdbffee07"
+  },
+  "dependency_sha256": {
+    "antiparallel_clamps.py": "af5d5ad31860b4b71db98efae3e1b4105fea459ecf283646c78c89e42026a4e7",
+    "bias_block_connectivity.py": "1681e2c532a67483f9fd652a18be6025180df3d26c323cdafba5f617bd5f51c9",
+    "biased_amplifiers.py": "3893d6c882f516da8182ccf5392f8edd0bd3138e54038b284a88f8c186ca3409",
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "block_aliases_native.py": "4b46a908e9b093d7ad3d8b65335dab494c049a6378d1037d70426e375e4c760f",
+    "center_tap_connectivity.py": "ebb528512581d7389b6238b3d576ce2ad44484d3266d910ab75acb276d56ac58",
+    "center_tap_curve_measure.py": "9fa846057a79a6ccc1491e303fa5337594799f98c56951a3e782a99031069530",
+    "center_tap_curves.py": "d0cd45dd01e30b2f3d004a563f69d900d44acf5b49659ea021f35575e017df79",
+    "center_tap_native.py": "64549a01c02eed30c2b9644c7ccce778629afe200c178f991ff2d0b3d10e1d9c",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "center_tap_symbols_cases.json": "c829d1acde40d4bb8c69497974f11655e6bb74d881b6f3ca974ebe88d780f43f",
+    "channel_bridges.py": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "driven_banks.py": "68c7cc9e75767a2e2f249ada60f2345b40adc472e37c9c6d629dafe29b1120be",
+    "driven_banks_connectivity.py": "ac98c25c7c57280d7f9e08379a814c21ca8f9b5009376fb37efbaee0df842a3c",
+    "driven_banks_native.py": "a36fa157e1c37d1139b20f0a83051162d9674a12e311ccfde4d0f75a39f2cb90",
+    "input_resistor_legs.py": "5660823e09293ed82ac57d5b9835dff0005c357d6ac55a09c13b4cb8bec40612",
+    "input_resistors.py": "46d3dfae5fae8fd7874519a84f5b9a36292c7b37a343583a0a847dd95233fea5",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "power_paths.py": "179c721073ac9b18b8cff2985075326706c71bffc661d291a170275e3d648528",
+    "reference_amplifiers.py": "a0c97f5446e4820701a9c3e578035443e4111af37fdc96b352cd65c7da3e2502",
+    "reference_amplifiers_connectivity.py": "14f6120f8ed58d4879f0bc9f28cd2fb88394af131265bf952ff8204a083b371d",
+    "remaining_amplifiers.py": "4b727e43ec6ffd7f1786385df86e8604fb353633982a7cbc458d77e2d2f4b9bb",
+    "remaining_amplifiers_native.py": "91378e98e22c16f684c17a2bbe1a6724f32e3bc9ef57990857031a4f768988e3",
+    "sampling_cells.py": "cf705df907cc88ab5e644a1de6c1e0d3c5297f971703a6e7376946834bbf2325",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a",
+    "thin_connectivity.py": "bdf216eb76714d0d2f6f3a0ce870f2c976fc0e68efb9959a9c842821b44886db",
+    "trunk_rungs.py": "c1a0a572481fb87e5f03960f3285cb944d16ecbb84d6c3d2f6f1e10364422fae"
+  },
+  "group_paths": [
+    {
+      "id": "ag-1048",
+      "net": "vp1",
+      "pins": [
+        [
+          "m5",
+          0
+        ],
+        [
+          "m5",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [
+          {
+            "anchor_kind": "route",
+            "at": [
+              108.0,
+              50.0
+            ],
+            "kind": "net-label",
+            "object": "label-27895491-cf9d-4e76-9662-a3d8725b41e8",
+            "text": "VP1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              350.0,
+              130.0
+            ],
+            "kind": "net-label",
+            "object": "label-2b189628-3076-484f-96a1-b74e36d89932",
+            "text": "VP1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              -250.0,
+              120.0
+            ],
+            "kind": "net-label",
+            "object": "label-5e31d7d1-df26-4142-8350-9d3ac5545577",
+            "text": "VP1"
+          }
+        ],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m5",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "vp1",
+            "source_term": "D",
+            "xy": [
+              70.0,
+              70.0
+            ]
+          },
+          {
+            "card": "m5",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "vp1",
+            "source_term": "G",
+            "xy": [
+              50.0,
+              40.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-e41d9b98-0e8a-41f9-88f4-a68503ce0b7c-to-junction",
+              "xy": [
+                100.0,
+                70.0
+              ]
+            },
+            {
+              "object": "wire-86167574-d309-4a95-84bb-54c54a777978-to-junction",
+              "xy": [
+                100.0,
+                90.0
+              ]
+            },
+            {
+              "object": "wire-7925b9a5-24b2-4a0e-820d-8773d63e480d-to-junction",
+              "xy": [
+                80.0,
+                70.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                50.0,
+                40.0
+              ],
+              [
+                80,
+                40
+              ]
+            ],
+            [
+              [
+                70.0,
+                70.0
+              ],
+              [
+                80,
+                70
+              ]
+            ],
+            [
+              [
+                80,
+                40
+              ],
+              [
+                80,
+                70
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              70.0,
+              70.0
+            ],
+            [
+              50.0,
+              40.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m5": {
+            "object": "instance-c12c2708-8eb7-42bd-8fcc-6edb7f80f2fd",
+            "terminals": {
+              "D": [
+                70.0,
+                70.0
+              ],
+              "G": [
+                50.0,
+                40.0
+              ],
+              "S": [
+                30.0,
+                70.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1048.cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+          "ag-1048.human.json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+          "ag-1048.svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              100,
+              20
+            ],
+            [
+              100,
+              70
+            ]
+          ],
+          [
+            [
+              100,
+              70
+            ],
+            [
+              100,
+              90
+            ]
+          ],
+          [
+            [
+              100,
+              90
+            ],
+            [
+              100,
+              150
+            ]
+          ],
+          [
+            [
+              70,
+              70
+            ],
+            [
+              80,
+              70
+            ]
+          ],
+          [
+            [
+              80,
+              70
+            ],
+            [
+              100,
+              70
+            ]
+          ],
+          [
+            [
+              50,
+              40
+            ],
+            [
+              80,
+              40
+            ]
+          ],
+          [
+            [
+              80,
+              40
+            ],
+            [
+              80,
+              70
+            ]
+          ],
+          [
+            [
+              70,
+              90
+            ],
+            [
+              100,
+              90
+            ]
+          ],
+          [
+            [
+              -230,
+              130
+            ],
+            [
+              -250,
+              130
+            ]
+          ],
+          [
+            [
+              330,
+              140
+            ],
+            [
+              350,
+              140
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-1048",
+      "net": "vm1",
+      "pins": [
+        [
+          "m6",
+          0
+        ],
+        [
+          "m6",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [
+          {
+            "anchor_kind": "route",
+            "at": [
+              -35.0,
+              120.0
+            ],
+            "kind": "net-label",
+            "object": "label-308118f3-0cfc-4191-a43e-2a6f89fa29e6",
+            "text": "VM1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              170.0,
+              130.0
+            ],
+            "kind": "net-label",
+            "object": "label-b9ffcae7-d65b-4ff8-8627-8dd6c817ca6f",
+            "text": "VM1"
+          }
+        ],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m6",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "vm1",
+            "source_term": "D",
+            "xy": [
+              30.0,
+              90.0
+            ]
+          },
+          {
+            "card": "m6",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "vm1",
+            "source_term": "G",
+            "xy": [
+              50.0,
+              120.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-995bbeb1-75a3-470c-8890-a1bebf9227f8-to-junction",
+              "xy": [
+                0.0,
+                70.0
+              ]
+            },
+            {
+              "object": "wire-e93a22bc-9d31-423a-b78f-5c6f2b4b04bd-to-junction",
+              "xy": [
+                0.0,
+                90.0
+              ]
+            },
+            {
+              "object": "wire-bf4a6be1-16ca-49dd-87e4-2a00cda693d3-to-junction",
+              "xy": [
+                0.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-509cc5c0-3e7f-40d4-bc00-2c049f4cea40-to-junction",
+              "xy": [
+                20.0,
+                90.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                20,
+                90
+              ],
+              [
+                20,
+                120
+              ]
+            ],
+            [
+              [
+                20,
+                90
+              ],
+              [
+                30.0,
+                90.0
+              ]
+            ],
+            [
+              [
+                20,
+                120
+              ],
+              [
+                50.0,
+                120.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              30.0,
+              90.0
+            ],
+            [
+              50.0,
+              120.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m6": {
+            "object": "instance-4603e973-2732-4034-a86a-44607a1b6a7c",
+            "terminals": {
+              "D": [
+                30.0,
+                90.0
+              ],
+              "G": [
+                50.0,
+                120.0
+              ],
+              "S": [
+                70.0,
+                90.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1048.cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+          "ag-1048.human.json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+          "ag-1048.svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              0,
+              20
+            ],
+            [
+              0,
+              70
+            ]
+          ],
+          [
+            [
+              0,
+              70
+            ],
+            [
+              0,
+              90
+            ]
+          ],
+          [
+            [
+              0,
+              90
+            ],
+            [
+              0,
+              130
+            ]
+          ],
+          [
+            [
+              0,
+              130
+            ],
+            [
+              0,
+              150
+            ]
+          ],
+          [
+            [
+              30,
+              70
+            ],
+            [
+              0,
+              70
+            ]
+          ],
+          [
+            [
+              30,
+              90
+            ],
+            [
+              20,
+              90
+            ]
+          ],
+          [
+            [
+              20,
+              90
+            ],
+            [
+              0,
+              90
+            ]
+          ],
+          [
+            [
+              50,
+              120
+            ],
+            [
+              20,
+              120
+            ]
+          ],
+          [
+            [
+              20,
+              120
+            ],
+            [
+              20,
+              90
+            ]
+          ],
+          [
+            [
+              -70,
+              130
+            ],
+            [
+              0,
+              130
+            ]
+          ],
+          [
+            [
+              190,
+              140
+            ],
+            [
+              170,
+              140
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-1048",
+      "net": "vp1",
+      "pins": [
+        [
+          "m5",
+          0
+        ],
+        [
+          "m6",
+          2
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [
+          {
+            "anchor_kind": "route",
+            "at": [
+              108.0,
+              50.0
+            ],
+            "kind": "net-label",
+            "object": "label-27895491-cf9d-4e76-9662-a3d8725b41e8",
+            "text": "VP1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              350.0,
+              130.0
+            ],
+            "kind": "net-label",
+            "object": "label-2b189628-3076-484f-96a1-b74e36d89932",
+            "text": "VP1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              -250.0,
+              120.0
+            ],
+            "kind": "net-label",
+            "object": "label-5e31d7d1-df26-4142-8350-9d3ac5545577",
+            "text": "VP1"
+          }
+        ],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m5",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "vp1",
+            "source_term": "D",
+            "xy": [
+              70.0,
+              70.0
+            ]
+          },
+          {
+            "card": "m6",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "vp1",
+            "source_term": "S",
+            "xy": [
+              70.0,
+              90.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-e41d9b98-0e8a-41f9-88f4-a68503ce0b7c-to-junction",
+              "xy": [
+                100.0,
+                70.0
+              ]
+            },
+            {
+              "object": "wire-86167574-d309-4a95-84bb-54c54a777978-to-junction",
+              "xy": [
+                100.0,
+                90.0
+              ]
+            },
+            {
+              "object": "wire-7925b9a5-24b2-4a0e-820d-8773d63e480d-to-junction",
+              "xy": [
+                80.0,
+                70.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                70.0,
+                70.0
+              ],
+              [
+                80,
+                70
+              ]
+            ],
+            [
+              [
+                70.0,
+                90.0
+              ],
+              [
+                100,
+                90
+              ]
+            ],
+            [
+              [
+                80,
+                70
+              ],
+              [
+                100,
+                70
+              ]
+            ],
+            [
+              [
+                100,
+                70
+              ],
+              [
+                100,
+                90
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              70.0,
+              70.0
+            ],
+            [
+              70.0,
+              90.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m5": {
+            "object": "instance-c12c2708-8eb7-42bd-8fcc-6edb7f80f2fd",
+            "terminals": {
+              "D": [
+                70.0,
+                70.0
+              ],
+              "G": [
+                50.0,
+                40.0
+              ],
+              "S": [
+                30.0,
+                70.0
+              ]
+            }
+          },
+          "m6": {
+            "object": "instance-4603e973-2732-4034-a86a-44607a1b6a7c",
+            "terminals": {
+              "D": [
+                30.0,
+                90.0
+              ],
+              "G": [
+                50.0,
+                120.0
+              ],
+              "S": [
+                70.0,
+                90.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1048.cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+          "ag-1048.human.json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+          "ag-1048.svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              100,
+              20
+            ],
+            [
+              100,
+              70
+            ]
+          ],
+          [
+            [
+              100,
+              70
+            ],
+            [
+              100,
+              90
+            ]
+          ],
+          [
+            [
+              100,
+              90
+            ],
+            [
+              100,
+              150
+            ]
+          ],
+          [
+            [
+              70,
+              70
+            ],
+            [
+              80,
+              70
+            ]
+          ],
+          [
+            [
+              80,
+              70
+            ],
+            [
+              100,
+              70
+            ]
+          ],
+          [
+            [
+              50,
+              40
+            ],
+            [
+              80,
+              40
+            ]
+          ],
+          [
+            [
+              80,
+              40
+            ],
+            [
+              80,
+              70
+            ]
+          ],
+          [
+            [
+              70,
+              90
+            ],
+            [
+              100,
+              90
+            ]
+          ],
+          [
+            [
+              -230,
+              130
+            ],
+            [
+              -250,
+              130
+            ]
+          ],
+          [
+            [
+              330,
+              140
+            ],
+            [
+              350,
+              140
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "s"
+      ]
+    },
+    {
+      "id": "ag-1048",
+      "net": "vm1",
+      "pins": [
+        [
+          "m5",
+          2
+        ],
+        [
+          "m6",
+          0
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [
+          {
+            "anchor_kind": "route",
+            "at": [
+              -35.0,
+              120.0
+            ],
+            "kind": "net-label",
+            "object": "label-308118f3-0cfc-4191-a43e-2a6f89fa29e6",
+            "text": "VM1"
+          },
+          {
+            "anchor_kind": "route",
+            "at": [
+              170.0,
+              130.0
+            ],
+            "kind": "net-label",
+            "object": "label-b9ffcae7-d65b-4ff8-8627-8dd6c817ca6f",
+            "text": "VM1"
+          }
+        ],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m5",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "vm1",
+            "source_term": "S",
+            "xy": [
+              30.0,
+              70.0
+            ]
+          },
+          {
+            "card": "m6",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "vm1",
+            "source_term": "D",
+            "xy": [
+              30.0,
+              90.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-995bbeb1-75a3-470c-8890-a1bebf9227f8-to-junction",
+              "xy": [
+                0.0,
+                70.0
+              ]
+            },
+            {
+              "object": "wire-e93a22bc-9d31-423a-b78f-5c6f2b4b04bd-to-junction",
+              "xy": [
+                0.0,
+                90.0
+              ]
+            },
+            {
+              "object": "wire-bf4a6be1-16ca-49dd-87e4-2a00cda693d3-to-junction",
+              "xy": [
+                0.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-509cc5c0-3e7f-40d4-bc00-2c049f4cea40-to-junction",
+              "xy": [
+                20.0,
+                90.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                0,
+                70
+              ],
+              [
+                0,
+                90
+              ]
+            ],
+            [
+              [
+                0,
+                70
+              ],
+              [
+                30.0,
+                70.0
+              ]
+            ],
+            [
+              [
+                0,
+                90
+              ],
+              [
+                20,
+                90
+              ]
+            ],
+            [
+              [
+                20,
+                90
+              ],
+              [
+                30.0,
+                90.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              30.0,
+              70.0
+            ],
+            [
+              30.0,
+              90.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m5": {
+            "object": "instance-c12c2708-8eb7-42bd-8fcc-6edb7f80f2fd",
+            "terminals": {
+              "D": [
+                70.0,
+                70.0
+              ],
+              "G": [
+                50.0,
+                40.0
+              ],
+              "S": [
+                30.0,
+                70.0
+              ]
+            }
+          },
+          "m6": {
+            "object": "instance-4603e973-2732-4034-a86a-44607a1b6a7c",
+            "terminals": {
+              "D": [
+                30.0,
+                90.0
+              ],
+              "G": [
+                50.0,
+                120.0
+              ],
+              "S": [
+                70.0,
+                90.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1048.cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+          "ag-1048.human.json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+          "ag-1048.svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              0,
+              20
+            ],
+            [
+              0,
+              70
+            ]
+          ],
+          [
+            [
+              0,
+              70
+            ],
+            [
+              0,
+              90
+            ]
+          ],
+          [
+            [
+              0,
+              90
+            ],
+            [
+              0,
+              130
+            ]
+          ],
+          [
+            [
+              0,
+              130
+            ],
+            [
+              0,
+              150
+            ]
+          ],
+          [
+            [
+              30,
+              70
+            ],
+            [
+              0,
+              70
+            ]
+          ],
+          [
+            [
+              30,
+              90
+            ],
+            [
+              20,
+              90
+            ]
+          ],
+          [
+            [
+              20,
+              90
+            ],
+            [
+              0,
+              90
+            ]
+          ],
+          [
+            [
+              50,
+              120
+            ],
+            [
+              20,
+              120
+            ]
+          ],
+          [
+            [
+              20,
+              120
+            ],
+            [
+              20,
+              90
+            ]
+          ],
+          [
+            [
+              -70,
+              130
+            ],
+            [
+              0,
+              130
+            ]
+          ],
+          [
+            [
+              190,
+              140
+            ],
+            [
+              170,
+              140
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "s",
+        "d"
+      ]
+    },
+    {
+      "id": "ag-1052",
+      "net": "net11",
+      "pins": [
+        [
+          "m6",
+          0
+        ],
+        [
+          "m6",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m6",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net11",
+            "source_term": "D",
+            "xy": [
+              20.0,
+              -70.0
+            ]
+          },
+          {
+            "card": "m6",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "net11",
+            "source_term": "G",
+            "xy": [
+              -0.0,
+              -100.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-230edefb-0f9f-4b70-b287-c817272d517b-to-junction",
+              "xy": [
+                50.0,
+                -70.0
+              ]
+            },
+            {
+              "object": "wire-da93267c-54a7-4545-b733-44056231c9e4-to-junction",
+              "xy": [
+                50.0,
+                -30.0
+              ]
+            },
+            {
+              "object": "wire-9bc3fa6f-1674-4ad2-b352-a3634ddd0192-from-junction",
+              "xy": [
+                50.0,
+                -20.0
+              ]
+            },
+            {
+              "object": "wire-c7a9a0a8-501f-4db8-b6e1-47c220ba38e7-to-junction",
+              "xy": [
+                30.0,
+                -70.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                -0.0,
+                -100.0
+              ],
+              [
+                30,
+                -100
+              ]
+            ],
+            [
+              [
+                20.0,
+                -70.0
+              ],
+              [
+                30,
+                -70
+              ]
+            ],
+            [
+              [
+                30,
+                -100
+              ],
+              [
+                30,
+                -70
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              20.0,
+              -70.0
+            ],
+            [
+              -0.0,
+              -100.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m6": {
+            "object": "instance-f897b65e-88d9-4092-a663-b12923f3f17d",
+            "terminals": {
+              "D": [
+                20.0,
+                -70.0
+              ],
+              "G": [
+                -0.0,
+                -100.0
+              ],
+              "S": [
+                -20.0,
+                -70.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1052.cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+          "ag-1052.human.json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+          "ag-1052.svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              50,
+              -100
+            ],
+            [
+              50,
+              -70
+            ]
+          ],
+          [
+            [
+              50,
+              -70
+            ],
+            [
+              50,
+              -30
+            ]
+          ],
+          [
+            [
+              50,
+              -30
+            ],
+            [
+              50,
+              -20
+            ]
+          ],
+          [
+            [
+              50,
+              -20
+            ],
+            [
+              50,
+              -10
+            ]
+          ],
+          [
+            [
+              20,
+              -70
+            ],
+            [
+              30,
+              -70
+            ]
+          ],
+          [
+            [
+              30,
+              -70
+            ],
+            [
+              50,
+              -70
+            ]
+          ],
+          [
+            [
+              20,
+              -30
+            ],
+            [
+              50,
+              -30
+            ]
+          ],
+          [
+            [
+              0,
+              -100
+            ],
+            [
+              30,
+              -100
+            ]
+          ],
+          [
+            [
+              30,
+              -100
+            ],
+            [
+              30,
+              -70
+            ]
+          ],
+          [
+            [
+              50,
+              -20
+            ],
+            [
+              160,
+              -20
+            ]
+          ],
+          [
+            [
+              160,
+              -20
+            ],
+            [
+              160,
+              130
+            ]
+          ],
+          [
+            [
+              160,
+              130
+            ],
+            [
+              360,
+              130
+            ]
+          ],
+          [
+            [
+              360,
+              130
+            ],
+            [
+              360,
+              10
+            ]
+          ],
+          [
+            [
+              360,
+              10
+            ],
+            [
+              340,
+              10
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-1052",
+      "net": "net1",
+      "pins": [
+        [
+          "m7",
+          0
+        ],
+        [
+          "m7",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m7",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net1",
+            "source_term": "D",
+            "xy": [
+              -20.0,
+              -30.0
+            ]
+          },
+          {
+            "card": "m7",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "net1",
+            "source_term": "G",
+            "xy": [
+              0.0,
+              0.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-d2c113f1-bbfb-4735-b9b6-301eeb917794-to-junction",
+              "xy": [
+                -50.0,
+                -70.0
+              ]
+            },
+            {
+              "object": "wire-07e1ae54-3001-4103-8588-1d5c3f4ecdec-from-junction",
+              "xy": [
+                -50.0,
+                -50.0
+              ]
+            },
+            {
+              "object": "wire-d49b7bde-bd51-42f1-b9f7-03005b143b71-to-junction",
+              "xy": [
+                -50.0,
+                -30.0
+              ]
+            },
+            {
+              "object": "wire-5fd49484-6496-4721-9652-65f0698475aa-to-junction",
+              "xy": [
+                -30.0,
+                -30.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                -30,
+                -30
+              ],
+              [
+                -30,
+                0
+              ]
+            ],
+            [
+              [
+                -30,
+                -30
+              ],
+              [
+                -20.0,
+                -30.0
+              ]
+            ],
+            [
+              [
+                -30,
+                0
+              ],
+              [
+                0.0,
+                0.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -20.0,
+              -30.0
+            ],
+            [
+              0.0,
+              0.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m7": {
+            "object": "instance-13eff403-c475-4d6e-bf99-1ff61ca947f2",
+            "terminals": {
+              "D": [
+                -20.0,
+                -30.0
+              ],
+              "G": [
+                0.0,
+                0.0
+              ],
+              "S": [
+                20.0,
+                -30.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1052.cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+          "ag-1052.human.json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+          "ag-1052.svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              -50,
+              -100
+            ],
+            [
+              -50,
+              -70
+            ]
+          ],
+          [
+            [
+              -50,
+              -70
+            ],
+            [
+              -50,
+              -50
+            ]
+          ],
+          [
+            [
+              -50,
+              -50
+            ],
+            [
+              -50,
+              -30
+            ]
+          ],
+          [
+            [
+              -50,
+              -30
+            ],
+            [
+              -50,
+              -10
+            ]
+          ],
+          [
+            [
+              -20,
+              -70
+            ],
+            [
+              -50,
+              -70
+            ]
+          ],
+          [
+            [
+              -20,
+              -30
+            ],
+            [
+              -30,
+              -30
+            ]
+          ],
+          [
+            [
+              -30,
+              -30
+            ],
+            [
+              -50,
+              -30
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              -30,
+              0
+            ]
+          ],
+          [
+            [
+              -30,
+              0
+            ],
+            [
+              -30,
+              -30
+            ]
+          ],
+          [
+            [
+              -50,
+              -50
+            ],
+            [
+              200,
+              -50
+            ]
+          ],
+          [
+            [
+              200,
+              -50
+            ],
+            [
+              200,
+              10
+            ]
+          ],
+          [
+            [
+              200,
+              10
+            ],
+            [
+              220,
+              10
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-1052",
+      "net": "net11",
+      "pins": [
+        [
+          "m6",
+          0
+        ],
+        [
+          "m7",
+          2
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m6",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net11",
+            "source_term": "D",
+            "xy": [
+              20.0,
+              -70.0
+            ]
+          },
+          {
+            "card": "m7",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "net11",
+            "source_term": "S",
+            "xy": [
+              20.0,
+              -30.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-230edefb-0f9f-4b70-b287-c817272d517b-to-junction",
+              "xy": [
+                50.0,
+                -70.0
+              ]
+            },
+            {
+              "object": "wire-da93267c-54a7-4545-b733-44056231c9e4-to-junction",
+              "xy": [
+                50.0,
+                -30.0
+              ]
+            },
+            {
+              "object": "wire-9bc3fa6f-1674-4ad2-b352-a3634ddd0192-from-junction",
+              "xy": [
+                50.0,
+                -20.0
+              ]
+            },
+            {
+              "object": "wire-c7a9a0a8-501f-4db8-b6e1-47c220ba38e7-to-junction",
+              "xy": [
+                30.0,
+                -70.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                20.0,
+                -70.0
+              ],
+              [
+                30,
+                -70
+              ]
+            ],
+            [
+              [
+                20.0,
+                -30.0
+              ],
+              [
+                50,
+                -30
+              ]
+            ],
+            [
+              [
+                30,
+                -70
+              ],
+              [
+                50,
+                -70
+              ]
+            ],
+            [
+              [
+                50,
+                -70
+              ],
+              [
+                50,
+                -30
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              20.0,
+              -70.0
+            ],
+            [
+              20.0,
+              -30.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m6": {
+            "object": "instance-f897b65e-88d9-4092-a663-b12923f3f17d",
+            "terminals": {
+              "D": [
+                20.0,
+                -70.0
+              ],
+              "G": [
+                -0.0,
+                -100.0
+              ],
+              "S": [
+                -20.0,
+                -70.0
+              ]
+            }
+          },
+          "m7": {
+            "object": "instance-13eff403-c475-4d6e-bf99-1ff61ca947f2",
+            "terminals": {
+              "D": [
+                -20.0,
+                -30.0
+              ],
+              "G": [
+                0.0,
+                0.0
+              ],
+              "S": [
+                20.0,
+                -30.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1052.cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+          "ag-1052.human.json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+          "ag-1052.svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              50,
+              -100
+            ],
+            [
+              50,
+              -70
+            ]
+          ],
+          [
+            [
+              50,
+              -70
+            ],
+            [
+              50,
+              -30
+            ]
+          ],
+          [
+            [
+              50,
+              -30
+            ],
+            [
+              50,
+              -20
+            ]
+          ],
+          [
+            [
+              50,
+              -20
+            ],
+            [
+              50,
+              -10
+            ]
+          ],
+          [
+            [
+              20,
+              -70
+            ],
+            [
+              30,
+              -70
+            ]
+          ],
+          [
+            [
+              30,
+              -70
+            ],
+            [
+              50,
+              -70
+            ]
+          ],
+          [
+            [
+              20,
+              -30
+            ],
+            [
+              50,
+              -30
+            ]
+          ],
+          [
+            [
+              0,
+              -100
+            ],
+            [
+              30,
+              -100
+            ]
+          ],
+          [
+            [
+              30,
+              -100
+            ],
+            [
+              30,
+              -70
+            ]
+          ],
+          [
+            [
+              50,
+              -20
+            ],
+            [
+              160,
+              -20
+            ]
+          ],
+          [
+            [
+              160,
+              -20
+            ],
+            [
+              160,
+              130
+            ]
+          ],
+          [
+            [
+              160,
+              130
+            ],
+            [
+              360,
+              130
+            ]
+          ],
+          [
+            [
+              360,
+              130
+            ],
+            [
+              360,
+              10
+            ]
+          ],
+          [
+            [
+              360,
+              10
+            ],
+            [
+              340,
+              10
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "s"
+      ]
+    },
+    {
+      "id": "ag-1052",
+      "net": "net1",
+      "pins": [
+        [
+          "m6",
+          2
+        ],
+        [
+          "m7",
+          0
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "m6",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "net1",
+            "source_term": "S",
+            "xy": [
+              -20.0,
+              -70.0
+            ]
+          },
+          {
+            "card": "m7",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net1",
+            "source_term": "D",
+            "xy": [
+              -20.0,
+              -30.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-d2c113f1-bbfb-4735-b9b6-301eeb917794-to-junction",
+              "xy": [
+                -50.0,
+                -70.0
+              ]
+            },
+            {
+              "object": "wire-07e1ae54-3001-4103-8588-1d5c3f4ecdec-from-junction",
+              "xy": [
+                -50.0,
+                -50.0
+              ]
+            },
+            {
+              "object": "wire-d49b7bde-bd51-42f1-b9f7-03005b143b71-to-junction",
+              "xy": [
+                -50.0,
+                -30.0
+              ]
+            },
+            {
+              "object": "wire-5fd49484-6496-4721-9652-65f0698475aa-to-junction",
+              "xy": [
+                -30.0,
+                -30.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                -50,
+                -70
+              ],
+              [
+                -50,
+                -50
+              ]
+            ],
+            [
+              [
+                -50,
+                -70
+              ],
+              [
+                -20.0,
+                -70.0
+              ]
+            ],
+            [
+              [
+                -50,
+                -50
+              ],
+              [
+                -50,
+                -30
+              ]
+            ],
+            [
+              [
+                -50,
+                -30
+              ],
+              [
+                -30,
+                -30
+              ]
+            ],
+            [
+              [
+                -30,
+                -30
+              ],
+              [
+                -20.0,
+                -30.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              -20.0,
+              -70.0
+            ],
+            [
+              -20.0,
+              -30.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "m6": {
+            "object": "instance-f897b65e-88d9-4092-a663-b12923f3f17d",
+            "terminals": {
+              "D": [
+                20.0,
+                -70.0
+              ],
+              "G": [
+                -0.0,
+                -100.0
+              ],
+              "S": [
+                -20.0,
+                -70.0
+              ]
+            }
+          },
+          "m7": {
+            "object": "instance-13eff403-c475-4d6e-bf99-1ff61ca947f2",
+            "terminals": {
+              "D": [
+                -20.0,
+                -30.0
+              ],
+              "G": [
+                0.0,
+                0.0
+              ],
+              "S": [
+                20.0,
+                -30.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1052.cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+          "ag-1052.human.json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+          "ag-1052.svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              -50,
+              -100
+            ],
+            [
+              -50,
+              -70
+            ]
+          ],
+          [
+            [
+              -50,
+              -70
+            ],
+            [
+              -50,
+              -50
+            ]
+          ],
+          [
+            [
+              -50,
+              -50
+            ],
+            [
+              -50,
+              -30
+            ]
+          ],
+          [
+            [
+              -50,
+              -30
+            ],
+            [
+              -50,
+              -10
+            ]
+          ],
+          [
+            [
+              -20,
+              -70
+            ],
+            [
+              -50,
+              -70
+            ]
+          ],
+          [
+            [
+              -20,
+              -30
+            ],
+            [
+              -30,
+              -30
+            ]
+          ],
+          [
+            [
+              -30,
+              -30
+            ],
+            [
+              -50,
+              -30
+            ]
+          ],
+          [
+            [
+              0,
+              0
+            ],
+            [
+              -30,
+              0
+            ]
+          ],
+          [
+            [
+              -30,
+              0
+            ],
+            [
+              -30,
+              -30
+            ]
+          ],
+          [
+            [
+              -50,
+              -50
+            ],
+            [
+              200,
+              -50
+            ]
+          ],
+          [
+            [
+              200,
+              -50
+            ],
+            [
+              200,
+              10
+            ]
+          ],
+          [
+            [
+              200,
+              10
+            ],
+            [
+              220,
+              10
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "s",
+        "d"
+      ]
+    },
+    {
+      "id": "ag-1149",
+      "net": "net8",
+      "pins": [
+        [
+          "q3",
+          0
+        ],
+        [
+          "q3",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "q3",
+            "card_index": 0,
+            "native_term": "c",
+            "net": "net8",
+            "source_term": "C",
+            "xy": [
+              90.0,
+              50.0
+            ]
+          },
+          {
+            "card": "q3",
+            "card_index": 1,
+            "native_term": "b",
+            "net": "net8",
+            "source_term": "B",
+            "xy": [
+              70.0,
+              20.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-c53cc18a-6c0b-4bed-b645-0880b772c38b-to-junction",
+              "xy": [
+                370.0,
+                50.0
+              ]
+            },
+            {
+              "object": "wire-2f36e701-38e7-4216-a2fb-fad09b96069a-to-junction",
+              "xy": [
+                370.0,
+                80.0
+              ]
+            },
+            {
+              "object": "wire-e783d900-eed9-44e5-8f58-c774267017f7-to-junction",
+              "xy": [
+                370.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-c5e351e9-dc81-45d9-a38a-8b2314bf81d2-to-junction",
+              "xy": [
+                110.0,
+                50.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                70.0,
+                20.0
+              ],
+              [
+                110,
+                20
+              ]
+            ],
+            [
+              [
+                90.0,
+                50.0
+              ],
+              [
+                110,
+                50
+              ]
+            ],
+            [
+              [
+                110,
+                20
+              ],
+              [
+                110,
+                50
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              90.0,
+              50.0
+            ],
+            [
+              70.0,
+              20.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "q3": {
+            "object": "instance-fb17a2dd-b784-4ded-8d0f-00a3c91bef1e",
+            "terminals": {
+              "B": [
+                70.0,
+                20.0
+              ],
+              "C": [
+                90.0,
+                50.0
+              ],
+              "E": [
+                50.0,
+                50.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              230,
+              0
+            ],
+            [
+              370,
+              0
+            ]
+          ],
+          [
+            [
+              370,
+              0
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              370,
+              50
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              370,
+              80
+            ],
+            [
+              370,
+              130
+            ]
+          ],
+          [
+            [
+              370,
+              130
+            ],
+            [
+              370,
+              170
+            ]
+          ],
+          [
+            [
+              90,
+              50
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              110,
+              50
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              70,
+              20
+            ],
+            [
+              110,
+              20
+            ]
+          ],
+          [
+            [
+              110,
+              20
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              310,
+              80
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              340,
+              130
+            ],
+            [
+              370,
+              130
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "c",
+        "b"
+      ]
+    },
+    {
+      "id": "ag-1149",
+      "net": "net10",
+      "pins": [
+        [
+          "q4",
+          0
+        ],
+        [
+          "q4",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "q4",
+            "card_index": 0,
+            "native_term": "c",
+            "net": "net10",
+            "source_term": "C",
+            "xy": [
+              270.0,
+              80.0
+            ]
+          },
+          {
+            "card": "q4",
+            "card_index": 1,
+            "native_term": "b",
+            "net": "net10",
+            "source_term": "B",
+            "xy": [
+              290.0,
+              110.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-d696e8b0-e62a-416f-b34c-2f71fdeaee2f-to-junction",
+              "xy": [
+                -10.0,
+                50.0
+              ]
+            },
+            {
+              "object": "wire-31bb91b1-31c6-4e0f-940d-b599aa3420fa-to-junction",
+              "xy": [
+                -10.0,
+                80.0
+              ]
+            },
+            {
+              "object": "wire-07d28f98-f162-4224-a2f8-6396d9c9b982-to-junction",
+              "xy": [
+                -10.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-bc9789bb-0ca0-4d95-b2f3-9f8413fd8e57-to-junction",
+              "xy": [
+                250.0,
+                80.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                250,
+                80
+              ],
+              [
+                250,
+                110
+              ]
+            ],
+            [
+              [
+                250,
+                80
+              ],
+              [
+                270.0,
+                80.0
+              ]
+            ],
+            [
+              [
+                250,
+                110
+              ],
+              [
+                290.0,
+                110.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              270.0,
+              80.0
+            ],
+            [
+              290.0,
+              110.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "q4": {
+            "object": "instance-fde1ab51-6117-48e0-af73-100d34326101",
+            "terminals": {
+              "B": [
+                290.0,
+                110.0
+              ],
+              "C": [
+                270.0,
+                80.0
+              ],
+              "E": [
+                310.0,
+                80.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              130,
+              0
+            ],
+            [
+              -10,
+              0
+            ]
+          ],
+          [
+            [
+              -10,
+              0
+            ],
+            [
+              -10,
+              50
+            ]
+          ],
+          [
+            [
+              -10,
+              50
+            ],
+            [
+              -10,
+              80
+            ]
+          ],
+          [
+            [
+              -10,
+              80
+            ],
+            [
+              -10,
+              130
+            ]
+          ],
+          [
+            [
+              -10,
+              130
+            ],
+            [
+              -10,
+              170
+            ]
+          ],
+          [
+            [
+              50,
+              50
+            ],
+            [
+              -10,
+              50
+            ]
+          ],
+          [
+            [
+              270,
+              80
+            ],
+            [
+              250,
+              80
+            ]
+          ],
+          [
+            [
+              250,
+              80
+            ],
+            [
+              -10,
+              80
+            ]
+          ],
+          [
+            [
+              290,
+              110
+            ],
+            [
+              250,
+              110
+            ]
+          ],
+          [
+            [
+              250,
+              110
+            ],
+            [
+              250,
+              80
+            ]
+          ],
+          [
+            [
+              20,
+              130
+            ],
+            [
+              -10,
+              130
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "c",
+        "b"
+      ]
+    },
+    {
+      "id": "ag-1149",
+      "net": "net8",
+      "pins": [
+        [
+          "q3",
+          0
+        ],
+        [
+          "q4",
+          2
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "q3",
+            "card_index": 0,
+            "native_term": "c",
+            "net": "net8",
+            "source_term": "C",
+            "xy": [
+              90.0,
+              50.0
+            ]
+          },
+          {
+            "card": "q4",
+            "card_index": 2,
+            "native_term": "e",
+            "net": "net8",
+            "source_term": "E",
+            "xy": [
+              310.0,
+              80.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-c53cc18a-6c0b-4bed-b645-0880b772c38b-to-junction",
+              "xy": [
+                370.0,
+                50.0
+              ]
+            },
+            {
+              "object": "wire-2f36e701-38e7-4216-a2fb-fad09b96069a-to-junction",
+              "xy": [
+                370.0,
+                80.0
+              ]
+            },
+            {
+              "object": "wire-e783d900-eed9-44e5-8f58-c774267017f7-to-junction",
+              "xy": [
+                370.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-c5e351e9-dc81-45d9-a38a-8b2314bf81d2-to-junction",
+              "xy": [
+                110.0,
+                50.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                90.0,
+                50.0
+              ],
+              [
+                110,
+                50
+              ]
+            ],
+            [
+              [
+                110,
+                50
+              ],
+              [
+                370,
+                50
+              ]
+            ],
+            [
+              [
+                310.0,
+                80.0
+              ],
+              [
+                370,
+                80
+              ]
+            ],
+            [
+              [
+                370,
+                50
+              ],
+              [
+                370,
+                80
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              90.0,
+              50.0
+            ],
+            [
+              310.0,
+              80.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "q3": {
+            "object": "instance-fb17a2dd-b784-4ded-8d0f-00a3c91bef1e",
+            "terminals": {
+              "B": [
+                70.0,
+                20.0
+              ],
+              "C": [
+                90.0,
+                50.0
+              ],
+              "E": [
+                50.0,
+                50.0
+              ]
+            }
+          },
+          "q4": {
+            "object": "instance-fde1ab51-6117-48e0-af73-100d34326101",
+            "terminals": {
+              "B": [
+                290.0,
+                110.0
+              ],
+              "C": [
+                270.0,
+                80.0
+              ],
+              "E": [
+                310.0,
+                80.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              230,
+              0
+            ],
+            [
+              370,
+              0
+            ]
+          ],
+          [
+            [
+              370,
+              0
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              370,
+              50
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              370,
+              80
+            ],
+            [
+              370,
+              130
+            ]
+          ],
+          [
+            [
+              370,
+              130
+            ],
+            [
+              370,
+              170
+            ]
+          ],
+          [
+            [
+              90,
+              50
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              110,
+              50
+            ],
+            [
+              370,
+              50
+            ]
+          ],
+          [
+            [
+              70,
+              20
+            ],
+            [
+              110,
+              20
+            ]
+          ],
+          [
+            [
+              110,
+              20
+            ],
+            [
+              110,
+              50
+            ]
+          ],
+          [
+            [
+              310,
+              80
+            ],
+            [
+              370,
+              80
+            ]
+          ],
+          [
+            [
+              340,
+              130
+            ],
+            [
+              370,
+              130
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "c",
+        "e"
+      ]
+    },
+    {
+      "id": "ag-1149",
+      "net": "net10",
+      "pins": [
+        [
+          "q3",
+          2
+        ],
+        [
+          "q4",
+          0
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "q3",
+            "card_index": 2,
+            "native_term": "e",
+            "net": "net10",
+            "source_term": "E",
+            "xy": [
+              50.0,
+              50.0
+            ]
+          },
+          {
+            "card": "q4",
+            "card_index": 0,
+            "native_term": "c",
+            "net": "net10",
+            "source_term": "C",
+            "xy": [
+              270.0,
+              80.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-d696e8b0-e62a-416f-b34c-2f71fdeaee2f-to-junction",
+              "xy": [
+                -10.0,
+                50.0
+              ]
+            },
+            {
+              "object": "wire-31bb91b1-31c6-4e0f-940d-b599aa3420fa-to-junction",
+              "xy": [
+                -10.0,
+                80.0
+              ]
+            },
+            {
+              "object": "wire-07d28f98-f162-4224-a2f8-6396d9c9b982-to-junction",
+              "xy": [
+                -10.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-bc9789bb-0ca0-4d95-b2f3-9f8413fd8e57-to-junction",
+              "xy": [
+                250.0,
+                80.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                -10,
+                50
+              ],
+              [
+                -10,
+                80
+              ]
+            ],
+            [
+              [
+                -10,
+                50
+              ],
+              [
+                50.0,
+                50.0
+              ]
+            ],
+            [
+              [
+                -10,
+                80
+              ],
+              [
+                250,
+                80
+              ]
+            ],
+            [
+              [
+                250,
+                80
+              ],
+              [
+                270.0,
+                80.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              50.0,
+              50.0
+            ],
+            [
+              270.0,
+              80.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "q3": {
+            "object": "instance-fb17a2dd-b784-4ded-8d0f-00a3c91bef1e",
+            "terminals": {
+              "B": [
+                70.0,
+                20.0
+              ],
+              "C": [
+                90.0,
+                50.0
+              ],
+              "E": [
+                50.0,
+                50.0
+              ]
+            }
+          },
+          "q4": {
+            "object": "instance-fde1ab51-6117-48e0-af73-100d34326101",
+            "terminals": {
+              "B": [
+                290.0,
+                110.0
+              ],
+              "C": [
+                270.0,
+                80.0
+              ],
+              "E": [
+                310.0,
+                80.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+          "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+          "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              130,
+              0
+            ],
+            [
+              -10,
+              0
+            ]
+          ],
+          [
+            [
+              -10,
+              0
+            ],
+            [
+              -10,
+              50
+            ]
+          ],
+          [
+            [
+              -10,
+              50
+            ],
+            [
+              -10,
+              80
+            ]
+          ],
+          [
+            [
+              -10,
+              80
+            ],
+            [
+              -10,
+              130
+            ]
+          ],
+          [
+            [
+              -10,
+              130
+            ],
+            [
+              -10,
+              170
+            ]
+          ],
+          [
+            [
+              50,
+              50
+            ],
+            [
+              -10,
+              50
+            ]
+          ],
+          [
+            [
+              270,
+              80
+            ],
+            [
+              250,
+              80
+            ]
+          ],
+          [
+            [
+              250,
+              80
+            ],
+            [
+              -10,
+              80
+            ]
+          ],
+          [
+            [
+              290,
+              110
+            ],
+            [
+              250,
+              110
+            ]
+          ],
+          [
+            [
+              250,
+              110
+            ],
+            [
+              250,
+              80
+            ]
+          ],
+          [
+            [
+              20,
+              130
+            ],
+            [
+              -10,
+              130
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "e",
+        "c"
+      ]
+    },
+    {
+      "id": "ag-739",
+      "net": "net5",
+      "pins": [
+        [
+          "md1",
+          0
+        ],
+        [
+          "md1",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "md1",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net5",
+            "source_term": "D",
+            "xy": [
+              80.0,
+              190.0
+            ]
+          },
+          {
+            "card": "md1",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "net5",
+            "source_term": "G",
+            "xy": [
+              100.0,
+              220.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-3a6b4b78-1477-4bda-b8ce-5f1f09331697-from-junction",
+              "xy": [
+                60.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-4d280df6-ef97-4c7a-b402-e545f2d1f5e2-from-junction",
+              "xy": [
+                60.0,
+                240.0
+              ]
+            },
+            {
+              "object": "wire-3a6b4b78-1477-4bda-b8ce-5f1f09331697-to-junction",
+              "xy": [
+                80.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-bde48be7-3148-4a6d-b5bf-a7ebb251fc12-to-junction",
+              "xy": [
+                100.0,
+                270.0
+              ]
+            },
+            {
+              "object": "wire-4d280df6-ef97-4c7a-b402-e545f2d1f5e2-to-junction",
+              "xy": [
+                100.0,
+                240.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                60,
+                180
+              ],
+              [
+                60,
+                240
+              ]
+            ],
+            [
+              [
+                60,
+                180
+              ],
+              [
+                80,
+                180
+              ]
+            ],
+            [
+              [
+                60,
+                240
+              ],
+              [
+                100,
+                240
+              ]
+            ],
+            [
+              [
+                80,
+                180
+              ],
+              [
+                80.0,
+                190.0
+              ]
+            ],
+            [
+              [
+                100.0,
+                220.0
+              ],
+              [
+                100,
+                240
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              80.0,
+              190.0
+            ],
+            [
+              100.0,
+              220.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "md1": {
+            "object": "instance-6a0948b3-72b0-4bd0-9448-8be5037151bc",
+            "terminals": {
+              "D": [
+                80.0,
+                190.0
+              ],
+              "G": [
+                100.0,
+                220.0
+              ],
+              "S": [
+                120.0,
+                190.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-739.cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+          "ag-739.human.json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+          "ag-739.svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              60,
+              120
+            ],
+            [
+              60,
+              180
+            ]
+          ],
+          [
+            [
+              60,
+              180
+            ],
+            [
+              60,
+              240
+            ]
+          ],
+          [
+            [
+              60,
+              240
+            ],
+            [
+              60,
+              250
+            ]
+          ],
+          [
+            [
+              80,
+              170
+            ],
+            [
+              80,
+              180
+            ]
+          ],
+          [
+            [
+              80,
+              180
+            ],
+            [
+              80,
+              190
+            ]
+          ],
+          [
+            [
+              60,
+              180
+            ],
+            [
+              80,
+              180
+            ]
+          ],
+          [
+            [
+              90,
+              270
+            ],
+            [
+              100,
+              270
+            ]
+          ],
+          [
+            [
+              100,
+              270
+            ],
+            [
+              110,
+              270
+            ]
+          ],
+          [
+            [
+              100,
+              220
+            ],
+            [
+              100,
+              240
+            ]
+          ],
+          [
+            [
+              100,
+              240
+            ],
+            [
+              100,
+              270
+            ]
+          ],
+          [
+            [
+              60,
+              240
+            ],
+            [
+              100,
+              240
+            ]
+          ],
+          [
+            [
+              100,
+              270
+            ],
+            [
+              100,
+              330
+            ]
+          ],
+          [
+            [
+              100,
+              330
+            ],
+            [
+              620,
+              330
+            ]
+          ],
+          [
+            [
+              620,
+              330
+            ],
+            [
+              620,
+              270
+            ]
+          ],
+          [
+            [
+              620,
+              270
+            ],
+            [
+              600,
+              270
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-739",
+      "net": "net2",
+      "pins": [
+        [
+          "md2",
+          0
+        ],
+        [
+          "md2",
+          1
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "md2",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net2",
+            "source_term": "D",
+            "xy": [
+              120.0,
+              170.0
+            ]
+          },
+          {
+            "card": "md2",
+            "card_index": 1,
+            "native_term": "g",
+            "net": "net2",
+            "source_term": "G",
+            "xy": [
+              100.0,
+              140.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-46865c94-4f29-4684-acb0-48d17330938b-to-junction",
+              "xy": [
+                140.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-1212b9fa-cb47-43eb-9168-e0dbccefd3fd-to-junction",
+              "xy": [
+                140.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-150ef86b-0469-42ac-bb47-5ee051ab3a53-from-junction",
+              "xy": [
+                140.0,
+                230.0
+              ]
+            },
+            {
+              "object": "wire-1212b9fa-cb47-43eb-9168-e0dbccefd3fd-from-junction",
+              "xy": [
+                120.0,
+                180.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                100,
+                130
+              ],
+              [
+                100.0,
+                140.0
+              ]
+            ],
+            [
+              [
+                100,
+                130
+              ],
+              [
+                140,
+                130
+              ]
+            ],
+            [
+              [
+                120.0,
+                170.0
+              ],
+              [
+                120,
+                180
+              ]
+            ],
+            [
+              [
+                120,
+                180
+              ],
+              [
+                140,
+                180
+              ]
+            ],
+            [
+              [
+                140,
+                130
+              ],
+              [
+                140,
+                180
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              120.0,
+              170.0
+            ],
+            [
+              100.0,
+              140.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "md2": {
+            "object": "instance-0897622b-3b42-46d5-843f-bd29ee83aca9",
+            "terminals": {
+              "D": [
+                120.0,
+                170.0
+              ],
+              "G": [
+                100.0,
+                140.0
+              ],
+              "S": [
+                80.0,
+                170.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-739.cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+          "ag-739.human.json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+          "ag-739.svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              140,
+              120
+            ],
+            [
+              140,
+              130
+            ]
+          ],
+          [
+            [
+              140,
+              130
+            ],
+            [
+              140,
+              180
+            ]
+          ],
+          [
+            [
+              140,
+              180
+            ],
+            [
+              140,
+              230
+            ]
+          ],
+          [
+            [
+              140,
+              230
+            ],
+            [
+              140,
+              250
+            ]
+          ],
+          [
+            [
+              120,
+              170
+            ],
+            [
+              120,
+              180
+            ]
+          ],
+          [
+            [
+              120,
+              180
+            ],
+            [
+              120,
+              190
+            ]
+          ],
+          [
+            [
+              120,
+              180
+            ],
+            [
+              140,
+              180
+            ]
+          ],
+          [
+            [
+              100,
+              140
+            ],
+            [
+              100,
+              130
+            ]
+          ],
+          [
+            [
+              100,
+              130
+            ],
+            [
+              140,
+              130
+            ]
+          ],
+          [
+            [
+              140,
+              230
+            ],
+            [
+              320,
+              230
+            ]
+          ],
+          [
+            [
+              320,
+              230
+            ],
+            [
+              320,
+              270
+            ]
+          ],
+          [
+            [
+              320,
+              270
+            ],
+            [
+              340,
+              270
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "g"
+      ]
+    },
+    {
+      "id": "ag-739",
+      "net": "net5",
+      "pins": [
+        [
+          "md1",
+          0
+        ],
+        [
+          "md2",
+          2
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "md1",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net5",
+            "source_term": "D",
+            "xy": [
+              80.0,
+              190.0
+            ]
+          },
+          {
+            "card": "md2",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "net5",
+            "source_term": "S",
+            "xy": [
+              80.0,
+              170.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-3a6b4b78-1477-4bda-b8ce-5f1f09331697-from-junction",
+              "xy": [
+                60.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-4d280df6-ef97-4c7a-b402-e545f2d1f5e2-from-junction",
+              "xy": [
+                60.0,
+                240.0
+              ]
+            },
+            {
+              "object": "wire-3a6b4b78-1477-4bda-b8ce-5f1f09331697-to-junction",
+              "xy": [
+                80.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-bde48be7-3148-4a6d-b5bf-a7ebb251fc12-to-junction",
+              "xy": [
+                100.0,
+                270.0
+              ]
+            },
+            {
+              "object": "wire-4d280df6-ef97-4c7a-b402-e545f2d1f5e2-to-junction",
+              "xy": [
+                100.0,
+                240.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                80.0,
+                170.0
+              ],
+              [
+                80,
+                180
+              ]
+            ],
+            [
+              [
+                80,
+                180
+              ],
+              [
+                80.0,
+                190.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              80.0,
+              190.0
+            ],
+            [
+              80.0,
+              170.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "md1": {
+            "object": "instance-6a0948b3-72b0-4bd0-9448-8be5037151bc",
+            "terminals": {
+              "D": [
+                80.0,
+                190.0
+              ],
+              "G": [
+                100.0,
+                220.0
+              ],
+              "S": [
+                120.0,
+                190.0
+              ]
+            }
+          },
+          "md2": {
+            "object": "instance-0897622b-3b42-46d5-843f-bd29ee83aca9",
+            "terminals": {
+              "D": [
+                120.0,
+                170.0
+              ],
+              "G": [
+                100.0,
+                140.0
+              ],
+              "S": [
+                80.0,
+                170.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-739.cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+          "ag-739.human.json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+          "ag-739.svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              60,
+              120
+            ],
+            [
+              60,
+              180
+            ]
+          ],
+          [
+            [
+              60,
+              180
+            ],
+            [
+              60,
+              240
+            ]
+          ],
+          [
+            [
+              60,
+              240
+            ],
+            [
+              60,
+              250
+            ]
+          ],
+          [
+            [
+              80,
+              170
+            ],
+            [
+              80,
+              180
+            ]
+          ],
+          [
+            [
+              80,
+              180
+            ],
+            [
+              80,
+              190
+            ]
+          ],
+          [
+            [
+              60,
+              180
+            ],
+            [
+              80,
+              180
+            ]
+          ],
+          [
+            [
+              90,
+              270
+            ],
+            [
+              100,
+              270
+            ]
+          ],
+          [
+            [
+              100,
+              270
+            ],
+            [
+              110,
+              270
+            ]
+          ],
+          [
+            [
+              100,
+              220
+            ],
+            [
+              100,
+              240
+            ]
+          ],
+          [
+            [
+              100,
+              240
+            ],
+            [
+              100,
+              270
+            ]
+          ],
+          [
+            [
+              60,
+              240
+            ],
+            [
+              100,
+              240
+            ]
+          ],
+          [
+            [
+              100,
+              270
+            ],
+            [
+              100,
+              330
+            ]
+          ],
+          [
+            [
+              100,
+              330
+            ],
+            [
+              620,
+              330
+            ]
+          ],
+          [
+            [
+              620,
+              330
+            ],
+            [
+              620,
+              270
+            ]
+          ],
+          [
+            [
+              620,
+              270
+            ],
+            [
+              600,
+              270
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "d",
+        "s"
+      ]
+    },
+    {
+      "id": "ag-739",
+      "net": "net2",
+      "pins": [
+        [
+          "md1",
+          2
+        ],
+        [
+          "md2",
+          0
+        ]
+      ],
+      "proof": {
+        "cache_segments_without_ink": [],
+        "literal_net_labels": [],
+        "ordered_terminal_bindings": [
+          {
+            "card": "md1",
+            "card_index": 2,
+            "native_term": "s",
+            "net": "net2",
+            "source_term": "S",
+            "xy": [
+              120.0,
+              190.0
+            ]
+          },
+          {
+            "card": "md2",
+            "card_index": 0,
+            "native_term": "d",
+            "net": "net2",
+            "source_term": "D",
+            "xy": [
+              120.0,
+              170.0
+            ]
+          }
+        ],
+        "source_connection": {
+          "actual_junctions": [
+            {
+              "object": "wire-46865c94-4f29-4684-acb0-48d17330938b-to-junction",
+              "xy": [
+                140.0,
+                130.0
+              ]
+            },
+            {
+              "object": "wire-1212b9fa-cb47-43eb-9168-e0dbccefd3fd-to-junction",
+              "xy": [
+                140.0,
+                180.0
+              ]
+            },
+            {
+              "object": "wire-150ef86b-0469-42ac-bb47-5ee051ab3a53-from-junction",
+              "xy": [
+                140.0,
+                230.0
+              ]
+            },
+            {
+              "object": "wire-1212b9fa-cb47-43eb-9168-e0dbccefd3fd-from-junction",
+              "xy": [
+                120.0,
+                180.0
+              ]
+            }
+          ],
+          "continuous": true,
+          "spanning_ink_segments": [
+            [
+              [
+                120.0,
+                170.0
+              ],
+              [
+                120,
+                180
+              ]
+            ],
+            [
+              [
+                120,
+                180
+              ],
+              [
+                120.0,
+                190.0
+              ]
+            ]
+          ],
+          "targets": [
+            [
+              120.0,
+              190.0
+            ],
+            [
+              120.0,
+              170.0
+            ]
+          ]
+        },
+        "source_glyphs": {
+          "md1": {
+            "object": "instance-6a0948b3-72b0-4bd0-9448-8be5037151bc",
+            "terminals": {
+              "D": [
+                80.0,
+                190.0
+              ],
+              "G": [
+                100.0,
+                220.0
+              ],
+              "S": [
+                120.0,
+                190.0
+              ]
+            }
+          },
+          "md2": {
+            "object": "instance-0897622b-3b42-46d5-843f-bd29ee83aca9",
+            "terminals": {
+              "D": [
+                120.0,
+                170.0
+              ],
+              "G": [
+                100.0,
+                140.0
+              ],
+              "S": [
+                80.0,
+                170.0
+              ]
+            }
+          }
+        },
+        "source_sha256": {
+          "ag-739.cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+          "ag-739.human.json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+          "ag-739.svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+        },
+        "status": "source_connected",
+        "verified_ink_segments": [
+          [
+            [
+              140,
+              120
+            ],
+            [
+              140,
+              130
+            ]
+          ],
+          [
+            [
+              140,
+              130
+            ],
+            [
+              140,
+              180
+            ]
+          ],
+          [
+            [
+              140,
+              180
+            ],
+            [
+              140,
+              230
+            ]
+          ],
+          [
+            [
+              140,
+              230
+            ],
+            [
+              140,
+              250
+            ]
+          ],
+          [
+            [
+              120,
+              170
+            ],
+            [
+              120,
+              180
+            ]
+          ],
+          [
+            [
+              120,
+              180
+            ],
+            [
+              120,
+              190
+            ]
+          ],
+          [
+            [
+              120,
+              180
+            ],
+            [
+              140,
+              180
+            ]
+          ],
+          [
+            [
+              100,
+              140
+            ],
+            [
+              100,
+              130
+            ]
+          ],
+          [
+            [
+              100,
+              130
+            ],
+            [
+              140,
+              130
+            ]
+          ],
+          [
+            [
+              140,
+              230
+            ],
+            [
+              320,
+              230
+            ]
+          ],
+          [
+            [
+              320,
+              230
+            ],
+            [
+              320,
+              270
+            ]
+          ],
+          [
+            [
+              320,
+              270
+            ],
+            [
+              340,
+              270
+            ]
+          ]
+        ]
+      },
+      "terms": [
+        "s",
+        "d"
+      ]
+    }
+  ],
+  "limits": "Eight devices in four correlated AG circuits, none in AMS. No same-column, exact-gap, absolute-row, inductive cross-cap or whole-source equivalence claim. Source label identity never joins conductor ink.",
+  "methods": [
+    "literal_outward_reversed_channels",
+    "inward_control_rejected",
+    "same_channel_row_rejected",
+    "skew_channel_rejected",
+    "unmatched_spatial_net_order_rejected",
+    "coincident_channel_rejected",
+    "staggered_columns_allowed",
+    "horizontal_reflection",
+    "vertical_reflection",
+    "member_permutation",
+    "wire_bent",
+    "wire_gap",
+    "wire_T",
+    "wire_overlap",
+    "wire_proper_X_without_dot",
+    "wire_proper_X_with_dot",
+    "wire_direction_and_order",
+    "wire_other_net_excluded",
+    "source_literal_resistor_path_leads",
+    "source_unrelated_cache_only_spur_keeps_verified_path",
+    "source_whole_ink_rejects_unassigned_source_negative",
+    "source_labels_do_not_join_source_pieces",
+    "source_wrong_source_binding_rejected",
+    "source_detached_resistor_lead_rejected",
+    "source_literal_inductor_path_ends",
+    "source_detached_inductor_endpoint_rejected",
+    "source_source_proper_crossing_requires_actual_contact_dot"
+  ],
+  "pair_names": [
+    "ag-1048:m5--m6",
+    "ag-1052:m6--m7",
+    "ag-1149:q3--q4",
+    "ag-739:md1--md2"
+  ],
+  "rows": [
+    {
+      "actual_glyphs": [
+        {
+          "object": "instance-c12c2708-8eb7-42bd-8fcc-6edb7f80f2fd",
+          "terminals": {
+            "D": [
+              70.0,
+              70.0
+            ],
+            "G": [
+              50.0,
+              40.0
+            ],
+            "S": [
+              30.0,
+              70.0
+            ]
+          }
+        },
+        {
+          "object": "instance-4603e973-2732-4034-a86a-44607a1b6a7c",
+          "terminals": {
+            "D": [
+              30.0,
+              90.0
+            ],
+            "G": [
+              50.0,
+              120.0
+            ],
+            "S": [
+              70.0,
+              90.0
+            ]
+          }
+        }
+      ],
+      "cards": [
+        [
+          "m5",
+          "vp1",
+          "vp1",
+          "vm1",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ],
+        [
+          "m6",
+          "vm1",
+          "vm1",
+          "vp1",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ]
+      ],
+      "id": "ag-1048",
+      "name": "ag-1048:m5--m6",
+      "names": [
+        "m5",
+        "m6"
+      ],
+      "relations": {
+        "distinct_channel_rows": true,
+        "horizontal": true,
+        "outward_controls": true,
+        "same_net_order": true
+      },
+      "same_midpoint_column": true,
+      "source": [
+        {
+          "card": "m5",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1048",
+          "mates": [
+            "m6"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+            ".json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+            ".svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              70.0,
+              70.0
+            ],
+            [
+              30.0,
+              70.0
+            ]
+          ]
+        },
+        {
+          "card": "m6",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1048",
+          "mates": [
+            "m5"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+            ".json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+            ".svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              30.0,
+              90.0
+            ],
+            [
+              70.0,
+              90.0
+            ]
+          ]
+        }
+      ],
+      "source_sha256": {
+        "ag-1048.cir": "4d6629948507eafaca18d975fb2c42d78443cc17775251f84a4097e3fe1ba889",
+        "ag-1048.human.json": "10fc41ba751afb4d154a58ef2df4109731908d852ad57af708eb8da655ca5d94",
+        "ag-1048.svg": "d1934a9ef7725192274e3f8bb36016dfa014f7ed6a64330e4f83794ac7e68d66"
+      }
+    },
+    {
+      "actual_glyphs": [
+        {
+          "object": "instance-f897b65e-88d9-4092-a663-b12923f3f17d",
+          "terminals": {
+            "D": [
+              20.0,
+              -70.0
+            ],
+            "G": [
+              -0.0,
+              -100.0
+            ],
+            "S": [
+              -20.0,
+              -70.0
+            ]
+          }
+        },
+        {
+          "object": "instance-13eff403-c475-4d6e-bf99-1ff61ca947f2",
+          "terminals": {
+            "D": [
+              -20.0,
+              -30.0
+            ],
+            "G": [
+              0.0,
+              0.0
+            ],
+            "S": [
+              20.0,
+              -30.0
+            ]
+          }
+        }
+      ],
+      "cards": [
+        [
+          "m6",
+          "net11",
+          "net11",
+          "net1",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ],
+        [
+          "m7",
+          "net1",
+          "net1",
+          "net11",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ]
+      ],
+      "id": "ag-1052",
+      "name": "ag-1052:m6--m7",
+      "names": [
+        "m6",
+        "m7"
+      ],
+      "relations": {
+        "distinct_channel_rows": true,
+        "horizontal": true,
+        "outward_controls": true,
+        "same_net_order": true
+      },
+      "same_midpoint_column": true,
+      "source": [
+        {
+          "card": "m6",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1052",
+          "mates": [
+            "m7"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+            ".json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+            ".svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              20.0,
+              -70.0
+            ],
+            [
+              -20.0,
+              -70.0
+            ]
+          ]
+        },
+        {
+          "card": "m7",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1052",
+          "mates": [
+            "m6"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+            ".json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+            ".svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              -20.0,
+              -30.0
+            ],
+            [
+              20.0,
+              -30.0
+            ]
+          ]
+        }
+      ],
+      "source_sha256": {
+        "ag-1052.cir": "ed1051ece7e46ea08ddea2fa55d6f18ac5c5b4845615ddbd9a3f9007c6168a5d",
+        "ag-1052.human.json": "5e7d1a6d5af06fd416fd4bc31850527892ce68412648ee21f12c91f3617d1647",
+        "ag-1052.svg": "dbd89231d36d01eead993a99fac539e325714a3c72a400d220a640d6f61d1069"
+      }
+    },
+    {
+      "actual_glyphs": [
+        {
+          "object": "instance-fb17a2dd-b784-4ded-8d0f-00a3c91bef1e",
+          "terminals": {
+            "B": [
+              70.0,
+              20.0
+            ],
+            "C": [
+              90.0,
+              50.0
+            ],
+            "E": [
+              50.0,
+              50.0
+            ]
+          }
+        },
+        {
+          "object": "instance-fde1ab51-6117-48e0-af73-100d34326101",
+          "terminals": {
+            "B": [
+              290.0,
+              110.0
+            ],
+            "C": [
+              270.0,
+              80.0
+            ],
+            "E": [
+              310.0,
+              80.0
+            ]
+          }
+        }
+      ],
+      "cards": [
+        [
+          "q3",
+          "net8",
+          "net8",
+          "net10",
+          "vss",
+          "qnpn",
+          "m=1"
+        ],
+        [
+          "q4",
+          "net10",
+          "net10",
+          "net8",
+          "vss",
+          "qnpn",
+          "m=1"
+        ]
+      ],
+      "id": "ag-1149",
+      "name": "ag-1149:q3--q4",
+      "names": [
+        "q3",
+        "q4"
+      ],
+      "relations": {
+        "distinct_channel_rows": true,
+        "horizontal": true,
+        "outward_controls": true,
+        "same_net_order": true
+      },
+      "same_midpoint_column": false,
+      "source": [
+        {
+          "card": "q3",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1149",
+          "mates": [
+            "q4"
+          ],
+          "native_axis": null,
+          "polarity": "npn",
+          "source_sha256": {
+            ".cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+            ".json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+            ".svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              90.0,
+              50.0
+            ],
+            [
+              50.0,
+              50.0
+            ]
+          ]
+        },
+        {
+          "card": "q4",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-1149",
+          "mates": [
+            "q3"
+          ],
+          "native_axis": null,
+          "polarity": "npn",
+          "source_sha256": {
+            ".cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+            ".json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+            ".svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              270.0,
+              80.0
+            ],
+            [
+              310.0,
+              80.0
+            ]
+          ]
+        }
+      ],
+      "source_sha256": {
+        "ag-1149.cir": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+        "ag-1149.human.json": "7caa48e0cfae0f5afe9d83e4a6c41c803276c09243bb5b9437ff7dad97667ebf",
+        "ag-1149.svg": "981882d1d6afa60cd3337ef82f84985bf9eb9cf0176bcadff179104eb2938b84"
+      }
+    },
+    {
+      "actual_glyphs": [
+        {
+          "object": "instance-6a0948b3-72b0-4bd0-9448-8be5037151bc",
+          "terminals": {
+            "D": [
+              80.0,
+              190.0
+            ],
+            "G": [
+              100.0,
+              220.0
+            ],
+            "S": [
+              120.0,
+              190.0
+            ]
+          }
+        },
+        {
+          "object": "instance-0897622b-3b42-46d5-843f-bd29ee83aca9",
+          "terminals": {
+            "D": [
+              120.0,
+              170.0
+            ],
+            "G": [
+              100.0,
+              140.0
+            ],
+            "S": [
+              80.0,
+              170.0
+            ]
+          }
+        }
+      ],
+      "cards": [
+        [
+          "md1",
+          "net5",
+          "net5",
+          "net2",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ],
+        [
+          "md2",
+          "net2",
+          "net2",
+          "net5",
+          "vss",
+          "nch",
+          "l=0.15",
+          "w=1",
+          "nf=1",
+          "m=1"
+        ]
+      ],
+      "id": "ag-739",
+      "name": "ag-739:md1--md2",
+      "names": [
+        "md1",
+        "md2"
+      ],
+      "relations": {
+        "distinct_channel_rows": true,
+        "horizontal": true,
+        "outward_controls": true,
+        "same_net_order": true
+      },
+      "same_midpoint_column": true,
+      "source": [
+        {
+          "card": "md1",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-739",
+          "mates": [
+            "md2"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+            ".json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+            ".svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              80.0,
+              190.0
+            ],
+            [
+              120.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "card": "md2",
+          "families": [
+            "antiparallel_diode_connected"
+          ],
+          "id": "ag-739",
+          "mates": [
+            "md1"
+          ],
+          "native_axis": null,
+          "polarity": "nmos",
+          "source_sha256": {
+            ".cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+            ".json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+            ".svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+          },
+          "split": "discovery",
+          "svg_axis": "horizontal",
+          "svg_channel": [
+            [
+              120.0,
+              170.0
+            ],
+            [
+              80.0,
+              170.0
+            ]
+          ]
+        }
+      ],
+      "source_sha256": {
+        "ag-739.cir": "66f7fefda4af984a264dedc73ef46adea6141be1c73269e8d9955db5f2179a2a",
+        "ag-739.human.json": "c4d5acb30fa32558ba7e1ae9c4929197cee7de81f89b53786de6915752a60182",
+        "ag-739.svg": "03871aefb2f7e353eb22944a83e35f8c037273fd7d4c2242688c35da5199c611"
+      }
+    }
+  ],
+  "selected_names": [
+    "ag-1048:m5",
+    "ag-1048:m6",
+    "ag-1052:m6",
+    "ag-1052:m7",
+    "ag-1149:q3",
+    "ag-1149:q4",
+    "ag-739:md1",
+    "ag-739:md2"
+  ]
+}

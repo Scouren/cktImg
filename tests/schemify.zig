@@ -52,6 +52,8 @@ fn blockOf(gpa: std.mem.Allocator, a: std.mem.Allocator, text: []const u8, p: []
 test {
     _ = @import("remaining_amplifiers.zig");
     _ = @import("reference_amplifiers.zig");
+    _ = @import("center_tap_bindings.zig");
+    _ = @import("center_tap_renderers.zig");
 }
 
 test "every fixture converts, deterministically" {

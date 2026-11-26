@@ -38,14 +38,19 @@ or load a whole symbol file (`tests/symbols.zon` is the set the tests use):
 try lib.loadZon(arena, symbols_text, &diags);
 ```
 
-Body strokes include hollow `.circle` and solid `.filled_circle`, both
-with a local center `c: Pt` and radius `r: i32`. For example,
-`.{ .filled_circle = .{ .c = .{ .x = 6, .y = -4 }, .r = 3 } }` adds a
-solid disk. Class registration copies its geometry; placement transforms
-the center with the rest of the class and includes the disk in its bounds.
-The radius must be nonnegative, and each center coordinate plus or minus
-the radius must fit `i32`. SVG and TikZ preserve hollow versus filled ink;
-Schemify emits a circle record with a local `fill true` attribute for a disk.
+`DrawOp.circle` is hollow; `DrawOp.filled_circle` is a solid ink disk.
+Both use `{ .c = point, .r = radius }`, rotate with the symbol, and
+contribute their full radius to body bounds. The C ABI retains kinds 0–3
+and adds `CKTIMG_OP_FILLED_CIRCLE = 4` without changing `CktimgOp` or any
+function signature. `cktimg_device_op_circle` reads either circle kind;
+renderers use `cktimg_device_op_kind` to select fill. Exhaustive Zig
+switches and C drawing consumers must handle the new kind.
+Native SVG and TikZ omit the disk outline. Schemify's `fill true` adds fill
+while retaining the host's normal screen-width stroke; its format has no
+zero-outline circle. This preserves a solid tap dot, with a renderer-specific
+outer stroke rather than identical raster radius.
+For hollow circles, native SVG and TikZ use a white interior; Schemify's
+existing unfilled circle keeps the host's normal transparent interior.
 
 Which class a device gets is decided by name: `res`, `cap`, `ind`,
 `vsource`, `isource`, `cvsource` (E), `cisource` (G), `ccvs` (H), `cccs` (F),

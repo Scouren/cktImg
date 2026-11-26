@@ -32,7 +32,7 @@
 //!   `pmos` or `nmos`, `pnp` or `npn`, `pjfet` or `njfet` (device.8).
 //!   `className`
 //! - library.3 (choice) A block uses the caller's registered symbol first,
-//!   else a recognized amplifier/gate glyph with a complete port contract,
+//!   else a recognized glyph with a complete named-port contract,
 //!   else a generated box. Explicit side directives keep the box geometry.
 //!   `blockFor`
 //! - library.4 (order: potential) A generated block's supply port

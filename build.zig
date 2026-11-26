@@ -112,6 +112,18 @@ pub fn build(b: *std.Build) void {
     filled_circle_abi.root_module.linkLibrary(static);
 
     const test_step = b.step("test", "Run tests");
+    // The C ABI as real C callers use it; each program owns its assertions.
+    for ([_][]const u8{"center_tap_abi"}) |name| {
+        const c_test = b.addExecutable(.{ .name = name, .root_module = b.createModule(.{
+            .target = target,
+            .optimize = optimize,
+            .link_libc = true,
+        }) });
+        c_test.root_module.addCSourceFile(.{ .file = b.path(b.fmt("tests/{s}.c", .{name})), .flags = &.{ "-std=c99", "-Wall", "-Wextra", "-Werror", "-DCKTIMG_TEST_PUBLISHED_FILLED_CIRCLE=1" } });
+        c_test.root_module.addIncludePath(b.path("include"));
+        c_test.root_module.linkLibrary(static);
+        test_step.dependOn(&b.addRunArtifact(c_test).step);
+    }
     test_step.dependOn(&b.addRunArtifact(lib_tests).step);
     test_step.dependOn(&b.addRunArtifact(cases).step);
     test_step.dependOn(&b.addRunArtifact(api).step);
@@ -146,12 +158,26 @@ pub fn build(b: *std.Build) void {
     residue.addFileInput(b.path("tools/asm_probe.py"));
     residue.addFileArg(probe.getEmittedAsm());
     residue.addArgs(&.{"gen_analog_output=hand_analog_output"});
+    // This separate owner-local object proves only the null entry wrapper,
+    // without exporting Canvas or trunk through the shipped engine module.
+    const trunk_probe = b.addObject(.{ .name = "trunk-codegen-probe", .root_module = b.createModule(.{
+        .root_source_file = b.path("src/trunk_codegen.zig"),
+        .target = probe_target,
+        .optimize = .ReleaseFast,
+    }) });
+    trunk_probe.root_module.addOptions("build_options", probe_options);
+    const trunk_residue = b.addSystemCommand(&.{"python3"});
+    trunk_residue.addFileArg(b.path("tools/codegen_check.py"));
+    trunk_residue.addFileInput(b.path("tools/asm_probe.py"));
+    trunk_residue.addFileArg(trunk_probe.getEmittedAsm());
+    trunk_residue.addArgs(&.{"gen_trunk_null=hand_trunk_null"});
     const probe_checks = b.addSystemCommand(&.{"python3"});
     probe_checks.addFileArg(b.path("tools/codegen_check.py"));
     probe_checks.addFileInput(b.path("tools/asm_probe.py"));
     probe_checks.addArg("--self-test");
     const codegen = b.step("test-codegen", "Check fixed-target assembly against direct implementations");
     codegen.dependOn(&residue.step);
+    codegen.dependOn(&trunk_residue.step);
     codegen.dependOn(&probe_checks.step);
     test_step.dependOn(codegen);
 

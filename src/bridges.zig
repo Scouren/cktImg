@@ -102,6 +102,11 @@
 //!   reaches. Mixed rows and final cells/at retain their later precedence.
 //!   Multiple grounded caps or an explicitly flat cap give no row bound.
 //!   `power_paths.reservoir`
+//! - bridges.22 (habit, bounded) A certified antiparallel clamp pair takes
+//!   two nearby rows with joint collision search, like a transmission pair.
+//!   Source channels are flat on separate rows in all four selected circuits;
+//!   one common column is a layout choice (AG1149's source is staggered).
+//!   `antiparallel.find`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, order: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, rank: []const u32, mate: []const u32, order_pairs: []const [2]u32, axis2: ?i32, x: []i32, y: []i32) Allocator.Error!void`
@@ -118,6 +123,7 @@ const forms = @import("forms.zig");
 const library = @import("library.zig");
 const block_symbols = @import("block_symbols.zig");
 const transmission = @import("transmission.zig");
+const antiparallel = @import("antiparallel.zig");
 const power_paths = @import("power_paths.zig");
 
 const Netlist = netlist.Netlist;
@@ -155,14 +161,17 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const
     defer slots.deinit(gpa);
     for (order) |d| {
         if (!drawn[d] or form[d] != .horizontal or placed[d]) continue;
-        const pair = if (transmission.mate(nl, d)) |m| (if (drawn[m] and form[m] == .horizontal and !placed[m]) m else null) else null;
+        const clamp = if (antiparallel.find(nl, roles, EdgeId.from(d))) |m|
+            (if (!antiparallel.held(nl, st.verdicts, EdgeId.from(d), m)) m.index() else null) else null;
+        const candidate = clamp orelse transmission.mate(nl, d);
+        const pair = if (candidate) |m| (if (drawn[m] and form[m] == .horizontal and !placed[m]) m else null) else null;
         const power = if (power_paths.series(nl, roles, drawn, form, d)) |members| available: {
             for (members) |v| if (placed[v]) break :available null;
             break :available members;
         } else null;
         const tips = if (pair) |m| paired: {
             chain.clearRetainingCapacity();
-            const first_n = device.polarity(nl.modelType(EdgeId.from(d))) == .n;
+            const first_n = clamp != null or device.polarity(nl.modelType(EdgeId.from(d))) == .n;
             try chain.appendSlice(gpa, if (first_n) &.{ d, m } else &.{ m, d });
             break :paired nl.path(EdgeId.from(chain.items[0])).?;
         } else if (power) |members| ordered: {

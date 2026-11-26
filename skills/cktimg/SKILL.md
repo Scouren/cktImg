@@ -1,6 +1,6 @@
 ---
 name: cktimg
-description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), fix a cktImg drawing, or hint one to hand-drawn quality.
+description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), or steer a drawing you dislike with `*@` hint lines and `lint.zon`, up to hand-drawn quality.
 ---
 
 cktImg lays a netlist out the way a textbook draws it and keeps the drawing
@@ -83,15 +83,28 @@ on a device overrides the relations on it.
   device itself.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
-  `weak` one (a stay). `requests` gives each line a state: `honoured`;
-  `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`
-  `guarantee` (an `at`, `route` or `via` that would break the drawing);
-  `dropped`,
-  `blocked_by` the lines it cannot hold with (`alone`: deleting that one
-  admits it), so delete or change a blocker; `rejected` (malformed, or a
-  name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
-  Inside a `.subckt`, lines are that cell's for the Schemify import, which
-  logs every line it does not honour.
+  `weak` one (a stay). Arguments split at blanks and commas. Inside a
+  `.subckt`, lines are that cell's for the Schemify import, which logs
+  every line it does not honour.
+  Each entry in `requests` has the line number, a `state`, a `code`, and
+  `blocked_by` (the stronger lines it cannot hold with, each with `alone`:
+  deleting that one alone admits it). Act on the code:
+
+  | code | state | what it means | your move |
+  |---|---|---|---|
+  | `ok` | honoured | drawn as written | none |
+  | `unknown_verb`, `bad_args` | rejected | misspelt verb, too few or malformed arguments | fix the spelling against the ladder |
+  | `unknown_name` | rejected, or relaxed when only some names are known | a device, net or pin the deck lacks | use names exactly as the deck has them (read lowercased) |
+  | `not_placeable` | rejected or dropped | a driver, a card with no pins, or a bridge where only a column device stands | name another device, or `driver <src> inline` first |
+  | `cycle` | dropped | closes an above/left cycle with `blocked_by` | delete or reverse one of the order lines |
+  | `conflict` | dropped or relaxed | cannot hold with `blocked_by` | delete the blocker marked `alone: true`, or this line |
+  | `taken` | dropped or relaxed | its devices already sit in a stronger line's group | `nogroup` them first, or edit that group |
+  | `asymmetric` | dropped | no symmetry of the circuit swaps those two | the circuit is not symmetric there: use relations |
+  | `no_room` | relaxed | a `wire` or `port` had no room and was drawn as names, or a cell was full | free room (`shelf`, lengths), or accept the names |
+  | `guarantee` | dropped | an `at`, `route` or `via` would put a symbol on another, a wire on another net's point, or a route off its pins | move the coordinates; read pins from `d.json` |
+  | `not_drawn` | relaxed | taken by the engine, missing from the drawing | a cktImg bug: report it with the deck |
+  | `not_built` | rejected | a verb the engine does not take yet | use the rung below |
+
   Shelves preserve accepted `row`, `order` and `above` relations. An
   `above` chain may cross shelves when their top-to-bottom order agrees;
   a cut that would reverse it is forbidden. Rejected or dropped relation
@@ -139,24 +152,40 @@ on a device overrides the relations on it.
   `at`) turns that placement off for the whole deck, so fix such a drawing
   from `--decisions 4`: it gives every device as a strong `*@ at` line,
   paste all and edit the ones to move. `--from` places such a deck afresh.
-- **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
-  the drawing and keep every row and column; `src/config.zig` lists each
-  with its default: a person's pitch, half a unit between stacked
-  devices and from a pin to its trunk or a transistor's rail symbol (a
-  two-pin part's rail symbol stands on its pin; `.stack = 1, .tap = 1,
-  .rail = 1, .terminal = 1` for a roomier drawing). The drawing is closed up
-  to those lengths
-  (`.compact = true`, the default); `.compact = false` keeps the roomier
-  lattice, every row and column a full pitch apart. `.cross_max` (3) is the
-  most other wires one internal net's wire may cross before the net is
-  joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
-  it (6) for one with too many names; `*@ wire <net>` keeps one net wired.
-  `.rail_past` (true) draws a supply bar as a named rail, no symbol on it,
-  running on past its outer pins, its name at the right end; `false` draws
-  the bar with its supply symbol, ended on its outer pins.
-  `.shelf` (8) is how many device columns a row holds before the drawing
-  wraps into rows of columns: raise it for a wider page, `0` for one row;
-  `*@ shelf <columns>|off` says so in one deck.
+- **Style** (`lint.zon`, passed as `--config`, or the `zon` text of the
+  library call). `.layout` keys, lengths in units of the symbol set's
+  two-pin length. They space the drawing and move nothing to another row
+  or column:
+
+  | key | default | what it sets | turn it when |
+  |---|---|---|---|
+  | `stack` | 0.5 | between neighbouring rows | stacked devices crowd: 1 |
+  | `series` | 1.0 | between neighbouring columns | columns crowd or sprawl |
+  | `rail` | 0.5 | a pin to its supply or ground symbol, the supply bar over its pins | 1 for a roomier drawing |
+  | `terminal` | 0.5 | a pin to its input or output port | ports crowd: 1 |
+  | `label` | 0.5 | a pin to its net label | labels crowd |
+  | `tap` | 0.5 | pins facing one way to the trunk joining them | 1 for a roomier drawing |
+  | `clearance` | 0.25 | the router's room between a wire and another net's | wires hug each other |
+  | `bend_cost` | 1.0 | what the router pays for a corner, in wire | too many corners: raise it |
+  | `cross_cost` | 2.0 | what the router pays to cross a wire, in wire | wires cross that could detour: raise it |
+  | `compact` | true | close the drawing up to these lengths | `false` keeps every row and column a full pitch apart |
+  | `cross_max` | 3 | the most wires one internal net may cross before it is joined by name (near pins stay wired) | too many crossings: 2; too many names: 6; one net: `*@ wire <net>` |
+  | `rail_past` | true | a supply bar is a named rail past its outer pins, no symbol | `false`: the bar carries its symbol, ending on its outer pins |
+  | `shelf` | 8 | device columns per row before the drawing wraps | wider page: raise; one row: 0; one deck: `*@ shelf` |
+
+  `.render` (TikZ only): `wire` (hex colour, `"1565c0"`), `sym_w` (1.2 pt),
+  `wire_w` (1.5 pt). `.rules`, each `.off`, `.warn` or `.err`:
+  `floating_pin`, `single_pin_net`, `duplicate_refdes`, `unmapped_master`,
+  `no_ground`, `symbol_geometry`, `label_fallback`. These rules report
+  problems and never move anything.
+- **Front ends.** Every front end reads the same lines from the deck text,
+  so a hinted deck draws the same everywhere. Iterate with `cktimg-json`:
+  it is the only front end whose `--report` and `--decisions` show what
+  became of your lines. `cktimg-tex [--standalone] [--config lint.zon]
+  deck.sp out.tex` gives the TikZ figure. In C, the hinted deck is the
+  `src` of `cktimg_parse_place(lib, src, zon, &report)`, where `report`
+  holds only the settings' complaints. From Zig, `place(gpa, &cfg, &lib,
+  &.{deck}, null)`, then `report.write` gives the `r.json` above.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.

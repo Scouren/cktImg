@@ -534,4 +534,18 @@ test {
 test {
     _ = @import("cross_loads.zig");
     _ = @import("sampling_bridge.zig");
+    _ = @import("center_tap_symbols.zig");
+    _ = @import("center_tap_body_bounds.zig");
+    _ = @import("center_tap_continuity.zig");
+    _ = @import("center_tap_networks.zig");
+    _ = @import("center_tap_tanks.zig");
+    _ = @import("ct_common_controls.zig");
+    _ = @import("ct_mirror_controls.zig");
+    _ = @import("ct_feedback_stage.zig");
+    _ = @import("coil_couplers.zig");
+    _ = @import("coil_chain_frames.zig");
+    _ = @import("coil_bridge_frames.zig");
+    _ = @import("coil_banks.zig");
+    _ = @import("coil_reflection.zig");
+    _ = @import("pin_escape.zig");
 }

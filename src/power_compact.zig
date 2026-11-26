@@ -31,7 +31,8 @@
 //!   between the cap columns, retaining those orders also keeps its center
 //!   inside. No exact lower-row equality or output-branch order is added.
 //! - power_compact.6 (invariant) Other geometry owners may append initially
-//!   true actual-coordinate orders to the same pass. Bias peers use this
+//!   true actual-coordinate orders to the same pass. Bias peers and coil
+//!   tanks use this
 //!   seam; this owner does not discover or place those groups. Empty
 //!   extra slices preserve the converter-only requests.
 //!
@@ -43,7 +44,10 @@
 //! The compactor owns coordinate writes; this pass only submits orders.
 //!
 //! Contents:
-//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: [2][]const [2]i32) Allocator.Error!void`
+//! - `pub fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) Allocator.Error![]library.Rect`
+//! - `pub fn clear(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) Allocator.Error!bool`
+//! - `pub fn drawnAxis2(gpa: Allocator, s: *const Schematic, sk: *const Skeleton) !?i32`
+//! - `pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: []const [2][]const [2]i32) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -67,12 +71,23 @@ const Skeleton = skeleton.Skeleton;
 const Lengths = canvas.Lengths;
 const Pt = library.Pt;
 
+/// Tests every drawn device box after compaction. Allocation and overlap
+/// order match the drawing's original check; caller decides whether to
+/// retain the squeezed coordinates. Does not mutate the schematic.
+pub fn clear(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) Allocator.Error!bool {
+    const boxes = try deviceBoxes(gpa, s, nl, sk);
+    defer gpa.free(boxes);
+    return clear: for (boxes, 0..) |a, i| {
+        for (boxes[i + 1 ..]) |b| if (a.intersects(b)) break :clear false;
+    } else true;
+}
+
 /// Compacts a wired drawing while preserving its existing converter
 /// terminal orders. Asserts the skeleton and `ats` cover every device and
 /// `s` has its settled symbols and coordinates. `extra` borrows initially
 /// strict actual-coordinate orders from other geometry owners. Temporary storage belongs
 /// to this call; allocation failure may leave x compacted as in `compact`.
-pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: [2][]const [2]i32) Allocator.Error!void {
+pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At, len: Lengths, axis2: ?i32, extra: []const [2][]const [2]i32) Allocator.Error!void {
     const c = &nl.graph;
     assert(ats.len == c.edgeCount());
     assert(sk.drawn.len == c.edgeCount());
@@ -84,7 +99,11 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
     const groups = try gpa.alloc([3]u32, coil_capacity);
     defer gpa.free(groups);
     var count: usize = 0;
-    var y_capacity: usize = extra[1].len;
+    var extra_capacity: [2]usize = .{ 0, 0 };
+    for (extra) |owner| for (owner, &extra_capacity) |orders, *capacity| {
+        capacity.* += orders.len;
+    };
+    var y_capacity: usize = extra_capacity[1];
     for (c.edges.items(.kind), 0..) |kind, d| {
         if (kind != .inductor) continue;
         const members = power_paths.series(nl, s.roles, sk.drawn, sk.form, @intCast(d)) orelse continue;
@@ -95,15 +114,19 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
         for (controlNets(nl, members)) |net| y_capacity += c.incident(VertexId.from(net)).len;
     }
     assert(count <= coil_capacity);
-    const x_capacity = 13 * count + extra[0].len;
+    const x_capacity = 13 * count + extra_capacity[0];
     const xs = try gpa.alloc([2]i32, x_capacity);
     defer gpa.free(xs);
     const ys = try gpa.alloc([2]i32, y_capacity);
     defer gpa.free(ys);
-    @memcpy(xs[0..extra[0].len], extra[0]);
-    @memcpy(ys[0..extra[1].len], extra[1]);
-    var nx: usize = extra[0].len;
-    var ny: usize = extra[1].len;
+    var nx: usize = 0;
+    var ny: usize = 0;
+    for (extra) |owner| {
+        @memcpy(xs[nx..][0..owner[0].len], owner[0]);
+        @memcpy(ys[ny..][0..owner[1].len], owner[1]);
+        nx += owner[0].len;
+        ny += owner[1].len;
+    }
     for (groups[0..count]) |members| {
         const coil = channel(s, nl, members[1]) orelse continue;
         const first = channel(s, nl, members[0]) orelse continue;
@@ -215,7 +238,44 @@ pub fn squeeze(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Ske
     try compact.squeeze(gpa, s, len, axis2, .{ xs[0..nx], ys[0..ny] });
 }
 
+/// Twice the x the skeleton's mirrored columns stand about in the drawing,
+/// when every pair of them agrees (an `at` line may move one off it); else
+/// null. The skeleton mirrors a pair's columns even where the circuit has
+/// no symmetry of its own (a mirror load), which sketch's `drawnMirror` asks for.
+pub fn drawnAxis2(gpa: Allocator, s: *const Schematic, sk: *const Skeleton) !?i32 {
+    assert(sk.drawn.len == s.devices.len and sk.x.len == sk.drawn.len);
+    assert(s.xy.len == s.nodes.len);
+    const a2 = sk.axis2 orelse return null;
+    const x = try gpa.alloc(?i32, sk.drawn.len);
+    defer gpa.free(x);
+    for (x, 0..) |*v, d| v.* = if (sk.drawn[d]) Pt.round(s.xy[s.deviceNode(@intCast(d)).?]).x else null;
+    var axis2: ?i32 = null;
+    for (x, 0..) |xd, d| for (x[d..], d..) |xe, e| {
+        if (xd == null or xe == null or sk.x[d] + sk.x[e] != a2) continue;
+        if (axis2 != null and axis2.? != xd.? + xe.?) return null;
+        axis2 = xd.? + xe.?;
+    };
+    return axis2;
+}
+
+/// Allocates the current drawn-device boxes in graph order. Both drawing
+/// and post-compaction overlap checks consume this same geometry. The
+/// caller frees the returned slice; allocation failure leaves input intact.
+pub fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) Allocator.Error![]library.Rect {
+    var out: std.ArrayList(library.Rect) = .empty;
+    errdefer out.deinit(gpa);
+    for (0..nl.graph.edgeCount()) |d| {
+        if (!sk.drawn[d]) continue;
+        const r = s.boxAt(d, Pt.round(s.xy[s.deviceNode(@intCast(d)).?]));
+        assert(r.min.x <= r.max.x and r.min.y <= r.max.y);
+        try out.append(gpa, r);
+    }
+    assert(out.items.len <= nl.graph.edgeCount());
+    return out.toOwnedSlice(gpa);
+}
+
 // ---- private ----
+
 
 fn controlNets(nl: *const Netlist, members: [3]u32) [4]u32 {
     const ends = nl.path(EdgeId.from(members[1])).?;

@@ -1,0 +1,302 @@
+//! Exact source pair/partition literals, source deck and frozen class text.
+//! Oracle/provenance: docs/research/figures/ct_four_wires_tests.json.
+//! Frozen RED7 assertions and fixture values; no production topology oracle.
+//!
+//! Contents: nets, pairs, parts, rail, poses_off, pins_off, wires_off, poses_on, pins_on, wires_on, deck, symbols.
+
+const frames = @import("ct_four_wire_frames.zig");
+
+/// Frozen nets expectation from the source certificate.
+pub const nets=[_][]const u8{
+    "p4",
+    "m4",
+    "p3",
+    "m3",
+    "p2",
+    "m2",
+    "p1",
+    "m1",
+    "net2",
+    "net1",
+    "net0",
+    "net3",
+    "vdd",
+    "vss",
+    "lb",
+    "hb"
+};
+
+/// Frozen pairs expectation from the source certificate.
+pub const pairs=[_]struct{a:u32,b:u32,yes:bool}{
+    .{.a=5,.b=27,.yes=true},
+    .{.a=5,.b=31,.yes=true},
+    .{.a=5,.b=36,.yes=true},
+    .{.a=5,.b=66,.yes=true},
+    .{.a=27,.b=31,.yes=true},
+    .{.a=27,.b=36,.yes=true},
+    .{.a=27,.b=66,.yes=true},
+    .{.a=31,.b=36,.yes=true},
+    .{.a=31,.b=66,.yes=true},
+    .{.a=36,.b=66,.yes=true},
+    .{.a=7,.b=39,.yes=true},
+    .{.a=7,.b=43,.yes=true},
+    .{.a=7,.b=48,.yes=true},
+    .{.a=7,.b=67,.yes=true},
+    .{.a=39,.b=43,.yes=true},
+    .{.a=39,.b=48,.yes=true},
+    .{.a=39,.b=67,.yes=true},
+    .{.a=43,.b=48,.yes=true},
+    .{.a=43,.b=67,.yes=true},
+    .{.a=48,.b=67,.yes=true},
+    .{.a=8,.b=28,.yes=false},
+    .{.a=8,.b=30,.yes=false},
+    .{.a=8,.b=38,.yes=false},
+    .{.a=8,.b=69,.yes=true},
+    .{.a=28,.b=30,.yes=true},
+    .{.a=28,.b=38,.yes=true},
+    .{.a=28,.b=69,.yes=false},
+    .{.a=30,.b=38,.yes=true},
+    .{.a=30,.b=69,.yes=false},
+    .{.a=38,.b=69,.yes=false},
+    .{.a=10,.b=40,.yes=false},
+    .{.a=10,.b=42,.yes=false},
+    .{.a=10,.b=50,.yes=false},
+    .{.a=10,.b=70,.yes=true},
+    .{.a=40,.b=42,.yes=true},
+    .{.a=40,.b=50,.yes=true},
+    .{.a=40,.b=70,.yes=false},
+    .{.a=42,.b=50,.yes=true},
+    .{.a=42,.b=70,.yes=false},
+    .{.a=50,.b=70,.yes=false},
+    .{.a=1,.b=4,.yes=true},
+    .{.a=1,.b=12,.yes=true},
+    .{.a=1,.b=16,.yes=false},
+    .{.a=1,.b=18,.yes=true},
+    .{.a=1,.b=22,.yes=true},
+    .{.a=4,.b=12,.yes=true},
+    .{.a=4,.b=16,.yes=false},
+    .{.a=4,.b=18,.yes=true},
+    .{.a=4,.b=22,.yes=true},
+    .{.a=12,.b=16,.yes=false},
+    .{.a=12,.b=18,.yes=true},
+    .{.a=12,.b=22,.yes=true},
+    .{.a=16,.b=18,.yes=false},
+    .{.a=16,.b=22,.yes=false},
+    .{.a=18,.b=22,.yes=true},
+    .{.a=0,.b=6,.yes=true},
+    .{.a=0,.b=13,.yes=false},
+    .{.a=0,.b=15,.yes=true},
+    .{.a=0,.b=19,.yes=true},
+    .{.a=0,.b=21,.yes=true},
+    .{.a=6,.b=13,.yes=false},
+    .{.a=6,.b=15,.yes=true},
+    .{.a=6,.b=19,.yes=true},
+    .{.a=6,.b=21,.yes=true},
+    .{.a=13,.b=15,.yes=false},
+    .{.a=13,.b=19,.yes=false},
+    .{.a=13,.b=21,.yes=false},
+    .{.a=15,.b=19,.yes=true},
+    .{.a=15,.b=21,.yes=true},
+    .{.a=19,.b=21,.yes=true},
+    .{.a=3,.b=9,.yes=true},
+    .{.a=3,.b=51,.yes=true},
+    .{.a=3,.b=55,.yes=false},
+    .{.a=3,.b=57,.yes=true},
+    .{.a=3,.b=61,.yes=true},
+    .{.a=9,.b=51,.yes=true},
+    .{.a=9,.b=55,.yes=false},
+    .{.a=9,.b=57,.yes=true},
+    .{.a=9,.b=61,.yes=true},
+    .{.a=51,.b=55,.yes=false},
+    .{.a=51,.b=57,.yes=true},
+    .{.a=51,.b=61,.yes=true},
+    .{.a=55,.b=57,.yes=false},
+    .{.a=55,.b=61,.yes=false},
+    .{.a=57,.b=61,.yes=true},
+    .{.a=2,.b=11,.yes=true},
+    .{.a=2,.b=52,.yes=false},
+    .{.a=2,.b=54,.yes=true},
+    .{.a=2,.b=58,.yes=true},
+    .{.a=2,.b=60,.yes=true},
+    .{.a=11,.b=52,.yes=false},
+    .{.a=11,.b=54,.yes=true},
+    .{.a=11,.b=58,.yes=true},
+    .{.a=11,.b=60,.yes=true},
+    .{.a=52,.b=54,.yes=false},
+    .{.a=52,.b=58,.yes=false},
+    .{.a=52,.b=60,.yes=false},
+    .{.a=54,.b=58,.yes=true},
+    .{.a=54,.b=60,.yes=true},
+    .{.a=58,.b=60,.yes=true},
+    .{.a=20,.b=23,.yes=true},
+    .{.a=20,.b=24,.yes=true},
+    .{.a=23,.b=24,.yes=true},
+    .{.a=59,.b=62,.yes=true},
+    .{.a=59,.b=63,.yes=true},
+    .{.a=62,.b=63,.yes=true},
+    .{.a=29,.b=32,.yes=true},
+    .{.a=29,.b=33,.yes=true},
+    .{.a=32,.b=33,.yes=true},
+    .{.a=41,.b=44,.yes=true},
+    .{.a=41,.b=45,.yes=true},
+    .{.a=44,.b=45,.yes=true},
+    .{.a=68,.b=71,.yes=true},
+    .{.a=14,.b=17,.yes=false},
+    .{.a=14,.b=26,.yes=false},
+    .{.a=14,.b=35,.yes=false},
+    .{.a=14,.b=47,.yes=false},
+    .{.a=14,.b=53,.yes=false},
+    .{.a=14,.b=56,.yes=false},
+    .{.a=14,.b=65,.yes=false},
+    .{.a=17,.b=26,.yes=false},
+    .{.a=17,.b=35,.yes=false},
+    .{.a=17,.b=47,.yes=false},
+    .{.a=17,.b=53,.yes=false},
+    .{.a=17,.b=56,.yes=false},
+    .{.a=17,.b=65,.yes=false},
+    .{.a=26,.b=35,.yes=false},
+    .{.a=26,.b=47,.yes=false},
+    .{.a=26,.b=53,.yes=false},
+    .{.a=26,.b=56,.yes=false},
+    .{.a=26,.b=65,.yes=false},
+    .{.a=35,.b=47,.yes=false},
+    .{.a=35,.b=53,.yes=false},
+    .{.a=35,.b=56,.yes=false},
+    .{.a=35,.b=65,.yes=false},
+    .{.a=47,.b=53,.yes=false},
+    .{.a=47,.b=56,.yes=false},
+    .{.a=47,.b=65,.yes=false},
+    .{.a=53,.b=56,.yes=false},
+    .{.a=53,.b=65,.yes=false},
+    .{.a=56,.b=65,.yes=false},
+    .{.a=25,.b=37,.yes=false},
+    .{.a=25,.b=49,.yes=false},
+    .{.a=25,.b=64,.yes=false},
+    .{.a=37,.b=49,.yes=false},
+    .{.a=37,.b=64,.yes=false},
+    .{.a=49,.b=64,.yes=false},
+    .{.a=34,.b=46,.yes=false}
+};
+
+/// Frozen parts expectation from the source certificate.
+pub const parts=[_]struct{net:u32,pins:[]const u32,output:bool}{
+    .{.net=5,.pins=&.{0,6,15,19,21},.output=true},
+    .{.net=5,.pins=&.{13},.output=false},
+    .{.net=4,.pins=&.{1,4,12,18,22},.output=true},
+    .{.net=4,.pins=&.{16},.output=false},
+    .{.net=7,.pins=&.{2,11,54,58,60},.output=true},
+    .{.net=7,.pins=&.{52},.output=false},
+    .{.net=6,.pins=&.{3,9,51,57,61},.output=true},
+    .{.net=6,.pins=&.{55},.output=false},
+    .{.net=2,.pins=&.{28,30,38},.output=false},
+    .{.net=2,.pins=&.{8,69},.output=false},
+    .{.net=3,.pins=&.{40,42,50},.output=false},
+    .{.net=3,.pins=&.{10,70},.output=false}
+};
+
+/// Frozen rail expectation from the source certificate.
+pub const rail=[2]u32{
+    68,
+    71
+};
+
+/// Frozen actual native frame, not a source expectation.
+pub const poses_off = frames.poses_off;
+/// Frozen actual native frame, not a source expectation.
+pub const pins_off = frames.pins_off;
+/// Frozen actual native frame, not a source expectation.
+pub const wires_off = frames.wires_off;
+/// Frozen actual native frame, not a source expectation.
+pub const poses_on = frames.poses_on;
+/// Frozen actual native frame, not a source expectation.
+pub const pins_on = frames.pins_on;
+/// Frozen actual native frame, not a source expectation.
+pub const wires_on = frames.wires_on;
+
+/// Exact frozen deck bytes, including the final newline.
+pub const deck =
+    \\* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+    \\.model nch nmos
+    \\
+    \\.subckt ct_inductor n1 n2 n3 params: l1=1n l2=1n k=0
+    \\L1 n1 n3 {l1}
+    \\L2 n3 n2 {l2}
+    \\K12 L1 L2 {k}
+    \\.ends ct_inductor
+    \\
+    \\C1 M2 P2 1p
+    \\C2 M1 P1 1p
+    \\LS1 P2 P4 1n
+    \\LS2 M2 M4 1n
+    \\LS3 P3 P1 1n
+    \\LS4 M3 M1 1n
+    \\M10 P2 M2 VSS VSS nch l=0.06 w=14 nf=1 m=1
+    \\M11 M2 P2 VSS VSS nch l=0.06 w=14 nf=1 m=1
+    \\M12 P2 M2 net2 VSS nch l=0.06 w=8 nf=1 m=1
+    \\M13 M2 P2 net2 VSS nch l=0.06 w=8 nf=1 m=1
+    \\M14 net2 LB VSS VSS nch l=0.06 w=1 nf=1 m=1
+    \\M15 P4 P3 net0 VSS nch l=0.06 w=14 nf=1 m=1
+    \\M16 P3 P4 net0 VSS nch l=0.06 w=14 nf=1 m=1
+    \\M17 net0 HB VSS VSS nch l=0.06 w=1 nf=1 m=1
+    \\M18 P4 LB P3 VSS nch l=0.06 w=1 nf=1 m=1
+    \\M19 M4 M3 net3 VSS nch l=0.06 w=14 nf=1 m=1
+    \\M20 M3 M4 net3 VSS nch l=0.06 w=14 nf=1 m=1
+    \\M21 net3 HB VSS VSS nch l=0.06 w=1 nf=1 m=1
+    \\M22 M4 LB M3 VSS nch l=0.06 w=1 nf=1 m=1
+    \\M5 P1 M1 VSS VSS nch l=0.06 w=14 nf=1 m=1
+    \\M6 M1 P1 VSS VSS nch l=0.06 w=14 nf=1 m=1
+    \\M7 P1 M1 net1 VSS nch l=0.06 w=8 nf=1 m=1
+    \\M8 M1 P1 net1 VSS nch l=0.06 w=8 nf=1 m=1
+    \\M9 net1 LB VSS VSS nch l=0.06 w=1 nf=1 m=1
+    \\XL1 P4 M4 Vdd ct_inductor l1=1n l2=1n k=0
+    \\XL2 P3 M3 Vdd ct_inductor l1=1n l2=1n k=0
+    \\*@ weak role p1 output
+    \\*@ weak role m1 output
+    \\*@ weak role p2 output
+    \\*@ weak role m2 output
+    \\*@ weak role lb input
+    \\*@ weak role hb input
+    \\
+;
+
+/// Exact frozen symbols bytes, including the final newline.
+pub const symbols =
+    \\// The symbol set the tests and the tools register: one class per device kind
+    \\// the layout's vocabulary names (library.className), plus the rail and port
+    \\// symbols it adds. Canonical frame: origin at the device centre, y down,
+    \\// principal terminals at x = -20 and x = +20 (one unit is 40).
+    \\//
+    \\// Generated from the drawings of the original SVG renderer; edit freely.
+    \\.{
+    \\    .unit = 40,
+    \\    .classes = .{
+    \\        .{ .name = "res", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = 0 }, .{ .x = -9, .y = 4 }, .{ .x = -6, .y = -4 }, .{ .x = -3, .y = 4 }, .{ .x = 0, .y = -4 }, .{ .x = 3, .y = 4 }, .{ .x = 6, .y = -4 }, .{ .x = 9, .y = 4 }, .{ .x = 12, .y = 0 } } } } },
+    \\        .{ .name = "cap", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -3, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 3, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -3, .y = -8 }, .b = .{ .x = -3, .y = 8 } } }, .{ .line = .{ .a = .{ .x = 3, .y = -8 }, .b = .{ .x = 3, .y = 8 } } } } },
+    \\        .{ .name = "ind", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = 0 }, .{ .x = -11, .y = -3 }, .{ .x = -9, .y = -4 }, .{ .x = -7, .y = -3 }, .{ .x = -6, .y = 0 }, .{ .x = -5, .y = -3 }, .{ .x = -3, .y = -4 }, .{ .x = -1, .y = -3 }, .{ .x = 0, .y = 0 }, .{ .x = 1, .y = -3 }, .{ .x = 3, .y = -4 }, .{ .x = 5, .y = -3 }, .{ .x = 6, .y = 0 }, .{ .x = 7, .y = -3 }, .{ .x = 9, .y = -4 }, .{ .x = 11, .y = -3 }, .{ .x = 12, .y = 0 } } } } },
+    \\        .{ .name = "vsource", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 9 } }, .{ .line = .{ .a = .{ .x = -6, .y = -2 }, .b = .{ .x = -6, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -8, .y = 0 }, .b = .{ .x = -4, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 5, .y = -2 }, .b = .{ .x = 5, .y = 2 } } } } },
+    \\        .{ .name = "isource", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 9 } }, .{ .line = .{ .a = .{ .x = -5, .y = 0 }, .b = .{ .x = 5, .y = 0 } } }, .{ .polyline = .{ .{ .x = 6, .y = 0 }, .{ .x = 2, .y = -3 }, .{ .x = 2, .y = 3 }, .{ .x = 6, .y = 0 } } } } },
+    \\        .{ .name = "diode", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "k", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -6, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 6, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -6, .y = -6 }, .{ .x = -6, .y = 6 }, .{ .x = 6, .y = 0 }, .{ .x = -6, .y = -6 } } }, .{ .line = .{ .a = .{ .x = 6, .y = -6 }, .b = .{ .x = 6, .y = 6 } } } } },
+    \\        .{ .name = "bsource", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } } } },
+    \\        .{ .name = "ccvs", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = -2 }, .b = .{ .x = -5, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -7, .y = 0 }, .b = .{ .x = -3, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 4, .y = -2 }, .b = .{ .x = 4, .y = 2 } } } } },
+    \\        .{ .name = "cccs", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = 0 }, .b = .{ .x = 5, .y = 0 } } }, .{ .polyline = .{ .{ .x = 6, .y = 0 }, .{ .x = 2, .y = -3 }, .{ .x = 2, .y = 3 }, .{ .x = 6, .y = 0 } } } } },
+    \\        .{ .name = "cvsource", .terminals = .{ .{ .name = "out+", .at = .{ .x = 20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 0, .y = 20 }, .ground_ref = true }, .{ .name = "in+", .at = .{ .x = -20, .y = -20 } }, .{ .name = "in-", .at = .{ .x = -20, .y = 20 } } }, .draw = .{ .{ .polyline = .{ .{ .x = -14, .y = -28 }, .{ .x = -14, .y = 28 }, .{ .x = 16, .y = 0 }, .{ .x = -14, .y = -28 } } }, .{ .line = .{ .a = .{ .x = 16, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -20, .y = -20 }, .b = .{ .x = -14, .y = -20 } } }, .{ .line = .{ .a = .{ .x = -20, .y = 20 }, .b = .{ .x = -14, .y = 20 } } }, .{ .line = .{ .a = .{ .x = 0, .y = 10 }, .b = .{ .x = 0, .y = 20 } } }, .{ .text = .{ .at = .{ .x = -9, .y = -20 }, .s = "+", .size = 8 } }, .{ .text = .{ .at = .{ .x = -9, .y = 20 }, .s = "-", .size = 8 } } } },
+    \\        .{ .name = "vcvs", .terminals = .{ .{ .name = "out+", .at = .{ .x = -20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = -2 }, .b = .{ .x = -5, .y = 2 } } }, .{ .line = .{ .a = .{ .x = -7, .y = 0 }, .b = .{ .x = -3, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 4, .y = -2 }, .b = .{ .x = 4, .y = 2 } } } } },
+    \\        .{ .name = "cisource", .terminals = .{ .{ .name = "out+", .at = .{ .x = -20, .y = 0 } }, .{ .name = "out-", .at = .{ .x = 20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 9, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -9, .y = 0 }, .{ .x = 0, .y = -9 }, .{ .x = 9, .y = 0 }, .{ .x = 0, .y = 9 }, .{ .x = -9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -5, .y = 0 }, .b = .{ .x = 5, .y = 0 } } }, .{ .polyline = .{ .{ .x = 6, .y = 0 }, .{ .x = 2, .y = -3 }, .{ .x = 2, .y = 3 }, .{ .x = 6, .y = 0 } } } } },
+    \\        .{ .name = "nmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -7 } } } } },
+    \\        .{ .name = "pmos", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -3 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -3 }, .b = .{ .x = -10, .y = -3 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -7 }, .b = .{ .x = -8, .y = -7 } } }, .{ .circle = .{ .c = .{ .x = 0, .y = -9 }, .r = 2 } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -11 } } } } },
+    \\        .{ .name = "npn", .terminals = .{ .{ .name = "c", .at = .{ .x = 20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = -20 } }, .{ .name = "e", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -6 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -6 }, .b = .{ .x = -8, .y = -6 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 12, .y = 0 }, .{ .x = 3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -12, .y = 0 }, .{ .x = -3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -11, .y = -1 }, .{ .x = -8, .y = -5 }, .{ .x = -6, .y = -2 }, .{ .x = -11, .y = -1 } } } } },
+    \\        .{ .name = "pnp", .terminals = .{ .{ .name = "c", .at = .{ .x = 20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 0, .y = -20 } }, .{ .name = "e", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -6 } } }, .{ .line = .{ .a = .{ .x = 8, .y = -6 }, .b = .{ .x = -8, .y = -6 } } }, .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 12, .y = 0 }, .{ .x = 3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -12, .y = 0 }, .{ .x = -3, .y = -6 } } }, .{ .polyline = .{ .{ .x = -4, .y = -5 }, .{ .x = -8, .y = -2 }, .{ .x = -9, .y = -5 }, .{ .x = -4, .y = -5 } } } } },
+    \\        .{ .name = "njfet", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -4 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -4 }, .b = .{ .x = -10, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -4 } } }, .{ .polyline = .{ .{ .x = 0, .y = -4 }, .{ .x = -2, .y = -8 }, .{ .x = 2, .y = -8 }, .{ .x = 0, .y = -4 } } } } },
+    \\        .{ .name = "pjfet", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -4 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -4 }, .b = .{ .x = -10, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -4 } } }, .{ .polyline = .{ .{ .x = 0, .y = -8 }, .{ .x = -2, .y = -4 }, .{ .x = 2, .y = -4 }, .{ .x = 0, .y = -8 } } } } },
+    \\        .{ .name = "mesfet", .terminals = .{ .{ .name = "d", .at = .{ .x = 20, .y = 0 } }, .{ .name = "g", .at = .{ .x = 0, .y = -20 } }, .{ .name = "s", .at = .{ .x = -20, .y = 0 } } }, .draw = .{ .{ .polyline = .{ .{ .x = 20, .y = 0 }, .{ .x = 8, .y = 0 }, .{ .x = 8, .y = -4 } } }, .{ .polyline = .{ .{ .x = -20, .y = 0 }, .{ .x = -8, .y = 0 }, .{ .x = -8, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 10, .y = -4 }, .b = .{ .x = -10, .y = -4 } } }, .{ .line = .{ .a = .{ .x = 0, .y = -20 }, .b = .{ .x = 0, .y = -4 } } } } },
+    \\        .{ .name = "switch", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } }, .{ .name = "c+", .at = .{ .x = -6, .y = -20 } }, .{ .name = "c-", .at = .{ .x = 6, .y = -20 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -8, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -8, .y = 0 }, .b = .{ .x = 8, .y = -7 } } }, .{ .line = .{ .a = .{ .x = 8, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -6, .y = -20 }, .b = .{ .x = -6, .y = -12 } } }, .{ .line = .{ .a = .{ .x = 6, .y = -20 }, .b = .{ .x = 6, .y = -12 } } }, .{ .polyline = .{ .{ .x = -9, .y = -12 }, .{ .x = 9, .y = -12 }, .{ .x = 9, .y = -9 }, .{ .x = -9, .y = -9 }, .{ .x = -9, .y = -12 } } } } },
+    \\        .{ .name = "tline", .terminals = .{ .{ .name = "p1", .at = .{ .x = -20, .y = 0 } }, .{ .name = "n1", .at = .{ .x = -10, .y = 20 } }, .{ .name = "p2", .at = .{ .x = 20, .y = 0 } }, .{ .name = "n2", .at = .{ .x = 10, .y = 20 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = -5 }, .{ .x = 12, .y = -5 }, .{ .x = 12, .y = 5 }, .{ .x = -12, .y = 5 }, .{ .x = -12, .y = -5 } } }, .{ .line = .{ .a = .{ .x = -10, .y = 20 }, .b = .{ .x = -10, .y = 5 } } }, .{ .line = .{ .a = .{ .x = 10, .y = 20 }, .b = .{ .x = 10, .y = 5 } } } } },
+    \\        .{ .name = "urc", .terminals = .{ .{ .name = "a", .at = .{ .x = -20, .y = 0 } }, .{ .name = "b", .at = .{ .x = 20, .y = 0 } }, .{ .name = "c", .at = .{ .x = 0, .y = 20 } } }, .draw = .{ .{ .line = .{ .a = .{ .x = -20, .y = 0 }, .b = .{ .x = -12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = 12, .y = 0 }, .b = .{ .x = 20, .y = 0 } } }, .{ .polyline = .{ .{ .x = -12, .y = 0 }, .{ .x = -9, .y = 4 }, .{ .x = -6, .y = -4 }, .{ .x = -3, .y = 4 }, .{ .x = 0, .y = -4 }, .{ .x = 3, .y = 4 }, .{ .x = 6, .y = -4 }, .{ .x = 9, .y = 4 }, .{ .x = 12, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -12, .y = 6 }, .b = .{ .x = 12, .y = 6 } } }, .{ .line = .{ .a = .{ .x = 0, .y = 6 }, .b = .{ .x = 0, .y = 20 } } } } },
+    \\        .{ .name = "vdd", .role = .power_rail, .terminals = .{.{ .name = "p", .at = .{ .x = 0, .y = 0 } }}, .draw = .{.{ .line = .{ .a = .{ .x = -9, .y = 0 }, .b = .{ .x = 9, .y = 0 } } }} },
+    \\        .{ .name = "gnd", .role = .ground_rail, .terminals = .{.{ .name = "p", .at = .{ .x = 0, .y = 0 } }}, .draw = .{ .{ .line = .{ .a = .{ .x = -9, .y = 0 }, .b = .{ .x = 9, .y = 0 } } }, .{ .line = .{ .a = .{ .x = -6, .y = 3 }, .b = .{ .x = 6, .y = 3 } } }, .{ .line = .{ .a = .{ .x = -2, .y = 6 }, .b = .{ .x = 2, .y = 6 } } } } },
+    \\        .{ .name = "ipin", .role = .input_port, .terminals = .{.{ .name = "p", .at = .{ .x = 0, .y = 0 } }}, .draw = .{.{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 3 } }} },
+    \\        .{ .name = "opin", .role = .output_port, .terminals = .{.{ .name = "p", .at = .{ .x = 0, .y = 0 } }}, .draw = .{.{ .circle = .{ .c = .{ .x = 0, .y = 0 }, .r = 3 } }} },
+    \\    },
+    \\}
+    \\
+;

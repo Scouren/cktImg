@@ -7,6 +7,11 @@
 //! instance of a generated *leaf* (`spice_<kind>.shprim`, template `{name} {pins} {args}`)
 //! that re-emits the card text verbatim. `X` cards call the generated cell of a subckt in
 //! the file, or a generated stub leaf named after an undefined subckt.
+//!
+//! Human Rules:
+//! - recognize.1 (symbol contract) A named center-tapped inductor has three
+//!   passive ports. Left/right drawing position never invents an input or
+//!   output direction; explicit PININFO and caller side geometry win.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -382,7 +387,7 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
         const pins = try a.alloc(Pin, names.len);
         var agrees = true;
         for (ports, glyph.terminals, pins) |n, t, *p| {
-            const dir: Dir = if (shape == .clocked_comparator and block_symbols.clockFormal(t.name)) .in else switch (t.side.?) {
+            const dir: Dir = if (shape == .center_tap) deck.pinInfo(deck.netKey(c, n)) orelse .inout else if (shape == .clocked_comparator and block_symbols.clockFormal(t.name)) .in else switch (t.side.?) {
                 .left => .in,
                 .right => .out,
                 .up, .down => .inout,
