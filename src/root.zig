@@ -17,7 +17,6 @@
 //!
 //! Contents (shared symbol and source-qualified layout entries):
 //! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
-//! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`
 //! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`, `pub const switch_rectangles`
 //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
