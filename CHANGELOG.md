@@ -42,6 +42,12 @@ AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> afte
   - MOS bodies as distinct native and editor contacts, and a C query for a physical pin.
   - A signed amplifier frame per native use, shared by qualifying editor symbols.
   - Guest size: full LTO, pinned Binaryen, and deterministic heap ordering (-26,904 bytes).
+- A nested switch bank stands as its source does: the input pair left of all four switches, the
+  inner source columns between the outer ones (AG517, the staged checkpoint of #22): taken because
+  its one changed deck moves to its hand drawing, x 52 -> 96 of 100, y 74 -> 82 of 82, gates
+  2 -> 6 of 6, corners 3 -> 11 (people 14), crossings 5 -> 3 (people 5); 1 of 5,274 drawings
+  changes, 0 -> 0 with gate findings. Tests 468/468 and 469/469; `netlist-import.wasm` 545,677
+  bytes.
 
 ### Changed
 
