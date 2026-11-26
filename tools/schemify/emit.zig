@@ -321,6 +321,22 @@ const Refs = struct {
 /// or for the code leaf the text itself (`{text}`).
 pub fn leafFile(a: Allocator, source: []const u8, rec: *const Recognized, s: u32) Allocator.Error!OutFile {
     const stem = rec.syms.stem.items[s];
+    if (rec.syms.family.items[s] == .oblique_cap) {
+        var w: Writer = try .init(a, "shprim", source, stem);
+        try w.headerAttr("doc", "Capacitor with oblique plates and leads in a four-phase RC network");
+        try w.headerAttr("prefix", "C");
+        try w.headerAttr("provenance", try a.print("netlist-import {s}", .{source}));
+        try symbol(&w, rec, s);
+        try w.record(.rank1, "param", &.{ "value", "1p" });
+        try w.attr("kind", &.{"string"});
+        try w.attr("unit", &.{"F"});
+        try w.record(.rank1, "param", &.{ "m", "1" });
+        try w.record(.rank1, "impl", &.{ "spice", "spice" });
+        try w.attr("format", &.{ "spice", "{name} {p} {n} {value} m={m}" });
+        try w.attr("format", &.{ "spectre", "{name} ({p} {n}) capacitor c={num(value)} m={m}" });
+        try graphics(&w, rec, s);
+        return w.finish(try a.print("{s}.shprim", .{stem}), true);
+    }
     const own = rec.syms.format.items[s];
     const code = s == rec.code_sym;
     const doc = if (code) "SPICE text kept inside a subckt definition (netlist import)" else "SPICE card re-emitted verbatim (netlist import)";
@@ -355,6 +371,7 @@ fn lineRec(w: *Writer, v: [4]i32) Allocator.Error!void {
 fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
     const b = rec.syms.body.items[s];
     switch (rec.syms.family.items[s]) {
+        .oblique_cap => try drawOps(w, &@import("polyphase_caps.zig").strokes),
         .two => {
             try lineRec(w, .{ 0, -30, 0, -20 });
             try lineRec(w, .{ 0, 20, 0, 30 });
@@ -405,7 +422,7 @@ fn graphics(w: *Writer, rec: *const Recognized, s: u32) Allocator.Error!void {
             if (rec.syms.pins(s).len == 4) try lineRec(w, .{ 0, 0, 20, 0 });
         },
     }
-    for ([_]struct { i32, []const u8 }{ .{ b[1] - 20, "{name}" }, .{ b[3] + 10, "{cell}" } }) |t| {
+    for ([_]struct { i32, []const u8 }{ .{ b[1] - 20, "{name}" }, .{ b[3] + 10, if (rec.syms.family.items[s] == .oblique_cap) "{value}" else "{cell}" } }) |t| {
         try w.record(.rank2, "stext", &.{});
         try w.coords(&.{ b[0], t[0] });
         try w.fields(&.{ "R0", t[1] });

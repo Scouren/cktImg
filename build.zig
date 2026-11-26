@@ -221,6 +221,12 @@ pub fn build(b: *std.Build) void {
         body_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
     body_check.addFileArg(b.path("tests/symbols.zon"));
     test_step.dependOn(&body_check.step);
+    const cap_check = b.addSystemCommand(&.{"python3"});
+    cap_check.addFileArg(b.path("tests/polyphase_caps.py"));
+    cap_check.addArtifactArg(json_exe);
+    for ([_][]const u8{ "ag-493.cir", "ag-493.human.json", "ag-494.cir" }) |name|
+        cap_check.addFileArg(b.path(b.pathJoin(&.{ "external/examples/analoggenie", name })));
+    test_step.dependOn(&cap_check.step);
     const stage_check = b.addSystemCommand(&.{"python3"});
     stage_check.addFileArg(b.path("tests/parent_stages.py"));
     stage_check.addArtifactArg(json_exe);

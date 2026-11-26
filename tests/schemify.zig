@@ -191,3 +191,43 @@ test "a hint naming a device the subckt lacks is a log line naming it, and the r
     try std.testing.expectEqual(1, comps);
     try std.testing.expectEqual(5, out.stats.devices);
 }
+
+test "steered oblique capacitor has two real tips; another cell cannot bind those tips to a resistor" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const deck =
+        \\separate target cells
+        \\.subckt selected a b
+        \\C1 a b 2.25p m=3
+        \\C2 a b 8p
+        \\*@ class C1 cap_oblique
+        \\*@ weak class C1 cap
+        \\.ends selected
+        \\.subckt incompatible c d
+        \\R1 c d 1k
+        \\*@ class R1 cap_oblique
+        \\.ends incompatible
+    ;
+    const out = try cktimg.convert(t.allocator, arena.allocator(), "probe.cir", deck);
+    var seen: u8 = 0;
+    for (out.files.items) |f| {
+        if (std.mem.eql(u8, f.name, "polyphase_cap.shprim")) {
+            for ([_][]const u8{ "pin p inout -21 -21", "pin n inout 21 21", "line -21 -21 -3 -3", "line 21 21 3 3", "{name} {p} {n} {value} m={m}" }) |s|
+                try t.expect(std.mem.indexOf(u8, f.bytes, s) != null);
+            seen |= 1;
+        } else if (std.mem.eql(u8, f.name, "selected.shcomp")) {
+            try t.expect(std.mem.indexOf(u8, f.bytes, "core:cap") != null);
+            try t.expect(std.mem.indexOf(u8, f.bytes, "polyphase_cap") != null);
+            seen |= 2;
+        } else if (std.mem.eql(u8, f.name, "incompatible.shcomp")) {
+            try t.expect(std.mem.indexOf(u8, f.bytes, "core:res") != null);
+            seen |= 4;
+        }
+    }
+    try t.expectEqual(@as(u8, 7), seen);
+    for (out.warnings.items) |msg| {
+        if (std.mem.indexOf(u8, msg, "different contact coordinates") != null) return;
+    }
+    return error.MissingCapabilityDiagnostic;
+}

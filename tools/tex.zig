@@ -113,7 +113,7 @@ pub fn main(init: std.process.Init) !void {
 // ---- private ----
 
 fn placeDeck(gpa: std.mem.Allocator, arena: std.mem.Allocator, cfg: *const np.Config, lib: *np.Library, path: []const u8, raw: []const u8, custom_symbols: bool, diag: *np.netlist.Diagnostic) !np.Placed {
-    const sources = try native.deckSources(gpa, arena, lib, path, raw, diag);
+    const sources = try native.deckSourcesFor(gpa, arena, lib, path, raw, diag, !custom_symbols and std.meta.eql(cfg.layout, np.Config.default.layout));
     return native.placeSelected(gpa, arena, cfg, lib, sources, raw, custom_symbols, diag);
 }
 

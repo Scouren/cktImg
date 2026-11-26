@@ -21,6 +21,7 @@
 //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
+//! - `pub const polyphase_caps`
 //! - `pub const regulator = @import("regulator.zig")`
 //! - `pub const block_symbols = @import("block_symbols.zig")`
 
@@ -49,7 +50,9 @@ pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
-/// Signed input order from raw NMOS regulator connections and declared cell ports.
+/// Complete two-bank passive RC lattice and ordered capacitor poses.
+pub const polyphase_caps = @import("polyphase_caps.zig");
+/// Certified signed controller pose for a regulated pass transistor.
 pub const regulator = @import("regulator.zig");
 /// Conventional glyphs for subcircuits with verified named port contracts.
 pub const block_symbols = @import("block_symbols.zig");

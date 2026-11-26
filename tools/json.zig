@@ -26,7 +26,7 @@
 //!
 //! Contents:
 //! - `pub fn main`
-//! - `pub fn deckSources`
+//! - `pub fn deckSources`, `pub fn deckSourcesFor`
 //! - `pub fn placeSelected`
 
 const std = @import("std");
@@ -117,7 +117,8 @@ pub fn main(init: std.process.Init) !void {
     }
 
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {
+    const lattice = opts.from == null and opts.config == null and opts.symbols == null and (target == null or target.?.lookup("cap_oblique") != null);
+    const srcs = deckSourcesFor(gpa, arena, &lib, opts.netlist, raw, &diag, lattice) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -200,6 +201,11 @@ pub fn main(init: std.process.Init) !void {
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
 pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
+    return deckSourcesFor(gpa, arena, lib, path, raw, diag, false);
+}
+
+/// Selects the same cell while permitting the stock oblique-symbol capability.
+pub fn deckSourcesFor(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic, lattice: bool) ![][]const u8 {
     const first = std.mem.trimStart(u8, raw, " \t\r\n");
     const text = if (std.ascii.startsWithIgnoreCase(first, ".subckt")) try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw }) else raw;
     var nl = try np.netlist.parse(gpa, &.{text}, diag);
@@ -211,7 +217,7 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
     const body = try std.fmt.allocPrint(arena, "{s}\n{s}", .{ text[0..title_end], top.body });
     const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
-    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
+    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag, lattice and top.ports.len == 8 and @import("polyphase_caps.zig").plain(top.body));
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
 
@@ -292,7 +298,7 @@ fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, di
 /// their role (R1 leaves them internal): a port only gates hang on is an
 /// input, any other an output. So every port is drawn as one, and a port on
 /// one gate is no dangling pin.
-fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic) ![]const u8 {
+fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic, lattice: bool) ![]const u8 {
     var nl = try np.netlist.parse(gpa, sources, diag);
     defer nl.deinit(gpa);
     if (lib) |draw_lib| try @import("regulator.zig").select(arena, &nl, ports, draw_lib);
@@ -317,6 +323,8 @@ fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, po
         if (roles[net.index()] != .internal) continue;
         try out.writer.print("*@ weak role {s} {s}\n", .{ port, if (driven[net.index()]) "output" else "input" });
     }
+    if (lattice and nl.hints.len == 0) if (lib) |draw_lib|
+        try @import("polyphase_caps.zig").write(&out.writer, &nl, ports, draw_lib);
     return out.written();
 }
 

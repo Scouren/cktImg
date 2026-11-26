@@ -22,6 +22,7 @@ const Tok = spice.Tok;
 const Range = spice.Range;
 const keyOf = spice.keyOf;
 const Place = @import("place.zig").Place;
+const cap_lattice = @import("NetlistParser").polyphase_caps;
 const block_symbols = @import("NetlistParser").block_symbols;
 
 /// Symbols per conversion (core rows + generated cells).
@@ -31,6 +32,8 @@ pub const symbols_max = 8192;
 pub const Family = enum {
     /// Two pins `p` (0,-30) / `n` (0,30).
     two,
+    /// Capacitor with two physical diagonal leads in its own frame.
+    oblique_cap,
     /// MOSFET `d g s b`, n-channel drawing.
     nmos,
     /// MOSFET `d g s b`, p-channel drawing (drain at the bottom).
@@ -125,7 +128,7 @@ pub const Symbols = struct {
         if (s.pin_start.items.len == 0) try s.pin_start.append(a, 0);
         var body: Body = .{ 0, 0, 0, 0 };
         for (pins_, 0..) |p, i| {
-            assert(origin == .lib or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
+            assert(origin == .lib or family == .oblique_cap or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
             if (i == 0) body = .{ p.x, p.y, p.x, p.y };
             body = .{ @min(body[0], p.x), @min(body[1], p.y), @max(body[2], p.x), @max(body[3], p.y) };
         }
@@ -219,6 +222,7 @@ pub fn subSymbol(c: u32) u32 {
 /// order, then leaves in first-use order) and one `Parts` row per deck device.
 pub const Recognized = struct {
     syms: Symbols = .{},
+    lattices: ArrayList(struct { cell: u32, layout: cap_lattice.Layout }) = .empty,
     parts: Parts = .{},
     warnings: ArrayList([]const u8) = .empty,
     /// The `spice_code` leaf (one pin, template `{text}`) that carries a subckt's code
@@ -286,9 +290,36 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
         }
     }
     try @import("regulator.zig").select(a, deck, &r);
+    try selectCapLattices(a, deck, &r);
     assert(r.parts.sym.items.len == deck.dev_name.len);
     assert(r.parts.over_start.items.len == deck.dev_name.len + 1);
     return r;
+}
+
+/// A private generated primitive keeps the core capacitor's electrical
+/// parameters and both ordered terminals. Actual caller-steered cells use
+/// their existing ordinary layout and symbols.
+fn selectCapLattices(a: Allocator, deck: *const Deck, r: *Recognized) Allocator.Error!void {
+    var symbol: ?u32 = null;
+    for (0..deck.cells()) |ci| {
+        const c: u32 = @intCast(ci);
+        const matcher = @import("polyphase_caps.zig");
+        const layout = matcher.match(deck, r, c);
+        if (layout == null and deck.directive.len == 0) continue;
+        const ds = deck.devs(c);
+        for (ds.lo..ds.hi, 0..) |d, i| {
+            if (r.parts.sym.items[d] != coreSym("cap")) continue;
+            if (layout == null and !matcher.requested(deck, c, deck.dev_name[d])) continue;
+            if (layout) |l| assert(l[i].cap);
+            if (symbol == null) {
+                const stem = try uniqueStem(a, "polyphase_cap", &r.taken);
+                const pins = [_]Pin{ pin("p", -21, -21, .inout), pin("n", 21, 21, .inout) };
+                symbol = try r.syms.push(a, stem, .leaf, .oblique_cap, &pins, null);
+            }
+            r.parts.sym.items[d] = symbol.?;
+        }
+        if (layout) |l| try r.lattices.append(a, .{ .cell = c, .layout = l });
+    }
 }
 
 /// True when `n` equals one of `names`, case-insensitively (file stems on a case-folding disk).

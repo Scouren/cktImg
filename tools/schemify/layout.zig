@@ -97,7 +97,7 @@ pub fn facing(o: u8, px: i32, py: i32) u8 {
 /// (already horizontal) and generated boxes.
 pub fn toCanonical(fam: Family) u8 {
     return switch (fam) {
-        .tline, .box => 0,
+        .tline, .box, .oblique_cap => 0,
         else => 1,
     };
 }
@@ -113,6 +113,7 @@ fn hiddenPin(fam: Family, k: usize) bool {
 fn classNames(fam: Family) []const []const u8 {
     return switch (fam) {
         .two => &.{ "res", "cap", "ind", "vsource", "isource", "diode", "bsource" },
+        .oblique_cap => &.{"cap_oblique"},
         .nmos => &.{"nmos"},
         .pmos => &.{"pmos"},
         .npn => &.{"npn"},
@@ -172,7 +173,7 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
                 op.* = .ln(from[0], from[1], to[0], to[1]);
             }
             break :blk &core_mos;
-        } else if (syms.shape.items[s] == .box) &box_ops else glyph: {
+        } else if (fam == .oblique_cap) &@import("polyphase_caps.zig").strokes else if (syms.shape.items[s] == .box) &box_ops else glyph: {
             const port_names = try a.alloc([]const u8, pins.len);
             for (pins, port_names) |p, *name| name.* = p.name;
             const glyph = try engine.block_symbols.draw(a, syms.shape.items[s], port_names, 20);
@@ -325,6 +326,11 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
         try text.print(a, " {s}\n", .{card.tail});
     }
     try hints.write(a, &text, deck, c, dev_names, names);
+    for (rec.lattices.items) |lattice| if (lattice.cell == c) {
+        var ink: std.Io.Writer.Allocating = .init(a);
+        engine.polyphase_caps.hints(&ink.writer, lattice.layout, dev_names, true) catch return error.OutOfMemory;
+        try text.appendSlice(a, ink.written());
+    };
     return text.items;
 }
 
@@ -373,7 +379,14 @@ pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine
     defer placed.deinit();
     budget.* -= wired_devs;
     try hints.notes(gpa, a, &out.notes, deck, c, text, &placed, lib);
-    try translate(a, &out, &placed, lib, deck, rec, c, names);
+    translate(a, &out, &placed, lib, deck, rec, c, names) catch |err| switch (err) {
+        error.OutOfMemory => return error.OutOfMemory,
+        error.IncompatibleClass => {
+            out = .{ .fallback = "the selected class has different contact coordinates from the bound editor symbol" };
+            try labelled(a, &out, deck, rec, c);
+            return out;
+        },
+    };
     try placeFree(a, &out, deck, rec, c);
     assert(out.x.items.len == devs.len());
     return out;
@@ -428,7 +441,7 @@ fn onAny(wires: []const Seg, p: P) bool {
 }
 
 /// Fills `out` from the engine's placement `placed` of cell `c`.
-fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) Allocator.Error!void {
+fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) (Allocator.Error || error{IncompatibleClass})!void {
     const syms = &rec.syms;
     const devs = deck.devs(c);
     const n = devs.len();
@@ -478,11 +491,11 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
         try out.place(a, pos.x, pos.y, o);
         const lo, const hi = placed.pinRange(i);
         const pins = syms.pins(s);
-        assert(hi - lo == pins.len);
+        if (hi - lo != pins.len) return error.IncompatibleClass;
         for (pins, 0..) |p, k| {
             const dd = xform(o, p.x, p.y);
             const at: P = .{ pos.x + dd[0], pos.y + dd[1] };
-            assert(placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] }));
+            if (!placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] })) return error.IncompatibleClass;
             const net = nets[k];
             assert(local.of(placed.pin_net[lo + k]) == net);
             const face = facing(o, p.x, p.y);

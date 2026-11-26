@@ -114,6 +114,14 @@ on a device overrides the relations on it.
   `unshown_bodies`. A custom symbol file can supply either class on its
   own, or register a visible D/G/S/B variant after its compact class with
   `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
+- **Polyphase RC cells.** A closed four-phase network with two resistor
+  banks and two certified cyclic capacitor banks can show oblique capacitor
+  plates and leads. Native stock text/SVG and the editor use an actual
+  two-contact `cap_oblique` symbol. With `*@ class C1 cap_oblique` a
+  caller can also request this glyph on a single ordinary capacitor. Its
+  leads are diagonal in its local frame. Inter-device wires use the
+  selected router. An explicit geometry request keeps the other parts on
+  ordinary placement.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:
