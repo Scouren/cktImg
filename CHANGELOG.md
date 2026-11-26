@@ -48,6 +48,11 @@ AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> afte
   2 -> 6 of 6, corners 3 -> 11 (people 14), crossings 5 -> 3 (people 5); 1 of 5,274 drawings
   changes, 0 -> 0 with gate findings. Tests 468/468 and 469/469; `netlist-import.wasm` 545,677
   bytes.
+- A folded switch bank is drawn as two dimensions of its source, rows by control and columns by
+  input (AG1093, recovery patch of #22): taken because its one changed deck improves on every
+  measure, crossings 12 -> 9, corners 30 -> 27, written names 2 -> 1, and corpus gates +6, gate
+  directions +6, x +58, y +70, symbols +2; AG1016 and AG364 unchanged. Tests 468/468 and
+  469/469; `netlist-import.wasm` 550,891 bytes.
 
 ### Changed
 
