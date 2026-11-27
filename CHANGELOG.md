@@ -79,6 +79,15 @@ the size cap below are the open follow-ups.
   clamps and their anchors; pin escapes; with their research notes and figures (the main
   checkout's uncommitted work since 4f69956). The 117 MB `docs/research/image-rules` study is
   kept on the `snapshot/main-checkout` branch, not in the tree.
+- Hint reports (`fix/hint-reports`): taken because five agents hinting 15 hard corpus decks
+  lost rounds to what `requests` said. Top-level `*@` lines in a deck of only `.subckt`s apply to
+  the top cell (they were dropped silently); `requests[].line` is the file's own line (139 of 139
+  trial lines match, 0 before); the engine's own lines leave `requests` (170 -> 139 entries);
+  `not_placeable` and `unknown_name` name the failing argument (`name`); a mirror, bank or stack
+  with no joining net is `rejected unjoined`; a `face` that leaves a name on the port is
+  `relaxed no_room`. The 15 trial drawings are byte-identical. `skills/cktimg/` gains the verdict
+  and `lint.zon` tables. `netlist-import.wasm` 677,072 -> 678,692 bytes. Corpus numbers
+  unmeasured.
 
 ### Changed
 
