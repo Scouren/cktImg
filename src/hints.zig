@@ -63,6 +63,8 @@ pub const Verb = enum(u8) {
     above,
     column,
     order,
+    stage,
+    repeat,
     upright,
     bridge,
     face,

@@ -77,6 +77,7 @@ const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
 const anchored = @import("anchored.zig");
+const units = @import("units.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -280,6 +281,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .row and h.verb != .above and h.verb != .column) continue;
+        if (units.claims(nl, h)) continue;
         if (h.args.len < 2) {
             verdicts[i] = .of(.bad_args);
             continue;
@@ -334,7 +336,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     const check: Check = .{ .gpa = gpa, .n = n, .own = own };
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
-        if ((h.verb != .row and h.verb != .above and h.verb != .column) or verdicts[i] != null) continue;
+        if ((h.verb != .row and h.verb != .above and h.verb != .column) or verdicts[i] != null or units.claims(nl, h)) continue;
         try admitted.append(gpa, i);
         if (!try check.holds(admitted.items)) {
             _ = admitted.pop();
