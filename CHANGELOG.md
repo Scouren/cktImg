@@ -132,6 +132,15 @@ the size cap below are the open follow-ups.
   every file input a path, text or dict. It runs `cktimg-json` (pinned redraw, ReleaseFast: 41
   devices 12.6 ms, 123 devices 73 ms). `docs/PYTHON.md` documents the placement schema. No engine
   or guest change.
+- Block turns (`feat/block-turns`): taken because two Fable agents could turn or mirror a block
+  only with hand `at` lines. `*@ face <block> <port> left|right|up|down` turns a block until that
+  port faces the side, and an admitted `*@ symmetric <blk> <blk>` draws the mate mirrored (ag-1168,
+  replacing a hand `at ... MR0`: 4/24 -> 3/22, the hand result). A child's side lines keep a
+  recognised glyph, turned or mirrored to fit, before falling back to a box (ar-3201's amplifier
+  keeps its triangle with vip on top). A block's title moves a quarter unit off its ports' names
+  before the box widens, and `text_overlaps` counts two texts of one symbol (43 findings in 20
+  decks, mostly blocks the engine turns itself). 16 of 5,274 drawings change, 14 with the same
+  metrics. Gates rerun on the merged tree. `netlist-import.wasm` 701,214 -> 704,503 bytes.
 
 ### Changed
 
