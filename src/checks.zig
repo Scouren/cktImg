@@ -19,9 +19,10 @@
 //!   nowhere else, and never two at one point. `dots`
 //! - checks.4 (invariant) No net crosses its own wire without a dot there.
 //!   `dots`
-//! - checks.5 (choice) `row`, `above` and `order` read off device origins:
-//!   a `row` on one y, `above` y growing down the list, `order` x growing
-//!   along it: the meaning the report holds each honoured line to.
+//! - checks.5 (choice) `row`, `above`, `column` and `order` read off
+//!   device origins: a `row` on one y, `above` y growing down the list, a
+//!   `column` that on one x, `order` x growing along it: the meaning the
+//!   report holds each honoured line to.
 //!   `drawnAs`
 //! - checks.6 (choice) `face` reads off the pin: left or right of its
 //!   device's origin, or above or below the other end of its path: the
@@ -275,8 +276,8 @@ pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt {
 }
 
 /// Whether `p` draws what line `h` of `nl`'s deck asks, read from the
-/// drawing alone (y grows down): `row` one y, `above` y increasing, `order`
-/// x increasing, `stack` in written top-to-bottom order, `face` the pin on that side of its device or its other
+/// drawing alone (y grows down): `row` one y, `above` y increasing,
+/// `column` that on one x, `order` x increasing, `stack` in written top-to-bottom order, `face` the pin on that side of its device or its other
 /// end, `label` a name on the net and `wire` none, `port` a port symbol
 /// past the net's pins on that side. Null for a line the drawing cannot
 /// show (a group, the symmetry).
@@ -289,15 +290,17 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             }
             return true;
         },
-        // The two orders: `order` runs along the columns (x), `row` and
-        // `above` down the rows (y); a `row` stays level, the others go on.
-        .row, .above, .order => {
+        // The two orders: `order` runs along the columns (x), `row`,
+        // `above` and `column` down the rows (y); a `row` stays level, the
+        // others go on, and a `column` keeps its x.
+        .row, .above, .column, .order => {
             var prev: ?Pt = null;
             for (h.args) |name| {
                 const at = p.dev_pos[deviceIn(p, name) orelse return false];
                 if (prev) |q| {
                     const here, const before = if (h.verb == .order) .{ at.x, q.x } else .{ at.y, q.y };
                     if (if (h.verb == .row) here != before else here <= before) return false;
+                    if (h.verb == .column and at.x != q.x) return false;
                 }
                 prev = at;
             }

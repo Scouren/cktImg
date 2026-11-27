@@ -118,7 +118,7 @@ fn held(nl: *const netlist.Netlist, st: *const structure.Structure, verdicts: []
         if (verdict) |v| if (v.state != .honoured and v.state != .relaxed) continue;
         switch (hint.verb) {
             .off => return true,
-            .pair, .cross, .mirror, .bank, .stack, .nogroup, .order, .cell, .at, .above, .class, .kind => {},
+            .pair, .cross, .mirror, .bank, .stack, .nogroup, .order, .cell, .at, .above, .column, .class, .kind => {},
             else => continue,
         }
         for (hint.args) |word| {

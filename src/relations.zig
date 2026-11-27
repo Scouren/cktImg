@@ -1,11 +1,11 @@
 //! The deck's placement lines (steering rung 2): `upright`, `bridge`,
-//! `face`, `row` and `above`, applied by the skeleton. In: the netlist, its
+//! `face`, `row`, `above` and `column`, applied by the skeleton. In: the netlist, its
 //! structure, and the skeleton's tables as each stage leaves them. Out: the
 //! tables changed as the lines say, the rows' constraints for `levels`, and
 //! a verdict per line.
 //!
 //! Rows and their order are difference constraints: `row a b` an equality,
-//! `above a b` an edge.
+//! `above a b` an edge, `column a b` an edge that is also a column link.
 //!
 //! Human Rules:
 //! - relations.1 (invariant) `driver <dev> apart` draws a two-pin
@@ -42,6 +42,12 @@
 //!   Narrowing: a flat part by its pin count, as `sketch.fits` turns it;
 //!   the device model's flat part also takes a four-pin switch and leaves
 //!   out a two-port box.
+//! - relations.13 (invariant) Each upright device a `column` line names
+//!   stands in one column with the next, directly above it, whether or not
+//!   the two share a net (devices in parallel too); a device stands
+//!   directly under one device and over one at most, and the line holds
+//!   only with the `row` and `above` lines it closes no cycle with
+//!   (relations.7). `rows`, `Relations.links`
 //! - relations.11 (unmeasured) A `face` line on one of a mated pair turns
 //!   the unnamed mate's gate the other way; a flat part's mate is not
 //!   turned with it. `faces`
@@ -88,6 +94,10 @@ pub const Relations = struct {
     /// Per bridge a `row` line names: a column device whose row it takes;
     /// `none` for the rest.
     bridge_row: []const u32,
+    /// `[a, b, line]`: a directly above b in one column, as `column` line
+    /// `line` (an index into the deck's hints) or its mirror image says.
+    /// No device is first, or second, of two links.
+    links: []const [3]u32 = &.{},
 
     /// The representative of `d`'s class.
     pub fn find(r: *const Relations, d: u32) u32 {
@@ -247,9 +257,9 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
     }
 }
 
-/// Admits the `row` and `above` lines; their devices must be drawn column
-/// devices, but a `row` line's may bridge (it takes the row of the line's
-/// first column device).
+/// Admits the `row`, `above` and `column` lines; their devices must be
+/// drawn column devices, but a `row` line's may bridge (it takes the row of
+/// the line's first column device).
 pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Relations {
     const n = nl.graph.edgeCount();
     // The valid lines' constraints, by hint: `[a, b, eq]`.
@@ -259,7 +269,7 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     defer arena.free(order);
     for (order) |i| {
         const h = nl.hints[i];
-        if (h.verb != .row and h.verb != .above) continue;
+        if (h.verb != .row and h.verb != .above and h.verb != .column) continue;
         if (h.args.len < 2) {
             verdicts[i] = .of(.bad_args);
             continue;
@@ -286,7 +296,13 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             continue;
         }
         var cs: std.ArrayList([3]u32) = .empty;
-        const eq: u32 = @intFromBool(h.verb == .row);
+        // 1 an equality, 0 an edge, 2 an edge and a column link.
+        const eq: u32 = switch (h.verb) {
+            .row => 1,
+            .above => 0,
+            .column => 2,
+            else => unreachable,
+        };
         for (devs.items[0 .. devs.items.len - 1], devs.items[1..]) |a, b| {
             if (a == b) continue;
             assert(devs.items.len >= 2);
@@ -297,19 +313,22 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
     var held: std.ArrayList([3]u32) = .empty;
-    var images: std.ArrayList([]const [3]u32) = .empty;
+    const Image = struct { line: u32, cs: []const [3]u32 };
+    var images: std.ArrayList(Image) = .empty;
+    var links: std.ArrayList([3]u32) = .empty;
     const check: Check = .{ .gpa = gpa, .n = n, .own = own };
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
-        if ((h.verb != .row and h.verb != .above) or verdicts[i] != null) continue;
+        if ((h.verb != .row and h.verb != .above and h.verb != .column) or verdicts[i] != null) continue;
         try admitted.append(gpa, i);
         if (!try check.holds(admitted.items)) {
             _ = admitted.pop();
-            verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, .cycle);
+            verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, if (h.verb == .column) .conflict else .cycle);
             continue;
         }
         verdicts[i] = .of(.ok);
         try held.appendSlice(arena, own[i]);
+        for (own[i]) |k| if (k[2] == 2) try links.append(arena, .{ k[0], k[1], i });
         // Its mirror image, where the symmetry has one and it fits.
         var image: std.ArrayList([3]u32) = .empty;
         for (own[i]) |k| {
@@ -319,13 +338,17 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             if (!drawn[a] or !drawn[b] or form[a] != .vertical or form[b] != .vertical) continue;
             try image.append(arena, .{ a, b, k[2] });
         }
-        if (image.items.len != 0) try images.append(arena, image.items);
+        if (image.items.len != 0) try images.append(arena, .{ .line = i, .cs = image.items });
     }
     // The images after every line, the strongest line's first: a line
     // admitted later stands, and the image that contradicts it goes.
     for (images.items) |image| {
-        try held.appendSlice(arena, image);
-        if (!try consistent(gpa, n, held.items)) held.shrinkRetainingCapacity(held.items.len - image.len);
+        try held.appendSlice(arena, image.cs);
+        if (!try consistent(gpa, n, held.items)) {
+            held.shrinkRetainingCapacity(held.items.len - image.cs.len);
+            continue;
+        }
+        for (image.cs) |k| if (k[2] == 2) try links.append(arena, .{ k[0], k[1], image.line });
     }
     assert(try consistent(gpa, n, held.items));
     const class = try arena.alloc(u32, n);
@@ -351,14 +374,15 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             if (mb != none and mb != b and drawn[mb] and form[mb] != .vertical and mf != none and drawn[mf] and form[mf] == .vertical) bridge_row[mb] = mf;
         }
     }
-    var out: Relations = .{ .class = class, .edges = &.{}, .bridge_row = bridge_row };
+    var out: Relations = .{ .class = class, .edges = &.{}, .bridge_row = bridge_row, .links = links.items };
     for (held.items) |k| if (k[2] == 1) {
         const a = out.find(k[0]);
         const b = out.find(k[1]);
         if (a != b) class[a] = b;
     };
-    for (held.items) |k| if (k[2] == 0) try edges.append(arena, .{ k[0], k[1] });
+    for (held.items) |k| if (k[2] != 1) try edges.append(arena, .{ k[0], k[1] });
     out.edges = edges.items;
+    assert(links.items.len <= held.items.len);
     return out;
 }
 
@@ -466,9 +490,13 @@ fn namedFace(nl: *const Netlist, verdicts: []const ?Verdict, d: u32) bool {
     return false;
 }
 
-/// Whether equalities and edges (`[a, b, 1]`, `[a, b, 0]`) over `n` devices
-/// admit levels: no edge within a class, no cycle among classes.
+/// Whether equalities, edges and column links (`[a, b, 1]`, `[a, b, 0]`,
+/// `[a, b, 2]`) over `n` devices admit levels: no edge within a class, no
+/// cycle among classes, no device first or second of two distinct links.
 fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool {
+    for (cs, 0..) |k, i| if (k[2] == 2) for (cs[0..i]) |o| {
+        if (o[2] == 2 and (o[0] == k[0]) != (o[1] == k[1])) return false;
+    };
     const class = try gpa.alloc(u32, n);
     defer gpa.free(class);
     for (class, 0..) |*k, d| k.* = @intCast(d);
@@ -481,7 +509,7 @@ fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool
     // The rows' order among the classes is an order like the columns'.
     var edges: std.ArrayList([2]u32) = .empty;
     defer edges.deinit(gpa);
-    for (cs) |k| if (k[2] == 0) {
+    for (cs) |k| if (k[2] != 1) {
         if (r.find(k[0]) == r.find(k[1])) return false;
         try edges.append(gpa, .{ r.find(k[0]), r.find(k[1]) });
     };

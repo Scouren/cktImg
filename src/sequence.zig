@@ -29,11 +29,17 @@
 //!   its own (on the row a `row` line gives it), bridges a line puts first
 //!   placed first, then in canonical order: moving as little as possible.
 //!   `bridges`
+//! - sequence.9 (invariant) Two devices one column a `column` line makes
+//!   (relations.13) are no two columns: an `order` line that puts one left
+//!   of the other, directly or through other lines, is dropped, naming the
+//!   `column` lines and `order` lines it conflicts with. Narrowing: a
+//!   `column` line, admitted with the rows, outranks every `order` line
+//!   whatever their strengths. `read`
 //!
 //! Contents:
 //! - `pub const Sequence = struct`, `Sequence.refuses(s: *const Sequence, gpa: Allocator, above: []const u32, u: u32, l: u32) Allocator.Error!bool`
 //! - `Check.holds(ck: Check, lines: []const u32) Allocator.Error!bool`: the admission test `hints.conflict` calls
-//! - `pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Sequence`
+//! - `pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, links: []const [3]u32, verdicts: []?Verdict) Allocator.Error!Sequence`
 //! - `pub fn columns(gpa: Allocator, s: *const Sequence, column_of: []const u32, col_x: []i32) Allocator.Error!void`
 //! - `pub fn bridges(gpa: Allocator, s: *const Sequence, bridge_row: []const u32, by_rank: []const u32, drawn: []const bool, form: []const Form, x: []i32, y: []i32, verdicts: []?Verdict) Allocator.Error!void`
 
@@ -84,23 +90,27 @@ pub const Sequence = struct {
 
 /// The admission test for order lines: their column devices' edges and
 /// each line's devices pairwise distinct hold together, every device its
-/// own column.
+/// own column but those the `column` lines among them join.
 const Check = struct {
     gpa: Allocator,
+    n: usize,
     own: []const []const u32,
+    links: []const [3]u32,
 
     pub fn holds(ck: Check, lines: []const u32) Allocator.Error!bool {
         var edges: std.ArrayList([2]u32) = .empty;
         defer edges.deinit(ck.gpa);
         // Bridges count too: one placed between two columns orders them.
-        for (lines) |i| try neighbours(ck.gpa, ck.own[i], &edges);
+        for (lines) |i| if (ck.own[i].len != 0) try neighbours(ck.gpa, ck.own[i], &edges);
+        try joined(ck.gpa, ck.n, ck.links, lines, edges.items);
         return acyclic(ck.gpa, std.math.maxInt(u32), edges.items);
     }
 };
 
 /// Admits the `order` lines: two or more drawn devices each, column devices
-/// or bridges; bridges are placed by `bridges`.
-pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Sequence {
+/// or bridges; bridges are placed by `bridges`. `links` are the admitted
+/// `column` lines' (`Relations.links`): an order line may not part them.
+pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, links: []const [3]u32, verdicts: []?Verdict) Allocator.Error!Sequence {
     const n = nl.graph.edgeCount();
     // Per line, its devices in order.
     const own = try arena.alloc([]const u32, nl.hints.len);
@@ -120,9 +130,11 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
         }
         own[i] = devs.items;
     }
-    const check: Check = .{ .gpa = gpa, .own = own };
+    const check: Check = .{ .gpa = gpa, .n = n, .own = own, .links = links };
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
+    // The `column` lines stand already: an order line gives way to them.
+    for (links) |k| if (std.mem.indexOfScalar(u32, admitted.items, k[2]) == null) try admitted.append(gpa, k[2]);
     // What states pairs: each admitted line, then each one's mirror image.
     const Stated = struct { line: u32, devices: []const u32 };
     var stated: std.ArrayList(Stated) = .empty;
@@ -159,7 +171,9 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     for (stated.items) |s| {
         const before = pairs.items.len;
         try neighbours(arena, s.devices, &pairs);
-        if (!try acyclic(gpa, n, pairs.items)) {
+        const edges = try arena.dupe([2]u32, pairs.items);
+        try joined(gpa, n, links, null, edges);
+        if (!try acyclic(gpa, n, edges)) {
             pairs.shrinkRetainingCapacity(before);
             continue;
         }
@@ -327,6 +341,30 @@ fn columnEdges(gpa: Allocator, arena: Allocator, form: []const Form, pairs: []co
         }
     }
     return out.items;
+}
+
+/// Each device of `edges` replaced by its column's representative under
+/// the `links` (`[a, b, line]`) whose line is in `lines` (null: all).
+fn joined(gpa: Allocator, n: usize, links: []const [3]u32, lines: ?[]const u32, edges: [][2]u32) !void {
+    if (links.len == 0) return;
+    const rep = try gpa.alloc(u32, n);
+    defer gpa.free(rep);
+    for (rep, 0..) |*r, d| r.* = @intCast(d);
+    for (links) |k| {
+        if (lines) |l| if (std.mem.indexOfScalar(u32, l, k[2]) == null) continue;
+        rep[root(rep, k[0])] = root(rep, k[1]);
+    }
+    for (edges) |*e| e.* = .{ root(rep, e[0]), root(rep, e[1]) };
+}
+
+fn root(rep: []const u32, d0: u32) u32 {
+    var d = d0;
+    var steps: usize = 0;
+    while (rep[d] != d) : (steps += 1) {
+        assert(steps < rep.len);
+        d = rep[d];
+    }
+    return d;
 }
 
 fn separated(s: *const Sequence, column_of: []const u32, a: u32, b: u32) bool {

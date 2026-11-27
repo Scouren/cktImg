@@ -12,6 +12,8 @@
 //! - skeleton.1 (order: potential) Upright devices stand in one column
 //!   when one's lower end and the other's upper end are one net, never
 //!   through a rail; a column is a chain current flows down. `link`
+//!   A `column` line links its devices whatever their nets
+//!   (relations.13).
 //! - skeleton.2 (unmeasured) Where several devices meet on a net, a stack
 //!   block's two (hinted or recognized) share a column first. `choose`
 //! - skeleton.3 (unmeasured) No column runs through a pair: where the
@@ -257,7 +259,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     try forms.ends(gpa, nl, roles, drawn, form, upper, lower);
     try relations.ends(arena, nl, drawn, form, upper, lower, verdicts);
     const rel = try relations.rows(gpa, arena, nl, st, drawn, form, verdicts);
-    const seq = try sequence.read(gpa, arena, nl, st, drawn, form, verdicts);
+    const seq = try sequence.read(gpa, arena, nl, st, drawn, form, rel.links, verdicts);
     const net_rank = st.net_rank;
     const above = try gpa.alloc(u32, n);
     defer gpa.free(above);
@@ -393,14 +395,20 @@ fn blockPartner(st: *const Structure, d: u32) u32 {
     return none;
 }
 
-/// One link per net: from a device whose lower end is on it to one whose
-/// upper end is, none across a pair (a tail stands alone). The symmetry's
-/// mate net gets the mirrored link.
+/// The `column` lines' links, then one link per net: from a device whose
+/// lower end is on it to one whose upper end is, none across a pair (a tail
+/// stands alone). The symmetry's mate net gets the mirrored link.
 fn link(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, net_rank: []const u32, rel: *const relations.Relations, seq: *const sequence.Sequence, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32, chain: *Chain) !void {
     assert(net_rank.len == roles.len);
     assert(chain.above.len == drawn.len);
     @memset(chain.above, none);
     @memset(chain.below, none);
+    // The `column` lines' links first: the engine's own go around them.
+    for (rel.links) |k| {
+        assert(chain.below[k[0]] == none or chain.below[k[0]] == k[1]);
+        chain.below[k[0]] = k[1];
+        chain.above[k[1]] = k[0];
+    }
     var ups: std.ArrayList(u32) = .empty;
     defer ups.deinit(gpa);
     var downs: std.ArrayList(u32) = .empty;

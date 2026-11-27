@@ -240,7 +240,7 @@ pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) boo
 /// placed the same way again.
 pub fn steered(nl: *const Netlist) bool {
     for (nl.hints) |h| switch (h.verb) {
-        .upright, .bridge, .row, .above, .order, .face, .cell => return true,
+        .upright, .bridge, .row, .above, .column, .order, .face, .cell => return true,
         .at => if (!h.weak) return true,
         else => {},
     };

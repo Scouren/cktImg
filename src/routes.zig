@@ -118,25 +118,47 @@ pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Er
 }
 
 /// An output's port out from the topmost of its wires' outermost points,
-/// on the drawing's nearer side; nothing for any other net.
+/// on the drawing's nearer side. An input's (with no `port` line) out from
+/// the leftmost point of its wires a stub fits at, left first, then up,
+/// down, right: one symbol, a name only when no point has room. Nothing for
+/// a net with no wire. Asserts the net is an input or an output.
 pub fn port(c: *Canvas, net: u32) !void {
-    if (c.s.roles[net] == .output) {
-        var lo: i32 = std.math.maxInt(i32);
-        var hi: i32 = std.math.minInt(i32);
-        for (c.segs.items) |g| if (g.net == net) {
-            lo = @min(lo, @min(g.a.x, g.b.x));
-            hi = @max(hi, @max(g.a.x, g.b.x));
-        };
-        if (lo <= hi) {
-            const right = lo + hi >= c.middle2();
-            const edge = if (right) hi else lo;
-            var from: ?Pt = null;
-            for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-                if (e.x == edge and (from == null or e.above(from.?))) from = e;
-            };
-            try c.port(net, from.?, if (right) .right else .left);
+    assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
+    var lo: i32 = std.math.maxInt(i32);
+    var hi: i32 = std.math.minInt(i32);
+    var ends: std.ArrayList(Pt) = .empty;
+    defer ends.deinit(c.gpa);
+    for (c.segs.items) |g| if (g.net == net) {
+        lo = @min(lo, @min(g.a.x, g.b.x));
+        hi = @max(hi, @max(g.a.x, g.b.x));
+        try ends.appendSlice(c.gpa, &.{ g.a, g.b });
+    };
+    if (lo > hi) return;
+    const asked = c.port_side.len > 0 and c.port_side[net] != null;
+    if (c.s.roles[net] == .input and !asked) {
+        // Column by column from the left; a stub along the net's own wire
+        // is no stub (`Canvas.port`).
+        var x = lo;
+        while (x <= hi) {
+            var next: i32 = std.math.maxInt(i32);
+            for (ends.items) |from| {
+                if (from.x > x) next = @min(next, from.x);
+                if (from.x != x) continue;
+                for ([_]Side{ .left, .up, .down, .right }) |t| {
+                    if (c.onNet(net, canvas.stepPt(from, t, 1)) or c.onNet(net, canvas.stepPt(from, t, c.len.terminal))) continue;
+                    if (try c.stub(.terminal, net, from, t, c.len.terminal)) return;
+                }
+            }
+            x = next;
         }
     }
+    const right = lo + hi >= c.middle2();
+    const edge = if (right) hi else lo;
+    var from: ?Pt = null;
+    for (ends.items) |e| {
+        if (e.x == edge and (from == null or e.above(from.?))) from = e;
+    }
+    try c.port(net, from.?, if (right) .right else .left);
 }
 
 /// Promotes a fallback label on the existing gate span only once the routes
@@ -326,7 +348,7 @@ fn spineAndImage(c: *Canvas, net: u32, pins: []const u32, from: usize, axis: i32
 /// on the drawing's nearer side; labels at the pins in `failed` and, when
 /// any, at `first`.
 fn finish(c: *Canvas, net: u32, first: u32, failed: []const u32) !void {
-    try port(c, net);
+    if (c.s.roles[net] == .output) try port(c, net);
     if (failed.len == 0) return;
     for (failed) |p| try c.labelAt(p);
     try c.labelAt(first);

@@ -47,7 +47,7 @@ person would not draw) goes on from step 5 with
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
-| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down, any columns), `column <devs>` (one column, each directly over the next; parallel devices too), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `label <net> at <dev>.<pin> ...` (those pins named, the rest wired), `wire <net> [ladder\|trunk\|route]` (on an input: one wire, one port), `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
 | 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
 | 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
 | 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
@@ -63,7 +63,8 @@ on a device overrides the relations on it.
   - `requests`: each of your lines' state (Lines, below).
   - `grid`: each lattice row, top down, each device `name@column`.
   - `decisions`: cktImg's choices as `*@` lines (below).
-  - `metrics`: crossings, bends, and the nets drawn as names.
+  - `metrics`: crossings, bends, the nets drawn as names (`labelled`) and
+    the nets drawn as a port at two pins or more (`ported`).
 
   Then `d.json`: each device's `pos` (y grows down; names starting `_` are
   the rail and port symbols cktImg drew), its `pins` and their nets. Then
@@ -90,7 +91,7 @@ on a device overrides the relations on it.
   name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
   Inside a `.subckt`, lines are that cell's for the Schemify import, which
   logs every line it does not honour.
-  Shelves preserve accepted `row`, `order` and `above` relations. An
+  Shelves preserve accepted `row`, `order`, `above` and `column` relations. An
   `above` chain may cross shelves when their top-to-bottom order agrees;
   a cut that would reverse it is forbidden. Rejected or dropped relation
   lines do not change shelf cuts.

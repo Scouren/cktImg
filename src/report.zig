@@ -320,6 +320,21 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
         first = false;
         try netName(w, p, @intCast(n));
     }
+    // A net drawn as a port at two pins or more is named too, by its ports.
+    try w.writeAll("], \"ported\": [");
+    first = true;
+    for (0..p.netCount()) |n| {
+        if (n < roles.len and roles[n].isRail()) continue;
+        var ports: u32 = 0;
+        for (0..p.deviceCount()) |d| {
+            const lo, const hi = p.pinRange(d);
+            ports += @intFromBool(p.dev_name[d].len == 0 and hi - lo == 1 and p.pin_net[lo] == n);
+        }
+        if (ports < 2) continue;
+        if (!first) try w.writeAll(", ");
+        first = false;
+        try netName(w, p, @intCast(n));
+    }
     try w.writeAll("] },\n  \"decisions\": [");
     const lines = try decisions(a, nl, &st, &sk, p, lib.unit, 4);
     for (lines, 0..) |line, i| {
@@ -376,7 +391,9 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
         .face => if (h.args.len == 3 and !(h.verb.side(library.Side, h.args[2]) orelse library.Side.left).isHorizontal()) 1 else 2,
         .upright, .bridge => 3,
         .driver => 4,
-        .label, .wire => 5,
+        // A `label ... at` names some pins and sets no style: none.
+        .label => if (h.args.len == 1) 5 else return null,
+        .wire => 5,
         .port => 6,
         .rail => 7,
         .role => 8,
@@ -396,7 +413,7 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
 /// for none.
 fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
     const exact: [2]hints.Verb = switch (h.verb) {
-        .row, .above, .order, .face, .symmetric, .axis, .stack => .{ .cell, .at },
+        .row, .above, .column, .order, .face, .symmetric, .axis, .stack => .{ .cell, .at },
         .label => .{ .route, .via },
         else => return null,
     };

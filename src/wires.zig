@@ -110,6 +110,13 @@
 //!   the retained routing handle is not its boundary. Distant pins retain
 //!   ports. This native proximity choice does not infer source block layout.
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
+//! - wires.21 (invariant) An input a `wire` line wires is one wire with
+//!   one port: a trunk's, out from its free end, else the router's wire
+//!   with the port out from its outermost point (`routes.port`); a pin no
+//!   path reaches carries the name. `wire`
+//! - wires.22 (invariant) A pin a `label ... at` line names carries the
+//!   net's name and joins no wire; the net's other pins are drawn without
+//!   it, and their wire, if they are one, carries the name once. `wire`
 //!
 //! Contents:
 //! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void`
@@ -183,7 +190,7 @@ const Drawn = enum(u8) {
 /// in step with it), `len` the drawing's lengths, `hidden` the points of
 /// pins drawn on their symbol with no wire. Asserts `lines` is
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
-/// symbols chosen, no input styled as a wire. `loops` holds requests
+/// symbols chosen. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
 pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
@@ -212,6 +219,19 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             return o.rank[x] < o.rank[y] or (o.rank[x] == o.rank[y] and x < y);
         }
     }.lt);
+    // Nets whose wire is named once: a bias a line wires (as a gate line
+    // is, so its wire joins the source drawn apart under that name), and a
+    // net some of whose pins a `label ... at` line names, a name each and
+    // off the wire.
+    var named: std.ArrayList(u32) = .empty;
+    defer named.deinit(gpa);
+    for (lines.named_at) |k| for (s.pins.items(.net), 0..) |net, p| {
+        if (s.pins.items(.device)[p] != k[0] or s.pins.items(.index)[p] != k[1]) continue;
+        _ = pins_of[net].swapRemove(std.mem.indexOfScalar(u32, pins_of[net].items, @intCast(p)) orelse break);
+        try c.labelAt(@intCast(p));
+        if (Drawn.of(s.roles[net]) == .wire and std.mem.indexOfScalar(u32, named.items, net) == null) try named.append(gpa, net);
+        break;
+    };
     // Pinned routes and vias claim their room before anything else.
     const routed = try gpa.alloc(bool, n_nets);
     defer gpa.free(routed);
@@ -231,10 +251,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     defer gate_labels.deinit(gpa);
     var waiting: std.ArrayList(u32) = .empty;
     defer waiting.deinit(gpa);
-    // Bias nets a line wires: each named once, as a gate line is, so its
-    // wire joins the source drawn apart under that name.
-    var named: std.ArrayList(u32) = .empty;
-    defer named.deinit(gpa);
+    // Inputs a line wires that no trunk took: their port once routed.
+    var ported_late: std.ArrayList(u32) = .empty;
+    defer ported_late.deinit(gpa);
     // The nets drawn so far: a mate drawn as its net's mirror image is not
     // drawn again.
     const drawn = try gpa.alloc(bool, n_nets);
@@ -285,12 +304,15 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 .bar, .plain => |r| try bar(&c, pins, if (s.roles[net] == .supply) .up else .down, r == .plain),
                 .auto => unreachable,
             },
-            // A bias a line wires (never an input) is a wire like any
-            // other, named once.
-            .port => if (style == .auto) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
-                assert(s.roles[net] == .bias);
-                if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
-                try named.append(gpa, net);
+            // A bias a line wires is a wire like any other, named once; an
+            // input one wire with one port, out from a free end of its
+            // trunk, else from the wire the router draws.
+            .port => if (style == .auto or pins.len < 2) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
+                if (s.roles[net] == .bias) try named.append(gpa, net);
+                if (!try patterned(&c, net, pins, axis2, if (s.roles[net] == .bias or style == .route) style else .trunk)) {
+                    try waiting.append(gpa, net);
+                    if (s.roles[net] == .input) try ported_late.append(gpa, net);
+                }
             },
             .wire => {
                 if (s.roles[net] == .output and try power_loop_wires.port(&c, net, pins, anchor)) continue;
@@ -310,6 +332,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
         }
     }
     try routes.draw(&c, waiting.items, pins_of, own_mirror, anchors);
+    for (ported_late.items) |net| try routes.port(&c, net);
     try joinRouted(&c, routed, pins_of);
     // On its top-left pin, so card order changes nothing.
     for (named.items) |net| if (!s.labeled[net]) {

@@ -522,6 +522,7 @@ test {
     _ = @import("trunk_row.zig");
     _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");
+    _ = @import("hint_columns.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
     _ = @import("driven_banks.zig");
