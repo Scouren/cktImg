@@ -493,8 +493,10 @@ fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton
 
 /// Keeps each `at` whose symbol, at its place and turn, overlaps no other
 /// drawn device's (the preferred of two `at` devices stays), and turns the
-/// kept ones; drops the rest (`ats[d] = null`). The report says which.
-fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, at: []const [2]f32, ats: []?pinned.At) !void {
+/// kept ones; drops the rest (`ats[d] = null`). The report says which. A
+/// device no `at` places, standing where one puts another, steps right
+/// first (`at[e]`), a unit at a time, to the first place no symbol holds.
+fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, at: [][2]f32, ats: []?pinned.At) !void {
     const n = nl.graph.edgeCount();
     const info = s.devices.slice();
     const boxes = try gpa.alloc(Rect, n);
@@ -507,6 +509,30 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
             s.lib.at(info.items(.class)[d]).box(a.orient orelse info.items(.orient)[d], a.origin)
         else
             boxAt(s, d, toPt(at[d]));
+    }
+    // A line beats the engine: a device the lattice put on an `at`'s place
+    // moves off it (a Schemify round trip pinned every device but one, or
+    // added one; the lattice stood it on a pinned place, and that line
+    // was dropped). Past every box it overlaps nothing.
+    var right: i32 = std.math.minInt(i32);
+    for (0..n) |d| if (sk.drawn[d]) {
+        right = @max(right, boxes[d].max.x);
+    };
+    const step: f32 = @floatFromInt(s.lib.unit);
+    for (0..n) |e| {
+        if (!sk.drawn[e] or ats[e] != null) continue;
+        const pinned_on = for (0..n) |d| {
+            if (d != e and sk.drawn[d] and ats[d] != null and boxes[e].intersects(boxes[d])) break true;
+        } else false;
+        if (!pinned_on) continue;
+        while (for (0..n) |d| {
+            if (d != e and sk.drawn[d] and boxes[e].intersects(boxes[d])) break true;
+        } else false) {
+            assert(boxes[e].min.x <= right);
+            at[e][0] += step;
+            boxes[e] = boxAt(s, e, toPt(at[e]));
+        }
+        right = @max(right, boxes[e].max.x);
     }
     // The least preferred `at` gives way first, and stands where the
     // lattice has it: another `at` may be on that place, and gives way in

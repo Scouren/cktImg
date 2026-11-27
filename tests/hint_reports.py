@@ -160,6 +160,17 @@ R2 vdd g 1k
 *@ cell v1 0 0
 """, [(7, "*@ at v1 0 0", "rejected", "not_placeable", "v1"),
       (8, "*@ cell v1 0 0", "rejected", "not_placeable", "v1")]),
+    # Drawn inline first, the source takes a place (the form Schemify writes).
+    ("driver-inline-at", """driver
+.model nch nmos
+V1 vdd 0 1
+M1 d g 0 0 nch
+R1 vdd d 1k
+R2 vdd g 1k
+*@ driver v1 inline
+*@ at v1 -3 0
+""", [(7, "*@ driver v1 inline", "honoured", "ok", None),
+      (8, "*@ at v1 -3 0", "honoured", "ok", None)]),
 ]
 
 AG = Path(__file__).resolve().parent.parent / "external" / "examples" / "analoggenie"
@@ -283,6 +294,23 @@ def unmoved(binary, out):
     return bad
 
 
+
+def unpinned(binary, out):
+    """A device no `at` places gives way to one that does. Oracle: the
+    deck's own `--decisions 4` places, all strong but one device's: every
+    line is honoured (ag-1067 without m4: two lines were dropped as
+    `guarantee`, the lattice having stood m4 on a pinned place; a Schemify
+    round trip that pinned all but one device hit the same)."""
+    cir = AG / "ag-1067.cir"
+    lines = out / "unpinned.lines"
+    subprocess.run([binary, "--decisions", "4", cir, out / "unpinned.base.json"], check=True, stdout=lines.open("w"))
+    ats = [l.replace("weak ", "") for l in lines.read_text().splitlines() if l.startswith("*@ weak at ") and not l.startswith("*@ weak at m4 ")]
+    deck, r = out / "unpinned.cir", out / "unpinned.report.json"
+    deck.write_text(cir.read_text() + "\n".join(ats) + "\n")
+    subprocess.run([binary, "--report", r, deck, out / "unpinned.json"], check=True)
+    return [f"{q['text']}: {q['state']} {q['code']}" for q in json.loads(r.read_text())["requests"] if q["state"] != "honoured"]
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("binary", type=lambda p: Path(p).resolve())
@@ -300,7 +328,7 @@ def main():
         if got != want or faults:
             bad.append(name)
             print(f"{name}:\n  want {want}\n  got  {got}\n  {faults}")
-    for check in (alone, unmoved):
+    for check in (alone, unmoved, unpinned):
         faults = check(args.binary, args.out)
         if faults:
             bad.append(check.__name__)
