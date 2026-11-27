@@ -117,6 +117,41 @@ the size cap below are the open follow-ups.
   5/18). Auto-expanding passive-only subcircuits was measured on the 38 corpus decks that have
   one (crossings fall in 16, rise in 10) and not taken. Tests 604/604. Corpus numbers unmeasured.
   `netlist-import.wasm` 689,025 -> 693,741 bytes.
+- Stages (`feat/stages`): taken because three Fable agents and three round-2 agents stood in
+  for a stage with `order` lines of up to 24 names that reflow every column they omit. `*@ stage
+  <name> <devs>` makes a unit that `row` and `order` move whole, stepping only unnamed devices
+  inside its box aside; `*@ repeat <stages>` lays each like the first. ag-1067's four XNOR cells:
+  7 lines draw them alike on one level (the unhinted staircase spans 10 rows), 21 -> 21 crossings;
+  with face and label lines 10/37. A stage keeps no inner column order: ag-2500 with two stages
+  for a 19-name order went 3 -> 8 crossings. No gate-bus pattern was needed: `wire <net> trunk` is
+  one, and SKILL now explains trunk, ladder and route. All 5,274 decks are byte-identical without
+  the new lines. `netlist-import.wasm` 693,741 -> 701,214 bytes.
+- Python (`feat/python`): taken because Schemify and SPRack agreed one documented drawing call
+  owned by cktImg. `cktimg.place(deck, *, symbols, target, start, config)` returns the placement
+  and the report, `cktimg.draw` the SVG and the report; the deck is text or a `sprack.Circuit`,
+  every file input a path, text or dict. It runs `cktimg-json` (pinned redraw, ReleaseFast: 41
+  devices 12.6 ms, 123 devices 73 ms). `docs/PYTHON.md` documents the placement schema. No engine
+  or guest change.
+- Block turns (`feat/block-turns`): taken because two Fable agents could turn or mirror a block
+  only with hand `at` lines. `*@ face <block> <port> left|right|up|down` turns a block until that
+  port faces the side, and an admitted `*@ symmetric <blk> <blk>` draws the mate mirrored (ag-1168,
+  replacing a hand `at ... MR0`: 4/24 -> 3/22, the hand result). A child's side lines keep a
+  recognised glyph, turned or mirrored to fit, before falling back to a box (ar-3201's amplifier
+  keeps its triangle with vip on top). A block's title moves a quarter unit off its ports' names
+  before the box widens, and `text_overlaps` counts two texts of one symbol (43 findings in 20
+  decks, mostly blocks the engine turns itself). 16 of 5,274 drawings change, 14 with the same
+  metrics. Gates rerun on the merged tree. `netlist-import.wasm` 701,214 -> 704,503 bytes.
+- Naming (`fix/naming`): taken because all five Fable agents ranked names drawn on their own
+  wire, twice on one point, or at every pin of a thinned net as the top defect. A name's stub never
+  runs along its own wire, ends on its own net or crosses another; a thinned or cut net gets one
+  name per wired piece, and pins facing each other with no crossing between are joined by a
+  straight wire; repeated pieces are dropped. `label <net> at` no longer rewires other nets
+  (ag-1329: 5 -> 1 crossings). New `*@ wire <net> at <dev>.<pin> ...` wires the listed pins as one
+  named piece and names the rest once. On the 5,274 decks: 769 drawings change, 672 better and 9
+  worse; names on their own wire 476 -> 1, duplicate pieces 1,272 -> 313, pieces named twice
+  110 -> 3; crossings 6,303 -> 6,259, bends 32,087 -> 32,069, labels 10,690 -> 10,461;
+  `text_overlaps` 535 -> 631, because own-wire names now count. `netlist-import.wasm`
+  704,503 -> 713,470 bytes.
 
 ### Changed
 

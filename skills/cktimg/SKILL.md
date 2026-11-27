@@ -49,7 +49,7 @@ person would not draw) goes on from step 5 with
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
-| 2 relations | where things stand to each other | `*@ above <devs>` (top down: the vertical order only, not one column; a flat part or `X` block stands in the column of the first upright device named, else the first block: `above r5 x1 r4` puts r5 over x1, r4 under it), `column <devs>` (one column, each directly over the next; parallel devices too), `row <devs>` (level, in no left-to-right order: add `order` for that; a bridge or block takes that device's row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `hang <part> <dev>.<pin>` (the part under a lower end, over an upper end, or beside a gate: `hang cg m3.g`, `hang ic m9.d`; beside a gate an upright part stands a row lower, its near end within two units of the gate); `label <net>`, `label <net> at <dev>.<pin> ...` (those pins named, the rest wired), `wire <net> [ladder\|trunk\|route\|over\|under]` (on an input: one wire, one port; `over`/`under`: round the top or bottom of the drawing), `port <net> left\|right\|top\|bottom` (the port at the net's end on that side or beyond it: no pin of the net past it; with no room there, the port stands where it would with no line, and the line is `no_room`), `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down: the vertical order only, not one column; a flat part or `X` block stands in the column of the first upright device named, else the first block: `above r5 x1 r4` puts r5 over x1, r4 under it), `column <devs>` (one column, each directly over the next; parallel devices too), `row <devs>` (level, in no left-to-right order: add `order` for that; a bridge or block takes that device's row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `stage <name> <devs>` (a unit: `row`, `order` and `repeat <stages>` take its name and move it whole, nothing else; `repeat` lays each stage as the first, member by member, level and left to right); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `face <block> <port> left\|right\|up\|down` (turns or mirrors an `X` block so that port faces that side; `symmetric <block> <block>` draws the second as the first's mirror image); `upright\|bridge <dev>`; `hang <part> <dev>.<pin>` (the part under a lower end, over an upper end, or beside a gate: `hang cg m3.g`, `hang ic m9.d`; beside a gate an upright part stands a row lower, its near end within two units of the gate); `label <net>`, `label <net> at <dev>.<pin> ...` (those pins named, the rest drawn as before: wired, unless it crosses too much), `wire <net> at <dev>.<pin> <dev>.<pin> ...` (those pins one wire with one name, the rest drawn apart and named once; one line a piece: a net split where you say), `wire <net> [ladder\|trunk\|route\|over\|under]` (on an input: one wire, one port; `ladder`: facing pins joined in pairs, the pairs by a rung; `trunk`: one straight wire along a row, every pin brought to it, a bank's gate bus; `route`: the router, pin to pin; `over`/`under`: round the top or bottom of the drawing), `port <net> left\|right\|top\|bottom` (the port at the net's end on that side or beyond it: no pin of the net past it; with no room there, the port stands where it would with no line, and the line is `no_room`), `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
 | 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
 | 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units: `d.json`'s `pos` over 40 with the built-in symbols, over the file's `.unit` with `--symbols`), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
 | 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (symbol units, as `at`; one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
@@ -62,8 +62,9 @@ on a device overrides the relations on it.
 
 - **Reading a drawing.** `r.json` first:
   - `gates`: the checklist's first item.
-  - `text_overlaps`: each name (`of` device, port, rail or label) drawn
-    `over` a symbol, another name or another net's wire, with the `other`
+  - `text_overlaps`: each name (`of` device, port, rail or label; `symbol`: two texts of one block, its title and a port name) drawn
+    `over` a symbol, another name or another net's wire (a label: its own
+    net's wire too), with the `other`
     thing's name and the text box's lower-left `at`. Not a gate yet; a
     finding is a cktImg bug, and a `refdes` or `port` line can steer it.
   - `requests`: each of your lines' state (Lines, below).
@@ -164,8 +165,10 @@ on a device overrides the relations on it.
   selected router. An explicit geometry request keeps the other parts on
   ordinary placement.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
-  `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
-  box, and `*@ expand` draws the devices instead. With no such line:
+  `*@ left|right|top|bottom <ports>` puts ports on a side (in the line's
+  order, top down or left to right): a recognised glyph (amplifier
+  triangle, centre tap) turned or mirrored when one of its turns fits,
+  else the generated box, and `*@ expand` draws the devices instead. With no such line:
   supplies on top, grounds and bias lines (`vb`, `vb1`, ...) below, an
   output (`out*`, `vout*`, `vo`, `vop`, `von`, `o`) right, the rest left.
   A circuit of only amplifier blocks and two-pin parts is drawn along its
@@ -215,7 +218,10 @@ on a device overrides the relations on it.
   hinted deck is the `src` of `cktimg_parse_place(lib, src, zon, &report)`,
   where `report` holds only the settings' complaints. From Zig,
   `place(gpa, &cfg, &lib, &.{deck}, null)`, then `report.write` (with the
-  parsed netlist and its roles) gives the `r.json` above.
+  parsed netlist and its roles) gives the `r.json` above. From Python,
+  `cktimg.place(deck, symbols=, target=, start=, config=)` returns the
+  placement and that report, and `cktimg.draw(...)` returns the SVG and the
+  report. `deck` is text or a `sprack.Circuit` (docs/PYTHON.md).
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.

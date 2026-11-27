@@ -62,13 +62,14 @@ fn scene(gpa: std.mem.Allocator, which: Scene, mirror: bool, order: [2]u32) !voi
     }
     try std.testing.expect(drawn);
     if (which == .clear) {
-        // Original legal candidate, including its name stub, retained
-        // exactly: a new unsplit row must not replace it at a lower cost.
+        // Original legal candidate retained exactly: a new unsplit row must
+        // not replace it at a lower cost. Its name stands on the top-left
+        // pin with no stub: a stub out of that pin would run along the
+        // trunk itself (canvas.9).
         const expected = [_][2]Pt{
             .{ terminals[order[0]], .{ .x = if (order[0] == 0) 40 else 70, .y = 100 } },
             .{ terminals[order[1]], .{ .x = if (order[1] == 0) 40 else 70, .y = 100 } },
             .{ .{ .x = 40, .y = 100 }, .{ .x = 70, .y = 100 } },
-            .{ .{ .x = if (mirror) 90 else 20, .y = 100 }, .{ .x = if (mirror) 70 else 40, .y = 100 } },
         };
         try std.testing.expectEqual(expected.len, c.segs.items.len);
         for (expected, c.segs.items) |want, actual| {
@@ -78,6 +79,7 @@ fn scene(gpa: std.mem.Allocator, which: Scene, mirror: bool, order: [2]u32) !voi
         }
         try std.testing.expectEqual(@as(usize, 3), s.nodes.len);
         try std.testing.expectEqual(sch.NodeKind.label, s.nodes.items(.kind)[2]);
+        try std.testing.expect(Pt.round(s.xy[2]).eql(reflected(.{ .x = if (mirror) 90 else 20, .y = 100 }, mirror)));
     }
     if (which == .away) {
         // The middle is clear, but reaching it directly would enter both
