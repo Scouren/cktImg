@@ -141,6 +141,17 @@ the size cap below are the open follow-ups.
   before the box widens, and `text_overlaps` counts two texts of one symbol (43 findings in 20
   decks, mostly blocks the engine turns itself). 16 of 5,274 drawings change, 14 with the same
   metrics. Gates rerun on the merged tree. `netlist-import.wasm` 701,214 -> 704,503 bytes.
+- Naming (`fix/naming`): taken because all five Fable agents ranked names drawn on their own
+  wire, twice on one point, or at every pin of a thinned net as the top defect. A name's stub never
+  runs along its own wire, ends on its own net or crosses another; a thinned or cut net gets one
+  name per wired piece, and pins facing each other with no crossing between are joined by a
+  straight wire; repeated pieces are dropped. `label <net> at` no longer rewires other nets
+  (ag-1329: 5 -> 1 crossings). New `*@ wire <net> at <dev>.<pin> ...` wires the listed pins as one
+  named piece and names the rest once. On the 5,274 decks: 769 drawings change, 672 better and 9
+  worse; names on their own wire 476 -> 1, duplicate pieces 1,272 -> 313, pieces named twice
+  110 -> 3; crossings 6,303 -> 6,259, bends 32,087 -> 32,069, labels 10,690 -> 10,461;
+  `text_overlaps` 535 -> 631, because own-wire names now count. `netlist-import.wasm`
+  704,503 -> 713,470 bytes.
 
 ### Changed
 
