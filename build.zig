@@ -257,6 +257,11 @@ pub fn build(b: *std.Build) void {
     for ([_][]const u8{ "tests/shared_frames/mixed.cir", "tests/shared_frames/uniform.cir", "tests/symbols.zon" }) |file|
         signed_frames.addFileInput(b.path(file));
     test_step.dependOn(&signed_frames.step);
+    const hint_reports = b.addSystemCommand(&.{ "python3", "-B" });
+    hint_reports.addFileArg(b.path("tests/hint_reports.py"));
+    hint_reports.addArtifactArg(json_exe);
+    _ = hint_reports.addOutputDirectoryArg("hint-reports");
+    test_step.dependOn(&hint_reports.step);
 
     const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
     control_bus.addFileArg(b.path("tests/control_bus_native.py"));

@@ -353,9 +353,10 @@ test "report: two controlled sources anchored to the same rail refuse both stack
         const roles = try np.guessRoles(a, &nl);
         const st = try np.schematic.structure.analyze(a, a, &nl, roles);
         const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        // They share no net but the rail: no stack, refused before drawing.
         const v = (try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib))[0];
-        try std.testing.expectEqual(np.hints.State.relaxed, v.state);
-        try std.testing.expectEqual(np.hints.Code.not_drawn, v.code);
+        try std.testing.expectEqual(np.hints.State.rejected, v.state);
+        try std.testing.expectEqual(np.hints.Code.unjoined, v.code);
         try std.testing.expect(!support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
         for (try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1)) |line|
             try std.testing.expect(!std.mem.startsWith(u8, line, "*@ group stack"));

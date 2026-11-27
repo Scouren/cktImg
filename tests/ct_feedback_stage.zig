@@ -341,7 +341,8 @@ test "CT feedback stage: admitted member and net requests retain ordinary placem
         .{ .text = "*@ cell c1 -8 -6\n", .verb = .cell },
         .{ .text = "*@ face q1 b left\n", .verb = .face },
         .{ .text = "*@ row q1 q2\n", .verb = .row },
-        .{ .text = "*@ group stack q1 q2\n", .verb = .stack },
+        // q3's emitter is q1's collector (net10): a stack in series.
+        .{ .text = "*@ group stack q3 q1\n", .verb = .stack },
         .{ .text = "*@ label net7\n", .verb = .label },
         .{ .text = "*@ route net10 -12,-12 -10,-12\n", .verb = .route },
         .{ .text = "*@ first net8\n", .verb = .first },

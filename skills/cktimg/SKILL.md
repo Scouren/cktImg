@@ -49,10 +49,10 @@ person would not draw) goes on from step 5 with
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
-| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down: the vertical order only, not one column), `row <devs>` (level, in no left-to-right order: add `order` for that; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
 | 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
-| 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
-| 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
+| 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units: `d.json`'s `pos` over 40 with the built-in symbols, over the file's `.unit` with `--symbols`), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
+| 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (symbol units, as `at`; one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
 | style | lengths for every drawing of the project | a `lint.zon` with `.{ .layout = .{ .stack = 1.5, .terminal = 2 } }`, passed as `--config lint.zon` | crowded or sprawling |
 
 Descend to rungs 3 to 5 for one device or net at a time: a cell or place
@@ -83,24 +83,34 @@ on a device overrides the relations on it.
   device itself.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
-  `weak` one (a stay). Arguments split at blanks and commas. Inside a
-  `.subckt`, lines are that cell's for the Schemify import, which logs
-  every line it does not honour.
-  Each entry in `requests` has the line number, a `state`, a `code`, and
+  `weak` one (a stay). Arguments split at blanks and commas. In a deck of
+  only `.subckt`s, which draws its last `.subckt` (the top cell), a line
+  before that `.subckt`, in its body or after its `.ends` is the top
+  cell's; a line in another `.subckt`'s body is that block's (Blocks,
+  below), and `requests` does not list it, so check those by eye. The
+  Schemify import reads every `.subckt` as a cell of its own and a line as
+  the cell's it is written in, so a deck both draw alike keeps the top
+  cell's lines inside its body; it logs every line it does not honour.
+  Each entry in `requests` has the line's 1-based `line` in the file, its
+  `text`, a `state`, a `code`, `name` when one argument of several is at
+  fault (`*@ above r5 x1 r4` rejected `not_placeable` names `x1`), and
   `blocked_by` (the stronger lines it cannot hold with, each with `alone`:
-  deleting that one alone admits it). Act on the code:
+  deleting that one alone admits it). Lines `cktimg-json` adds itself (a
+  top cell's port roles and sources, `--from`'s stays) are not listed; a
+  `blocked_by` line 0 is one of them. Act on the code:
 
   | code | state | what it means | your move |
   |---|---|---|---|
   | `ok` | honoured | drawn as written | none |
-  | `unknown_verb`, `bad_args` | rejected | misspelt verb, too few or malformed arguments | fix the spelling against the ladder |
+  | `unknown_verb`, `bad_args` | rejected | misspelt verb, too few or malformed arguments, a name twice | fix the spelling against the ladder |
   | `unknown_name` | rejected, or relaxed when only some names are known | a device, net or pin the deck lacks | use names exactly as the deck has them (read lowercased) |
-  | `not_placeable` | rejected or dropped | a driver, a card with no pins, or a bridge where only a column device stands | name another device, or `driver <src> inline` first |
+  | `not_placeable` | rejected | a driver, a card with no pins, a bridge where only a column device stands; an `X` block in `above` or `row` (a block is no column device); a net line its net's role refuses (`wire`, `route` or `via` on an input or a rail, `label` on a rail, `port` on no input or output, `rail` on no rail) or on a net no drawn device touches | name another device or net (`role <net> internal` frees a net); `expand <instance>` to draw a block's devices, or place it with `order`, `cell` or `at`; `driver <src> inline` first |
+  | `unjoined` | rejected | a group its devices are not joined as: a `mirror` or `bank` whose gates are on two nets, a `stack` member that shares no non-rail channel net with the next | name devices that are so joined, or use relations (`above`, `row`) |
   | `cycle` | dropped | closes an above/left cycle with `blocked_by` | delete or reverse one of the order lines |
   | `conflict` | dropped or relaxed | cannot hold with `blocked_by` | delete the blocker marked `alone: true`, or this line |
   | `taken` | dropped or relaxed | its devices already sit in a stronger line's group | `nogroup` them first, or edit that group |
   | `asymmetric` | dropped | no symmetry of the circuit swaps those two | the circuit is not symmetric there: use relations |
-  | `no_room` | relaxed | a `wire` or `port` had no room and was drawn as names, or a cell was full | free room (`shelf`, lengths), or accept the names |
+  | `no_room` | relaxed | a `wire` or `port` had no room and was drawn as names; a `face` turned a port's pin where only a name fits; an `order` bridge found no free cell; a `refdes` side had no room | free room (`shelf`, lengths), turn the pin back, or accept the names |
   | `guarantee` | dropped | an `at`, `route` or `via` would put a symbol on another, a wire on another net's point, or a route off its pins | move the coordinates; read pins from `d.json` |
   | `not_drawn` | relaxed | taken by the engine, missing from the drawing | a cktImg bug: report it with the deck |
   | `not_built` | rejected | a verb the engine does not take yet | use the rung below |
@@ -178,14 +188,16 @@ on a device overrides the relations on it.
   `floating_pin`, `single_pin_net`, `duplicate_refdes`, `unmapped_master`,
   `no_ground`, `symbol_geometry`, `label_fallback`. These rules report
   problems and never move anything.
-- **Front ends.** Every front end reads the same lines from the deck text,
-  so a hinted deck draws the same everywhere. Iterate with `cktimg-json`:
-  it is the only front end whose `--report` and `--decisions` show what
-  became of your lines. `cktimg-tex [--standalone] [--config lint.zon]
-  deck.sp out.tex` gives the TikZ figure. In C, the hinted deck is the
-  `src` of `cktimg_parse_place(lib, src, zon, &report)`, where `report`
-  holds only the settings' complaints. From Zig, `place(gpa, &cfg, &lib,
-  &.{deck}, null)`, then `report.write` gives the `r.json` above.
+- **Front ends.** `cktimg-json` and `cktimg-tex` read the same lines from
+  the deck text, so a hinted deck draws the same in both (the Schemify
+  import too, but for the subckt-only case under Lines). Iterate with
+  `cktimg-json`: it is the only front end whose `--report` and
+  `--decisions` show what became of your lines. `cktimg-tex [--standalone]
+  [--config lint.zon] deck.sp out.tex` gives the TikZ figure. In C, the
+  hinted deck is the `src` of `cktimg_parse_place(lib, src, zon, &report)`,
+  where `report` holds only the settings' complaints. From Zig,
+  `place(gpa, &cfg, &lib, &.{deck}, null)`, then `report.write` (with the
+  parsed netlist and its roles) gives the `r.json` above.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.
