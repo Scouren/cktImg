@@ -3,6 +3,8 @@
 //! next one.
 //!
 //! - `gates`: every finding of `checks.find`; none is the guarantee.
+//! - `text_overlaps`: every name drawn on a symbol, a name or another net's
+//!   wire (`text_overlaps.find`); not yet a guarantee, so apart from `gates`.
 //! - `requests`: each `*@` line of the deck, by line number: honoured,
 //!   relaxed, dropped or rejected, why, and the lines that blocked it. An
 //!   honoured line the finished drawing does not show (`checks.drawnAs`) is
@@ -46,6 +48,7 @@ const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
 const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
+const text_overlaps = @import("text_overlaps.zig");
 const drawn_symmetry = @import("drawn_symmetry.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
@@ -293,6 +296,19 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
         try w.print(", \"at\": [{d}, {d}], \"other\": {d} }}", .{ f.at.x, f.at.y, f.other });
     }
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
+
+    var over: std.ArrayList(text_overlaps.Overlap) = .empty;
+    try text_overlaps.find(a, &over, p, lib);
+    try w.writeAll("  \"text_overlaps\": [");
+    for (over.items, 0..) |o, i| {
+        try w.writeAll(if (i == 0) "\n    " else ",\n    ");
+        try w.print("{{ \"of\": \"{t}\", \"text\": ", .{o.of});
+        try std.json.Stringify.value(o.text, .{}, w);
+        try w.print(", \"at\": [{d}, {d}], \"over\": \"{t}\", \"other\": ", .{ o.box.min.x, o.box.max.y, o.over });
+        try std.json.Stringify.value(o.other, .{}, w);
+        try w.writeAll(" }");
+    }
+    try w.writeAll(if (over.items.len == 0) "],\n" else "\n  ],\n");
 
     try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
     try w.writeAll("  \"requests\": [");

@@ -265,7 +265,9 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     // side. Nearer is narrower here than in `routes.port`, which sets the
     // wire's middle against the drawing's: a trunk whose right end reaches
     // the drawing's middle leaves right.
-    const side: Side = free orelse if (end == .name) return nameOnPin(c, pins) else if (2 * hi >= c.middle2()) .right else .left;
+    // A `port` line asking left or right takes that end.
+    const asked: ?Side = if (c.port_side.len > 0) c.port_side[net] else null;
+    const side: Side = free orelse if (end == .name) return nameOnPin(c, pins) else if (asked != null and asked.?.isHorizontal()) asked.? else if (2 * hi >= c.middle2()) .right else .left;
     const from: Pt = .{ .x = if (side == .right) hi else lo, .y = y_t };
     if (end == .port) {
         try c.port(net, from, side);

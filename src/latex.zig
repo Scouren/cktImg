@@ -88,8 +88,8 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
             const name = p.net_name[p.pin_net[lo]];
             if (role == .ground_rail and !geom.namesRail(p, lib, p.pin_net[lo])) continue;
             const side: library.Side = switch (role) {
-                .power_rail, .ground_rail => geom.railSide(p, lo),
-                else => geom.nameSide(p, lo),
+                .power_rail, .ground_rail => geom.railSide(p, lib, lo),
+                else => geom.nameSide(p, lib, lo),
             };
             const at = p.pin_xy[lo];
             const box = p.deviceRect(lib, d);

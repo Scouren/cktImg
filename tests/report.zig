@@ -102,6 +102,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
     const Doc = struct {
         gates: []const struct { rule: []const u8 },
+        text_overlaps: []const struct { text: []const u8 },
         metrics: struct { crossings: u32, bends: u32, labelled: []const []const u8 },
         requests: []const struct { line: u32 },
         decisions: []const []const u8,
@@ -109,6 +110,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     };
     const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{});
     try std.testing.expectEqual(0, doc.gates.len);
+    try std.testing.expectEqual(0, doc.text_overlaps.len);
     var have: std.ArrayList(u8) = .empty;
     for (doc.decisions) |l| if (std.mem.startsWith(u8, l, "*@ group")) try have.print(arena, "{s}\n", .{l});
     // Names as the parser keeps them (lower case); stacks top to bottom.

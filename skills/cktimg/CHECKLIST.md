@@ -7,6 +7,7 @@ its complaint is usually fixed.
 | item | read it in | rung |
 |---|---|---|
 | Clean: `gates` is empty. A finding is a cktImg bug: report it with the deck | `gates` | none |
+| No name lies on a symbol, another name or another net's wire. A finding is a cktImg bug: report it with the deck | `text_overlaps` | none |
 | Each gate faces the net it is driven from, as the book draws it | the image; `decisions` (`face`) | 2 |
 | Supply on top, ground at the bottom, current flowing down each column | `grid`; the image | 0, then 2 |
 | Each net plays its role: inputs and outputs are ports, supply and ground are symbols, a bias line is named or carries a port at each gate | `metrics.labelled`, the ports in the image | 0 |

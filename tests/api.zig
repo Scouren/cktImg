@@ -445,7 +445,7 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
     defer one.deinit();
     const pin = supplyPin(&one, lib);
     try testing.expectEqual(@as(u4, 0), np.checks.ways(&one, one.pin_net[pin], one.pin_xy[pin]));
-    try testing.expectEqual(np.Side.right, np.geom.railSide(&one, pin));
+    try testing.expectEqual(np.Side.right, np.geom.railSide(&one, lib, pin));
     // Three pins on one bar carrying its symbol (`rail_past` off; the
     // default bar is a named rail with none, wires.6): the symbol stands on
     // the bar's run.
@@ -455,7 +455,7 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
     const on = supplyPin(&bar, lib);
     const ways = np.checks.ways(&bar, bar.pin_net[on], bar.pin_xy[on]);
     try testing.expectEqual(bit(.left) | bit(.right), ways & (bit(.left) | bit(.right) | bit(.up)));
-    try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, on));
+    try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, lib, on));
 }
 
 test "place: a coupling card remains electrical data and needs no drawable class" {
@@ -519,6 +519,7 @@ test {
     _ = @import("input_order.zig");
     _ = @import("trunk_taps.zig");
     _ = @import("thin_parts.zig");
+    _ = @import("drawing_text.zig");
     _ = @import("trunk_row.zig");
     _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");
