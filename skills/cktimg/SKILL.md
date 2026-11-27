@@ -204,7 +204,10 @@ on a device overrides the relations on it.
   hinted deck is the `src` of `cktimg_parse_place(lib, src, zon, &report)`,
   where `report` holds only the settings' complaints. From Zig,
   `place(gpa, &cfg, &lib, &.{deck}, null)`, then `report.write` (with the
-  parsed netlist and its roles) gives the `r.json` above.
+  parsed netlist and its roles) gives the `r.json` above. From Python,
+  `cktimg.place(deck, symbols=, target=, start=, config=)` returns the
+  placement and that report, and `cktimg.draw(...)` returns the SVG and the
+  report. `deck` is text or a `sprack.Circuit` (docs/PYTHON.md).
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.
