@@ -191,6 +191,14 @@ the size cap below are the open follow-ups.
   open), dangling ends 0. 302 drawings change: crossings worse 11, better 8; bends worse 35,
   better 23. Block-outline wires and side-trunk columns remain. `netlist-import.wasm`
   716,402 -> 734,708 bytes.
+- Flat MOS (`feat/flat-mos`): taken because three Fable agents wanted a transistor laid flat
+  between two nodes, and `symmetric` refused mirrors that swap a MOS's drain and source. `*@ bridge
+  <mos>` lays a MOS flat; `face <mos> g up|down` and `face <mos> d|s left|right` turn it. When a
+  `symmetric` or `axis` line would be dropped `asymmetric`, the search retries letting a MOS swap
+  drain and source (symmetry.8). ar-2369 with `symmetric mc1 mc4`: dropped -> honoured, 8/20 ->
+  5/11; with `bridge` and `above`, the book's two stacked flat MOS at 4/14. Pin-level alignment
+  was already met. 0 of 5,274 unhinted drawings change. All branches gated together on this tip.
+  `netlist-import.wasm` 734,708 -> 736,096 bytes.
 
 ### Changed
 
