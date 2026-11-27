@@ -48,7 +48,7 @@
 //! - `Canvas.wall(c: *Canvas) void`
 //! - `Canvas.leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void`
 //! - `Canvas.stub(c: *Canvas, kind: sch.NodeKind, net: u32, from: Pt, side: Side, d: i32) Allocator.Error!bool`, `Canvas.markAt(c: *Canvas, kind: sch.NodeKind, p: u32, toward: []const Side, d: i32) Allocator.Error!bool`
-//! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`, `Canvas.onNet(c: *const Canvas, net: u32, at: Pt) bool`, `Canvas.crossed(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
+//! - `Canvas.labelAt(c: *Canvas, p: u32) Allocator.Error!void`, `Canvas.port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void`, `Canvas.portStub(c: *Canvas, net: u32, from: Pt, order: []const Side) Allocator.Error!bool`, `Canvas.onNet(c: *const Canvas, net: u32, at: Pt) bool`, `Canvas.crossed(c: *const Canvas, net: u32, a: Pt, b: Pt) bool`
 //! - `Canvas.middle2(c: *const Canvas) i32`
 //! - `Canvas.save(c: *const Canvas) Checkpoint`, `Canvas.restore(c: *Canvas, cp: Checkpoint) void`
 //! - `pub const Line = struct`, `Line.of(pts: []const Pt) Line`, `Line.push(l: *Line, p: Pt) void`, `Line.slice(l: *const Line) []const Pt`
@@ -293,21 +293,21 @@ pub const Canvas = struct {
     /// An output's or input's port on a stub out from `from`: toward the
     /// side a `port` line asks, else `side`, else up, else down, the first
     /// whose stub does not run back along the net's own wire (the node
-    /// between two parts in series has its port off the line). When the
-    /// stub does not fit, a label at `from`, or at the net's top-left pin
+    /// between two parts in series has its port off the line); where the
+    /// line's stub does not fit, the first of the others'. When no stub
+    /// fits, a label at `from`, or at the net's top-left pin
     /// when `from` is where another net's wire crosses (a label there would
     /// join the two).
     pub fn port(c: *Canvas, net: u32, from: Pt, side: Side) Allocator.Error!void {
         assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
         const asked = if (c.port_side.len > 0) c.port_side[net] orelse side else side;
-        // A stub over the net's own wire is no stub: the symbol would stand
-        // on the wire, and a netlister reads the two as apart.
-        const free: ?Side = for ([_]Side{ asked, side, .up, .down }) |t| {
-            if (!c.along(net, from, t, c.len.terminal)) break t;
-        } else null;
-        if (free) |t| if (try c.stub(.terminal, net, from, t, c.len.terminal)) return;
+        const order = [_]Side{ asked, side, .up, .down };
+        if (try c.portStub(net, from, &order)) return;
+        // A `port` line's side with no room: where no line would put it, a
+        // symbol still (routes.6).
+        if (asked != side and try c.portStub(net, from, order[1..])) return;
         if (c.fits(net, from, from)) {
-            try c.leaf(.label, net, from, (free orelse asked).opposite());
+            try c.leaf(.label, net, from, (c.free(net, from, &order) orelse asked).opposite());
         } else {
             // Every pin of the net drawn so far, a symbol's or a name's too.
             var all: std.ArrayList(u32) = .empty;
@@ -315,6 +315,24 @@ pub const Canvas = struct {
             for (c.s.pins.items(.net), 0..) |n, p| if (n == net) try all.append(c.gpa, @intCast(p));
             try c.labelAt(all.items[topLeft(c.s, all.items)]);
         }
+    }
+
+    /// An output's or input's port symbol on a stub out from `from`, toward
+    /// the first side of `order` whose stub does not run back along the
+    /// net's own wire. False, and nothing drawn, when that stub does not
+    /// fit or every side runs along the wire.
+    pub fn portStub(c: *Canvas, net: u32, from: Pt, order: []const Side) Allocator.Error!bool {
+        assert(order.len > 0);
+        const t = c.free(net, from, order) orelse return false;
+        return c.stub(.terminal, net, from, t, c.len.terminal);
+    }
+
+    /// The first side of `order` a stub out from `from` can take: a stub
+    /// over the net's own wire is no stub (the symbol would stand on the
+    /// wire, and a netlister reads the two as apart). Null for none.
+    fn free(c: *const Canvas, net: u32, from: Pt, order: []const Side) ?Side {
+        for (order) |t| if (!c.along(net, from, t, c.len.terminal)) return t;
+        return null;
     }
 
     /// Whether a stub of `d` out from `from` toward `side` runs along a wire

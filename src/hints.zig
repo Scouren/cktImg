@@ -194,6 +194,9 @@ pub const Code = enum(u8) {
     guarantee,
     /// A verb on a rung the engine does not take yet.
     not_built,
+    /// On the deck's first line, which SPICE reads as the title: nothing
+    /// taken. Move it below the title.
+    title,
 };
 
 /// `Verdict.arg` of a line no single argument fails.
@@ -259,7 +262,12 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
     var lines = std.mem.splitScalar(u8, text, '\n');
     while (lines.next()) |raw| {
         line += 1;
-        if (line == 1) continue;
+        // The title, as SPICE reads it: a line there takes nothing, but is
+        // listed (verb `unknown`, line 1) so the report can say so.
+        if (line == 1) {
+            if (read(raw) != null) try out.append(arena, .{ .verb = .unknown, .weak = false, .args = &.{}, .line = 1, .text = std.mem.trim(u8, raw, " \t\r") });
+            continue;
+        }
         var words = std.mem.tokenizeAny(u8, raw, " \t\r");
         depth = nesting(depth, words.next() orelse continue, ".subckt", ".ends");
         if (depth > 0) continue;
@@ -269,7 +277,7 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
         try out.append(arena, .{ .verb = h.verb, .weak = h.weak, .args = args.items, .line = line, .text = std.mem.trim(u8, raw, " \t\r") });
     }
     assert(depth <= line);
-    var last: u32 = 1;
+    var last: u32 = 0;
     for (out.items) |h| {
         assert(h.line > last and h.line <= line);
         last = h.line;

@@ -16,7 +16,9 @@
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
 //!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
-//!   lines, under `*@ grouping off`, draws the same picture.
+//!   lines, under `*@ grouping off`, draws the same picture on most
+//!   circuits; one a line turns a recognised stage's placement off on
+//!   does not at rungs 2 and 3 (skills/cktimg/SKILL.md has the counts).
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Human Rules:
@@ -32,7 +34,7 @@
 //! Contents:
 //! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
 //! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8`
-//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void`
+//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout, given: ?[]const Verdict) !void`
 
 const std = @import("std");
 const config = @import("config.zig");
@@ -123,10 +125,12 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     }
     // What still stands, checked against the drawing. A wire or port with
     // no room falls back to names, as it may; a place, route or via a
-    // guarantee refuses is not drawn.
+    // guarantee refuses is not drawn; a stay stronger lines moved is
+    // dropped, `conflict` (which lines, the drawing cannot say).
     const drawing = p orelse return out;
+    const l = lib orelse return out;
     for (out, nl.hints) |*v, h| {
-        if (v.state != .honoured or h.verb == .stack or checks.drawnAs(drawing, nl, h, unit) != false) continue;
+        if (v.state != .honoured or h.verb == .stack or checks.drawnAs(drawing, nl, h, l, sk.drawn) != false) continue;
         // A cell or place on one of its devices is the more exact line: it
         // stands, and this one gives way to it.
         if (try placedBy(arena, nl, out, h)) |by| {
@@ -135,7 +139,10 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         }
         v.* = switch (h.verb) {
             .wire, .port => .{ .state = .relaxed, .code = .no_room },
-            .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
+            // A stay gives way to stronger lines, whichever they are; an
+            // exact place, route or via only to a guarantee.
+            .at => .{ .state = .dropped, .code = if (h.weak) .conflict else .guarantee },
+            .route, .via => .{ .state = .dropped, .code = .guarantee },
             else => .{ .state = .relaxed, .code = .not_drawn },
         };
     }
@@ -152,7 +159,7 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     for (nl.hints, out) |h, *v| {
         if (v.state != .honoured) continue;
         switch (h.verb) {
-            .stack => if (checks.drawnAs(drawing, nl, h, unit) != false) continue,
+            .stack => if (checks.drawnAs(drawing, nl, h, l, sk.drawn) != false) continue,
             .axis, .symmetric => if (nl.device(h.args[0]) == null or drawn_symmetry.shows(drawing, h, axis)) continue,
             else => continue,
         }
@@ -162,7 +169,6 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
             .{ .state = .relaxed, .code = .not_drawn };
     }
     // A name where a `refdes` line asks, when there is room.
-    const l = lib orelse return out;
     const anchors = try geom.refdesAnchors(arena, drawing, l);
     for (out, nl.hints) |*v, h| {
         if (v.state != .honoured or h.verb != .refdes) continue;
@@ -283,10 +289,11 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
 }
 
 /// The report on `p`, drawn from `nl` and `roles` with `lib` under `layout`
-/// (the one `p` was laid out with). The structure
+/// (the one `p` was laid out with); its `requests` are `given` (the
+/// caller's `verdicts`, its `alone` proven, say), else `verdicts`'. The structure
 /// and skeleton are worked out again (both are pure), in `gpa`, freed
 /// before this returns.
-pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void {
+pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout, given: ?[]const Verdict) !void {
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
     const a = arena_state.allocator();
@@ -320,7 +327,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
     try w.writeAll("  \"requests\": [");
     var listed: usize = 0;
-    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib)) |h, v| {
+    for (nl.hints, given orelse try verdicts(a, nl, roles, &st, &sk, p, lib)) |h, v| {
         if (h.line == 0) continue;
         try w.writeAll(if (listed == 0) "\n    " else ",\n    ");
         listed += 1;
@@ -410,7 +417,8 @@ fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed
             const d = checks.deviceIn(drawing, h.args[0]) orelse return .of(.ok);
             return .of(if (drawing.dev_class[d] == id) .ok else .bad_args);
         },
-        .unknown => return .of(.unknown_verb),
+        // Line 1 is the title (`hints.collect`).
+        .unknown => return .of(if (h.line == 1) .title else .unknown_verb),
         else => return .of(.not_built),
     }
 }
