@@ -126,6 +126,12 @@ the size cap below are the open follow-ups.
   for a 19-name order went 3 -> 8 crossings. No gate-bus pattern was needed: `wire <net> trunk` is
   one, and SKILL now explains trunk, ladder and route. All 5,274 decks are byte-identical without
   the new lines. `netlist-import.wasm` 693,741 -> 701,214 bytes.
+- Python (`feat/python`): taken because Schemify and SPRack agreed one documented drawing call
+  owned by cktImg. `cktimg.place(deck, *, symbols, target, start, config)` returns the placement
+  and the report, `cktimg.draw` the SVG and the report; the deck is text or a `sprack.Circuit`,
+  every file input a path, text or dict. It runs `cktimg-json` (pinned redraw, ReleaseFast: 41
+  devices 12.6 ms, 123 devices 73 ms). `docs/PYTHON.md` documents the placement schema. No engine
+  or guest change.
 
 ### Changed
 
