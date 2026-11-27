@@ -597,6 +597,46 @@ test "lines: hang stands a part by a pin of an upright device" {
     try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
 }
 
+test "lines: bridge lays a MOS flat along its channel, its gate up or down as face says" {
+    // Oracle: the finished drawing's pins. A flat MOS has its drain and
+    // source level, and its gate above (below) them for `face g up`
+    // (`down`). Three agents of the hinting trial asked for this (ar-2369
+    // MR1-MR4, ag-1329 m21/m1, ag-1094's transmission gates); `bridge` on a
+    // transistor was refused `not_placeable`.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Pass device\n.model nch nmos\nM1 a ga 0 0 nch\nM2 b gb 0 0 nch\nR1 vdd a 1k\nR2 vdd b 1k\nM3 a g b 0 nch\nVg g 0 1\nVa ga 0 1\nVb gb 0 1\n";
+    for ([_][]const u8{ "up", "down" }) |side| {
+        const face = try std.fmt.allocPrint(f.arena(), "*@ face m3 g {s}", .{side});
+        const r = try run(f.arena(), f.lib, deck, try std.mem.concat(f.arena(), u8, &.{ "*@ bridge m3\n", face, "\n*@ face m3 d left\n" }));
+        for ([_][]const u8{ "*@ bridge m3", face, "*@ face m3 d left" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+        const d, const g, const s = .{ r.pin("m3", 0), r.pin("m3", 1), r.pin("m3", 2) };
+        try std.testing.expectEqual(d.y, s.y);
+        try std.testing.expect(d.x < s.x);
+        try std.testing.expect(if (side[0] == 'u') g.y < d.y else g.y > d.y);
+    }
+    // A flat MOS's gate stands up or down only, and only its gate does.
+    const bad = try run(f.arena(), f.lib, deck, "*@ bridge m3\n*@ face m3 g left\n*@ face m3 b up\n");
+    try expectState(bad.verdict("*@ face m3 g left"), .rejected, .not_placeable);
+    try expectState(bad.verdict("*@ face m3 b up"), .rejected, .not_placeable);
+}
+
+test "lines: symmetric trades a MOS's drain and source when no symmetry keeps them" {
+    // Oracle: the verdict, which reads the finished drawing's mirror
+    // (`drawn_symmetry.shows`), and the pins: m4 is m3's image with its
+    // drain and source traded, so m3's drain stands opposite m4's source.
+    // ar-2369's MR1 maps to MR3 only so; `symmetric mc1 mc4` was dropped
+    // `asymmetric` (two agents of the hinting trial).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Traded ends\n.model nch nmos\nM1 x in1 t 0 nch\nM2 y in2 t 0 nch\nM3 x c x2 0 nch\nM4 y2 c y 0 nch\nR1 vdd x2 1k\nR2 vdd y2 1k\nI1 t 0 1m\nVdd vdd 0 1\nV1 in1 0 1\nV2 in2 0 1\nVc c 0 1\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ symmetric m1 m2\n");
+    try expectState(r.verdict("*@ symmetric m1 m2"), .honoured, .ok);
+    const d3, const s4 = .{ r.pin("m3", 0), r.pin("m4", 2) };
+    try std.testing.expectEqual(d3.y, s4.y);
+    try std.testing.expectEqual(r.at("m1").x + r.at("m2").x, d3.x + s4.x);
+}
+
 test "lines: wire over and under run a net past the top or the bottom of the drawing" {
     // Oracle: the finished drawing's wires (`checks.drawnAs`): the net is
     // one wire, and some point of it lies above (below) every pin of every

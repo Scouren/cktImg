@@ -13,15 +13,19 @@
 //!   net's symbol and ground; `driver <dev> inline` draws a device in the
 //!   circuit. `drivers`
 //! - relations.2 (invariant) A device an `upright` line names stands in a
-//!   column, one a `bridge` line names lies flat between columns; a
-//!   transistor only stands. `forms`
+//!   column, one a `bridge` line names lies flat between columns: a
+//!   two-pin part, or a MOS laid along its channel, its gate up or down
+//!   (relations.4). Asked for by three agents of the hinting trial
+//!   (ar-2369 MR1-MR4, ag-1329 m21/m1, ag-1094's transmission gates).
+//!   `forms`
 //!   Narrowing: no controlled source (E, G, F, H) is taken, which the
-//!   general form admits (`twoPin`).
+//!   general form admits (`twoPin`); a bipolar transistor only stands.
 //! - relations.3 (choice) Of lines setting one value (a device's form, an
 //!   end, a driver), the preferred stands, applied last: the deck's own
 //!   ranking of its lines. `forms`
 //! - relations.4 (invariant) `face <dev> <end> up|down` puts that end of
-//!   an upright device up or down. `ends`
+//!   an upright device up or down; `face <mos> g up|down` turns a flat
+//!   MOS's gate up or down (`sketch.orientAll` reads the line). `ends`
 //! - relations.5 (invariant) The upright devices a `row` line names stand
 //!   on one row; a bridge or block it names takes the row of the line's
 //!   anchor (`anchored.anchor`: its first upright device, else its first
@@ -39,8 +43,8 @@
 //!   ground drop give way to the `row` and `above` lines: the deck is the
 //!   user's word. `Relations.refuses`
 //! - relations.10 (invariant) `face <dev> g left|right` puts a transistor's
-//!   gate (or base) on that side; on a flat part, the named end stands on
-//!   that side. `faces`
+//!   gate (or base) on that side; on a flat part or a flat MOS, the named
+//!   end of its path stands on that side. `faces`
 //!   Narrowing: a flat part by its pin count, as `sketch.fits` turns it;
 //!   the device model's flat part also takes a four-pin switch and leaves
 //!   out a two-port box.
@@ -204,7 +208,8 @@ pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?V
 }
 
 /// `upright <dev>` and `bridge <dev>`: a drawn device whose path joins two
-/// nets stands in a column or bridges; one with a gate stands only.
+/// nets stands in a column or bridges; of those with a gate, only a MOS
+/// bridges.
 pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -218,7 +223,7 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
             at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             const a, const b = nl.path(EdgeId.from(d)) orelse break .not_placeable;
-            const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
+            const takes = if (device.isTransistor(kinds[d])) h.verb == .upright or kinds[d] == .mosfet else twoPin(kinds[d]);
             if (!drawn[d] or !takes or a == b) break .not_placeable;
         } else done: {
             at = hints.no_arg;
@@ -229,7 +234,8 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     }
 }
 
-/// `face <dev> <end> up|down`: which of a vertical device's ends is up.
+/// `face <dev> <end> up|down`: which of a vertical device's ends is up;
+/// on a flat MOS, its gate's side (relations.4), which this only admits.
 pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32, verdicts: []?Verdict) Allocator.Error!void {
     const c = &nl.graph;
     const order = try hints.applyOrder(arena, nl.hints);
@@ -244,14 +250,18 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
             verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
-        if (!drawn[d] or form[d] != .vertical) {
-            verdicts[i] = .of(.not_placeable);
-            continue;
-        }
         const pin = pinIndex(nl, d, h.args[1]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         };
+        if (drawn[d] and form[d] == .horizontal and c.edges.items(.kind)[d] == .mosfet) {
+            verdicts[i] = .of(if (pin == device.of(.mosfet).gate.?) .ok else .not_placeable);
+            continue;
+        }
+        if (!drawn[d] or form[d] != .vertical) {
+            verdicts[i] = .of(.not_placeable);
+            continue;
+        }
         const net = c.members(EdgeId.from(d))[pin].index();
         if (net != upper[d] and net != lower[d]) {
             verdicts[i] = .of(.bad_args);
@@ -434,8 +444,9 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         // pin count, as `sketch.fits` turns it; the device model's flat part
         // (`device.isPart`, an end of its path) also takes a four-pin switch
         // and leaves out a two-port box.
-        if (drawn[d] and form[d] == .horizontal and c.members(EdgeId.from(d)).len == 2) {
-            left_end[d] = if ((pin == 0) != right) .first else .second;
+        const path: ?[2]u8 = if (c.members(EdgeId.from(d)).len == 2) .{ 0, 1 } else if (kinds[d] == .mosfet) device.of(.mosfet).path else null;
+        if (drawn[d] and form[d] == .horizontal and path != null and (pin == path.?[0] or pin == path.?[1])) {
+            left_end[d] = if ((pin == path.?[0]) != right) .first else .second;
             verdicts[i] = .of(.ok);
             continue;
         }

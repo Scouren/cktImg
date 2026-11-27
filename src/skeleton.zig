@@ -258,6 +258,12 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
         if (u and dr) f.* = .vertical;
     };
     try forms.ends(gpa, nl, roles, drawn, form, upper, lower);
+    // A MOS whose image traded its drain and source (symmetry.8) turns
+    // with it: its upper end is the image of its mate's.
+    for (st.device_mate, 0..) |m, d| {
+        if (m == none or m <= d or !drawn[d] or form[d] != .vertical or form[m] != .vertical) continue;
+        if (c.edges.items(.kind)[m] == .mosfet and st.net_mate[upper[d]] == lower[m]) std.mem.swap(u32, &upper[m], &lower[m]);
+    }
     try relations.ends(arena, nl, drawn, form, upper, lower, verdicts);
     const rel = try relations.rows(gpa, arena, nl, st, drawn, form, verdicts);
     const seq = try sequence.read(gpa, arena, nl, st, drawn, form, rel.links, verdicts);
@@ -607,6 +613,19 @@ fn gates(nl: *const Netlist, roles: []const Role, st: *const Structure, mate: []
         gate_right[a] = k != .pair;
         gate_right[z] = k == .pair;
     }
+    // A mate's gate is its image's (mates.1) where the symmetry traded a
+    // MOS's ends (symmetry.8): it maps a block onto one of another kind.
+    // Elsewhere the rules above stand (mirrored or not, as they were).
+    const traded = for (st.device_mate, 0..) |m, d| {
+        if (m == none or m == d or kinds[d] != .mosfet) continue;
+        const p = c.members(EdgeId.from(d));
+        const q = c.members(EdgeId.from(m));
+        if (q[0] != q[2] and st.net_mate[p[0].index()] == q[2].index()) break true;
+    } else false;
+    if (traded) for (mate, 0..) |m, d| {
+        if (m == none or m <= d or st.device_mate[d] != m or !drawn[d] or form[d] != .vertical) continue;
+        gate_right[m] = !gate_right[d];
+    };
 }
 
 /// One complete analog output on the bank's shared gate, with no other
