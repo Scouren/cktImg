@@ -35,9 +35,9 @@ sources, `--from`'s stays).
 | 2 | `group stack <devs>` | a column's chain, top to bottom (built) | each on a non-rail channel net of the next (else `unjoined`), no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form | upright: a transistor, or a two-pin device on two nets | strong |
 | 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's, the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
-| 2 | `hang <part> <dev>.<pin>` | a part by one pin of an upright device: under its lower end, over its upper end, or beside its gate (level when the part lies flat, its end on the net toward the gate; a row lower, hanging from the gate's wire, when it stands). A part pushed off that cell by another is `relaxed no_room` | the part touches the pin's net; the device stands | strong |
+| 2 | `hang <part> <dev>.<pin>` | a part by one pin of an upright device: under its lower end, over its upper end, or beside its gate (level when the part lies flat, its end on the net toward the gate; a row lower, hanging from the gate's wire, when it stands: held when a pin of the part is within two units of the gate). A part pushed off that cell by another is `relaxed no_room` | the part touches the pin's net; the device stands | strong |
 | 2 | `label <net> [at <dev>.<pin> ...]`, `wire <net> [ladder\|trunk\|route\|over\|under]` | names or a wire, and which pattern or pin: `at` names only those pins and wires the rest; `wire` on an input draws one wire with one port; `over`, `under` run one wire along the top or the bottom of the drawing, past every symbol | the guarantees; a wire that cannot be drawn is reported, then labels | strong |
-| 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side | — | strong |
+| 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side: the port at the net's end on that side or beyond it (no pin of the net past it). With no stub that fits there, the port stands where it would with no line, a symbol still, and the line is `relaxed no_room` | — | strong |
 | 2 | `rail <net> bar\|each\|plain` | a supply or ground as one bar, a symbol per pin, or one bar with no symbol | — | strong |
 | 2 | `first <nets>` | nets wired before the rest, in this order | — | strong |
 | 2 | `shelf <columns>\|off` | how many device columns a row of the drawing holds before it wraps into rows (8); `off`: one row | — | strong |
@@ -56,9 +56,12 @@ tentative decision, and an agent's line outranks it.
 
 `--decisions <rung>` prints every decision on rungs 1 to `<rung>`, so
 `--decisions 3` pins the placement and `--decisions 5` pins everything. A
-deck plus its own export draws the same picture with every line honoured,
-even under an engine whose heuristics changed, because the lines leave it
-nothing to decide.
+deck plus its own export is meant to draw the same picture with every
+line honoured, because the lines leave it nothing to decide. Measured on
+200 corpus decks (with `*@ grouping off`), a device still moves in 6 at
+rung 1, 35 at rung 2, 14 at rung 3 and 8 at rung 4: a line on a part of
+a recognised converter or stage turns that stage's own placement off,
+which the lines of rungs 2 and 3 do not restate.
 
 The decision kinds are one closed enum: role, kind, class, block, mate,
 axis, driver, expansion, row, column order, chain, form, pin side, net

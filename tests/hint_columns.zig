@@ -259,7 +259,7 @@ test "report: a net drawn as two ports or more is listed as ported" {
     const s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     var aw: std.Io.Writer.Allocating = .init(arena);
-    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
+    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{}, null);
     const Doc = struct { metrics: struct { ported: []const []const u8 } };
     const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{ .ignore_unknown_fields = true });
     try std.testing.expectEqual(1, doc.metrics.ported.len);

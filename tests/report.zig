@@ -99,7 +99,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     const s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     var aw: std.Io.Writer.Allocating = .init(arena);
-    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
+    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{}, null);
     const Doc = struct {
         gates: []const struct { rule: []const u8 },
         text_overlaps: []const struct { text: []const u8 },
@@ -171,7 +171,7 @@ test "report: bends counts every corner a reader sees, a trunk drawn in pieces t
             }
         }
         var aw: std.Io.Writer.Allocating = .init(arena);
-        try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
+        try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{}, null);
         const Doc = struct { metrics: struct { bends: u32 } };
         const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{ .ignore_unknown_fields = true });
         try std.testing.expectEqual(want, doc.metrics.bends);
@@ -330,7 +330,7 @@ test "report: the written stack follows the final shared channel, including both
             p.pin_xy = pins;
             pins[p.dev_pin0[l]].x += 10;
             try std.testing.expect(!support.generatedStack(&p, "m1", "m5"));
-            try std.testing.expectEqual(false, np.checks.drawnAs(&p, &nl, nl.hints[0], lib.unit).?);
+            try std.testing.expectEqual(false, np.checks.drawnAs(&p, &nl, nl.hints[0], lib, sk.drawn).?);
         }
     }
 }

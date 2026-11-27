@@ -119,7 +119,168 @@ MR4 net2 VREF_CM net9 VDD pch l=0.15 w=1 nf=1 m=1
 .ends dut
 """, [(36, "*@ face mr3 g right", "relaxed", "no_room", None),
                     (37, "*@ face mr2 g right", "relaxed", "no_room", None)], "*@ face"),
+    # A `*@` line on line 1 is the title, as SPICE reads it: nothing taken,
+    # and said so (four agents of a hinting trial lost one there silently).
+    ("title-line", """*@ shelf off
+.model nch nmos
+M1 b a 0 0 nch
+R1 vdd b 1k
+*@ face m1 g right
+""", [(1, "*@ shelf off", "rejected", "title", None),
+      (5, "*@ face m1 g right", "honoured", "ok", None)]),
+    # A net that is also a hidden MOS body is wired by its shown pins: the
+    # body takes no wire (bulk-a), as when the body is on another net
+    # (bulk-b). `drawn` reads the wires off d.json.
+    ("bulk-a", """* wire on a net that is also a hidden bulk
+.model pch pmos
+*@ wire vin
+.subckt dut vss vin vout vg
+M1 vout vg vin vin pch
+M2 vout vg vin vin pch
+R1 vout vss 1k
+.ends
+""", [(3, "*@ wire vin", "honoured", "ok", None)]),
+    ("bulk-b", """* the same, bodies on vss
+.model pch pmos
+*@ wire vin
+.subckt dut vss vin vout vg
+M1 vout vg vin vss pch
+M2 vout vg vin vss pch
+R1 vout vss 1k
+.ends
+""", [(3, "*@ wire vin", "honoured", "ok", None)]),
+    # A place for a driver drawn apart names it: `driver v1 inline` first.
+    ("driver-at", """driver
+.model nch nmos
+V1 vdd 0 1
+M1 d g 0 0 nch
+R1 vdd d 1k
+R2 vdd g 1k
+*@ at v1 0 0
+*@ cell v1 0 0
+""", [(7, "*@ at v1 0 0", "rejected", "not_placeable", "v1"),
+      (8, "*@ cell v1 0 0", "rejected", "not_placeable", "v1")]),
 ]
+
+AG = Path(__file__).resolve().parent.parent / "external" / "examples" / "analoggenie"
+
+
+def titled(name, lines):
+    """Corpus deck `name` with `lines` after its title."""
+    text = (AG / (name + ".cir")).read_text()
+    head, rest = text.split("\n", 1)
+    return head + "\n" + lines + rest
+
+
+# Decks from a hinting trial, on corpus circuits: each case's verdicts.
+CORPUS = [
+    # A port at the net's left end stands where `port left` asks: at or past
+    # every pin, not strictly past (ag-1108, a hinting trial).
+    ("port-end", lambda: titled("ag-1108", "*@ port rfoutp left\n"),
+     [(2, "*@ port rfoutp left", "honoured", "ok", None)]),
+    # A port line with no room on its side keeps a port symbol, where no line
+    # would put it; the line is `no_room` (ag-1108 round 6 drew a bare name).
+    ("port-room", lambda: titled("ag-1108", "".join("*@ " + l + "\n" for l in [
+        "face mp1 g right", "face mp2 g right", "face mp3 g right", "face mp4 g left",
+        "face mp5 g left", "face mp6 g left", "order cf1 rf1 mp3 cg3l cpn3r cpn3l cg3r mp6 rf2 cf2",
+        "order mp2 cg2l cpn2r cpn2l cg2r mp5", "order mp1 cnp1r cnp1l mp4", "column cpn3r cpn2r cnp1r",
+        "column cpn3l cpn2l cnp1l", "column cg3l cg2l", "column cg3r cg2r", "port rfoutp top"])),
+     [(15, "*@ port rfoutp top", "relaxed", "no_room", None)], "*@ port"),
+    # An upright part hung beside a gate stands a row lower, its near end
+    # within two units of the gate (anchored.3; ag-2500, a hinting trial).
+    ("hang-upright", lambda: titled("ag-2500", "".join("*@ " + l + "\n" for l in [
+        "shelf off", "role vin supply",
+        "order m19 m7 m9 m11 m12 m13 m4 m1 md6 md5 md7 m23 m24 m18 m16 mpt cf1 cm1",
+        "column m9 m10", "label vb5", "hang cm2 md1.g"])),
+     [(7, "*@ hang cm2 md1.g", "honoured", "ok", None)], "*@ hang"),
+]
+
+
+def drawn_checks(name, d):
+    """What the drawing itself must show for case `name`: a list of faults."""
+    pins = lambda net: [(dv, p) for dv in d["devices"] if not dv["name"].startswith("_")
+                        for p in dv["pins"] if p["net"] == net]
+    ports = lambda net: [dv for dv in d["devices"] if dv["class"] in ("ipin", "opin", "iopin")
+                         and dv["pins"][0]["net"] == net]
+    if name.startswith("bulk"):
+        # Oracle: the wires, joined where their points meet, hold every
+        # shown pin of vin in one piece.
+        segs = [s for w in d["wires"] if w["net"] == "vin" for s in w["segments"]]
+        group = {}
+        def root(x):
+            while group.setdefault(x, x) != x:
+                x = group[x]
+            return x
+        for s in segs:
+            for a, b in zip(s, s[1:]):
+                group[root(tuple(a))] = root(tuple(b))
+        roots = {root(tuple(p["xy"])) for _, p in pins("vin")}
+        return [] if len(roots) == 1 else [f"vin in {len(roots)} pieces"]
+    if name == "port-end":
+        lo = min(p["xy"][0] for _, p in pins("rfoutp"))
+        return [] if any(dv["pos"][0] <= lo for dv in ports("rfoutp")) else ["no port at rfoutp's left end"]
+    if name == "port-room":
+        named = [l for l in d["labels"] if l["net"] == "rfoutp"]
+        return [] if ports("rfoutp") and not named else ["rfoutp drawn as a name, not a port"]
+    return []
+
+
+def alone(binary, out):
+    """`blocked_by[].alone` against its definition: the deck with that line
+    alone made a comment honours the blocked line. Oracle: the decks drawn
+    again here, and by hand: at m1 2, m2 6, m3 4 break `order m1 m2 m3`
+    at m2 and m3; only freeing m3 admits it (ag-1289, a hinting trial,
+    listed 14 blockers all alone, where one was)."""
+    deck = """alone
+.model nch nmos
+M1 d1 g 0 0 nch
+M2 d2 g 0 0 nch
+M3 d3 g 0 0 nch
+R1 vdd d1 1k
+R2 vdd d2 1k
+R3 vdd d3 1k
+V1 g 0 1
+*@ order m1 m2 m3
+*@ at m1 2 10
+*@ at m2 6 10
+*@ at m3 4 10
+"""
+    def request(text, line):
+        cir, r, j = [out / ("alone" + ext) for ext in (".cir", ".report.json", ".json")]
+        cir.write_text(text)
+        subprocess.run([binary, "--report", r, cir, j], check=True)
+        return next(q for q in json.loads(r.read_text())["requests"] if q["line"] == line)
+    got = [(b["line"], b["alone"]) for b in request(deck, 10)["blocked_by"]]
+    bad = [] if got == [(11, False), (12, False), (13, True)] else [f"alone: got {got}"]
+    lines = deck.split("\n")
+    for b, said in got:
+        freed = "\n".join("*" if k == b - 1 else l for k, l in enumerate(lines))
+        if (request(freed, 10)["state"] == "honoured") != said:
+            bad.append(f"alone: line {b} said {said}")
+    return bad
+
+
+def unmoved(binary, out):
+    """A strong `at` on the place a device holds moves nothing (relay.6).
+    Oracle: the drawing of the deck plus its own `--decisions 4`, each
+    `weak at` made strong in turn: every device stands where it did
+    (ag-1350, a hinting trial: one moved four others)."""
+    cir = AG / "ag-1350.cir"
+    base, lines = out / "unmoved.json", out / "unmoved.lines"
+    subprocess.run([binary, "--decisions", "4", cir, base], check=True, stdout=lines.open("w"))
+    pos = lambda path: {dv["name"]: (dv["pos"], dv["rot"], dv["mirror"]) for dv in json.loads(path.read_text())["devices"]}
+    want = pos(base)
+    stays = [l for l in lines.read_text().splitlines() if l.startswith("*@ weak at ")]
+    bad = []
+    for stay in stays:
+        deck = out / "unmoved.cir"
+        deck.write_text(cir.read_text() + "\n".join(l if l != stay else l.replace("weak ", "") for l in lines.read_text().splitlines()) + "\n*@ grouping off\n")
+        got = out / "unmoved.got.json"
+        subprocess.run([binary, deck, got], check=True)
+        moved = sorted(k for k, v in pos(got).items() if want.get(k) != v)
+        if moved:
+            bad.append(f"strong {stay[11:]} moved {moved}")
+    return bad
 
 
 def main():
@@ -129,15 +290,21 @@ def main():
     args = parser.parse_args()
     args.out.mkdir(parents=True, exist_ok=True)
     bad = []
-    for name, deck, want, *only in CASES:
+    for name, deck, want, *only in CASES + [(n, f(), w, *o) for n, f, w, *o in CORPUS]:
         cir, r, j = [args.out / (name + ext) for ext in (".cir", ".report.json", ".json")]
         cir.write_text(deck)
         subprocess.run([args.binary, "--report", r, cir, j], check=True)
         got = [(q["line"], q["text"], q["state"], q["code"], q.get("name"))
                for q in json.loads(r.read_text())["requests"] if q["text"].startswith(tuple(only) or "")]
-        if got != want:
+        faults = drawn_checks(name, json.loads(j.read_text()))
+        if got != want or faults:
             bad.append(name)
-            print(f"{name}:\n  want {want}\n  got  {got}")
+            print(f"{name}:\n  want {want}\n  got  {got}\n  {faults}")
+    for check in (alone, unmoved):
+        faults = check(args.binary, args.out)
+        if faults:
+            bad.append(check.__name__)
+            print(f"{check.__name__}: {faults}")
     if bad:
         raise SystemExit(f"hint reports wrong: {bad}")
 

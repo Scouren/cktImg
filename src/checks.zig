@@ -28,10 +28,12 @@
 //!   device's origin, or above or below the other end of its path: the
 //!   meaning the report holds each honoured line to. `drawnAs`
 //! - checks.7 (choice) `label` holds when the net has a name written or no
-//!   wire, `wire` when the named devices' pins on the net are one piece by
-//!   wires alone, `port` when a port symbol on the net stands past all its
-//!   devices' pins on that side: the meaning the report holds each honoured
-//!   line to. `drawnAs`
+//!   wire, `wire` when the circuit's shown pins on the net (no hidden body,
+//!   no driver drawn apart) are one piece by wires alone, `port` when a
+//!   port symbol on the net stands at or past every such pin on that side,
+//!   `hang` when the part, on the named pin's net, has a pin within two
+//!   units of that pin: the meaning the report holds each honoured line
+//!   to. `drawnAs`
 //! - checks.8 (choice) `at` holds when the device's origin (and turn) is
 //!   the one asked, `route` and `via` when every point asked (and for
 //!   `route`, every point between them) lies on the net's wires: the
@@ -48,7 +50,7 @@
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
 //! - `pub fn wireRays`
 //! - `pub fn ways(p: *const Placed, n: usize, at: Pt) u4`, `pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt`
-//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
+//! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, lib: *const Library, drawn: []const bool) ?bool`
 //! - `pub fn stackStep(p: *const Placed, nl: *const Netlist, upper: []const u8, lower: []const u8) bool`
 //! - `pub fn deviceIn(p: *const Placed, name: []const u8) ?usize`
 
@@ -286,9 +288,12 @@ pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt {
 /// drawing alone (y grows down): `row` one y, `above` y increasing,
 /// `column` that on one x, `order` x increasing, `stack` in written top-to-bottom order, `face` the pin on that side of its device or its other
 /// end, `label` a name on the net and `wire` none, `port` a port symbol
-/// past the net's pins on that side. Null for a line the drawing cannot
-/// show (a group, the symmetry).
-pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool {
+/// at or past the net's pins on that side (checks.7). `lib` is the library
+/// `p` was drawn with, `drawn` the skeleton's per netlist device: which
+/// pins a net line is judged by. Null for a line the drawing cannot show
+/// (a group, the symmetry).
+pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, lib: *const Library, drawn: []const bool) ?bool {
+    const unit = lib.unit;
     switch (h.verb) {
         .stack => {
             if (h.args.len < 2) return false;
@@ -340,21 +345,24 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
         },
         .wire => {
             const net = netIn(p, h.args[0]) orelse return false;
-            if (!wired(p, net)) return false;
+            if (!wired(p, nl, lib, drawn, net)) return false;
             const top = h.args.len == 2 and std.mem.eql(u8, h.args[1], "over");
             if (!top and !(h.args.len == 2 and std.mem.eql(u8, h.args[1], "under"))) return true;
             // `over`, `under`: a point of the wire past every device's pins.
             var edge: i32 = if (top) std.math.maxInt(i32) else std.math.minInt(i32);
             for (0..p.deviceCount()) |d| {
-                if (p.dev_name[d].len == 0) continue;
                 const a, const b = p.pinRange(d);
-                for (p.pin_xy[a..b]) |q| edge = if (top) @min(edge, q.y) else @max(edge, q.y);
+                for (a..b) |pin| if (judged(p, nl, lib, drawn, d, pin)) {
+                    edge = if (top) @min(edge, p.pin_xy[pin].y) else @max(edge, p.pin_xy[pin].y);
+                };
             }
             var it = p.segments(net);
             while (it.next()) |poly| for (poly) |q| if (if (top) q.y < edge else q.y > edge) return true;
             return false;
         },
-        // A pin of the part on the named pin's net, within two units of it.
+        // The part on the named pin's net, a pin of it within two units of
+        // that pin: an upright part beside a gate stands a row lower,
+        // its nearer end there (anchored.3).
         .hang => {
             if (h.args.len != 2) return null;
             const dot = std.mem.lastIndexOfScalar(u8, h.args[1], '.') orelse return false;
@@ -365,21 +373,23 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             const at = p.pin_xy[lo + k];
             const part = deviceIn(p, h.args[0]) orelse return false;
             const a, const b = p.pinRange(part);
-            for (a..b) |q| if (p.pin_net[q] == p.pin_net[lo + k] and
-                @abs(p.pin_xy[q].x - at.x) <= 2 * unit and @abs(p.pin_xy[q].y - at.y) <= 2 * unit) return true;
+            const on = for (a..b) |q| {
+                if (p.pin_net[q] == p.pin_net[lo + k]) break true;
+            } else false;
+            for (p.pin_xy[a..b]) |q| if (on and @abs(q.x - at.x) <= 2 * unit and @abs(q.y - at.y) <= 2 * unit) return true;
             return false;
         },
         .port => {
             if (h.args.len != 2) return null;
             const net = netIn(p, h.args[0]) orelse return false;
-            // A port symbol (an unnamed one-pin device) on the net past
-            // every pin of it the circuit's devices hold.
+            // A port symbol (an unnamed one-pin device) on the net at or
+            // past every pin of it the circuit's devices show: at the
+            // net's end on that side, or beyond it.
             var lo: Pt = .{ .x = std.math.maxInt(i32), .y = std.math.maxInt(i32) };
             var hi: Pt = .{ .x = std.math.minInt(i32), .y = std.math.minInt(i32) };
             for (0..p.deviceCount()) |d| {
                 const a, const b = p.pinRange(d);
-                if (p.dev_name[d].len == 0) continue;
-                for (a..b) |pin| if (p.pin_net[pin] == net) {
+                for (a..b) |pin| if (p.pin_net[pin] == net and judged(p, nl, lib, drawn, d, pin)) {
                     lo = .{ .x = @min(lo.x, p.pin_xy[pin].x), .y = @min(lo.y, p.pin_xy[pin].y) };
                     hi = .{ .x = @max(hi.x, p.pin_xy[pin].x), .y = @max(hi.y, p.pin_xy[pin].y) };
                 };
@@ -390,10 +400,10 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
                 if (p.dev_name[d].len != 0 or b - a != 1 or p.pin_net[a] != net) continue;
                 const at = p.dev_pos[d];
                 const past = switch (side) {
-                    .left => at.x < lo.x,
-                    .right => at.x > hi.x,
-                    .up => at.y < lo.y,
-                    .down => at.y > hi.y,
+                    .left => at.x <= lo.x,
+                    .right => at.x >= hi.x,
+                    .up => at.y <= lo.y,
+                    .down => at.y >= hi.y,
                 };
                 if (past) return true;
             }
@@ -476,9 +486,10 @@ fn scaled(words: []const []const u8, unit: i32, buf: []Pt) ?[]const Pt {
     return buf[0..n];
 }
 
-/// Whether the named devices' pins on `net` are one piece by its wires
-/// alone (names aside). ponytail: a pin against every wire end, quadratic.
-fn wired(p: *const Placed, net: u32) bool {
+/// Whether the pins on `net` a `wire` line judges (`judged`) are one piece
+/// by its wires alone (names aside). ponytail: a pin against every wire
+/// end, quadratic.
+fn wired(p: *const Placed, nl: *const Netlist, lib: *const Library, drawn: []const bool, net: u32) bool {
     var buf: [256]Pt = undefined;
     var group: [256]u16 = undefined;
     var n: usize = 0;
@@ -512,17 +523,15 @@ fn wired(p: *const Placed, net: u32) bool {
     // One pin, or none, is joined already.
     var count: usize = 0;
     for (0..p.deviceCount()) |d| {
-        if (p.dev_name[d].len == 0) continue;
         const a, const b = p.pinRange(d);
-        for (a..b) |pin| count += @intFromBool(p.pin_net[pin] == net);
+        for (a..b) |pin| count += @intFromBool(p.pin_net[pin] == net and judged(p, nl, lib, drawn, d, pin));
     }
     if (count <= 1) return true;
     var piece: ?u16 = null;
     for (0..p.deviceCount()) |d| {
-        if (p.dev_name[d].len == 0) continue;
         const a, const b = p.pinRange(d);
         for (a..b) |pin| {
-            if (p.pin_net[pin] != net) continue;
+            if (p.pin_net[pin] != net or !judged(p, nl, lib, drawn, d, pin)) continue;
             const g = for (0..n) |k| {
                 if (buf[k].eql(p.pin_xy[pin])) break group[k];
             } else return false;
@@ -531,6 +540,20 @@ fn wired(p: *const Placed, net: u32) bool {
         }
     }
     return true;
+}
+
+/// Whether pin `pin` of device `d` is one a net line is judged by: a pin
+/// its symbol shows (a hidden MOS body, a dependent source's control pair
+/// takes no wire) of a device of the circuit, which `drawn` (by the
+/// netlist's device) says is laid in it; a driver drawn apart is not, nor
+/// a rail or port symbol.
+fn judged(p: *const Placed, nl: *const Netlist, lib: *const Library, drawn: []const bool, d: usize, pin: usize) bool {
+    const lo, const hi = p.pinRange(d);
+    assert(pin >= lo and pin < hi);
+    if (p.dev_name[d].len == 0 or !lib.at(p.dev_class[d]).shows(pin - lo)) return false;
+    const e = nl.device(p.dev_name[d]) orelse return true;
+    assert(e.index() < drawn.len);
+    return drawn[e.index()];
 }
 
 fn netIn(p: *const Placed, name: []const u8) ?u32 {

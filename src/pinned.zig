@@ -51,7 +51,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, unit: i32, drawn: []const bool
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .at) continue;
-        verdicts[i] = .of(code: {
+        const code: hints.Code = code: {
             if (h.args.len != 3 and h.args.len != 4) break :code .bad_args;
             const d = (nl.device(h.args[0]) orelse break :code .unknown_name).index();
             if (!drawn[d]) break :code .not_placeable;
@@ -62,7 +62,9 @@ pub fn read(arena: Allocator, nl: *const Netlist, unit: i32, drawn: []const bool
             const u: f64 = @floatFromInt(unit);
             out[d] = .{ .origin = .{ .x = @intFromFloat(@round(x.? * u)), .y = @intFromFloat(@round(y.? * u)) }, .orient = o, .line = @intCast(i), .weak = h.weak };
             break :code .ok;
-        });
+        };
+        // A device not drawn in the circuit (a driver apart): its name.
+        verdicts[i] = if (code == .not_placeable) .at(code, 0) else .of(code);
     }
     return out;
 }

@@ -261,6 +261,8 @@ pub fn build(b: *std.Build) void {
     hint_reports.addFileArg(b.path("tests/hint_reports.py"));
     hint_reports.addArtifactArg(json_exe);
     _ = hint_reports.addOutputDirectoryArg("hint-reports");
+    for ([_][]const u8{ "ag-1108", "ag-1350", "ag-2500" }) |id|
+        hint_reports.addFileInput(b.path(b.fmt("external/examples/analoggenie/{s}.cir", .{id})));
     test_step.dependOn(&hint_reports.step);
 
     const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
