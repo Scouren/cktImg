@@ -524,6 +524,8 @@ test {
     _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");
     _ = @import("hint_columns.zig");
+    _ = @import("block_turns.zig");
+    _ = @import("stages.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
     _ = @import("driven_banks.zig");
