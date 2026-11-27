@@ -106,6 +106,17 @@ the size cap below are the open follow-ups.
   one wire (ag-1067 `a0`: 3 ports -> 1, crossings 11 -> 16). `metrics.ported` lists nets drawn as
   two or more ports. `wire <net> column` is not built: `wire` already draws it. Corpus numbers
   unmeasured. `netlist-import.wasm` 684,239 -> 689,025 bytes.
+- Block and pin hints (`feat/hint-block-pins`): taken because four hinting agents found every
+  relation on an `X` block refused and three wanted a part hung from a pin. `row` and `above` now
+  place blocks and flat parts by the line's anchor, its first upright device or block (ar-3201
+  `above r5 x1 r4` and ag-1094 `above r8 c9 x1 r10 c10`, both rejected before, draw the feedback
+  parts over and under the block; ag-1094 bends 38 -> 29). `*@ hang <part> <dev>.<pin>` hangs a
+  part under, over or beside that pin (ag-1108: four `hang` lines draw what 26 `cell` lines did;
+  ag-1094 `hang c3 m5.g` crossings 8 -> 5). `*@ wire <net> over|under` runs the net past every
+  symbol without coordinates (ag-2323 `wire fb under` 9/19 -> 5/16, where a hand `route` gave
+  5/18). Auto-expanding passive-only subcircuits was measured on the 38 corpus decks that have
+  one (crossings fall in 16, rise in 10) and not taken. Tests 604/604. Corpus numbers unmeasured.
+  `netlist-import.wasm` 689,025 -> 693,741 bytes.
 
 ### Changed
 
