@@ -182,6 +182,15 @@ the size cap below are the open follow-ups.
   manifest key `<class>:<model>` (`nmos:nfet_01v8`) maps a device of that class and model before
   the plain `<class>` key; the model is the M/Q/D/J/Z card's model, an R/C card's model word, or a
   PDK X master drawn as a primitive, matched lowercased. Tool only: the guest is unchanged.
+- Route glyphs (`fix/route-glyphs`): taken because four Fable agents found wires grazing rail
+  symbols, `wire over|under` runs left dangling, and loops in one net, all with `gates` empty. A
+  rail symbol registers its box plus a unit as a keep-out for the canvas and the maze; each pin of
+  an over/under net routes to the run, which is trimmed to its outer taps; a trunk whose tap lines
+  would close a loop is refused. New gates `glyph_touch`, `dangling_end`, `net_loop`. On the
+  5,274 decks: wires touching a rail symbol 276 (230 drawings) -> 0, loops 36 -> 5 (not trunks;
+  open), dangling ends 0. 302 drawings change: crossings worse 11, better 8; bends worse 35,
+  better 23. Block-outline wires and side-trunk columns remain. `netlist-import.wasm`
+  716,402 -> 734,708 bytes.
 
 ### Changed
 
