@@ -103,7 +103,9 @@ Work down this list. Stop at the first round whose picture meets the target.
    their inputs come from. Turning a bias gate away from its mate needs
    `label <net>` with it, or one port is wired round. `face <part> <pin>
    left|right` turns a flat part end for end; its mate needs a line of its
-   own.
+   own. A pass MOS between two columns (a transmission gate, a MOS used as
+   a resistor) lies flat with `bridge <mos>`; `face <mos> g up|down` turns
+   its gate, and `above m1 m2` stacks two flat ones in one channel.
 
 7. **`group stack <upper> <lower>`** names members from top to bottom. For
    a pair in series, put their shared conduction terminals in the same
@@ -176,6 +178,6 @@ complaint open.
 | you want | reach for |
 |---|---|
 | A part level with a gate, or hung from a pin between two rows; a bias chain off a coupling cap (`hang c3 m5.g`, then `hang r1 c3.b`); a part by a block's port | `hang <part> <dev>.<pin>` |
-| A mirror about a device that swaps two of its pins | cells, mirrored by hand |
+| A mirror about a device that swaps two of its pins (other than a MOS's drain and source, which `symmetric` trades) | cells, mirrored by hand |
 
 A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.

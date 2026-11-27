@@ -208,6 +208,8 @@ const Pins = struct {
     pin: []symmetry.Pin,
     /// Cold automatic requests, tried only after caller admission.
     preference: []const [2]EdgeId = &.{},
+    /// Whether a MOS may trade its drain and source (symmetry.8).
+    ends: symmetry.Ends = .kept,
     device_mate: []u32,
     net_mate: []u32,
 
@@ -216,7 +218,7 @@ const Pins = struct {
         defer pins.deinit(p.gpa);
         for (lines) |i| try pins.append(p.gpa, p.pin[i]);
         for (p.preference) |pair| try pins.append(p.gpa, .{ .net = false, .a = pair[0].index(), .b = pair[1].index() });
-        return symmetry.find(p.gpa, p.nl, p.roles, p.device_rank, p.net_rank, pins.items, p.device_mate, p.net_mate);
+        return symmetry.find(p.gpa, p.nl, p.roles, p.device_rank, p.net_rank, pins.items, p.ends, p.device_mate, p.net_mate);
     }
 };
 
@@ -612,7 +614,7 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
         off = off orelse i;
         verdicts[i] = .of(.ok);
     };
-    const check: Pins = .{ .gpa = gpa, .nl = nl, .roles = roles, .device_rank = device_rank, .net_rank = net_rank, .pin = try arena.alloc(symmetry.Pin, nl.hints.len), .device_mate = device_mate, .net_mate = net_mate };
+    var check: Pins = .{ .gpa = gpa, .nl = nl, .roles = roles, .device_rank = device_rank, .net_rank = net_rank, .pin = try arena.alloc(symmetry.Pin, nl.hints.len), .device_mate = device_mate, .net_mate = net_mate };
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
     for (order) |i| {
@@ -630,6 +632,17 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
         if (try check.holds(admitted.items)) {
             verdicts[i] = .of(.ok);
             continue;
+        }
+        // A MOS channel conducts either way (symmetry.8): once a line
+        // needs it, the lines after it may trade ends too.
+        if (check.ends == .kept) {
+            var free = check;
+            free.ends = .mos_free;
+            if (try free.holds(admitted.items)) {
+                check = free;
+                verdicts[i] = .of(.ok);
+                continue;
+            }
         }
         _ = admitted.pop();
         var v = try hints.conflict(gpa, arena, check, admitted.items, i, .conflict);

@@ -594,7 +594,7 @@ fn orientAll(s: *Schematic, nl: *const Netlist, st: *const Structure, sk: *const
         const gate_side = if (vertical) null else if (clamp) |m|
             (if (sk.y[d] < sk.y[m]) Side.up else Side.down)
         else
-            controlSide(nl, s.roles, sk, @intCast(d));
+            lineGateSide(nl, sk, @intCast(d)) orelse controlSide(nl, s.roles, sk, @intCast(d));
         for (flips) |f| {
             if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical, gate_side, clamp)) continue;
             info.items(.flip_x)[d] = f[0];
@@ -623,6 +623,27 @@ fn orientAll(s: *Schematic, nl: *const Netlist, st: *const Structure, sk: *const
         sch.settleDevice(s, c, @intCast(d));
         if (s.pinSide(@intCast(d), pin) != .up or !sch.alignPin(s, c, @intCast(d), pin)) s.devices.set(d, before);
     }
+}
+
+/// The side an honoured `face <d> g up|down` line turns flat MOS `d`'s
+/// gate to (relations.4): the preferred line, as `hints.admitOrder` ranks
+/// them, strong first, then the later line.
+fn lineGateSide(nl: *const Netlist, sk: *const Skeleton, d: u32) ?Side {
+    assert(sk.verdicts.len == nl.hints.len);
+    if (nl.graph.edges.items(.kind)[d] != .mosfet) return null;
+    for ([_]bool{ false, true }) |weak| {
+        var i = nl.hints.len;
+        while (i > 0) {
+            i -= 1;
+            const h = nl.hints[i];
+            if (h.weak != weak or h.verb != .face or h.args.len != 3) continue;
+            const v = sk.verdicts[i] orelse continue;
+            if (v.state != .honoured or nl.device(h.args[0]).?.index() != d) continue;
+            const side = h.verb.side(Side, h.args[2]) orelse continue;
+            if (!side.isHorizontal()) return side;
+        }
+    }
+    return null;
 }
 
 /// Turns each drawn block a `face <block> <port> <side>` line names
