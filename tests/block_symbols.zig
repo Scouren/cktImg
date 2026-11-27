@@ -74,8 +74,9 @@ test "block glyphs: textbook amplifiers and gates retain every ordered SPICE por
 }
 
 test "block glyphs: side directives and caller symbols win; ambiguous contracts stay boxes" {
-    // Oracle: explicit drawing instructions outrank name recognition; the extra
-    // extra control port of AG1677 and the custom blocks of AG1070 stay visible.
+    // Oracle: explicit drawing instructions outrank name recognition (a side
+    // directive's port is on that side, a glyph turned to fit it); the extra
+    // control port of AG1677 and the custom blocks of AG1070 stay visible.
     const decks = [_][]const u8{
         "t\n.subckt opamp VDD VSS VIP VIN VOUT\n*@ right VIP\n.ends\n",
         "t\n.subckt opamp VDD VSS VIP VIN VOUT VA\n.ends\n",
@@ -109,7 +110,7 @@ test "block glyphs: side directives and caller symbols win; ambiguous contracts 
         var lib: np.Library = .init(testing.allocator);
         defer lib.deinit();
         const c = lib.at(try lib.blockFor(&nl.defs[0]));
-        try testing.expect(!diagonal(c));
+        try testing.expect(std.mem.indexOf(u8, text, "*@") != null or !diagonal(c));
         try testing.expectEqual(nl.defs[0].ports.len, c.terminals.len);
         if (k == 0) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
         if (std.mem.indexOf(u8, text, "*@ right INN") != null) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
@@ -278,14 +279,15 @@ test "seven extended source blocks draw the declared leads of their signed trian
         defer own.deinit();
         const custom = try own.register(.{ .name = def.name, .terminals = glyph.terminals });
         try t.expectEqual(custom, try own.blockFor(def));
-        // A side request on the exact same declaration also wins.
+        // A side request on the exact same declaration also wins: the glyph
+        // turns or mirrors to put the port there (library.3).
         const hint = try std.fmt.allocPrint(a, "AG{d}\n.subckt {s} {s}\n*@ right {s}\n.ends\n", .{ c[0], c[1], c[2], def.ports[0] });
         var explicit = try np.netlist.parse(t.allocator, &.{hint}, null);
         defer explicit.deinit(t.allocator);
         var geometry = np.Library.init(t.allocator);
         defer geometry.deinit();
         const block = geometry.at(try geometry.blockFor(&explicit.defs[0]));
-        try t.expect(!diagonal(block));
+        try t.expect(diagonal(block));
         try t.expectEqual(np.Side.right, block.side(0, .r0).?);
         total += glyph.terminals.len;
     }

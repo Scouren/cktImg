@@ -21,6 +21,9 @@
 //!   no wire of its net leaves; with none clear it keeps its side.
 //!   `settleLabels`
 //!
+//! - text_overlaps.3 (choice) Two texts of one symbol (a block's title
+//!   and a port's name) lie clear of each other. `find`
+//!
 //! Contents:
 //! - `pub const Over = enum`, `pub const Of = enum`, `pub const Overlap = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Overlap), p: *const Placed, lib: *const Library) Allocator.Error!void`
@@ -39,8 +42,9 @@ const Side = library.Side;
 const Library = library.Library;
 const Placed = placed.Placed;
 
-/// What a name is the name of.
-pub const Of = enum { device, port, rail, label };
+/// What a name is the name of; `symbol` is a symbol's own text (a block's
+/// title, a port's name on it).
+pub const Of = enum { device, port, rail, label, symbol };
 /// What a name lies on.
 pub const Over = enum { symbol, text, wire };
 
@@ -107,6 +111,7 @@ pub fn find(gpa: Allocator, out: *std.ArrayList(Overlap), p: *const Placed, lib:
             try out.append(gpa, t.over(.wire, p.net_name[w.net], p));
         }
     }
+    try symbolTexts(gpa, out, p, lib);
     assert(out.items.len >= before);
 }
 
@@ -158,6 +163,26 @@ fn collect(gpa: Allocator, names: *std.ArrayList(Name), p: *const Placed, lib: *
         };
         try names.append(gpa, .{ .of = of, .box = t.box, .dev = t.dev, .net = t.net });
     }
+}
+
+/// Appends a finding for each two texts of one symbol that lie on each
+/// other (text_overlaps.3), boxes by `library.symbolTextRect`.
+fn symbolTexts(gpa: Allocator, out: *std.ArrayList(Overlap), p: *const Placed, lib: *const Library) Allocator.Error!void {
+    for (0..p.deviceCount()) |d| {
+        const ops = lib.at(p.dev_class[d]).draw;
+        for (ops, 0..) |a, i| {
+            if (a != .text) continue;
+            const box = textBox(p, d, a.text).grow(-1);
+            for (ops[i + 1 ..]) |b| {
+                if (b != .text or !box.intersects(textBox(p, d, b.text).grow(-1))) continue;
+                try out.append(gpa, .{ .of = .symbol, .text = a.text.s, .box = box.grow(1), .over = .text, .other = b.text.s });
+            }
+        }
+    }
+}
+
+fn textBox(p: *const Placed, d: usize, t: @FieldType(library.DrawOp, "text")) Rect {
+    return library.symbolTextRect(p.dev_orient[d].apply(t.at).add(p.dev_pos[d]), t.s, t.size);
 }
 
 /// A device's name, or for a rail or port the layout added, its net's.

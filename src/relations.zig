@@ -43,7 +43,8 @@
 //!   that side. `faces`
 //!   Narrowing: a flat part by its pin count, as `sketch.fits` turns it;
 //!   the device model's flat part also takes a four-pin switch and leaves
-//!   out a two-port box.
+//!   out a two-port box. On a block, `face <block> <port>
+//!   left|right|up|down` puts that port on that side (`sketch.orientAll`).
 //! - relations.13 (invariant) Each upright device a `column` line names
 //!   stands in one column with the next, directly above it, whether or not
 //!   the two share a net (devices in parallel too); a device stands
@@ -244,6 +245,7 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
             verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
+        if (c.edges.items(.kind)[d] == .subckt and drawn[d] and form[d] != .vertical) continue; // a block's turn: `faces`
         if (!drawn[d] or form[d] != .vertical) {
             verdicts[i] = .of(.not_placeable);
             continue;
@@ -400,7 +402,8 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
 /// `face <dev> <side pin> left|right`: a transistor's gate (or base) side;
 /// on a mated pair, the mate turns the other way unless a line names it.
 /// On a flat part, the end named stands on that side (`left_end`); its mate
-/// is not turned with it. Returns false when a line turned a mated pair's
+/// is not turned with it. On a block, the line is only admitted here
+/// (any side): `sketch.orientAll` turns the block. Returns false when a line turned a mated pair's
 /// gates out of their mirror.
 pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, left_end: []skeleton.End, verdicts: []?Verdict) Allocator.Error!bool {
     const before = try arena.dupe(bool, gate_right);
@@ -418,18 +421,23 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         }
         const side = h.verb.side(Side, h.args[2]);
         const right = side == .right;
-        if (!right and side != .left) {
-            verdicts[i] = .of(.bad_args);
-            continue;
-        }
         const d = (nl.device(h.args[0]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
+        if (side == null or (!right and side != .left and kinds[d] != .subckt)) {
+            verdicts[i] = .of(.bad_args);
+            continue;
+        }
         const pin = pinIndex(nl, d, h.args[1]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         };
+        // A block: the named port on any side; `sketch.orientAll` turns it.
+        if (drawn[d] and kinds[d] == .subckt) {
+            verdicts[i] = .of(.ok);
+            continue;
+        }
         // A flat part: one of its two ends on that side. Narrowing: by its
         // pin count, as `sketch.fits` turns it; the device model's flat part
         // (`device.isPart`, an end of its path) also takes a four-pin switch
@@ -462,12 +470,15 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
 }
 
 /// Pin `word` of device `d`: a terminal name of its kind (`d g s b`, `c b
-/// e`, `a b` for two pins, `p n` for a source, or the pin's number from 1),
-/// or a net it touches.
+/// e`, `a b` for two pins, `p n` for a source, a block's port), or the
+/// pin's number from 1, or a net it touches.
 pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32 {
     const c = &nl.graph;
     const pins = c.members(EdgeId.from(d));
     for (device.of(c.edges.items(.kind)[d]).names, 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
+    if (nl.defOf(EdgeId.from(d))) |def| for (def.ports, 0..) |port, k| {
+        if (k < pins.len and std.ascii.eqlIgnoreCase(port, word)) return @intCast(k);
+    };
     if (hints.int(word)) |k| if (k >= 1 and k <= pins.len) return @intCast(k - 1);
     const net = nl.net(word) orelse return null;
     for (pins, 0..) |p, k| if (p == net) return @intCast(k);
