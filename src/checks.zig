@@ -314,8 +314,9 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             const o = p.dev_pos[d];
             const dir = h.verb.side(Side, h.args[2]) orelse return false;
             if (dir.isHorizontal()) return if (dir == .left) at.x < o.x else at.x > o.x;
-            // An end: above or below the other end of its path; a box has none.
-            const path = device.of(nl.graph.edges.items(.kind)[e]).path orelse return false;
+            // An end: above or below the other end of its path; a block's
+            // port, above or below its origin.
+            const path = device.of(nl.graph.edges.items(.kind)[e]).path orelse return if (dir == .up) at.y < o.y else at.y > o.y;
             const other: u32 = path[@intFromBool(pin == path[0])];
             if (lo + other >= hi) return false;
             const there = p.pin_xy[lo + other];

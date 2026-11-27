@@ -115,6 +115,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    parts over and under the block, and `above <block> <block>` stacks two.
    A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
+   Turn or mirror a block in the parent with `face <block> <port>
+   left|right|up|down` (`face x2 n1 right`), not `at ... MR0`; on a
+   `symmetric` pair of blocks the second is drawn mirrored. Child side
+   lines keep a recognised glyph (amplifier triangle, centre tap), turned
+   or mirrored, when one of its turns puts every named port on its side in
+   the line's order (`*@ left vip vin` puts vip above vin); else the block
+   is drawn as a box.
 
 10. **`rail <supply> each`** when a wire must pass over the top, or when the
    bar joins only two pins (its two end corners go).
