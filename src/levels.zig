@@ -39,9 +39,19 @@
 //!   longest path alone. `rows`
 //!   Narrowing: a part with two pins on its card or a dependent source
 //!   (`isFoot`); a switch and a three-pin diode keep their row.
+//! - levels.11 (choice) A transistor of a `stage` line's unit drops, by
+//!   levels.9, only to its type's lowest row among its own unit's: a unit
+//!   is laid as a drawing of its own, so a `row` line can level units
+//!   (units.2). The rest drop as before. `rows`
+//! - levels.12 (choice) A device standing on another (levels.1) through a
+//!   device a `row` line holds level with others yields to mates and
+//!   blocks standing level (levels.7, levels.8): the line moved a
+//!   neighbour, not the pair (ag-2500 `row m3 cm2` dropped m6 under m3's
+//!   row). A `row` takes the lowest row any of its devices needs; it never
+//!   raises one. `rows`
 //!
 //! Contents:
-//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
+//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, unit: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -53,6 +63,7 @@ const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
 const forms = @import("forms.zig");
 const relations = @import("relations.zig");
+const units = @import("units.zig");
 const sch = @import("schematic.zig");
 
 const Netlist = netlist.Netlist;
@@ -71,11 +82,12 @@ const isRail = Role.isRail;
 /// merging mates and blocks (where that closes no cycle); then each type's
 /// transistors on ground drop to that type's lowest level among them, and
 /// a part on ground with nothing over it hangs under the net it joins.
-/// `below` is each device's next in its column, or `none`.
-pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
+/// `below` is each device's next in its column, or `none`; `unit` each
+/// device's stage line, or `units.alone` (`units.read`).
+pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, unit: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
     const c = &nl.graph;
     const n = c.edgeCount();
-    assert(mate.len == n and below.len == n);
+    assert(mate.len == n and below.len == n and unit.len == n);
     assert(roles.len == c.vertexCount());
     const kinds = c.edges.items(.kind);
     // Edges: u above l where u's lower end is l's upper end.
@@ -145,6 +157,23 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         kept += 1;
     };
     edges.shrinkRetainingCapacity(kept);
+    // A device standing on another through a device a `row` line holds
+    // level with others yields to mates and blocks (levels.12): set aside.
+    var held: std.ArrayList([2]u32) = .empty;
+    defer held.deinit(gpa);
+    kept = 0;
+    for (edges.items) |e| {
+        const line = below[e[0]] == e[1] or for (rel.edges) |r| {
+            if (r[0] == e[0] and r[1] == e[1]) break true;
+        } else false;
+        if (!line and (shared(rel, e[0]) or shared(rel, e[1]))) {
+            try held.append(gpa, e);
+            continue;
+        }
+        edges.items[kept] = e;
+        kept += 1;
+    }
+    edges.shrinkRetainingCapacity(kept);
     // Equalities: mates first, then blocks, each kept if it closes no cycle.
     for (mate, 0..) |m, d| if (m != none and m != d) try level(gpa, class, edges.items, @intCast(d), m);
     for (st.block_kind, 0..) |k, b| {
@@ -152,6 +181,8 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         const ms = st.members(b);
         for (ms[1..]) |d| if (drawn[d] and drawn[ms[0]] and form[d] == .vertical and form[ms[0]] == .vertical) try level(gpa, class, edges.items, ms[0], d);
     }
+    // The set-aside edges back, each that still closes no cycle.
+    for (held.items) |e| if (find(class, e[0]) != find(class, e[1]) and !try reaches(gpa, class, edges.items, e[1], e[0])) try edges.append(gpa, e);
 
     // Longest path over the classes, now free of loops.
     const rank = try gpa.alloc(u32, n);
@@ -191,7 +222,15 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             const all = for (0..n) |e| {
                 if (find(class, @intCast(e)) == k and !onGround(nl, roles, kinds, drawn, form, lower, e, pol)) break false;
             } else true;
-            if (all) rank[d] = low;
+            // A stage's own: its lowest among its members (levels.11).
+            var own = low;
+            if (unit[d] != units.alone) {
+                own = 0;
+                for (0..n) |e| if (unit[e] == unit[d] and onGround(nl, roles, kinds, drawn, form, lower, e, pol)) {
+                    own = @max(own, before[e]);
+                };
+            }
+            if (all) rank[d] = own;
         }
     }
     // A part on ground with nothing over it hangs under its net: a row
@@ -289,6 +328,12 @@ fn level(gpa: Allocator, class: []u32, edges: []const [2]u32, a: u32, b: u32) !v
     if (ka == kb) return;
     if (try reaches(gpa, class, edges, ka, kb) or try reaches(gpa, class, edges, kb, ka)) return;
     class[ka] = kb;
+}
+
+/// Whether a `row` line holds `d` level with another device.
+fn shared(rel: *const Relations, d: u32) bool {
+    for (rel.class, 0..) |_, e| if (e != d and rel.find(@intCast(e)) == rel.find(d)) return true;
+    return false;
 }
 
 fn find(class: []u32, d: u32) u32 {

@@ -3,26 +3,30 @@
 //! next one.
 //!
 //! - `gates`: every finding of `checks.find`; none is the guarantee.
-//! - `requests`: each `*@` line of the deck, by line number: honoured,
-//!   relaxed, dropped or rejected, why, and the lines that blocked it. An
-//!   honoured line the finished drawing does not show (`checks.drawnAs`) is
-//!   reported relaxed, `not_drawn`: a bug.
+//! - `text_overlaps`: every name drawn on a symbol, a name or another net's
+//!   wire (`text_overlaps.find`); not yet a guarantee, so apart from `gates`.
+//! - `requests`: each `*@` line of the deck, by its 1-based line in the
+//!   file: honoured, relaxed, dropped or rejected, why, the argument at
+//!   fault (`name`, when one of several is) and the lines that blocked it.
+//!   An honoured line the finished drawing does not show (`checks.drawnAs`)
+//!   is reported relaxed, `not_drawn`: a bug. A line a front end added (its
+//!   `Hint.line` 0) is no line of the deck, and is left out.
+//! - `unshown_bodies`: device, terminal and net of a distinct non-rail body
+//!   whose selected symbol has no B contact or marks its B hidden.
 //! - `metrics`: crossings between nets, bends, the nets drawn as names.
 //! - `decisions`: the engine's decisions as the `*@` lines that state them,
 //!   rungs 1 to 4 (cells and places as `weak` stays); a deck plus these
-//!   lines, under `*@ grouping off`, draws the same picture.
+//!   lines, under `*@ grouping off`, draws the same picture on most
+//!   circuits; one a line turns a recognised stage's placement off on
+//!   does not at rungs 2 and 3 (skills/cktimg/SKILL.md has the counts).
 //! - `grid`: the skeleton's rows, each device at its lattice column.
 //!
 //! Human Rules:
-//! - report.1 (choice) A crossing is a level wire of one net and an upright
-//!   wire of another meeting strictly inside both; a touch at an end, a T or
-//!   a bend is none: it is the measure the drawings are compared by.
-//!   `crossings`
-//! - report.2 (choice) A corner is a point with no pin on it that a net's
-//!   wire leaves exactly two ways at a right angle; a T, a net's crossing of
-//!   its own and a straight joint are none, and a trunk drawn in pieces has
-//!   its corners where two pieces end: it is the measure the drawings are
-//!   compared by. `bends`
+//! - report.1: Two distinct nets cross where nonparallel segments meet strictly
+//!   inside both segments. Opt-in diagonals can cross at half-grid points.
+//! - report.2: A corner has exactly two noncollinear wire arms of one net
+//!   and no terminal. A shared endpoint between pieces can be a corner.
+//!   `crossings`, `bends`
 //!   Both agree with the scorer the 5,263 hand-drawn reference schematics
 //!   are compared by: on 200 of its drawings, 305 crossings and 1,178
 //!   corners either way, none differing.
@@ -30,7 +34,7 @@
 //! Contents:
 //! - `pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict`
 //! - `pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, unit: i32, rung: u8) Allocator.Error![]const []const u8`
-//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void`
+//! - `pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout, given: ?[]const Verdict) !void`
 
 const std = @import("std");
 const config = @import("config.zig");
@@ -44,6 +48,9 @@ const netlist = @import("netlist.zig");
 const placed = @import("placed.zig");
 const sch = @import("schematic.zig");
 const checks = @import("checks.zig");
+const text_overlaps = @import("text_overlaps.zig");
+const wire_geometry = @import("wire_geometry.zig");
+const drawn_symmetry = @import("drawn_symmetry.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
@@ -78,8 +85,9 @@ const Lattice = struct {
 /// takes yet. Of lines setting one value (a device's gate side, a net's
 /// style, ...), the preferred stands and the rest are dropped, blocked by
 /// it. With `p`, an honoured line `p` does not show is `relaxed`:
-/// `no_room` for a `wire` or `port` that fell back to names, else
-/// `not_drawn`, a bug.
+/// `no_room` for a `wire` or `port` that fell back to names or a `face`
+/// that turned a port's pin where a name stands for it, else `not_drawn`,
+/// a bug.
 pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, sk: *const Skeleton, p: ?*const Placed, lib: ?*const Library) Allocator.Error![]const Verdict {
     assert(st.verdicts.len == nl.hints.len and sk.verdicts.len == nl.hints.len);
     const drawn = try arena.alloc(?Verdict, nl.hints.len);
@@ -117,10 +125,12 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
     }
     // What still stands, checked against the drawing. A wire or port with
     // no room falls back to names, as it may; a place, route or via a
-    // guarantee refuses is not drawn.
+    // guarantee refuses is not drawn; a stay stronger lines moved is
+    // dropped, `conflict` (which lines, the drawing cannot say).
     const drawing = p orelse return out;
+    const l = lib orelse return out;
     for (out, nl.hints) |*v, h| {
-        if (v.state != .honoured or checks.drawnAs(drawing, nl, h, unit) != false) continue;
+        if (v.state != .honoured or h.verb == .stack or checks.drawnAs(drawing, nl, h, l, sk.drawn) != false) continue;
         // A cell or place on one of its devices is the more exact line: it
         // stands, and this one gives way to it.
         if (try placedBy(arena, nl, out, h)) |by| {
@@ -129,12 +139,36 @@ pub fn verdicts(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *
         }
         v.* = switch (h.verb) {
             .wire, .port => .{ .state = .relaxed, .code = .no_room },
-            .at, .route, .via => .{ .state = .dropped, .code = .guarantee },
+            // A stay gives way to stronger lines, whichever they are; an
+            // exact place, route or via only to a guarantee.
+            .at => .{ .state = .dropped, .code = if (h.weak) .conflict else .guarantee },
+            .route, .via => .{ .state = .dropped, .code = .guarantee },
             else => .{ .state = .relaxed, .code = .not_drawn },
         };
     }
+    // A pin turned where its port had no room: a name stands on it instead.
+    for (out, nl.hints) |*v, h| {
+        if (v.state == .honoured and h.verb == .face and portNamed(drawing, nl, roles, h)) v.* = .{ .state = .relaxed, .code = .no_room };
+    }
+    // A later exact pose may break an admitted symmetry. Check the finished
+    // poses first, so a discarded weak stay can never become a blocker.
+    const has_symmetry = for (nl.hints, out) |h, v| {
+        if (v.state == .honoured and (h.verb == .axis or h.verb == .symmetric)) break true;
+    } else false;
+    const axis = if (has_symmetry) drawn_symmetry.plane(nl, st, sk, drawing) else null;
+    for (nl.hints, out) |h, *v| {
+        if (v.state != .honoured) continue;
+        switch (h.verb) {
+            .stack => if (checks.drawnAs(drawing, nl, h, l, sk.drawn) != false) continue,
+            .axis, .symmetric => if (nl.device(h.args[0]) == null or drawn_symmetry.shows(drawing, h, axis)) continue,
+            else => continue,
+        }
+        v.* = if (try placedBy(arena, nl, out, h)) |by|
+            try .blocked(arena, .dropped, .conflict, by)
+        else
+            .{ .state = .relaxed, .code = .not_drawn };
+    }
     // A name where a `refdes` line asks, when there is room.
-    const l = lib orelse return out;
     const anchors = try geom.refdesAnchors(arena, drawing, l);
     for (out, nl.hints) |*v, h| {
         if (v.state != .honoured or h.verb != .refdes) continue;
@@ -169,16 +203,33 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
     for (st.block_kind, 0..) |k, b| {
         var line: std.ArrayList(u8) = .empty;
         try line.appendSlice(arena, k.verb().head(.strong));
-        for (st.members(b)) |d| try line.print(arena, " {s}", .{names[d]});
+        const members = st.members(b);
+        var reversed = false;
+        if (k == .stack and p != null) {
+            var forward = true;
+            reversed = true;
+            for (members[0 .. members.len - 1], members[1..]) |a, z| {
+                forward = forward and checks.stackStep(p.?, nl, names[a], names[z]);
+                reversed = reversed and checks.stackStep(p.?, nl, names[z], names[a]);
+            }
+            if (!forward and !reversed) continue;
+        }
+        for (0..members.len) |i| {
+            const d = members[if (reversed) members.len - 1 - i else i];
+            try line.print(arena, " {s}", .{names[d]});
+        }
         try out.append(arena, line.items);
     }
     if (rung < 2) return out.items;
     const n = c.edgeCount();
     // An op-amp circuit is placed along its signal, not on the lattice
     // (`opamp.zig`): its places are the decision, every device's.
-    if (p != null and !opamp.steered(nl) and opamp.applies(nl, try sch.guessRoles(arena, nl), sk.drawn)) {
-        try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, p.?, unit);
-        return out.items;
+    if (p) |drawing| {
+        const roles = try sch.guessRoles(arena, nl);
+        if (opamp.applies(nl, roles, sk.drawn) and !try opamp.steered(arena, nl, roles, st, sk)) {
+            try places(arena, &out, hints.Verb.at.head(.strong), nl, sk, drawing, unit);
+            return out.items;
+        }
     }
     // Forms of the two-pin devices.
     for ([_]skeleton.Form{ .vertical, .horizontal }) |f| {
@@ -238,10 +289,11 @@ pub fn decisions(arena: Allocator, nl: *const Netlist, st: *const Structure, sk:
 }
 
 /// The report on `p`, drawn from `nl` and `roles` with `lib` under `layout`
-/// (the one `p` was laid out with). The structure
+/// (the one `p` was laid out with); its `requests` are `given` (the
+/// caller's `verdicts`, its `alone` proven, say), else `verdicts`'. The structure
 /// and skeleton are worked out again (both are pure), in `gpa`, freed
 /// before this returns.
-pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout) !void {
+pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, nl: *const Netlist, roles: []const Role, layout: config.Layout, given: ?[]const Verdict) !void {
     var arena_state: std.heap.ArenaAllocator = .init(gpa);
     defer arena_state.deinit();
     const a = arena_state.allocator();
@@ -249,6 +301,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     const sk = try skeleton.place(a, a, nl, roles, &st, .{ .shelf = layout.shelf });
     var found: std.ArrayList(checks.Finding) = .empty;
     try checks.find(a, &found, p, lib);
+    try @import("wire_gates.zig").find(a, &found, p, lib);
 
     try w.writeAll("{\n  \"gates\": [");
     for (found.items, 0..) |f, i| {
@@ -259,19 +312,42 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     }
     try w.writeAll(if (found.items.len == 0) "],\n" else "\n  ],\n");
 
-    try w.writeAll("  \"requests\": [");
-    for (nl.hints, try verdicts(a, nl, roles, &st, &sk, p, lib), 0..) |h, v, i| {
+    var over: std.ArrayList(text_overlaps.Overlap) = .empty;
+    try text_overlaps.find(a, &over, p, lib);
+    try w.writeAll("  \"text_overlaps\": [");
+    for (over.items, 0..) |o, i| {
         try w.writeAll(if (i == 0) "\n    " else ",\n    ");
+        try w.print("{{ \"of\": \"{t}\", \"text\": ", .{o.of});
+        try std.json.Stringify.value(o.text, .{}, w);
+        try w.print(", \"at\": [{d}, {d}], \"over\": \"{t}\", \"other\": ", .{ o.box.min.x, o.box.max.y, o.over });
+        try std.json.Stringify.value(o.other, .{}, w);
+        try w.writeAll(" }");
+    }
+    try w.writeAll(if (over.items.len == 0) "],\n" else "\n  ],\n");
+
+    try @import("mos_bodies.zig").writeUnshown(w, p, lib, nl, roles);
+    try w.writeAll("  \"requests\": [");
+    var listed: usize = 0;
+    for (nl.hints, given orelse try verdicts(a, nl, roles, &st, &sk, p, lib)) |h, v| {
+        if (h.line == 0) continue;
+        try w.writeAll(if (listed == 0) "\n    " else ",\n    ");
+        listed += 1;
         try w.print("{{ \"line\": {d}, \"text\": ", .{h.line});
         try std.json.Stringify.value(h.text, .{}, w);
-        try w.print(", \"state\": \"{t}\", \"code\": \"{t}\", \"blocked_by\": [", .{ v.state, v.code });
+        try w.print(", \"state\": \"{t}\", \"code\": \"{t}\", ", .{ v.state, v.code });
+        if (v.arg < h.args.len) {
+            try w.writeAll("\"name\": ");
+            try std.json.Stringify.value(h.args[v.arg], .{}, w);
+            try w.writeAll(", ");
+        }
+        try w.writeAll("\"blocked_by\": [");
         for (v.blocked_by, v.alone, 0..) |b, solo, k| {
             if (k > 0) try w.writeAll(", ");
             try w.print("{{ \"line\": {d}, \"alone\": {} }}", .{ nl.hints[b].line, solo });
         }
         try w.writeAll("] }");
     }
-    try w.writeAll(if (nl.hints.len == 0) "],\n" else "\n  ],\n");
+    try w.writeAll(if (listed == 0) "],\n" else "\n  ],\n");
 
     try w.print("  \"metrics\": {{ \"crossings\": {d}, \"bends\": {d}, \"labelled\": [", .{ crossings(p), bends(p) });
     var first = true;
@@ -280,6 +356,21 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
             if (l.net == n) break true;
         } else false;
         if (!named) continue;
+        if (!first) try w.writeAll(", ");
+        first = false;
+        try netName(w, p, @intCast(n));
+    }
+    // A net drawn as a port at two pins or more is named too, by its ports.
+    try w.writeAll("], \"ported\": [");
+    first = true;
+    for (0..p.netCount()) |n| {
+        if (n < roles.len and roles[n].isRail()) continue;
+        var ports: u32 = 0;
+        for (0..p.deviceCount()) |d| {
+            const lo, const hi = p.pinRange(d);
+            ports += @intFromBool(p.dev_name[d].len == 0 and hi - lo == 1 and p.pin_net[lo] == n);
+        }
+        if (ports < 2) continue;
         if (!first) try w.writeAll(", ");
         first = false;
         try netName(w, p, @intCast(n));
@@ -327,9 +418,24 @@ fn own(nl: *const Netlist, roles: []const Role, h: hints.Hint, p: ?*const Placed
             const d = checks.deviceIn(drawing, h.args[0]) orelse return .of(.ok);
             return .of(if (drawing.dev_class[d] == id) .ok else .bad_args);
         },
-        .unknown => return .of(.unknown_verb),
+        // Line 1 is the title (`hints.collect`).
+        .unknown => return .of(if (h.line == 1) .title else .unknown_verb),
         else => return .of(.not_built),
     }
+}
+
+/// Whether `face` line `h` turned a pin of an input's or output's net
+/// where `p` draws a name on that pin: its port had no room there.
+fn portNamed(p: *const Placed, nl: *const Netlist, roles: []const Role, h: hints.Hint) bool {
+    if (h.args.len != 3) return false;
+    const e = nl.device(h.args[0]) orelse return false;
+    const pin = relations.pinIndex(nl, e.index(), h.args[1]) orelse return false;
+    if (!roles[nl.graph.members(e)[pin].index()].isPort()) return false;
+    const d = checks.deviceIn(p, h.args[0]) orelse return false;
+    const lo, const hi = p.pinRange(d);
+    if (lo + pin >= hi) return false;
+    for (p.labels) |l| if (l.at.eql(p.pin_xy[lo + pin])) return true;
+    return false;
 }
 
 /// The value a line sets, when one line can override another: its kind of
@@ -340,7 +446,10 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
         .face => if (h.args.len == 3 and !(h.verb.side(library.Side, h.args[2]) orelse library.Side.left).isHorizontal()) 1 else 2,
         .upright, .bridge => 3,
         .driver => 4,
-        .label, .wire => 5,
+        // A `label ... at` names some pins and sets no style: none.
+        .label => if (h.args.len == 1) 5 else return null,
+        // A `wire ... at` wires some pins and sets no style: none.
+        .wire => if (h.args.len >= 2 and std.mem.eql(u8, h.args[1], "at")) return null else 5,
         .port => 6,
         .rail => 7,
         .role => 8,
@@ -360,14 +469,14 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
 /// for none.
 fn placedBy(arena: Allocator, nl: *const Netlist, out: []const Verdict, h: hints.Hint) !?[]const u32 {
     const exact: [2]hints.Verb = switch (h.verb) {
-        .row, .above, .order, .face => .{ .cell, .at },
+        .row, .above, .column, .order, .face, .hang, .symmetric, .axis, .stack => .{ .cell, .at },
         .label => .{ .route, .via },
         else => return null,
     };
     var by: std.ArrayList(u32) = .empty;
     for (nl.hints, out, 0..) |g, v, i| {
         if ((g.verb != exact[0] and g.verb != exact[1]) or v.state != .honoured or g.args.len == 0) continue;
-        const names = if (h.verb == .face or h.verb == .label) h.args[0..1] else h.args;
+        const names = if (h.verb == .face or h.verb == .hang or h.verb == .label) h.args[0..1] else h.args;
         for (names) |name| if (std.mem.eql(u8, name, g.args[0])) {
             try by.append(arena, @intCast(i));
             break;
@@ -437,12 +546,10 @@ fn crossings(p: *const Placed) u32 {
     for (0..p.netCount()) |n| {
         var h = p.segments(n);
         while (h.next()) |hp| for (hp[0 .. hp.len - 1], hp[1..]) |a, b| {
-            if (a.y != b.y) continue;
-            for (0..p.netCount()) |m| {
-                if (m == n) continue;
+            for (n + 1..p.netCount()) |m| {
                 var v = p.segments(m);
                 while (v.next()) |vp| for (vp[0 .. vp.len - 1], vp[1..]) |c, d| {
-                    count += @intFromBool(checks.crossing(a, b, c, d) != null);
+                    count += @intFromBool(wire_geometry.properCross(a, b, c, d) != null);
                 };
             }
         };
@@ -469,11 +576,11 @@ fn bends(p: *const Placed) u32 {
             } else false;
             if (seen) continue;
             // The ways out: bits 0 and 1 along the row, 2 and 3 along the column.
-            const ways = checks.ways(p, n, at);
+            const ways = checks.wireRays(p, n, at);
             const on_pin = for (p.pin_xy, p.pin_net) |q, net| {
                 if (net == n and q.eql(at)) break true;
             } else false;
-            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways & 3 != 0 and ways & 12 != 0);
+            count += @intFromBool(!on_pin and @popCount(ways) == 2 and ways != 3 and ways != 12 and ways != 48 and ways != 192);
         };
     }
     return count;

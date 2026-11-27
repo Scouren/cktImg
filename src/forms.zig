@@ -106,6 +106,10 @@
 //!   source branch belongs at one driven gate's row; `input_resistors`
 //!   owns the all-pin certificate and 22-case actual-source evidence.
 //!   Placement chooses the anchor; caller forms and ends still win.
+//! - forms.24 (habit, bounded) A unique antiparallel diode-connected MOS
+//!   or BJT pair lies flat. All eight source devices agree; antiparallel
+//!   owns the exact topology. A valid upright gate/base face request keeps
+//!   the previous upright form; explicit forms still run afterward.
 //!
 //! Contents:
 //! - `pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, drawn: []bool, form: []Form, verdicts: []?hints.Verdict) !void`
@@ -128,6 +132,7 @@ const skeleton = @import("skeleton.zig");
 const power_paths = @import("power_paths.zig");
 const power_loops = @import("power_loops.zig");
 const input_resistors = @import("input_resistors.zig");
+const antiparallel = @import("antiparallel.zig");
 
 const Netlist = netlist.Netlist;
 const EdgeId = netlist.EdgeId;
@@ -178,6 +183,10 @@ pub fn classify(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *co
         // A box has no path, and a shorted path passes no current.
         const a, const b = pathNets(nl, roles, @intCast(d)) orelse continue;
         if (a == b) continue;
+        if (antiparallel.find(nl, roles, EdgeId.from(d))) |m| {
+            if (drawn[m.index()] and !antiparallel.directed(nl, EdgeId.from(d), m) and
+                !antiparallel.held(nl, st.verdicts, EdgeId.from(d), m)) continue;
+        }
         if (kinds[d] == .resistor and input_resistors.find(nl, roles, drawn, @intCast(d)) != null) continue;
         const k = device.of(kinds[d]);
         const on_rail = isRail(roles[a]) or isRail(roles[b]);

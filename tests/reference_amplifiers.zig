@@ -396,7 +396,8 @@ test "reference amplifiers: caller classes and explicit sides retain precedence"
         defer lib.deinit();
         const def = &nl.defs[0];
         const c = lib.at(try lib.blockFor(def));
-        try testing.expect(outline(c, 4) != null and outline(c, 3) == null);
+        // The triangle, mirrored to put VREF on the right (library.3).
+        try testing.expect(outline(c, 3) != null);
         try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
         const terms = try testing.allocator.dupe(np.library.Terminal, c.terminals);
         defer testing.allocator.free(terms);

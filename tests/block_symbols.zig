@@ -74,8 +74,9 @@ test "block glyphs: textbook amplifiers and gates retain every ordered SPICE por
 }
 
 test "block glyphs: side directives and caller symbols win; ambiguous contracts stay boxes" {
-    // Oracle: explicit drawing instructions outrank name recognition; the extra
-    // extra control port of AG1677 and the custom blocks of AG1070 stay visible.
+    // Oracle: explicit drawing instructions outrank name recognition (a side
+    // directive's port is on that side, a glyph turned to fit it); the extra
+    // control port of AG1677 and the custom blocks of AG1070 stay visible.
     const decks = [_][]const u8{
         "t\n.subckt opamp VDD VSS VIP VIN VOUT\n*@ right VIP\n.ends\n",
         "t\n.subckt opamp VDD VSS VIP VIN VOUT VA\n.ends\n",
@@ -109,7 +110,7 @@ test "block glyphs: side directives and caller symbols win; ambiguous contracts 
         var lib: np.Library = .init(testing.allocator);
         defer lib.deinit();
         const c = lib.at(try lib.blockFor(&nl.defs[0]));
-        try testing.expect(!diagonal(c));
+        try testing.expect(std.mem.indexOf(u8, text, "*@") != null or !diagonal(c));
         try testing.expectEqual(nl.defs[0].ports.len, c.terminals.len);
         if (k == 0) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
         if (std.mem.indexOf(u8, text, "*@ right INN") != null) try testing.expectEqual(np.Side.right, c.side(2, .r0).?);
@@ -241,6 +242,186 @@ test "block glyphs: named amplifier bias pins retain a triangle and separate ter
             try testing.expect(!terminal.hidden);
             if (std.mem.startsWith(u8, name, "vb")) try testing.expectEqual(np.Side.down, c.side(i, .r0).?);
             for (c.terminals[i + 1 ..]) |other| try testing.expect(!std.meta.eql(terminal.at, other.at));
+        }
+    }
+}
+
+test "seven extended source blocks draw the declared leads of their signed triangles" {
+    const t = std.testing;
+    const cases = [_]struct { u16, []const u8, []const u8 }{
+        .{ 1242, "EA", "VDD VSS VB1 VB3 VB2 INP INN OUT VB4" },
+        .{ 1674, "A1", "VDD VSS VB1 VB3 INN INP VB2 OUT VB4" },
+        .{ 2212, "opamp", "VDD VSS INN INP VB2 OUT VB1 VB3 VB4" },
+        .{ 808, "comparator", "VDD VSS OUT INN INP CLK" },
+        .{ 3492, "Comparator", "VDD VSS CLK INN INP OUT" },
+        .{ 3493, "comparator", "VDD VSS INP INN CLK OUT" },
+        .{ 3495, "Comparator", "VSS VN VP VO PHI3" },
+    };
+    var total: usize = 0;
+    for (cases) |c| {
+        var arena: std.heap.ArenaAllocator = .init(t.allocator);
+        defer arena.deinit();
+        const a = arena.allocator();
+        const text = try std.fmt.allocPrint(a, "AG{d}\n.subckt {s} {s}\n.ends\n", .{ c[0], c[1], c[2] });
+        var nl = try np.netlist.parse(t.allocator, &.{text}, null);
+        defer nl.deinit(t.allocator);
+        const def = &nl.defs[0];
+        const shape = np.block_symbols.identify(def.name, def.ports);
+        try t.expect(shape != .box);
+        const glyph = try np.block_symbols.draw(a, shape, def.ports, 20);
+        try t.expectEqual(@as(usize, 4), glyph.ops[0].polyline.len);
+        for (def.ports, glyph.terminals, 0..) |n, terminal, k| {
+            try t.expectEqualStrings(n, terminal.name);
+            for (glyph.terminals[0..k]) |old| try t.expect(!terminal.at.eql(old.at));
+        }
+        // A registered class wins even when the complete raw contract is known.
+        var own: np.Library = .init(t.allocator);
+        defer own.deinit();
+        const custom = try own.register(.{ .name = def.name, .terminals = glyph.terminals });
+        try t.expectEqual(custom, try own.blockFor(def));
+        // A side request on the exact same declaration also wins: the glyph
+        // turns or mirrors to put the port there (library.3).
+        const hint = try std.fmt.allocPrint(a, "AG{d}\n.subckt {s} {s}\n*@ right {s}\n.ends\n", .{ c[0], c[1], c[2], def.ports[0] });
+        var explicit = try np.netlist.parse(t.allocator, &.{hint}, null);
+        defer explicit.deinit(t.allocator);
+        var geometry = np.Library.init(t.allocator);
+        defer geometry.deinit();
+        const block = geometry.at(try geometry.blockFor(&explicit.defs[0]));
+        try t.expect(diagonal(block));
+        try t.expectEqual(np.Side.right, block.side(0, .r0).?);
+        total += glyph.terminals.len;
+    }
+    try t.expectEqual(@as(usize, 50), total);
+    try t.expectEqual(np.block_symbols.Shape.box, np.block_symbols.identify("opamp", &.{ "VDD", "VSS", "VB3", "VB1", "VB2", "OUT", "INN", "INP", "IB" }));
+}
+
+test "four-bias output or bias may occupy the ninth SPICE position; clock and unknown controls stay distinct" {
+    const t = std.testing;
+    // Positional oracle: move the output, each VB and each other formal
+    // into slot nine while keeping the matching formal as that terminal.
+    var ports = [_][]const u8{ "vdd", "vss", "inp", "inn", "out", "vb1", "vb2", "vb3", "vb4" };
+    for (0..ports.len) |last| {
+        std.mem.swap([]const u8, &ports[last], &ports[8]);
+        const out_index = for (ports, 0..) |name, i| {
+            if (std.mem.eql(u8, name, "out")) break i;
+        } else unreachable;
+        try t.expectEqual(@as(?u4, @intCast(out_index)), np.block_symbols.analogOutput("ea", &ports));
+        try t.expectEqual(np.block_symbols.Shape.four_bias_amplifier, np.block_symbols.identify("ea", &ports));
+        std.mem.swap([]const u8, &ports[last], &ports[8]);
+    }
+    for ([_][]const u8{ "IB", "TAIL", "VB3", "CLK" }) |bad| {
+        ports[8] = bad;
+        try t.expectEqual(np.block_symbols.Shape.box, np.block_symbols.identify("ea", &ports));
+    }
+    const clk = &.{ "vss", "vn", "vp", "vo", "phi3" };
+    try t.expectEqual(np.block_symbols.Shape.clocked_comparator, np.block_symbols.identify("comparator", clk));
+    try t.expectEqual(np.block_symbols.Shape.box, np.block_symbols.identify("opamp", clk));
+    try t.expectEqual(np.block_symbols.Shape.box, np.block_symbols.identify("comparator", &.{ "vdd", "vn", "vp", "vo", "clk" }));
+    try t.expectEqual(np.block_symbols.Shape.box, np.block_symbols.identify("comparator", &.{ "vss", "vn", "vp", "vo", "clk", "phi3" }));
+}
+
+test "extended triangle terminal leads meet their own body edge and their electrical sign" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const wide = [_][]const u8{ "vdd", "vss", "inp", "inn", "out", "vb1", "vb2", "vb3", "vb4" };
+    const clk = [_][]const u8{ "vdd", "vss", "inp", "inn", "out", "clk" };
+    for ([_][]const []const u8{ &wide, &clk }) |ports| {
+        const shape = np.block_symbols.identify(if (ports.len == 9) "ea" else "comparator", ports);
+        for ([_]i32{ 4, 5, 20, 41 }) |pitch| {
+            const g = try np.block_symbols.draw(arena.allocator(), shape, ports, pitch);
+            const half = @abs(g.ops[0].polyline[0].x);
+            for (g.terminals, 0..) |term, k| {
+                const edge = for (g.ops) |op| {
+                    if (op == .line and op.line.a.eql(term.at)) break op.line.b;
+                } else return error.MissingOwnLead;
+                switch (term.side.?) {
+                    .left => try t.expect(term.at.x < edge.x and edge.x == -@as(i32, @intCast(half)) and edge.y == term.at.y),
+                    .right => try t.expect(term.at.x > edge.x and edge.x == half and edge.y == 0),
+                    .up, .down => {
+                        try t.expectEqual(term.at.x, edge.x);
+                        try t.expect(@abs(term.at.y) > half);
+                        try t.expectEqual(@as(i32, @intCast(2 * @abs(edge.y))), @as(i32, @intCast(half)) - edge.x);
+                    },
+                }
+                if (k != 2 and k != 3) continue;
+                const sign = if (k == 2) "+" else "-";
+                const marked = for (g.ops) |op| {
+                    if (op == .text and std.mem.eql(u8, op.text.s, sign) and op.text.at.y == term.at.y) break true;
+                } else false;
+                try t.expect(marked);
+            }
+        }
+    }
+}
+
+test "rounded OR-family rail leads stop at the first intersection with the outline" {
+    // AG438, AG545 and AG1076 supply rails. Intersect each actual polygon edge
+    // with the pin's vertical ray using integer arithmetic at several pitches.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    for ([_]np.block_symbols.Shape{ .or_gate, .nor_gate, .xor_gate, .xnor_gate }) |shape| {
+        for ([_]i32{ 4, 7, 19, 20, 21, 1000 }) |pitch| {
+            const glyph = try np.block_symbols.draw(arena.allocator(), shape, &.{ "vdd", "vss", "a", "b", "y" }, pitch);
+            const outline = glyph.ops[0].polyline;
+            for (glyph.terminals[0..2]) |pin| {
+                const endpoint = for (glyph.ops) |op| {
+                    if (op == .line and op.line.a.eql(pin.at)) break op.line.b;
+                } else return error.MissingRailStroke;
+                try testing.expectEqual(pin.at.x, endpoint.x);
+                const direction: i64 = if (pin.at.y < 0) 1 else -1;
+                var touches = false;
+                for (outline[0 .. outline.len - 1], outline[1..]) |left, right| {
+                    const a, const b = if (left.x <= right.x) .{ left, right } else .{ right, left };
+                    if (pin.at.x < a.x or pin.at.x > b.x) continue;
+                    if (a.x == b.x) {
+                        const nearest = if (direction > 0) @min(a.y, b.y) else @max(a.y, b.y);
+                        const gap = direction * (nearest - endpoint.y);
+                        try testing.expect(gap >= 0);
+                        touches = touches or gap == 0;
+                        continue;
+                    }
+                    const width: i64 = b.x - a.x;
+                    const y = a.y * width + @as(i64, b.y - a.y) * (pin.at.x - a.x);
+                    const gap = direction * (y - endpoint.y * width);
+                    try testing.expect(gap >= 0);
+                    touches = touches or gap == 0;
+                }
+                try testing.expect(touches);
+            }
+        }
+    }
+}
+
+test "PFD and DAC remain boxes with named, ordered contacts after formal permutation" {
+    // AG439/440 show A/B on the left, QA/QB on the right. AG515/516
+    // put O1/O2 or OUT1/OUT2 on the right. These are graphical slots.
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const cases = [_]struct { []const u8, []const []const u8, []const np.library.Side, []const i32 }{
+        .{ "PFD", &.{ "QB", "a", "QA", "b" }, &.{ .right, .left, .right, .left }, &.{ 1, -1, -1, 1 } },
+        .{ "DAC", &.{ "o2", "O1" }, &.{ .right, .right }, &.{ 1, -1 } },
+        .{ "DAC", &.{ "OUT2", "out1" }, &.{ .right, .right }, &.{ 1, -1 } },
+        .{ "DAC", &.{ "o2", "out1" }, &.{ .left, .right }, &.{ 0, 0 } },
+        .{ "PFD2", &.{ "a", "qa" }, &.{ .left, .left }, &.{ -1, 1 } },
+        .{ "PFD", &.{ "a", "b", "qa", "en" }, &.{ .left, .left, .left, .left }, &.{ -1, -1, 1, 1 } },
+    };
+    for (cases) |case| {
+        const family, const names, const sides, const ys = case;
+        var lib = np.Library.init(a);
+        defer lib.deinit();
+        const specified = try a.alloc(?np.netlist.PortSide, names.len);
+        @memset(specified, null);
+        const order = try a.alloc(u16, names.len);
+        for (order, 0..) |*o, i| o.* = @intCast(1000 + i);
+        const def: np.netlist.Subckt = .{ .name = family, .ports = names, .sides = specified, .order = order, .expand = false, .body = "" };
+        try testing.expectEqual(.box, np.block_symbols.identify(family, names));
+        const glyph = lib.at(try lib.blockFor(&def));
+        for (glyph.terminals, names, sides, ys) |pin, name, side, ysign| {
+            try testing.expectEqualStrings(name, pin.name);
+            try testing.expectEqual(side, pin.side);
+            try testing.expectEqual(ysign, std.math.sign(pin.at.y));
         }
     }
 }

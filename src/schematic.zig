@@ -10,6 +10,9 @@
 //!   rail symbols and no port on 4,010 of the 4,157 nets so named in 5,263
 //!   hand-drawn schematics, a numbered one (`vdd1`, `vcc2`) in 22 of 22.
 //!   `roleFromName`
+//!   A net named `+<volts>v` (`+5v`, `+12v`, `+3.3v`) is a supply too:
+//!   33 nets so named in the 5,274 decks, each a constant rail.
+//!   `library.named`
 //! - schematic.2 (habit) Net 0, and a net named `gnd…`, `vss…`, `vee…`,
 //!   `agnd…`, `dgnd…` or `v-`, is a ground, drawn with a ground symbol
 //!   (R1). People: rail symbols and no port on 5,467 of the 5,535 nets so
@@ -96,6 +99,12 @@
 //!   between the visible perpendicular pins;
 //!   moving it past one would reverse its required reach. Hidden/reference
 //!   pins do not constrain the line or contribute reach. `alignPin`
+//! - schematic.17 (choice) A net named `vs` is a supply only where no
+//!   other net is named one and a p-type transistor's source, emitter or
+//!   body stands on it, no p-type drain or collector: of the 73 nets so
+//!   named in the 5,274 decks, most are a signal's source (`Vs` into a
+//!   gate, a base, a resistor) or a source node fed from `vdd`; this
+//!   reading takes one, AR6228's emitter supply. `guessRoles`
 //!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
@@ -117,6 +126,7 @@
 
 const std = @import("std");
 const hints = @import("hints.zig");
+const bodies = @import("mos_bodies.zig");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
@@ -242,6 +252,8 @@ pub const Schematic = struct {
     xy: [][2]f32 = &.{},
     /// Device pins alone on their net, drawn with a no-connect mark.
     no_connects: std.ArrayList(u32) = .empty,
+    /// The only visible pin of a net with other electrical terminals.
+    peer_labels: std.ArrayList(u32) = .empty,
     routes: std.ArrayList(Route) = .empty,
 
     pub fn deinit(self: *Schematic) void {
@@ -333,6 +345,10 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         if (roles[made] == .input and library.named(names[made], .net) == .ref) roles[made] = .output;
     }
 
+    if (nl.net("vs")) |vs| {
+        if (sourceSupply(nl, roles, vs.index())) roles[vs.index()] = .supply;
+    }
+
     const order = try hints.applyOrder(gpa, nl.hints);
     defer gpa.free(order);
     // A source a `*@ driver <src> inline` line draws in the circuit drives
@@ -404,10 +420,17 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
             continue;
         }
         c.* = if (nl.defOf(e)) |def| try lib.blockFor(def) else try lib.classFor(k, nl.modelType(e), circuit.members(e).len);
+        if (bodies.needsBody(nl, roles, e)) c.* = lib.at(c.*).body_variant orelse c.*;
         // An `E` that is a dependent source, not the book's amplifier: the
         // library's two-pin `vcvs`, where it has one. People: a two-pin
         // source symbol for 37 of 37 `E` cards (464 of 464 with G, F, H).
         if (k == .vcvs and forms.isDependent(nl, roles, @intCast(d))) c.* = lib.find("vcvs") orelse c.*;
+    }
+    for (nl.block_frames) |frame| {
+        const d = frame.device.index();
+        assert(d < classes.len and circuit.edges.items(.kind)[d] == .subckt);
+        assert(lib.at(frame.class).terminals.len == lib.at(classes[d]).terminals.len);
+        classes[d] = frame.class;
     }
     // The deck's `*@ class <dev> <class>` lines, the preferred one last: a
     // class with as many terminals as the one it replaces draws every pin
@@ -420,7 +443,12 @@ pub fn initDevices(gpa: Allocator, nl: *const netlist.Netlist, roles: []const Ro
         const e = nl.device(h.args[0]) orelse continue;
         if (circuit.members(e).len == 0) continue;
         const id = lib.find(h.args[1]) orelse continue;
-        if (lib.at(id).terminals.len < lib.at(classes[e.index()]).terminals.len) continue;
+        const current = classes[e.index()];
+        if (lib.at(id).terminals.len < lib.at(current).terminals.len) {
+            if (!bodies.needsBody(nl, roles, e)) continue;
+            const base = lib.at(try lib.classFor(.mosfet, nl.modelType(e), 4));
+            if (base.body_variant != current or lib.at(id).terminals.len < base.terminals.len) continue;
+        }
         classes[e.index()] = id;
     }
     var s: Schematic = .{
@@ -590,6 +618,29 @@ fn roleFromName(name: []const u8) Role {
         .ref, .inp, .inn, .in => .input,
         .out => .output,
     };
+}
+
+/// schematic.17: whether net `vs` (named `vs`) is a supply: no other net
+/// is (by `roles`, as named), a p-type transistor's source, emitter or
+/// body stands on it, and no p-type drain or collector does.
+fn sourceSupply(nl: *const netlist.Netlist, roles: []const Role, vs: u32) bool {
+    assert(vs < roles.len);
+    if (roles[vs] != .internal) return false;
+    for (roles) |r| if (r == .supply) return false;
+    const circuit = &nl.graph;
+    var feeds = false;
+    for (circuit.incident(netlist.VertexId.from(vs))) |e| {
+        const k = circuit.edges.items(.kind)[e.index()];
+        if (!device.isTransistor(k) or device.polarity(nl.modelType(e)) != .p) continue;
+        const pins = circuit.members(e);
+        const path = device.of(k).path.?;
+        for (pins, 0..) |net, i| {
+            if (net.index() != vs) continue;
+            if (i == path[0]) return false;
+            if (i == path[1] or i == 3) feeds = true;
+        }
+    }
+    return feeds;
 }
 
 /// R2, R3: the net a V source drives from the sink, its other end; null

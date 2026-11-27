@@ -192,3 +192,109 @@ test "trunk taps: AG986 retains its straight VC3 gate line" {
     // Source leads M8.G=(510,100), M9.G=(590,100).
     try expectLine(ag986, "m8", "m9");
 }
+
+test "bias feed: AG725 VB3 port joins both gates clear of the control crossing" {
+    const deck =
+        \\AG725 bias feed
+        \\*@ weak role Iin1 output
+        \\*@ weak role Iin2 output
+        \\.model nch nmos
+        \\.model pch pmos
+        \\CL1 Voutp VSS 1p
+        \\CL2 Voutn VSS 1p
+        \\I1 VDD Iin2 DC 1m
+        \\I2 VDD Iin1 DC 1m
+        \\M10 Voutn VB3 net1 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M5 Voutp VB2 Iin2 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M6 Voutn VB2 Iin1 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M7 net0 Vcntrl VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M8 Voutp VB3 net0 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M9 net1 Vcntrl VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\RL1 Voutp Vcntrl 1k
+        \\RL2 Vcntrl Voutn 1k
+    ;
+    const lib = try support.library(testing.allocator);
+    defer support.freeLibrary(testing.allocator, lib);
+    var p = try np.place(testing.allocator, &.{}, lib, &.{deck}, null);
+    defer p.deinit();
+
+    const a = gate(&p, "m8");
+    const b = gate(&p, "m10");
+    const net = p.pin_net[a];
+    try testing.expectEqualStrings("vb3", p.net_name[net]);
+    try testing.expectEqual(net, p.pin_net[b]);
+    var port: ?usize = null;
+    for (0..p.deviceCount()) |d| {
+        const start, const end = p.pinRange(d);
+        if (p.dev_name[d].len != 0 or end - start != 1 or p.pin_net[start] != net) continue;
+        try testing.expect(port == null);
+        port = start;
+    }
+    // Fig. P6.57 gives this pair one visible bias feed on the gate line.
+    try testing.expect(port != null);
+    const tip = p.pin_xy[port.?];
+    const left = @min(p.pin_xy[a].x, p.pin_xy[b].x);
+    const right = @max(p.pin_xy[a].x, p.pin_xy[b].x);
+    try testing.expect(tip.x > left and tip.x < right);
+    try testing.expectEqual(p.pin_xy[a].y, p.pin_xy[b].y);
+    try testing.expect(tip.y != p.pin_xy[a].y);
+    try testing.expect(try ink.connected(testing.allocator, &p, &.{ a, b, port.? }));
+    try support.expectConnected(&p, lib);
+    try testing.expectEqual(0, try support.shorts(testing.allocator, &p, true));
+    try testing.expectEqual(0, try support.dots(testing.allocator, &p, true));
+}
+
+test "bias feed leaves adjacent AG1652 stage wiring and its existing bias ports intact" {
+    // Before additional bias access was enabled, all four net0 pins shared
+    // one conductor and seven drawn VB3 ports identified separate contacts.
+    const deck =
+        \\AG1652 bias ports
+        \\.model nch nmos
+        \\.model pch pmos
+        \\.model qpnp pnp
+        \\M1 net9 VB2 VDD VDD pch l=0.15 w=1 nf=1 m=1
+        \\M10 Vout VB3 VQ VSS nch l=0.15 w=1 nf=1 m=1
+        \\M11 VQ net7 VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M12 net2 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+        \\M13 net0 VB1 net2 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M14 net0 VB3 net5 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M15 net5 VN1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M16 net4 net4 VDD VDD pch l=0.15 w=1 nf=1 m=1
+        \\M17 VB3 net4 VDD VDD pch l=0.15 w=1 nf=1 m=1
+        \\M18 VB3 VB3 net6 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M19 net6 VB3 VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M2 VN1 X net9 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M3 net7 Y net9 VDD pch l=0.15 w=1 nf=1 m=1
+        \\M4 VN1 VB3 Y VSS nch l=0.15 w=1 nf=1 m=1
+        \\M5 net7 VB3 net1 VSS nch l=0.15 w=1 nf=1 m=1
+        \\M6 Y VN1 VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M7 net1 net7 VSS VSS nch l=0.15 w=1 nf=1 m=1
+        \\M8 net8 net0 VDD VDD pch l=0.15 w=1 nf=1 m=1
+        \\M9 Vout VB1 net8 VDD pch l=0.15 w=1 nf=1 m=1
+        \\Q1 VSS VSS VQ qpnp m=1
+        \\Q2 VQ VQ X qpnp m=1
+        \\Q3 VSS VSS net10 qpnp m=1
+        \\Q4 net10 net10 net3 qpnp m=1
+        \\R1 Vout X 1k
+        \\R2 Vout Y 1k
+        \\R3 Y net3 1k
+        \\R4 net4 VSS 1k
+    ;
+    const alloc = std.testing.allocator;
+    const lib = try support.library(alloc);
+    defer support.freeLibrary(alloc, lib);
+    var p = try np.place(alloc, &.default, lib, &.{deck}, null);
+    defer p.deinit();
+    const refs = [_][]const u8{ "m12", "m13", "m14", "m8" };
+    var pins: [4]usize = undefined;
+    for (refs, [_]u32{ 1, 0, 0, 1 }, 0..) |name, term, i| {
+        pins[i] = p.dev_pin0[np.checks.deviceIn(&p, name).?] + term;
+    }
+    try std.testing.expect(try ink.connected(alloc, &p, &pins));
+    var ports: usize = 0;
+    for (0..p.deviceCount()) |d| {
+        const first, const end = p.pinRange(d);
+        if (p.dev_name[d].len == 0 and end == first + 1 and std.mem.eql(u8, p.net_name[p.pin_net[first]], "vb3")) ports += 1;
+    }
+    try std.testing.expectEqual(7, ports);
+}

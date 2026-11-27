@@ -31,6 +31,7 @@ pub const layout = @import("layout.zig");
 pub const emit = @import("emit.zig");
 pub const place = @import("place.zig");
 const hints = @import("hints.zig");
+const port_bundle = @import("port_bundle.zig");
 pub const OutFile = emit.OutFile;
 
 /// Counts for the import log.
@@ -59,12 +60,19 @@ pub const Conversion = struct {
 /// A conversion in progress: parsed and recognized, its cells drawn one `step` at a time.
 /// Stepping to the end and `finish` give exactly what `convert` gives.
 pub const Converter = struct {
+    /// The command that started the import admits the final wire geometry.
+    allow_45: bool = false,
     gpa: Allocator,
     a: Allocator,
     source: []const u8,
+    /// Original deck bytes remain available for selected-cell and caller authority.
+    source_text: []const u8,
     deck: spice.Deck,
     rec: recognize.Recognized,
     lib: engine.Library,
+    bundle: ?port_bundle.Candidate = null,
+    /// The two ordinary figures needed to verify actual ports before publishing the pair.
+    bundle_drawings: [2]?struct { file: usize, drawn: layout.Drawn } = .{ null, null },
     /// Cells still to draw, the next one last (file order: subckts, then the bench).
     todo: ArrayList(u32) = .empty,
     bench: []const u8,
@@ -97,7 +105,7 @@ pub const Converter = struct {
         // `tb_<name>` rather than `<name>_2`.
         const named = if (recognize.nameTaken(rec.taken.items, base)) try a.print("tb_{s}", .{base}) else base;
         const bench = try recognize.uniqueStem(a, named, &rec.taken);
-        var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .deck = deck, .rec = rec, .lib = lib, .bench = bench, .out = out };
+        var c: Converter = .{ .gpa = gpa, .a = a, .source = source, .source_text = text, .deck = deck, .rec = rec, .lib = lib, .bundle = try port_bundle.find(a, &deck), .bench = bench, .out = out };
         var has_top = deck.devs(0).len() > 0;
         for (deck.code_cell) |cc| has_top = has_top or cc == 0;
         if (has_top) try c.todo.append(a, 0);
@@ -121,7 +129,7 @@ pub const Converter = struct {
         const a = c.a;
         const cell = c.todo.pop().?;
         const stem = if (cell == 0) c.bench else c.rec.syms.stem.items[recognize.subSymbol(cell)];
-        const drawn = try layout.draw(c.gpa, a, &c.lib, &c.deck, &c.rec, cell, &c.budget);
+        const drawn = try layout.drawSourceGeometry(c.gpa, a, c.source_text, &c.lib, &c.deck, &c.rec, cell, &c.budget, if (c.allow_45) .allow_45 else .manhattan);
         if (drawn.fallback) |why| try c.out.warnings.append(a, try a.print("{s}: drawn with labels only ({s})", .{ stem, why }));
         if (drawn.strays > 0) try c.out.warnings.append(a, try a.print("{s}: the engine left {d} pins unconnected; labelled", .{ stem, drawn.strays }));
         for (drawn.notes.items) |note| try c.out.warnings.append(a, try a.print("{s}: {s}", .{ stem, note }));
@@ -133,6 +141,10 @@ pub const Converter = struct {
         s.nets_multi += drawn.nets_multi;
         s.nets_wired += drawn.nets_wired;
         try c.out.files.append(a, try emit.cellFile(a, c.source, &c.deck, &c.rec, cell, stem, &drawn, &c.place, &c.out.warnings));
+        if (c.bundle) |b| {
+            if (b.row(cell) != null)
+                c.bundle_drawings[@intFromBool(cell == b.parent.cell)] = .{ .file = c.out.files.items.len - 1, .drawn = drawn };
+        }
         assert(s.nets_wired <= s.nets_multi);
     }
 
@@ -140,6 +152,17 @@ pub const Converter = struct {
     /// every cell is drawn.
     pub fn finish(c: *Converter) Allocator.Error!Conversion {
         assert(c.todo.items.len == 0);
+        if (c.bundle) |b| {
+            const parent = &c.bundle_drawings[1].?.drawn;
+            if (port_bundle.direct(b, &c.deck, &c.rec, parent)) {
+                for (c.bundle_drawings, [_]u32{ b.leaf.cell, b.parent.cell }) |maybe, cell| {
+                    const saved = maybe.?;
+                    const stem = c.rec.syms.stem.items[recognize.subSymbol(cell)];
+                    c.out.files.items[saved.file] = try emit.cellFileWithBundle(c.a, c.source, &c.deck, &c.rec, cell, stem, &saved.drawn, &c.place, &c.out.warnings, b);
+                }
+                c.out.stats.markers -= 6;
+            }
+        }
         for (0..c.rec.syms.len()) |s| {
             if (c.rec.syms.origin.items[s] == .leaf) try c.out.files.append(c.a, try emit.leafFile(c.a, c.source, &c.rec, @intCast(s)));
         }

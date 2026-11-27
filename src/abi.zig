@@ -128,7 +128,8 @@ pub export fn cktimg_lib_add(
                 }
             }.f;
             // An op's kind is its `DrawOp` tag, as `cktimg_device_op_kind` hands it back.
-            const d: library.DrawOp = switch (std.enums.fromInt(std.meta.Tag(library.DrawOp), op.kind) orelse return fail) {
+            const kind = std.enums.fromInt(std.meta.Tag(library.DrawOp), op.kind) orelse return fail;
+            const d: library.DrawOp = switch (kind) {
                 .line => .{ .line = .{ .a = pt(xy, 0), .b = pt(xy, 1) } },
                 .polyline => blk: {
                     if (op.count < 2) return fail;
@@ -136,7 +137,18 @@ pub export fn cktimg_lib_add(
                     for (ps, 0..) |*q, k| q.* = pt(xy, k);
                     break :blk .{ .polyline = ps };
                 },
-                .circle => .{ .circle = .{ .c = pt(xy, 0), .r = op.r } },
+                .circle, .filled_circle => blk: {
+                    if (op.r < 0) return fail;
+                    const center = pt(xy, 0);
+                    for ([_]i32{ center.x, center.y }) |v| {
+                        _ = std.math.add(i32, v, op.r) catch return fail;
+                        _ = std.math.sub(i32, v, op.r) catch return fail;
+                    }
+                    break :blk if (kind == .circle)
+                        .{ .circle = .{ .c = center, .r = op.r } }
+                    else
+                        .{ .filled_circle = .{ .c = center, .r = op.r } };
+                },
                 .text => .{ .text = .{ .at = pt(xy, 0), .s = std.mem.span(op.text orelse return fail), .size = op.size } },
             };
             draw.append(a, d) catch return fail;
@@ -173,6 +185,11 @@ pub export fn cktimg_lib_load_zon(lib: ?*CktimgLib, text: ?[*:0]const u8, out_re
 /// defaults). NULL on a netlist the parser rejects, with the reason in
 /// `*out_report`. `lib` must outlive the handle.
 pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
+    return cktimg_parse_place_geometry(lib, src, zon, 0, out_report);
+}
+
+/// Places a drawing with the caller's wire capability. Unknown capabilities return null.
+pub export fn cktimg_parse_place_geometry(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*:0]const u8, geometry: u8, out_report: ?*?[*:0]u8) ?*CktimgSch {
     if (out_report) |r| r.* = null;
     const l = lib orelse return null;
     const s = src orelse return null;
@@ -193,6 +210,7 @@ pub export fn cktimg_parse_place(lib: ?*CktimgLib, src: ?[*:0]const u8, zon: ?[*
         for (diags.items) |d| report.writer.print("config:{d}: {s} '{s}'\n", .{ d.line, @tagName(d.kind), d.key }) catch return null;
     }
     var diag: netlist.Diagnostic = .{};
+    sch.cfg.geometry = std.enums.fromInt(root.wire_geometry.Mode, geometry) orelse return null;
     sch.placed = root.place(gpa, &sch.cfg, l, &.{std.mem.span(s)}, &diag) catch |err| {
         if (out_report) |r| {
             var w: std.Io.Writer.Allocating = .init(gpa);
@@ -340,6 +358,16 @@ pub export fn cktimg_pin_xy(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32
     return true;
 }
 
+/// Writes the placed coordinate of a class-supported visible pin. The
+/// legacy pin coordinate query also covers electrically present hidden pins.
+pub export fn cktimg_pin_contact(sch: ?*const CktimgSch, d: usize, p: usize, x: ?*i32, y: ?*i32) bool {
+    const pin = pinOf(sch, d, p) orelse return false;
+    const s = sch.?;
+    if (!s.lib.at(s.placed.dev_class[d]).shows(p)) return false;
+    put(s.placed.pin_xy[pin], x, y);
+    return true;
+}
+
 // ---------------------------------------------------------------------------
 // Nets, wires, dots, labels, crosses
 // ---------------------------------------------------------------------------
@@ -462,10 +490,11 @@ pub export fn cktimg_device_op_points(sch: ?*const CktimgSch, d: usize, o: usize
     };
     return pts.len;
 }
+/// World center and radius for hollow or filled circles; `op_kind` selects fill.
 pub export fn cktimg_device_op_circle(sch: ?*const CktimgSch, d: usize, o: usize, cx: ?*i32, cy: ?*i32, r: ?*i32) bool {
     const op = opOf(sch, d, o) orelse return false;
     const c = switch (op) {
-        .circle => |c| c,
+        .circle, .filled_circle => |c| c,
         else => return false,
     };
     const s = sch.?;

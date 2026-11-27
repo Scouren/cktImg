@@ -31,14 +31,52 @@ static int on_wire(const CktimgSch *s, size_t n, int32_t x, int32_t y) {
       int32_t x0 = xy[2 * i], y0 = xy[2 * i + 1], x1 = xy[2 * i + 2], y1 = xy[2 * i + 3];
       int32_t lx = x0 < x1 ? x0 : x1, hx = x0 < x1 ? x1 : x0;
       int32_t ly = y0 < y1 ? y0 : y1, hy = y0 < y1 ? y1 : y0;
-      if (x >= lx && x <= hx && y >= ly && y <= hy) return 1;
+      if (x < lx || x > hx || y < ly || y > hy) continue;
+      if (lx == hx || ly == hy) return 1;
+      int64_t dx = (int64_t)x - x0, dy = (int64_t)y - y0;
+      if ((x1 > x0) == (y1 > y0) ? dx == dy : dx == -dy) return 1;
     }
   }
   return 0;
 }
 
-int main(void) {
+/* A genuine B at the class origin, a hidden B there, and an absent B can
+ * share the very same position. Visibility comes from the selected class. */
+static void check_body_contact(void) {
+  const char *deck = "body contact\n.model nch nmos\nM1 d g s well nch\nR1 well 0 1k\n";
+  for (int mode = 0; mode < 3; mode++) {
+    CktimgLib *lib = cktimg_lib_new();
+    CktimgTerminal mos[] = {{"d", 20, 0, 0}, {"g", 0, -20, 0}, {"s", -20, 0, 0},
+                            {"b", 0, 0, mode == 1 ? CKTIMG_TERM_HIDDEN : 0}};
+    int32_t lead_xy[] = {0, -3, 0, 0};
+    CktimgOp lead[] = {{CKTIMG_OP_LINE, lead_xy, 2, 0, NULL, 0}};
+    CHECK(cktimg_lib_add(lib, "nmos", CKTIMG_ROLE_NONE, mos, mode == 0 ? 3 : 4, lead, 1) != SIZE_MAX);
+    CktimgSch *s = cktimg_parse_place(lib, deck, NULL, NULL);
+    CHECK(s != NULL);
+    int found = 0;
+    for (size_t d = 0; d < cktimg_device_count(s); d++) {
+      if (strcmp(cktimg_device_name(s, d), "m1") != 0) continue;
+      int32_t x = 987, y = 654, ox, oy;
+      found++;
+      CHECK(cktimg_device_pin_count(s, d) == 4);
+      CHECK(strcmp(cktimg_pin_net(s, d, 3), "well") == 0);
+      CHECK(cktimg_device_pos(s, d, &ox, &oy));
+      CHECK(cktimg_pin_contact(s, d, 3, &x, &y) == (mode == 2));
+      CHECK(x == (mode == 2 ? ox : 987) && y == (mode == 2 ? oy : 654));
+      CHECK(cktimg_pin_xy(s, d, 3, &x, &y) && x == ox && y == oy);
+      CHECK(cktimg_pin_contact(s, d, 0, NULL, NULL));
+      CHECK(!cktimg_pin_contact(s, d, 4, NULL, NULL));
+    }
+    CHECK(found == 1);
+    cktimg_sch_free(s);
+    cktimg_lib_free(lib);
+  }
+}
+
+int main(int argc, char **argv) {
+  check_body_contact();
   /* NULL is safe everywhere. */
+  CHECK(!cktimg_pin_contact(NULL, 0, 0, NULL, NULL));
   CHECK(cktimg_device_count(NULL) == 0);
   CHECK(cktimg_device_name(NULL, 0) == NULL);
   CHECK(cktimg_parse_place(NULL, cs_stage, NULL, NULL) == NULL);
@@ -73,6 +111,50 @@ int main(void) {
   CHECK(cktimg_lib_add(lib, "gnd", CKTIMG_ROLE_GROUND_RAIL, pin, 1, rail, 1) != SIZE_MAX);
   CHECK(cktimg_lib_add(lib, "ipin", CKTIMG_ROLE_INPUT_PORT, pin, 1, port, 1) != SIZE_MAX);
   CHECK(cktimg_lib_add(lib, "opin", CKTIMG_ROLE_OUTPUT_PORT, pin, 1, port, 1) != SIZE_MAX);
+
+  /* The same five-MOS graph through the old caller and the opt-in geometry caller. */
+  if (argc != 2) return 1;
+  FILE *symbols = fopen(argv[1], "rb");
+  if (!symbols || fseek(symbols, 0, SEEK_END)) return 1;
+  long length = ftell(symbols);
+  if (length <= 0 || fseek(symbols, 0, SEEK_SET)) return 1;
+  char *text = malloc((size_t)length + 1);
+  if (!text || fread(text, 1, (size_t)length, symbols) != (size_t)length) return 1;
+  text[length] = 0;
+  fclose(symbols);
+  CktimgLib *glyphs = cktimg_lib_new();
+  CHECK(cktimg_lib_load_zon(glyphs, text, NULL));
+  free(text);
+  const char *pair = "Reciprocal PMOS loads\n"
+    ".model n nmos\n.model p pmos\n"
+    "M1 vout1 vin1 tail 0 n\nM2 vout2 vin2 tail 0 n\n"
+    "M3 vout1 vout2 vdd vdd p\nM4 vout2 vout1 vdd vdd p\nM5 tail vb 0 0 n\n";
+  CHECK(cktimg_parse_place_geometry(glyphs, pair, NULL, 245, NULL) == NULL);
+  for (unsigned mode = 0; mode <= 1; ++mode) {
+    CktimgSch *pair_s = mode == 0 ? cktimg_parse_place(glyphs, pair, NULL, NULL)
+                                  : cktimg_parse_place_geometry(glyphs, pair, NULL, CKTIMG_ALLOW_45, NULL);
+    CHECK(pair_s != NULL);
+    size_t diagonals = 0;
+    for (size_t n = 0; n < cktimg_wire_count(pair_s); ++n) {
+      for (size_t k = 0; k < cktimg_wire_segment_count(pair_s, n); ++k) {
+        const int32_t *points;
+        size_t length = cktimg_wire_segment_points(pair_s, n, k, &points);
+        for (size_t i = 0; i + 1 < length; ++i) {
+          const int32_t *seg = points + 2*i;
+          if (seg[0] == seg[2] || seg[1] == seg[3]) continue;
+          ++diagonals;
+          int dx = seg[2] > seg[0] ? 1 : -1;
+          int dy = seg[3] > seg[1] ? 1 : -1;
+          CHECK(on_wire(pair_s, n, seg[0]+dx, seg[1]+dy));
+          CHECK(!on_wire(pair_s, n, seg[0]+dx, seg[1]+dy+1));
+        }
+      }
+    }
+    CHECK(diagonals == (mode ? 2u : 0u));
+    cktimg_sch_free(pair_s);
+  }
+
+  cktimg_lib_free(glyphs);
 
   char *report = NULL;
   CktimgSch *s = cktimg_parse_place(lib, cs_stage, ".{ .layout = .{ .stack = 0.5 }, .typo = 1 }", &report);

@@ -1,11 +1,11 @@
 //! The deck's placement lines (steering rung 2): `upright`, `bridge`,
-//! `face`, `row` and `above`, applied by the skeleton. In: the netlist, its
+//! `face`, `row`, `above` and `column`, applied by the skeleton. In: the netlist, its
 //! structure, and the skeleton's tables as each stage leaves them. Out: the
 //! tables changed as the lines say, the rows' constraints for `levels`, and
 //! a verdict per line.
 //!
 //! Rows and their order are difference constraints: `row a b` an equality,
-//! `above a b` an edge.
+//! `above a b` an edge, `column a b` an edge that is also a column link.
 //!
 //! Human Rules:
 //! - relations.1 (invariant) `driver <dev> apart` draws a two-pin
@@ -13,20 +13,26 @@
 //!   net's symbol and ground; `driver <dev> inline` draws a device in the
 //!   circuit. `drivers`
 //! - relations.2 (invariant) A device an `upright` line names stands in a
-//!   column, one a `bridge` line names lies flat between columns; a
-//!   transistor only stands. `forms`
+//!   column, one a `bridge` line names lies flat between columns: a
+//!   two-pin part, or a MOS laid along its channel, its gate up or down
+//!   (relations.4). Asked for by three agents of the hinting trial
+//!   (ar-2369 MR1-MR4, ag-1329 m21/m1, ag-1094's transmission gates).
+//!   `forms`
 //!   Narrowing: no controlled source (E, G, F, H) is taken, which the
-//!   general form admits (`twoPin`).
+//!   general form admits (`twoPin`); a bipolar transistor only stands.
 //! - relations.3 (choice) Of lines setting one value (a device's form, an
 //!   end, a driver), the preferred stands, applied last: the deck's own
 //!   ranking of its lines. `forms`
 //! - relations.4 (invariant) `face <dev> <end> up|down` puts that end of
-//!   an upright device up or down. `ends`
+//!   an upright device up or down; `face <mos> g up|down` turns a flat
+//!   MOS's gate up or down (`sketch.orientAll` reads the line). `ends`
 //! - relations.5 (invariant) The upright devices a `row` line names stand
-//!   on one row; a bridge it names takes the row of its first upright
-//!   device. `rows`
+//!   on one row; a bridge or block it names takes the row of the line's
+//!   anchor (`anchored.anchor`: its first upright device, else its first
+//!   block, else its first device). `rows`
 //! - relations.6 (invariant) Each upright device an `above` line names
-//!   stands on a row above the next one's. `rows`
+//!   stands on a row above the next one's; its flat devices stand by
+//!   their anchor (`anchored.zig`). `rows`
 //! - relations.7 (choice) Of `row` and `above` lines that close a cycle,
 //!   the strongest stand and the rest are dropped with their preferred
 //!   conflict: the deck's own ranking of its lines. `rows`
@@ -37,11 +43,18 @@
 //!   ground drop give way to the `row` and `above` lines: the deck is the
 //!   user's word. `Relations.refuses`
 //! - relations.10 (invariant) `face <dev> g left|right` puts a transistor's
-//!   gate (or base) on that side; on a flat part, the named end stands on
-//!   that side. `faces`
+//!   gate (or base) on that side; on a flat part or a flat MOS, the named
+//!   end of its path stands on that side. `faces`
 //!   Narrowing: a flat part by its pin count, as `sketch.fits` turns it;
 //!   the device model's flat part also takes a four-pin switch and leaves
-//!   out a two-port box.
+//!   out a two-port box. On a block, `face <block> <port>
+//!   left|right|up|down` puts that port on that side (`sketch.orientAll`).
+//! - relations.13 (invariant) Each upright device a `column` line names
+//!   stands in one column with the next, directly above it, whether or not
+//!   the two share a net (devices in parallel too); a device stands
+//!   directly under one device and over one at most, and the line holds
+//!   only with the `row` and `above` lines it closes no cycle with
+//!   (relations.7). `rows`, `Relations.links`
 //! - relations.11 (unmeasured) A `face` line on one of a mated pair turns
 //!   the unnamed mate's gate the other way; a flat part's mate is not
 //!   turned with it. `faces`
@@ -68,6 +81,8 @@ const device = @import("device.zig");
 const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
+const anchored = @import("anchored.zig");
+const units = @import("units.zig");
 
 const Netlist = netlist.Netlist;
 const DeviceKind = netlist.DeviceKind;
@@ -88,6 +103,10 @@ pub const Relations = struct {
     /// Per bridge a `row` line names: a column device whose row it takes;
     /// `none` for the rest.
     bridge_row: []const u32,
+    /// `[a, b, line]`: a directly above b in one column, as `column` line
+    /// `line` (an index into the deck's hints) or its mirror image says.
+    /// No device is first, or second, of two links.
+    links: []const [3]u32 = &.{},
 
     /// The representative of `d`'s class.
     pub fn find(r: *const Relations, d: u32) u32 {
@@ -191,7 +210,8 @@ pub fn drivers(gpa: Allocator, nl: *const Netlist, drawn: []bool, verdicts: []?V
 }
 
 /// `upright <dev>` and `bridge <dev>`: a drawn device whose path joins two
-/// nets stands in a column or bridges; one with a gate stands only.
+/// nets stands in a column or bridges; of those with a gate, only a MOS
+/// bridges.
 pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []Form, verdicts: []?Verdict) Allocator.Error!void {
     const c = &nl.graph;
     const kinds = c.edges.items(.kind);
@@ -200,18 +220,24 @@ pub fn forms(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .upright and h.verb != .bridge) continue;
-        verdicts[i] = .of(for (h.args) |name| {
+        var at: u32 = hints.no_arg;
+        verdicts[i] = .at(for (h.args, 0..) |name, k| {
+            at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             const a, const b = nl.path(EdgeId.from(d)) orelse break .not_placeable;
-            const takes = if (device.isTransistor(kinds[d])) h.verb == .upright else twoPin(kinds[d]);
+            const takes = if (device.isTransistor(kinds[d])) h.verb == .upright or kinds[d] == .mosfet else twoPin(kinds[d]);
             if (!drawn[d] or !takes or a == b) break .not_placeable;
-        } else if (h.args.len == 0) .bad_args else .ok);
+        } else done: {
+            at = hints.no_arg;
+            break :done if (h.args.len == 0) .bad_args else .ok;
+        }, at);
         if (verdicts[i].?.state != .honoured) continue;
         for (h.args) |name| form[nl.device(name).?.index()] = if (h.verb == .upright) .vertical else .horizontal;
     }
 }
 
-/// `face <dev> <end> up|down`: which of a vertical device's ends is up.
+/// `face <dev> <end> up|down`: which of a vertical device's ends is up;
+/// on a flat MOS, its gate's side (relations.4), which this only admits.
 pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, upper: []u32, lower: []u32, verdicts: []?Verdict) Allocator.Error!void {
     const c = &nl.graph;
     const order = try hints.applyOrder(arena, nl.hints);
@@ -226,14 +252,19 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
             verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
-        if (!drawn[d] or form[d] != .vertical) {
-            verdicts[i] = .of(.not_placeable);
-            continue;
-        }
+        if (c.edges.items(.kind)[d] == .subckt and drawn[d] and form[d] != .vertical) continue; // a block's turn: `faces`
         const pin = pinIndex(nl, d, h.args[1]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         };
+        if (drawn[d] and form[d] == .horizontal and c.edges.items(.kind)[d] == .mosfet) {
+            verdicts[i] = .of(if (pin == device.of(.mosfet).gate.?) .ok else .not_placeable);
+            continue;
+        }
+        if (!drawn[d] or form[d] != .vertical) {
+            verdicts[i] = .of(.not_placeable);
+            continue;
+        }
         const net = c.members(EdgeId.from(d))[pin].index();
         if (net != upper[d] and net != lower[d]) {
             verdicts[i] = .of(.bad_args);
@@ -247,9 +278,11 @@ pub fn ends(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []c
     }
 }
 
-/// Admits the `row` and `above` lines; their devices must be drawn column
-/// devices, but a `row` line's may bridge (it takes the row of the line's
-/// first column device).
+/// Admits the `row`, `above` and `column` lines; their devices must be
+/// drawn, a `column` line's column devices. A flat one (a bridge, a block)
+/// takes no part in the rows' constraints: in a `row` it takes the row of
+/// the line's anchor (`anchored.anchor`), in an `above` its anchor's column
+/// (`anchored.place`).
 pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Structure, drawn: []const bool, form: []const Form, verdicts: []?Verdict) Allocator.Error!Relations {
     const n = nl.graph.edgeCount();
     // The valid lines' constraints, by hint: `[a, b, eq]`.
@@ -259,26 +292,32 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     defer arena.free(order);
     for (order) |i| {
         const h = nl.hints[i];
-        if (h.verb != .row and h.verb != .above) continue;
+        if (h.verb != .row and h.verb != .above and h.verb != .column) continue;
+        if (units.claims(nl, h)) continue;
         if (h.args.len < 2) {
             verdicts[i] = .of(.bad_args);
             continue;
         }
         var devs: std.ArrayList(u32) = .empty;
         var spans: usize = 0;
+        var at: u32 = hints.no_arg;
         const bad: ?hints.Code = each: for (h.args, 0..) |name, k| {
+            at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             if (!drawn[d]) break .not_placeable;
             for (h.args[0..k]) |seen| if (std.mem.eql(u8, seen, name)) break :each .bad_args;
             if (form[d] != .vertical) {
-                if (h.verb != .row) break .not_placeable;
+                if (h.verb == .column) break .not_placeable;
                 spans += 1;
                 continue;
             }
             try devs.append(arena, d);
-        } else null;
-        if (bad orelse if (devs.items.len == 0) @as(?hints.Code, .not_placeable) else null) |code| {
-            verdicts[i] = .of(code);
+        } else done: {
+            at = hints.no_arg;
+            break :done null;
+        };
+        if (bad) |code| {
+            verdicts[i] = .at(code, at);
             continue;
         }
         if (devs.items.len == 1 and spans == 0) {
@@ -286,30 +325,39 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             continue;
         }
         var cs: std.ArrayList([3]u32) = .empty;
-        const eq: u32 = @intFromBool(h.verb == .row);
-        for (devs.items[0 .. devs.items.len - 1], devs.items[1..]) |a, b| {
+        // 1 an equality, 0 an edge, 2 an edge and a column link.
+        const eq: u32 = switch (h.verb) {
+            .row => 1,
+            .above => 0,
+            .column => 2,
+            else => unreachable,
+        };
+        if (devs.items.len >= 2) for (devs.items[0 .. devs.items.len - 1], devs.items[1..]) |a, b| {
             if (a == b) continue;
             assert(devs.items.len >= 2);
             try cs.append(arena, .{ if (eq == 1) devs.items[0] else a, b, eq });
-        }
+        };
         own[i] = cs.items;
     }
     var admitted: std.ArrayList(u32) = .empty;
     defer admitted.deinit(gpa);
     var held: std.ArrayList([3]u32) = .empty;
-    var images: std.ArrayList([]const [3]u32) = .empty;
+    const Image = struct { line: u32, cs: []const [3]u32 };
+    var images: std.ArrayList(Image) = .empty;
+    var links: std.ArrayList([3]u32) = .empty;
     const check: Check = .{ .gpa = gpa, .n = n, .own = own };
     for (try hints.admitOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
-        if ((h.verb != .row and h.verb != .above) or verdicts[i] != null) continue;
+        if ((h.verb != .row and h.verb != .above and h.verb != .column) or verdicts[i] != null or units.claims(nl, h)) continue;
         try admitted.append(gpa, i);
         if (!try check.holds(admitted.items)) {
             _ = admitted.pop();
-            verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, .cycle);
+            verdicts[i] = try hints.conflict(gpa, arena, check, admitted.items, i, if (h.verb == .column) .conflict else .cycle);
             continue;
         }
         verdicts[i] = .of(.ok);
         try held.appendSlice(arena, own[i]);
+        for (own[i]) |k| if (k[2] == 2) try links.append(arena, .{ k[0], k[1], i });
         // Its mirror image, where the symmetry has one and it fits.
         var image: std.ArrayList([3]u32) = .empty;
         for (own[i]) |k| {
@@ -319,13 +367,17 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
             if (!drawn[a] or !drawn[b] or form[a] != .vertical or form[b] != .vertical) continue;
             try image.append(arena, .{ a, b, k[2] });
         }
-        if (image.items.len != 0) try images.append(arena, image.items);
+        if (image.items.len != 0) try images.append(arena, .{ .line = i, .cs = image.items });
     }
     // The images after every line, the strongest line's first: a line
     // admitted later stands, and the image that contradicts it goes.
     for (images.items) |image| {
-        try held.appendSlice(arena, image);
-        if (!try consistent(gpa, n, held.items)) held.shrinkRetainingCapacity(held.items.len - image.len);
+        try held.appendSlice(arena, image.cs);
+        if (!try consistent(gpa, n, held.items)) {
+            held.shrinkRetainingCapacity(held.items.len - image.cs.len);
+            continue;
+        }
+        for (image.cs) |k| if (k[2] == 2) try links.append(arena, .{ k[0], k[1], image.line });
     }
     assert(try consistent(gpa, n, held.items));
     const class = try arena.alloc(u32, n);
@@ -337,35 +389,33 @@ pub fn rows(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     for (try hints.applyOrder(arena, nl.hints)) |i| {
         const h = nl.hints[i];
         if (h.verb != .row or verdicts[i] == null or verdicts[i].?.state != .honoured) continue;
-        var first: u32 = none;
-        for (h.args) |name| {
-            const d = nl.device(name).?.index();
-            if (form[d] == .vertical and first == none) first = d;
-        }
+        const first = nl.device(h.args[anchored.anchor(nl, form, h.args)]).?.index();
         for (h.args) |name| {
             const b = nl.device(name).?.index();
-            if (form[b] == .vertical) continue;
+            if (form[b] == .vertical or b == first) continue;
             bridge_row[b] = first;
             const mb = st.device_mate[b];
             const mf = st.device_mate[first];
             if (mb != none and mb != b and drawn[mb] and form[mb] != .vertical and mf != none and drawn[mf] and form[mf] == .vertical) bridge_row[mb] = mf;
         }
     }
-    var out: Relations = .{ .class = class, .edges = &.{}, .bridge_row = bridge_row };
+    var out: Relations = .{ .class = class, .edges = &.{}, .bridge_row = bridge_row, .links = links.items };
     for (held.items) |k| if (k[2] == 1) {
         const a = out.find(k[0]);
         const b = out.find(k[1]);
         if (a != b) class[a] = b;
     };
-    for (held.items) |k| if (k[2] == 0) try edges.append(arena, .{ k[0], k[1] });
+    for (held.items) |k| if (k[2] != 1) try edges.append(arena, .{ k[0], k[1] });
     out.edges = edges.items;
+    assert(links.items.len <= held.items.len);
     return out;
 }
 
 /// `face <dev> <side pin> left|right`: a transistor's gate (or base) side;
 /// on a mated pair, the mate turns the other way unless a line names it.
 /// On a flat part, the end named stands on that side (`left_end`); its mate
-/// is not turned with it. Returns false when a line turned a mated pair's
+/// is not turned with it. On a block, the line is only admitted here
+/// (any side): `sketch.orientAll` turns the block. Returns false when a line turned a mated pair's
 /// gates out of their mirror.
 pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []const Form, mate: []const u32, gate_right: []bool, left_end: []skeleton.End, verdicts: []?Verdict) Allocator.Error!bool {
     const before = try arena.dupe(bool, gate_right);
@@ -383,24 +433,30 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
         }
         const side = h.verb.side(Side, h.args[2]);
         const right = side == .right;
-        if (!right and side != .left) {
-            verdicts[i] = .of(.bad_args);
-            continue;
-        }
         const d = (nl.device(h.args[0]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         }).index();
+        if (side == null or (!right and side != .left and kinds[d] != .subckt)) {
+            verdicts[i] = .of(.bad_args);
+            continue;
+        }
         const pin = pinIndex(nl, d, h.args[1]) orelse {
             verdicts[i] = .of(.unknown_name);
             continue;
         };
+        // A block: the named port on any side; `sketch.orientAll` turns it.
+        if (drawn[d] and kinds[d] == .subckt) {
+            verdicts[i] = .of(.ok);
+            continue;
+        }
         // A flat part: one of its two ends on that side. Narrowing: by its
         // pin count, as `sketch.fits` turns it; the device model's flat part
         // (`device.isPart`, an end of its path) also takes a four-pin switch
         // and leaves out a two-port box.
-        if (drawn[d] and form[d] == .horizontal and c.members(EdgeId.from(d)).len == 2) {
-            left_end[d] = if ((pin == 0) != right) .first else .second;
+        const path: ?[2]u8 = if (c.members(EdgeId.from(d)).len == 2) .{ 0, 1 } else if (kinds[d] == .mosfet) device.of(.mosfet).path else null;
+        if (drawn[d] and form[d] == .horizontal and path != null and (pin == path.?[0] or pin == path.?[1])) {
+            left_end[d] = if ((pin == path.?[0]) != right) .first else .second;
             verdicts[i] = .of(.ok);
             continue;
         }
@@ -427,12 +483,15 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
 }
 
 /// Pin `word` of device `d`: a terminal name of its kind (`d g s b`, `c b
-/// e`, `a b` for two pins, `p n` for a source, or the pin's number from 1),
-/// or a net it touches.
+/// e`, `a b` for two pins, `p n` for a source, a block's port), or the
+/// pin's number from 1, or a net it touches.
 pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32 {
     const c = &nl.graph;
     const pins = c.members(EdgeId.from(d));
     for (device.of(c.edges.items(.kind)[d]).names, 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
+    if (nl.defOf(EdgeId.from(d))) |def| for (def.ports, 0..) |port, k| {
+        if (k < pins.len and std.ascii.eqlIgnoreCase(port, word)) return @intCast(k);
+    };
     if (hints.int(word)) |k| if (k >= 1 and k <= pins.len) return @intCast(k - 1);
     const net = nl.net(word) orelse return null;
     for (pins, 0..) |p, k| if (p == net) return @intCast(k);
@@ -466,9 +525,13 @@ fn namedFace(nl: *const Netlist, verdicts: []const ?Verdict, d: u32) bool {
     return false;
 }
 
-/// Whether equalities and edges (`[a, b, 1]`, `[a, b, 0]`) over `n` devices
-/// admit levels: no edge within a class, no cycle among classes.
+/// Whether equalities, edges and column links (`[a, b, 1]`, `[a, b, 0]`,
+/// `[a, b, 2]`) over `n` devices admit levels: no edge within a class, no
+/// cycle among classes, no device first or second of two distinct links.
 fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool {
+    for (cs, 0..) |k, i| if (k[2] == 2) for (cs[0..i]) |o| {
+        if (o[2] == 2 and (o[0] == k[0]) != (o[1] == k[1])) return false;
+    };
     const class = try gpa.alloc(u32, n);
     defer gpa.free(class);
     for (class, 0..) |*k, d| k.* = @intCast(d);
@@ -481,7 +544,7 @@ fn consistent(gpa: Allocator, n: usize, cs: []const [3]u32) Allocator.Error!bool
     // The rows' order among the classes is an order like the columns'.
     var edges: std.ArrayList([2]u32) = .empty;
     defer edges.deinit(gpa);
-    for (cs) |k| if (k[2] == 0) {
+    for (cs) |k| if (k[2] != 1) {
         if (r.find(k[0]) == r.find(k[1])) return false;
         try edges.append(gpa, .{ r.find(k[0]), r.find(k[1]) });
     };

@@ -11,6 +11,197 @@ The engine work since 2.1.0: 143 commits from 2026-11-06 to 2026-11-13, mostly p
 wiring rules measured against 5,263 hand-drawn reference circuits, and a pattern study on the
 AnalogGenie corpus (#8).
 
+### Merged
+
+Each merge into `main` since 2026-11-26, why it was taken, and what it measured on the merged
+tree. Corpus numbers are `corpus_score.py` against the cached hand drawings (AnalogGenie 2,202,
+AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> after.
+
+- CI's `netlist-import.wasm` size cap is raised from 550 KiB (563,200 bytes) to 1 MiB (1,048,576 bytes), at the owner's decision: the merged layout work puts the guest at 736,096 bytes on 4c409314.
+
+- Human layout patterns, 33 commits (#22): taken because it moves the drawings toward the hand
+  layouts with no new gate findings. Decks matching every scored relation: AnalogGenie 290 -> 293,
+  AMS-Net 243 -> 246; gate directions, gates, orientations and x/y positions each gain, none
+  lose. 196 of 5,274 drawings change, 0 -> 0 with gate findings. AnalogGenie crossings 4,987 ->
+  4,982 and written names 3,964 -> 3,917 (people 2,691 and 1,397); the cost is corners 20,658 ->
+  20,731 (people 20,590). Tests 468/468 without LaTeX and 469/469 with; `netlist-import.wasm`
+  rebuilt byte-identical at 540,819 bytes (was 558,406). Its parts:
+  - Reciprocal MOS loads stand on their input branches; a bias gate line keeps a visible port
+    when its middle is taken; passive ladders and bridged Ts sit around their tapped path;
+    sampling diodes in two polarity columns beside the hold capacitor; a parallel LC across drive
+    and output; the regulator reference above its feedback lead.
+  - Bias taps are added after routing, so existing ports and wire partitions survive (57 of
+    5,274 decks gain one).
+  - Comparators: drain pairs joined and remote gates named in both renderers; preamplifier rows
+    above the latch (AG1079, AG1080); four-bias amplifiers and clocked comparators with every
+    ordered terminal.
+  - Common-control input stages on two branches around the tail; paired source-degeneration
+    arms joined at a T over the tail.
+  - Caller geometry: requested tail sources stay on the mirror axis, series stacks report their
+    real order, admitted caller geometry is kept, rejected directives no longer move a drawing.
+  - Hidden electrical peers replace misleading no-connect crosses at pins; rounded-gate supply
+    leads end exactly on the outline; PFD and DAC box contacts on their observed sides.
+  - MOS bodies as distinct native and editor contacts, and a C query for a physical pin.
+  - A signed amplifier frame per native use, shared by qualifying editor symbols.
+  - Guest size: full LTO, pinned Binaryen, and deterministic heap ordering (-26,904 bytes).
+- A nested switch bank stands as its source does: the input pair left of all four switches, the
+  inner source columns between the outer ones (AG517, the staged checkpoint of #22): taken because
+  its one changed deck moves to its hand drawing, x 52 -> 96 of 100, y 74 -> 82 of 82, gates
+  2 -> 6 of 6, corners 3 -> 11 (people 14), crossings 5 -> 3 (people 5); 1 of 5,274 drawings
+  changes, 0 -> 0 with gate findings. Tests 468/468 and 469/469; `netlist-import.wasm` 545,677
+  bytes.
+- A folded switch bank is drawn as two dimensions of its source, rows by control and columns by
+  input (AG1093, recovery patch of #22): taken because its one changed deck improves on every
+  measure, crossings 12 -> 9, corners 30 -> 27, written names 2 -> 1, and corpus gates +6, gate
+  directions +6, x +58, y +70, symbols +2; AG1016 and AG364 unchanged. Tests 468/468 and
+  469/469; `netlist-import.wasm` 550,891 bytes.
+
+Merged on 2026-11-26 at the owner's request to bring every branch and worktree into `main`
+without per-change scoring: taken to stop the work living in uncommitted trees and recovery
+patches. None of these lines is measured against the hand drawings yet; the corpus scores and
+the size cap below are the open follow-ups.
+
+- Interleaved control groups in a switch bank, after the folded bank (AG1093; recovery patch of
+  #22).
+- A rejected caller row request keeps the ordinary drawing; an accepted strong position is still
+  honoured (AG762, P24; recovery patch of #22).
+- Eight oblique two-terminal capacitor symbols for four-phase RC networks (AG493; recovery patch
+  of #22).
+- Grouped varactor controls as one bus contact in the editor, and the same grouping for native
+  `--bundles` (AG1146; recovery patches of #22).
+- `--allow-45`: optional 45-degree feedback crossovers (P21/P23; the in-progress recovery patch
+  of #22, merged onto `source_layout` and `--bundles`).
+- A switch bank is admitted only when its switches stand alone among the source's channel
+  rectangles; a quad-slot census for AG80, AG82, AG517 and AG1093 (rest-groups work in
+  progress).
+- A solid `filled_circle` symbol op through the Zig API, the C ABI (`CKTIMG_OP_FILLED_CIRCLE`),
+  SVG, TikZ and Schemify (`fill true`); host audit tests (human-layout-release work in progress).
+- Center-tap symbols, tanks, chains and four-sided stages; coil banks, chains, bridges and
+  tanks; resistor loads and their downstream parts; block input RC and block tanks; antiparallel
+  clamps and their anchors; pin escapes; with their research notes and figures (the main
+  checkout's uncommitted work since 4f69956). The 117 MB `docs/research/image-rules` study is
+  kept on the `snapshot/main-checkout` branch, not in the tree.
+- Hint reports (`fix/hint-reports`): taken because five agents hinting 15 hard corpus decks
+  lost rounds to what `requests` said. Top-level `*@` lines in a deck of only `.subckt`s apply to
+  the top cell (they were dropped silently); `requests[].line` is the file's own line (139 of 139
+  trial lines match, 0 before); the engine's own lines leave `requests` (170 -> 139 entries);
+  `not_placeable` and `unknown_name` name the failing argument (`name`); a mirror, bank or stack
+  with no joining net is `rejected unjoined`; a `face` that leaves a name on the port is
+  `relaxed no_room`. The 15 trial drawings are byte-identical. `skills/cktimg/` gains the verdict
+  and `lint.zon` tables. `netlist-import.wasm` 677,072 -> 678,692 bytes. Corpus numbers
+  unmeasured.
+- Drawing text (`fix/drawing-text`): taken because all five hinting agents found names drawn on
+  symbols, names or wires while `gates` stayed empty. The report's new `text_overlaps` lists
+  every name whose box sits on another symbol, name or net's wire; on the 5,274 decks it flagged
+  1,497 decks (3,297 findings), and moving device, port, rail and label names to a clear side
+  takes that to 304 (554), measured on the branch before the merge; 3,771 of the 3,777 decks with
+  no overlap stay byte-identical. A named net's near pins are wired two at a time, nearest first,
+  not all named (208 decks change). `+<n>v` is a supply by name, and `vs` when it is the only
+  supply candidate and sits on a p-type source (31 decks change). On the merged tree: 301 decks,
+  535 findings. `netlist-import.wasm` 678,692 -> 684,239 bytes.
+- Column and partial-wiring hints (`feat/hint-columns-wiring`): taken because all five hinting
+  agents asked for a column and four for naming only some pins of a net. `*@ column <devs>` stands
+  each device over the next in one lattice column, parallel devices too; an `order` that would
+  split it is dropped and a shelf never cuts it (ag-641 `column q19 q21`: 130 units apart -> one
+  x, crossings 15 -> 10, bends 37 -> 32). `*@ label <net> at <dev>.<pin> ...` names those pins and
+  wires the rest (ag-1289 `vx1`: 5/14 with `wire` -> 3/12). `*@ wire <input>` draws one port on
+  one wire (ag-1067 `a0`: 3 ports -> 1, crossings 11 -> 16). `metrics.ported` lists nets drawn as
+  two or more ports. `wire <net> column` is not built: `wire` already draws it. Corpus numbers
+  unmeasured. `netlist-import.wasm` 684,239 -> 689,025 bytes.
+- Block and pin hints (`feat/hint-block-pins`): taken because four hinting agents found every
+  relation on an `X` block refused and three wanted a part hung from a pin. `row` and `above` now
+  place blocks and flat parts by the line's anchor, its first upright device or block (ar-3201
+  `above r5 x1 r4` and ag-1094 `above r8 c9 x1 r10 c10`, both rejected before, draw the feedback
+  parts over and under the block; ag-1094 bends 38 -> 29). `*@ hang <part> <dev>.<pin>` hangs a
+  part under, over or beside that pin (ag-1108: four `hang` lines draw what 26 `cell` lines did;
+  ag-1094 `hang c3 m5.g` crossings 8 -> 5). `*@ wire <net> over|under` runs the net past every
+  symbol without coordinates (ag-2323 `wire fb under` 9/19 -> 5/16, where a hand `route` gave
+  5/18). Auto-expanding passive-only subcircuits was measured on the 38 corpus decks that have
+  one (crossings fall in 16, rise in 10) and not taken. Tests 604/604. Corpus numbers unmeasured.
+  `netlist-import.wasm` 689,025 -> 693,741 bytes.
+- Stages (`feat/stages`): taken because three Fable agents and three round-2 agents stood in
+  for a stage with `order` lines of up to 24 names that reflow every column they omit. `*@ stage
+  <name> <devs>` makes a unit that `row` and `order` move whole, stepping only unnamed devices
+  inside its box aside; `*@ repeat <stages>` lays each like the first. ag-1067's four XNOR cells:
+  7 lines draw them alike on one level (the unhinted staircase spans 10 rows), 21 -> 21 crossings;
+  with face and label lines 10/37. A stage keeps no inner column order: ag-2500 with two stages
+  for a 19-name order went 3 -> 8 crossings. No gate-bus pattern was needed: `wire <net> trunk` is
+  one, and SKILL now explains trunk, ladder and route. All 5,274 decks are byte-identical without
+  the new lines. `netlist-import.wasm` 693,741 -> 701,214 bytes.
+- Python (`feat/python`): taken because Schemify and SPRack agreed one documented drawing call
+  owned by cktImg. `cktimg.place(deck, *, symbols, target, start, config)` returns the placement
+  and the report, `cktimg.draw` the SVG and the report; the deck is text or a `sprack.Circuit`,
+  every file input a path, text or dict. It runs `cktimg-json` (pinned redraw, ReleaseFast: 41
+  devices 12.6 ms, 123 devices 73 ms). `docs/PYTHON.md` documents the placement schema. No engine
+  or guest change.
+- Block turns (`feat/block-turns`): taken because two Fable agents could turn or mirror a block
+  only with hand `at` lines. `*@ face <block> <port> left|right|up|down` turns a block until that
+  port faces the side, and an admitted `*@ symmetric <blk> <blk>` draws the mate mirrored (ag-1168,
+  replacing a hand `at ... MR0`: 4/24 -> 3/22, the hand result). A child's side lines keep a
+  recognised glyph, turned or mirrored to fit, before falling back to a box (ar-3201's amplifier
+  keeps its triangle with vip on top). A block's title moves a quarter unit off its ports' names
+  before the box widens, and `text_overlaps` counts two texts of one symbol (43 findings in 20
+  decks, mostly blocks the engine turns itself). 16 of 5,274 drawings change, 14 with the same
+  metrics. Gates rerun on the merged tree. `netlist-import.wasm` 701,214 -> 704,503 bytes.
+- Naming (`fix/naming`): taken because all five Fable agents ranked names drawn on their own
+  wire, twice on one point, or at every pin of a thinned net as the top defect. A name's stub never
+  runs along its own wire, ends on its own net or crosses another; a thinned or cut net gets one
+  name per wired piece, and pins facing each other with no crossing between are joined by a
+  straight wire; repeated pieces are dropped. `label <net> at` no longer rewires other nets
+  (ag-1329: 5 -> 1 crossings). New `*@ wire <net> at <dev>.<pin> ...` wires the listed pins as one
+  named piece and names the rest once. On the 5,274 decks: 769 drawings change, 672 better and 9
+  worse; names on their own wire 476 -> 1, duplicate pieces 1,272 -> 313, pieces named twice
+  110 -> 3; crossings 6,303 -> 6,259, bends 32,087 -> 32,069, labels 10,690 -> 10,461;
+  `text_overlaps` 535 -> 631, because own-wire names now count. `netlist-import.wasm`
+  704,503 -> 713,470 bytes.
+- Verdicts (`fix/verdicts`): taken because the skill's stop rule trusts `requests`, and the Fable
+  agents found false ones. `wire`/`port` are judged on shown pins of devices drawn in the circuit
+  (a hidden bulk or a driver drawn apart made them `no_room`); a port at or past every shown pin
+  holds, and one with no room keeps its port symbol instead of a bare name; an upright hung part
+  holds within two units of its pin; `blocked_by[].alone` is proven by redrawing without each
+  blocker (up to 32 redraws); a `*@` on file line 1 is reported `rejected title`. A strong `at`
+  anchors its relay line, so making one stay strong moves nothing (before: 7 of 14 on ag-1350,
+  6 of 19 on ag-1289, 4 of 43 on ag-1067). `--decisions <rung>` does not always redraw the same
+  picture (200 decks: moves at rung 2 in 35, rung 4 in 8, those 8 also on the base); the skill now
+  says so. 0 of 5,274 drawings change. `netlist-import.wasm` 713,470 -> 714,171 bytes.
+- Pinned places hold (`fix/verdicts` 5803d60f): taken because Schemify's pin-every-device redraw
+  dropped `at` lines as `guarantee` when one device had no `at`: the fresh lattice stood it on a
+  pinned place. A device no `at` places now steps right, a unit at a time, off any pinned place.
+  Six corpus circuits pinned from `--decisions 4` but one device (184 decks): unhonoured lines
+  25 -> 0, no new gate findings. 0 of 5,274 corpus drawings change; on the hinting-trial decks
+  fable2's ag-1168.p2 gains its two dropped `at` lines and loses on metrics (crossings 7 -> 12).
+  `netlist-import.wasm` 714,171 -> 714,699 bytes.
+- Anchors (`fix/anchors`): taken because three Fable agents wanted `hang` from any pin and found
+  parts an `order` line on a block stranded. `*@ hang <part> <dev>.<pin>` now takes a part's end, a
+  block's port and several parts per pin; a chain is two lines in deck order. An `order` on a block
+  now carries its `above` parts (ag-1094: x1 at 1010 with its feedback parts at 260 -> all at 990;
+  line 21 `relaxed not_drawn` -> honoured; lines 17-20 rejected -> honoured; crossings 7 -> 5,
+  labelled 8 -> 4, text_overlaps 5 -> 1). A `row` line no longer un-levels a matched pair (levels.12;
+  ag-2500 m3 and m6 level again, crossings 4 -> 3); a row takes the lowest row its members need,
+  now documented. 0 of 5,274 drawings change. `netlist-import.wasm` 714,699 -> 716,402 bytes.
+- Per-model manifest keys (`feat/target-models`): taken because Schemify maps PDK flavours (lvt
+  and hvt, 3- and 4-pin variants, PDK resistors and caps) to their own symbols and pin orders. A
+  manifest key `<class>:<model>` (`nmos:nfet_01v8`) maps a device of that class and model before
+  the plain `<class>` key; the model is the M/Q/D/J/Z card's model, an R/C card's model word, or a
+  PDK X master drawn as a primitive, matched lowercased. Tool only: the guest is unchanged.
+- Route glyphs (`fix/route-glyphs`): taken because four Fable agents found wires grazing rail
+  symbols, `wire over|under` runs left dangling, and loops in one net, all with `gates` empty. A
+  rail symbol registers its box plus a unit as a keep-out for the canvas and the maze; each pin of
+  an over/under net routes to the run, which is trimmed to its outer taps; a trunk whose tap lines
+  would close a loop is refused. New gates `glyph_touch`, `dangling_end`, `net_loop`. On the
+  5,274 decks: wires touching a rail symbol 276 (230 drawings) -> 0, loops 36 -> 5 (not trunks;
+  open), dangling ends 0. 302 drawings change: crossings worse 11, better 8; bends worse 35,
+  better 23. Block-outline wires and side-trunk columns remain. `netlist-import.wasm`
+  716,402 -> 734,708 bytes.
+- Flat MOS (`feat/flat-mos`): taken because three Fable agents wanted a transistor laid flat
+  between two nodes, and `symmetric` refused mirrors that swap a MOS's drain and source. `*@ bridge
+  <mos>` lays a MOS flat; `face <mos> g up|down` and `face <mos> d|s left|right` turn it. When a
+  `symmetric` or `axis` line would be dropped `asymmetric`, the search retries letting a MOS swap
+  drain and source (symmetry.8). ar-2369 with `symmetric mc1 mc4`: dropped -> honoured, 8/20 ->
+  5/11; with `bridge` and `above`, the book's two stacked flat MOS at 4/14. Pin-level alignment
+  was already met. 0 of 5,274 unhinted drawings change. All branches gated together on this tip.
+  `netlist-import.wasm` 734,708 -> 736,096 bytes.
+
 ### Changed
 
 Schemify plugin (what users see never names the engine):

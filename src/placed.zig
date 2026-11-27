@@ -49,6 +49,9 @@
 //! - placed.9 (habit) A sink named `vee…` is drawn with the supply's
 //!   glyph, below its pin, not the ground's. People: 470 of 477 `vee` rail
 //!   symbols in 5,263 hand-drawn schematics. `roleClass`
+//! - placed.10 (invariant) No net draws one piece of wire twice: a piece
+//!   that repeats one of its net's end for end is left out, its polyline
+//!   broken there; the ink and what it joins are unchanged. `Builder.once`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -58,6 +61,7 @@ const netlist_mod = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const dots = @import("dots.zig");
 const structure = @import("structure.zig");
+const text_overlaps = @import("text_overlaps.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -107,8 +111,8 @@ pub const Placed = struct {
     // --- nets ---
     net_name: []const [:0]const u8,
     /// Wires: net n owns segments `net_seg[n] .. net_seg[n + 1]`; segment k
-    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]`, Manhattan,
-    /// at least two points.
+    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]` with at least two
+    /// points. The default is Manhattan. Opt-in geometry also admits 45-degree segments.
     net_seg: []const u32,
     seg_pt: []const u32,
     wire_pts: []const Pt,
@@ -246,6 +250,10 @@ const Builder = struct {
             const pin = b.devicePin(d, s.pins.items(.index)[p]) orelse continue;
             try b.no_connects.append(b.a(), b.pin_xy.items[pin]);
         }
+        for (s.peer_labels.items) |p| {
+            const pin = b.devicePin(s.pins.items(.device)[p], s.pins.items(.index)[p]) orelse continue;
+            try b.labels.append(b.a(), .{ .net = b.pin_net.items[pin], .at = b.pin_xy.items[pin], .side = s.pins.items(.side)[p] });
+        }
         try b.names_();
 
         // Terminal symbols: one rail or port per terminal the layout drew.
@@ -332,7 +340,8 @@ const Builder = struct {
         var drivers: std.ArrayList(u32) = .empty;
         for (s.devices.items(.driver), 0..) |dr, d| if (dr) try drivers.append(b.a(), @intCast(d));
         if (drivers.items.len == 0) return;
-        std.mem.sort(u32, drivers.items, b.nl, struct {
+        // Parsed device names are unique; nameLess breaks numeric ties bytewise.
+        std.sort.heap(u32, drivers.items, b.nl, struct {
             fn lt(nl: *const netlist_mod.Netlist, x: u32, y: u32) bool {
                 const names = nl.graph.edges.items(.name);
                 return structure.nameLess(names[x], names[y]);
@@ -396,6 +405,41 @@ const Builder = struct {
         return out.items;
     }
 
+    /// Leaves out every piece of wire that repeats an earlier one of its
+    /// net end for end, breaking its polyline there (placed.10).
+    // ponytail: each piece against every earlier one of its net, quadratic
+    // per net; fine at cell sizes.
+    fn once(b: *Builder) Allocator.Error!void {
+        for (b.polys) |*list| {
+            var kept: std.ArrayList([]const Pt) = .empty;
+            for (list.items) |pl| {
+                var start: usize = 0;
+                for (pl[0 .. pl.len - 1], pl[1..], 1..) |u, v, end| {
+                    if (!drawn(kept.items, pl[start..end], u, v)) continue;
+                    if (end - 1 > start) try kept.append(b.a(), pl[start..end]);
+                    start = end;
+                }
+                if (pl.len - 1 > start) try kept.append(b.a(), pl[start..]);
+            }
+            list.* = kept;
+        }
+    }
+
+    /// Whether piece `p`-`q` is in `polys` or earlier in `piece`, either way
+    /// round.
+    fn drawn(polys: []const []const Pt, piece: []const Pt, p: Pt, q: Pt) bool {
+        for (polys) |pl| if (has(pl, p, q)) return true;
+        return has(piece[0 .. piece.len - 1], p, q);
+    }
+
+    fn has(pl: []const Pt, p: Pt, q: Pt) bool {
+        if (pl.len < 2) return false;
+        for (pl[0 .. pl.len - 1], pl[1..]) |u, v| {
+            if ((u.eql(p) and v.eql(q)) or (u.eql(q) and v.eql(p))) return true;
+        }
+        return false;
+    }
+
     fn valueText(b: *Builder, d: u32) ![:0]const u8 {
         var w: std.Io.Writer.Allocating = .init(b.a());
         const toks = b.nl.params(EdgeId.from(d));
@@ -434,6 +478,7 @@ const Builder = struct {
 
     fn finish(b: *Builder) Allocator.Error!Placed {
         try b.splitAtJunctions();
+        try b.once();
         const al = b.a();
         var net_seg: std.ArrayList(u32) = .empty;
         var seg_pt: std.ArrayList(u32) = .empty;
@@ -451,7 +496,7 @@ const Builder = struct {
         for (nets, b.s.net_name) |*d, n| d.* = try al.dupeSentinel(u8, n, 0);
         // Before the arena is copied into the result.
         const name_sides = try b.refdes();
-        return .{
+        const out: Placed = .{
             .arena = b.arena,
             .dev_name = b.names.items,
             .dev_class = b.classes.items,
@@ -470,6 +515,8 @@ const Builder = struct {
             .labels = b.labels.items,
             .no_connects = b.no_connects.items,
         };
+        try text_overlaps.settleLabels(b.arena.child_allocator, &out, b.labels.items, b.s.lib);
+        return out;
     }
 };
 

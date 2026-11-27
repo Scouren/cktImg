@@ -28,6 +28,14 @@
 //!   Narrowing: each family keeps the label numbers it had, which order
 //!   the colours and so which of equal symmetries is met first
 //!   (`pinLabel`).
+//! - symmetry.8 (book) A MOS channel conducts either way: where no
+//!   symmetry keeps every drain opposite a drain, a deck's `symmetric` or
+//!   `axis` line may be met by one that trades a MOS's drain and source
+//!   (its gate and body stay theirs). ar-2369's MR1 is MR3's image only so,
+//!   and two agents of the hinting trial wrote the line (ar-2369, ag-2402).
+//!   `Ends`, `buildGraph`
+//!   Narrowing: only for a line the kept ends refuse; a drawing with no
+//!   such line keeps them (structure.zig `mates`).
 //! - symmetry.4 (unmeasured) A swap that moves no net but a rail (two
 //!   parallel devices traded) is not drawn as a mirror. `movesSignal`
 //! - symmetry.5 (book) Of the symmetries, the drawing shows the one that
@@ -47,7 +55,8 @@
 //! - `pub const none: u32`
 //! - `pub const Polarity = device.Polarity`
 //! - `pub const Pin = struct`
-//! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool`
+//! - `pub const Ends = enum { kept, mos_free }`
+//! - `pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, ends: Ends, device_mate: []u32, net_mate: []u32) Allocator.Error!bool`
 //! - `pub fn sameType(nl: *const Netlist, a: u32, b: u32) bool`
 //! - `pub const polarity = device.polarity`
 
@@ -74,6 +83,10 @@ pub const polarity = device.polarity;
 /// Two devices (or nets) the symmetry must swap; one on the axis when
 /// `a == b` (`*@ symmetric`, `*@ axis`).
 pub const Pin = struct { net: bool, a: u32, b: u32 };
+
+/// Whether a symmetry keeps every MOS drain opposite a drain (`kept`), or
+/// may trade a MOS's drain and source (`mos_free`, symmetry.8).
+pub const Ends = enum { kept, mos_free };
 
 /// Refinements one symmetry search may run, and complete maps it may weigh:
 /// a circuit of many identical cells has many symmetries, and the first
@@ -134,12 +147,12 @@ const SigOrder = struct {
 /// the circuit onto itself, swaps every pair of `pins`, and moves the most
 /// devices that are not sources; or with `none`, returning false when there
 /// is none.
-pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, device_mate: []u32, net_mate: []u32) Allocator.Error!bool {
+pub fn find(gpa: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, net_rank: []const u32, pins: []const Pin, ends: Ends, device_mate: []u32, net_mate: []u32) Allocator.Error!bool {
     assert(device_mate.len == device_rank.len);
     assert(net_mate.len == net_rank.len);
     @memset(device_mate, none);
     @memset(net_mate, none);
-    const g = try buildGraph(gpa, nl, roles);
+    const g = try buildGraph(gpa, nl, roles, ends);
     defer g.deinit(gpa);
     const canon = try gpa.alloc(u32, g.vertices());
     defer gpa.free(canon);
@@ -188,7 +201,7 @@ fn typeKey(nl: *const Netlist, d: u32) u64 {
     return kind << 24 | pol << 16 | @min(c.members(e).len, 0xffff);
 }
 
-fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role) !Graph {
+fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role, ends: Ends) !Graph {
     const c = &nl.graph;
     const devices = c.edgeCount();
     const n = devices + c.vertexCount();
@@ -211,7 +224,9 @@ fn buildGraph(gpa: Allocator, nl: *const Netlist, roles: []const Role) !Graph {
     const kinds = c.edges.items(.kind);
     for (0..devices) |d| for (c.members(EdgeId.from(d)), 0..) |net, i| {
         const v = devices + net.index();
-        const l = pinLabel(kinds[d], i);
+        // A MOS's source labelled as its drain (symmetry.8).
+        const free = ends == .mos_free and kinds[d] == .mosfet and i == device.of(.mosfet).path.?[1];
+        const l = pinLabel(kinds[d], if (free) device.of(.mosfet).path.?[0] else i);
         to[fill[d]] = v;
         label[fill[d]] = l;
         fill[d] += 1;
@@ -348,7 +363,8 @@ fn refine(gpa: Allocator, g: Graph, colour: []u32) !void {
         }
         for (order, 0..) |*o, v| o.* = @intCast(v);
         const ctx: SigOrder = .{ .g = g, .colour = colour, .sig = sig };
-        std.mem.sort(u32, order, ctx, SigOrder.lessThan);
+        // Equal signatures receive the same next colour, regardless of order.
+        std.sort.heap(u32, order, ctx, SigOrder.lessThan);
         var c: u32 = 0;
         for (order, 0..) |v, i| {
             if (i > 0 and ctx.lessThan(order[i - 1], v)) c += 1;

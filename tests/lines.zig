@@ -60,6 +60,14 @@ const Run = struct {
         return r.p.pin_xy[r.p.pinRange(r.device(name))[0] + k];
     }
 
+    /// The box around device `name`'s pins.
+    fn pins(r: *const Run, name: []const u8) np.Rect {
+        const a, const b = r.p.pinRange(r.device(name));
+        var box: np.Rect = .point(r.p.pin_xy[a]);
+        for (r.p.pin_xy[a..b]) |q| box = box.merge(.point(q));
+        return box;
+    }
+
     fn net(r: *const Run, name: []const u8) u32 {
         for (r.p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
         unreachable;
@@ -122,6 +130,20 @@ fn run(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8, lines: []c
 /// `v` drawing units in symbol units.
 fn fu(v: i32, unit: i32) f64 {
     return @as(f64, @floatFromInt(v)) / @as(f64, @floatFromInt(unit));
+}
+
+/// Part `part` has a pin on the net of pin `k` of `dev`, within two units
+/// of it.
+fn expectHung(r: *const Run, unit: i32, part: []const u8, dev: []const u8, k: u32) !void {
+    const at = r.pin(dev, k);
+    const net = r.p.pin_net[r.p.pinRange(r.device(dev))[0] + k];
+    const a, const b = r.p.pinRange(r.device(part));
+    const near = for (a..b) |q| {
+        const xy = r.p.pin_xy[q];
+        if (r.p.pin_net[q] == net and @abs(xy.x - at.x) <= 2 * unit and @abs(xy.y - at.y) <= 2 * unit) break true;
+    } else false;
+    errdefer std.debug.print("{s} not by {s}.{d}\n", .{ part, dev, k });
+    try std.testing.expect(near);
 }
 
 fn expectState(v: np.hints.Verdict, state: np.hints.State, code: np.hints.Code) !void {
@@ -538,13 +560,170 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
     try std.testing.expect(r.at("m5").eql(.{ .x = -10 * f.lib.unit, .y = 20 * f.lib.unit }));
     try std.testing.expectEqual(np.Orient{ .rot = 1 }, r.p.dev_orient[r.device("m5")]);
     try expectState(r.verdict("*@ refdes m1 left"), .honoured, .ok);
-    // M4 placed on M3's own spot.
+    // M4 placed on M3's own spot: the line beats the engine, and M3, which
+    // no line places, steps off (`run` checks no symbol is on another).
     const base = try run(f.arena(), f.lib, ota, "");
     const m3 = base.at("m3");
     const on = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit) });
     const o = try run(f.arena(), f.lib, ota, on);
-    try expectState(o.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
-    try std.testing.expect(o.at("m4").eql(base.at("m4")));
+    try expectState(o.verdict(on[0 .. on.len - 1]), .honoured, .ok);
+    try std.testing.expect(o.at("m4").eql(m3));
+    try std.testing.expect(!o.at("m3").eql(m3));
+    // On M3's spot with M3 placed there too, the earlier line gives way.
+    const both = try std.fmt.allocPrint(f.arena(), "{s}*@ at m3 {d:.4} {d:.4}\n", .{ on, fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit) });
+    const t = try run(f.arena(), f.lib, ota, both);
+    try expectState(t.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
+    try std.testing.expect(t.at("m4").eql(base.at("m4")));
+}
+
+test "lines: above and row stand blocks and flat parts by their anchor" {
+    // Oracle: the lines themselves, read off the finished drawing's pins:
+    // the feedback part over the block has every pin above the block's and
+    // spans the block's centre; the part under it, every pin below.
+    // Blocks and flat parts have no row among the columns', and the engine
+    // rejected every such line `not_placeable` (four decks of the hinting
+    // trials: ar-3201, ag-1094, ag-1067, ag-1168).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Feedback over a block\n.model nch nmos\n.subckt dda p1 n1 o1 o2\n.ends dda\n.subckt buf a y\n.ends buf\n" ++
+        "M1 n1 vin 0 0 nch\nR1 vdd n1 1k\nR2 n1 o1 1k\nR3 p1 o2 1k\nX1 p1 n1 o1 o2 dda\nX2 o1 y buf\nR4 y 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ above r2 x1 r3\n*@ above x1 x2\n");
+    for ([_][]const u8{ "*@ above r2 x1 r3", "*@ above x1 x2" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    const r2 = r.pins("r2");
+    const x1 = r.pins("x1");
+    try std.testing.expect(r2.max.y < x1.min.y and r2.min.x <= r.at("x1").x and r.at("x1").x <= r2.max.x);
+    try std.testing.expect(r.pins("r3").min.y > x1.max.y);
+    try std.testing.expect(r.pins("x2").min.y > x1.max.y);
+    // A row of blocks and a flat part alone: level with its first block.
+    const level = try run(f.arena(), f.lib, deck, "*@ row x1 r2 x2\n");
+    try expectState(level.verdict("*@ row x1 r2 x2"), .honoured, .ok);
+}
+
+test "lines: hang stands a part by a pin of an upright device" {
+    // Oracle: the finished drawing's pins. A hung part has its pin on the
+    // named pin's net within two units of that pin (`checks.drawnAs`), and
+    // a capacitor hung from a gate stands under the gate, its pin on the
+    // gate's net no higher than the gate. Three agents of the hinting trial
+    // wrote cells for this (ar-239, ag-1108, ag-1094); the verb was unknown.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Hung parts\n.model nch nmos\nM1 d g s 0 nch\nR1 vdd d 1k\nR2 vin g 1k\nI1 s 0 1m\nC1 g 0 1p\nR3 s 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ hang c1 m1.g\n*@ hang i1 m1.s\n");
+    for ([_][]const u8{ "*@ hang c1 m1.g", "*@ hang i1 m1.s" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expect(r.pin("c1", 0).y >= r.pin("m1", 1).y);
+    try std.testing.expect(r.pins("i1").min.y >= r.pin("m1", 2).y);
+    const bad = try run(f.arena(), f.lib, deck, "*@ hang r1 m1.g\n*@ hang c1 m1\n*@ hang c1 m9.g\n");
+    try expectState(bad.verdict("*@ hang r1 m1.g"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m1"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
+}
+
+test "lines: hang stands a part by a flat part's end, a block's pin, and two parts by one pin" {
+    // Oracle: the finished drawing's pins. Each hung part has a pin on the
+    // named pin's net within two units of that pin. The second hinting
+    // trial wrote these and got `not_placeable` (a flat part's end, the
+    // chain of ag-1094's bias resistors), `unknown_name` (a block's port)
+    // and `relaxed no_room` (a second part on a gate).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const chain = "Hung chains\n.model nch nmos\nM1 d g s 0 nch\nR1 vdd d 1k\nI1 s 0 1m\nC1 lo g 1p\nR2 vb g 1k\nR3 vc g 1k\n";
+    const block = "Hung by a block\n.model nch nmos\n.subckt buf a y\n.ends buf\nM1 d g s 0 nch\nR1 vdd d 1k\nI1 s 0 1m\n" ++
+        "X1 d o buf\nR5 o out 1k\nR6 out 0 1k\n";
+    const Hung = struct { []const u8, []const u8, u32 };
+    const cases = [_]struct { []const u8, []const []const u8, []const Hung }{
+        .{ chain, &.{ "*@ hang c1 m1.g", "*@ hang r2 c1.b", "*@ hang r3 m1.g" }, &.{ .{ "c1", "m1", 1 }, .{ "r2", "c1", 1 }, .{ "r3", "m1", 1 } } },
+        .{ block, &.{"*@ hang r5 x1.y"}, &.{.{ "r5", "x1", 1 }} },
+    };
+    for (cases) |case| {
+        const r = try run(f.arena(), f.lib, case[0], try std.mem.concat(f.arena(), u8, &.{ try std.mem.join(f.arena(), "\n", case[1]), "\n" }));
+        for (case[1]) |line| try expectState(r.verdict(line), .honoured, .ok);
+        for (case[2]) |h| try expectHung(&r, f.lib.unit, h[0], h[1], h[2]);
+    }
+}
+
+test "lines: an order line that moves a block carries the parts an above line stands in its column" {
+    // Oracle: the finished drawing's device origins. `above r2 x1 r3`
+    // stands r2 over x1 and r3 under it, in x1's column; `order r4 x1`
+    // then moved x1 alone and left the two a column away, both lines
+    // reported honoured (fable3, x-1094-orderabove).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Feedback over a block\n.model nch nmos\n.subckt dda p1 n1 o1 o2\n.ends dda\n.subckt buf a y\n.ends buf\n" ++
+        "M1 n1 vin 0 0 nch\nR1 vdd n1 1k\nR2 n1 o1 1k\nR3 p1 o2 1k\nX1 p1 n1 o1 o2 dda\nX2 o1 y buf\nR4 y 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ order r4 x1\n*@ above r2 x1 r3\n");
+    for ([_][]const u8{ "*@ order r4 x1", "*@ above r2 x1 r3" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expect(r.at("r4").x < r.at("x1").x);
+    try std.testing.expectEqual(r.at("x1").x, r.at("r2").x);
+    try std.testing.expectEqual(r.at("x1").x, r.at("r3").x);
+}
+
+test "lines: a row line holding a part level with one mate keeps the mates level" {
+    // Oracle: the finished drawing's device origins. m3 and m4 are a
+    // matched pair; `row m3 c1` holds c1 level with m3, and c1's lower end
+    // is m4's drain. The row stood and m4 dropped a row below its mate
+    // (fable5, ag-2500 `row m3 cm2`).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Pair under a row\n.model nch nmos\n.model pch pmos\nM1 a a vdd vdd pch\nM2 b a vdd vdd pch\nM3 a vn t 0 nch\n" ++
+        "M4 b vn u 0 nch\nC1 b w 1p\nM5 w b 0 0 nch\nI1 t 0 1m\nI2 u 0 1m\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ row m3 c1\n*@ face c1 b up\n");
+    try expectState(r.verdict("*@ row m3 c1"), .honoured, .ok);
+    try std.testing.expectEqual(r.at("m3").y, r.at("c1").y);
+    try std.testing.expectEqual(r.at("m3").y, r.at("m4").y);
+}
+
+test "lines: bridge lays a MOS flat along its channel, its gate up or down as face says" {
+    // Oracle: the finished drawing's pins. A flat MOS has its drain and
+    // source level, and its gate above (below) them for `face g up`
+    // (`down`). Three agents of the hinting trial asked for this (ar-2369
+    // MR1-MR4, ag-1329 m21/m1, ag-1094's transmission gates); `bridge` on a
+    // transistor was refused `not_placeable`.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Pass device\n.model nch nmos\nM1 a ga 0 0 nch\nM2 b gb 0 0 nch\nR1 vdd a 1k\nR2 vdd b 1k\nM3 a g b 0 nch\nVg g 0 1\nVa ga 0 1\nVb gb 0 1\n";
+    for ([_][]const u8{ "up", "down" }) |side| {
+        const face = try std.fmt.allocPrint(f.arena(), "*@ face m3 g {s}", .{side});
+        const r = try run(f.arena(), f.lib, deck, try std.mem.concat(f.arena(), u8, &.{ "*@ bridge m3\n", face, "\n*@ face m3 d left\n" }));
+        for ([_][]const u8{ "*@ bridge m3", face, "*@ face m3 d left" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+        const d, const g, const s = .{ r.pin("m3", 0), r.pin("m3", 1), r.pin("m3", 2) };
+        try std.testing.expectEqual(d.y, s.y);
+        try std.testing.expect(d.x < s.x);
+        try std.testing.expect(if (side[0] == 'u') g.y < d.y else g.y > d.y);
+    }
+    // A flat MOS's gate stands up or down only, and only its gate does.
+    const bad = try run(f.arena(), f.lib, deck, "*@ bridge m3\n*@ face m3 g left\n*@ face m3 b up\n");
+    try expectState(bad.verdict("*@ face m3 g left"), .rejected, .not_placeable);
+    try expectState(bad.verdict("*@ face m3 b up"), .rejected, .not_placeable);
+}
+
+test "lines: symmetric trades a MOS's drain and source when no symmetry keeps them" {
+    // Oracle: the verdict, which reads the finished drawing's mirror
+    // (`drawn_symmetry.shows`), and the pins: m4 is m3's image with its
+    // drain and source traded, so m3's drain stands opposite m4's source.
+    // ar-2369's MR1 maps to MR3 only so; `symmetric mc1 mc4` was dropped
+    // `asymmetric` (two agents of the hinting trial).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Traded ends\n.model nch nmos\nM1 x in1 t 0 nch\nM2 y in2 t 0 nch\nM3 x c x2 0 nch\nM4 y2 c y 0 nch\nR1 vdd x2 1k\nR2 vdd y2 1k\nI1 t 0 1m\nVdd vdd 0 1\nV1 in1 0 1\nV2 in2 0 1\nVc c 0 1\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ symmetric m1 m2\n");
+    try expectState(r.verdict("*@ symmetric m1 m2"), .honoured, .ok);
+    const d3, const s4 = .{ r.pin("m3", 0), r.pin("m4", 2) };
+    try std.testing.expectEqual(d3.y, s4.y);
+    try std.testing.expectEqual(r.at("m1").x + r.at("m2").x, d3.x + s4.x);
+}
+
+test "lines: wire over and under run a net past the top or the bottom of the drawing" {
+    // Oracle: the finished drawing's wires (`checks.drawnAs`): the net is
+    // one wire, and some point of it lies above (below) every pin of every
+    // device. Two agents of the hinting trial wrote a `route` in hand-
+    // computed coordinates for this (ag-2323 `fb` under, ag-1168 over);
+    // the words were refused `bad_args`.
+    var f = try Fixture.init();
+    defer f.deinit();
+    for ([_][]const u8{ "*@ wire f over", "*@ wire f under" }) |line| {
+        const r = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ line, "\n" }));
+        try expectState(r.verdict(line), .honoured, .ok);
+    }
 }
 
 test "lines: a row line and an above line on a loop of two devices are both held" {
@@ -602,17 +781,18 @@ test "lines: an order line admitted after another order line's mirror image stan
 
 test "lines: an at that gives way stands on its lattice place, and an at on that place gives way too" {
     // Oracle: the guarantee (no symbol on another), checked by `run`, and
-    // the drawing with no line. M4 is put on M3 and gives way; M1 is put
-    // where M4 then stands, and must give way as well. It was checked
-    // against the place M4 had left, kept, and drawn on M4.
+    // the drawing with no line. M4 is put on M3, which a later line keeps
+    // there, and gives way; M1 is put where M4 then stands, and must give
+    // way as well. It was checked against the place M4 had left, kept, and
+    // drawn on M4.
     var f = try Fixture.init();
     defer f.deinit();
     const base = try run(f.arena(), f.lib, ota, "");
     const m3 = base.at("m3");
     const m4 = base.at("m4");
-    const lines = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n*@ at m1 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m4.x, f.lib.unit), fu(m4.y, f.lib.unit) });
+    const lines = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n*@ at m3 {d:.4} {d:.4}\n*@ at m1 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m4.x, f.lib.unit), fu(m4.y, f.lib.unit) });
     const r = try run(f.arena(), f.lib, ota, lines);
-    for (r.nl.hints, r.v) |h, v| if (h.verb == .at) try expectState(v, .dropped, .guarantee);
+    for (r.nl.hints, r.v) |h, v| if (h.verb == .at) try expectState(v, if (std.mem.eql(u8, h.args[0], "m3")) .honoured else .dropped, if (std.mem.eql(u8, h.args[0], "m3")) .ok else .guarantee);
     try std.testing.expect(r.at("m4").eql(m4));
     try std.testing.expect(r.at("m1").eql(base.at("m1")));
 }

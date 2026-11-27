@@ -1,0 +1,6671 @@
+{
+  "audit_sha256": "167481405036075c00d0fe6a6e1eb1af0438a4dfd206a5985715d444c1268012",
+  "captures": [
+    {
+      "binary_sha256": "efe0ba49b74c5b48399cc33b5cebd7eb92ed231367136467ba4e6bc2752c191f",
+      "capture_sha256": {
+        "observations": "60d72d04b7cd51373b10fa820670829f0fd91bdbb49585ef7dd92a12644e2b8d",
+        "trace": "bc36dacc9a6464f7e91f48e658cf20164dc971a438a371e16bba203299176b2f"
+      },
+      "exact_names": [
+        "ag-1048:compact=false:high_budget=false",
+        "ag-1048:compact=false:high_budget=true",
+        "ag-1048:compact=true:high_budget=false",
+        "ag-1048:compact=true:high_budget=true",
+        "ag-1052:compact=false:high_budget=false",
+        "ag-1052:compact=false:high_budget=true",
+        "ag-1052:compact=true:high_budget=false",
+        "ag-1052:compact=true:high_budget=true",
+        "ag-1149:compact=false:high_budget=false",
+        "ag-1149:compact=false:high_budget=true",
+        "ag-1149:compact=true:high_budget=false",
+        "ag-1149:compact=true:high_budget=true",
+        "ag-739:compact=false:high_budget=false",
+        "ag-739:compact=false:high_budget=true",
+        "ag-739:compact=true:high_budget=false",
+        "ag-739:compact=true:high_budget=true"
+      ],
+      "generated_inputs_sha256": {},
+      "instrumented_source_sha256": {
+        "src/sketch.zig": "e7823403f44ebb85cbc960a474b04124c8502f34deed2f187218502c6770068a",
+        "src/thin.zig": "cf9f3cf419a68b16b7838928dc7987f5b2d1164c6a6b76afee4550fb7dc15376",
+        "src/trunk.zig": "489ec3c6e762e08034865d647fae15c78c4d6e68d10871077411d7b764358bc9",
+        "src/wires.zig": "7c1ad6de565421b600fc82f677e9d544921aace82e742434a870aebb9516ed37"
+      },
+      "rows": [
+        {
+          "artifacts_sha256": {
+            "ag-1048-uncompacted.json": "1e1485e58cb221749b50c1ec2fb99b8d63220de7a20477df90b607a7b8a7b81f",
+            "ag-1048-uncompacted.report.json": "322015131aed6798230b2c1cb861aa5f631c96587eba27f1c0780e0130f59bb4",
+            "ag-1048-uncompacted.svg": "b3264119ea08a587ac81c2938988d0a2f98b1fa6fe606f17c3f707a064e7a17d"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  800,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  420
+                ],
+                [
+                  800,
+                  440
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  820,
+                  420
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  340
+                ],
+                [
+                  780,
+                  420
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "2400f674386799232d975ece301a668eddde12bc8832e40c14905d3361d882c8",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "vcmp",
+                  "net": 11
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 6,
+                  "iteration": 1,
+                  "name": "net1",
+                  "net": 13
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 2,
+                  "name": "vcmm",
+                  "net": 10
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vcmm"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "vcmm"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vcmp"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "vcmp"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-uncompacted-high-budget.json": "7c85a64e2515d27707af8cd317942218eeb621cfbc98c5338e799beb074f2f33",
+            "ag-1048-uncompacted-high-budget.report.json": "8d53c0f599de5c70afa3678b5ac458c4ee8021c415a3371bd834a1192bd4f7b6",
+            "ag-1048-uncompacted-high-budget.svg": "81339638d6057e04879830c109b8e0063f21b9f94ca434115ac8546d280cd455"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  800,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  420
+                ],
+                [
+                  800,
+                  440
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  820,
+                  420
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  340
+                ],
+                [
+                  780,
+                  420
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "20f45df507d6b33df950d035ebc8859db0f3a91b477773ba84d7ec89b458307b",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-compact.json": "174fda4c36a039c9e992c3f2cd11d746f5eefe6ae103027b6f8c1332db91d316",
+            "ag-1048-compact.report.json": "3baf6b101cdfb1b72ec66787362464c1292de09efd74538ad3e1fed445ce0201",
+            "ag-1048-compact.svg": "e2722e1749fd2f44a1d624beed860b4c7be90c78625a32b24c38091e2929e557"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": false,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  400,
+                  280
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  320
+                ],
+                [
+                  400,
+                  340
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  420,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  300
+                ],
+                [
+                  380,
+                  320
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "01f4117642587ea39a4ddbc4ecdf447e805e548e5f7aae51a93f5cdcd62ad412",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "vp1",
+                  "net": 7
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 5,
+                  "iteration": 1,
+                  "name": "net4",
+                  "net": 5
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 0,
+                  "name": "vcmp",
+                  "net": 11
+                }
+              ],
+              "part_trunks": [],
+              "round": 1,
+              "whole_part_labels": [
+                "net4",
+                "vp1"
+              ]
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 0,
+                  "name": "vm1",
+                  "net": 3
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vcmp"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "vcmp"
+                }
+              ],
+              "round": 2,
+              "whole_part_labels": [
+                "net4",
+                "vp1"
+              ]
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vcmp"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "vcmp"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 4,
+                  "net": "vm1"
+                },
+                {
+                  "drawn": true,
+                  "group": 3,
+                  "members": 3,
+                  "net": "vm1"
+                }
+              ],
+              "round": 3,
+              "whole_part_labels": [
+                "net4",
+                "vp1"
+              ]
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-compact-high-budget.json": "0a5536f2d3af82cd31b5180b3f2ea828a266711c8b6ebd84aced85522bed974c",
+            "ag-1048-compact-high-budget.report.json": "cd005d8bc63f437a65faacf708e0252de4ac86685a7f36a477c1b5e8c4f1e6f9",
+            "ag-1048-compact-high-budget.svg": "876464212d9a4a0b75febacf5b68d50c947ce8a784e98d855c0d7b5cc2f6d0ed"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  400,
+                  280
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  320
+                ],
+                [
+                  400,
+                  340
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  420,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  300
+                ],
+                [
+                  380,
+                  320
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "34984ffe107cbebd7b43a4d1d7f3af7955fe6695bb3c9dbac77940f666039d67",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-uncompacted.json": "8607bcd05c87c320ce8d2c73fb9d143892374cad52e578c0ccc1b9ff93c99173",
+            "ag-1052-uncompacted.report.json": "bccb2afd30527a350353f1d4b5c1bd9a0391fdf697693820793eb053c8b2a905",
+            "ag-1052-uncompacted.svg": "e89d00671e11348c7d114cd3d59c97717fb55dd5a9114eaea4abc1e36f8f1120"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1320,
+                  540
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  640
+                ],
+                [
+                  1320,
+                  660
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1340,
+                  640
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  560
+                ],
+                [
+                  1300,
+                  640
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "9c66a285607cd6378c6e027b0207e5856000a5fa7792c2232cd7b117506d2478",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 13,
+                  "iteration": 0,
+                  "name": "net1",
+                  "net": 1
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 11,
+                  "iteration": 1,
+                  "name": "net5",
+                  "net": 15
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 2,
+                  "name": "net4",
+                  "net": 9
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 7,
+                  "iteration": 3,
+                  "name": "net3",
+                  "net": 12
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 4,
+                  "name": "net2",
+                  "net": 6
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 5,
+                  "name": "vop",
+                  "net": 14
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "net11",
+                  "net": 5
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net1"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 3,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 5,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vop"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "vop"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net1"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 3,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 5,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net11"
+                },
+                {
+                  "drawn": true,
+                  "group": 1,
+                  "members": 2,
+                  "net": "net11"
+                },
+                {
+                  "drawn": true,
+                  "group": 3,
+                  "members": 3,
+                  "net": "net11"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vop"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "vop"
+                }
+              ],
+              "round": 2,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-uncompacted-high-budget.json": "888168292a3e732195e0cbecaba43bba297b921f9e1379cd56204d5813dd32ce",
+            "ag-1052-uncompacted-high-budget.report.json": "44226908fffcf50bc463df723b21e7e462780d7d4295bdc2217b55098310cab5",
+            "ag-1052-uncompacted-high-budget.svg": "bfa2ac9fe1a7195db07c53a9bf6f4e092ac1f4a38bee213c6fe12b335e8f0ded"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1320,
+                  540
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  640
+                ],
+                [
+                  1320,
+                  660
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1340,
+                  640
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  560
+                ],
+                [
+                  1300,
+                  640
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "0974429279d91ce63e774485471c513078b48c739b33bd13173c2c931a9efc49",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-compact.json": "9e334f11cf770420048e3ad4c08e740ca1c315fcb74ac68d9c917161a6e93671",
+            "ag-1052-compact.report.json": "ec878919d16f5722f9553341cf7aa6be508021b02e4cc9cb9204f60c90605500",
+            "ag-1052-compact.svg": "4bd938c7431d66adbacde57ededae6de00a268afcb145243783b8a7b41ac3a6b"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  740,
+                  520
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  560
+                ],
+                [
+                  740,
+                  580
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  760,
+                  560
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  540
+                ],
+                [
+                  720,
+                  560
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "a3a8c1ecf20525bb1b3b425c27da4f576e5a6e1ac4bcd01ef6c529a29b267033",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 13,
+                  "iteration": 0,
+                  "name": "net1",
+                  "net": 1
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 10,
+                  "iteration": 1,
+                  "name": "net5",
+                  "net": 15
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 9,
+                  "iteration": 2,
+                  "name": "net3",
+                  "net": 12
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 3,
+                  "name": "net4",
+                  "net": 9
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 4,
+                  "name": "net2",
+                  "net": 6
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 5,
+                  "name": "vop",
+                  "net": 14
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "net11",
+                  "net": 5
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net1"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 3,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 5,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vop"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "vop"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net1"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 3,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 5,
+                  "members": 1,
+                  "net": "net1"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net2"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net3"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 3,
+                  "members": 1,
+                  "net": "net4"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net5"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 4,
+                  "net": "net11"
+                },
+                {
+                  "drawn": true,
+                  "group": 1,
+                  "members": 2,
+                  "net": "net11"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "vop"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "vop"
+                }
+              ],
+              "round": 2,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-compact-high-budget.json": "3102041f882fe408c10fce412739e7380264a10967f1e5aca29f83b56e78706a",
+            "ag-1052-compact-high-budget.report.json": "e28c09f85bfba2c8094e5b94490c16d50d2e82ec090882330a718173b2bda4d7",
+            "ag-1052-compact-high-budget.svg": "3556f58cb29eb689572eac1a88ea9f384687adced427cd2920124df07ef58366"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  740,
+                  520
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  560
+                ],
+                [
+                  740,
+                  580
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  760,
+                  560
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  540
+                ],
+                [
+                  720,
+                  560
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "4fc7ba459b5371dec640412f583e73f4ea6ee0ff34ea2d3d1de6a6ce1b07677d",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-uncompacted.json": "06c95e9dcbe4b8c1cc11c6e5b8e734bbc327fb683cef35a5379d026ec498ee88",
+            "ag-1149-uncompacted.report.json": "bebe11ebe47d7afb7c9e0bafa028f48403e295da7a715a8cf05dfdb8e04f94aa",
+            "ag-1149-uncompacted.svg": "b39025cd7aef3769be2fe5ba60c870acfbaa02175580b74c5c9a474fdf88ba2c"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  530,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  80
+                ],
+                [
+                  530,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  550,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  20
+                ],
+                [
+                  510,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  100
+                ],
+                [
+                  20,
+                  200
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  580,
+                  120
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "6f64d282ec8029b1052e9c8ad875b20e6ee51eb32e627b4f1f0c0b95daada22d",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "net8",
+                  "net": 3
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 6,
+                  "iteration": 1,
+                  "name": "net10",
+                  "net": 2
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 2,
+                  "name": "net6",
+                  "net": 1
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 0,
+                  "name": "net7",
+                  "net": 4
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net8"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net8"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net10"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net10"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "label",
+                  "before": "cut",
+                  "count": 5,
+                  "iteration": 0,
+                  "name": "net8",
+                  "net": 3
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net8"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net8"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net10"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net10"
+                }
+              ],
+              "round": 2,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net10"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net10"
+                }
+              ],
+              "round": 3,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-uncompacted-high-budget.json": "c3a3403f8d0bb13cf89f19f1ee1abc0d4f293b425df31b4ad485b23eddd7485d",
+            "ag-1149-uncompacted-high-budget.report.json": "e09747983357e79e59ce4957ec215935fbd2e082f5aa3fd35ce18b96d13094d8",
+            "ag-1149-uncompacted-high-budget.svg": "fc93ddd978f2a84e20518eb2c5876b38e082895906bc0f448b78bb9bb72f824d"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  530,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  80
+                ],
+                [
+                  530,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  550,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  20
+                ],
+                [
+                  510,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  100
+                ],
+                [
+                  20,
+                  200
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  580,
+                  120
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "50c63d80b693f26a3f3ce834ca3d01bec20162d3f1032622c70a39ae23c9fbb2",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-compact.json": "c8af66eba087a08e5af460a9c7e8c88669a5443e2fdd52bbe73bdc1bc6691120",
+            "ag-1149-compact.report.json": "2f87bfdb1cf71f0eebb533043a37fa4e34b1e7985ebc5d0f8484e58f2573d234",
+            "ag-1149-compact.svg": "1d0b5d3a33a44e545f21cd2fa04c266a9069ac3f8df6cf539000b41ca2b3d329"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  350,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  80
+                ],
+                [
+                  350,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  370,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  20
+                ],
+                [
+                  330,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  930,
+                  100
+                ],
+                [
+                  20,
+                  160
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  400,
+                  120
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "bc1aeb4317843cbfad62987c975b4e81c008c8c4bb97646d3d2915d5498d3cdc",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 8,
+                  "iteration": 0,
+                  "name": "net6",
+                  "net": 1
+                },
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 6,
+                  "iteration": 1,
+                  "name": "net7",
+                  "net": 4
+                }
+              ],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 4,
+                  "iteration": 0,
+                  "name": "net8",
+                  "net": 3
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net6"
+                },
+                {
+                  "drawn": false,
+                  "group": 0,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 1,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net8"
+                },
+                {
+                  "drawn": true,
+                  "group": 2,
+                  "members": 4,
+                  "net": "net8"
+                }
+              ],
+              "round": 2,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-compact-high-budget.json": "c684ea35c2b24be77378948cdcf8285f73cd364064b2a64846722d03048f5cac",
+            "ag-1149-compact-high-budget.report.json": "f5a7fa030a2af244994c0df7c7eb8b1b42bd5107b46f6da76f72691c0733db86",
+            "ag-1149-compact-high-budget.svg": "724f4832ffc5dec8a3c2cfe01b2f0376fa83716b7f8111d77e342f76b613c31b"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  350,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  80
+                ],
+                [
+                  350,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  370,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  20
+                ],
+                [
+                  330,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  930,
+                  100
+                ],
+                [
+                  20,
+                  160
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  400,
+                  120
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "e4655b876a38619e42c6d06454ea443ee10be0e78d79192b9340bfccf0a54341",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-uncompacted.json": "b5d4a400408da3b3329ba03561bba7bb280181cd5f411966619359c11d95b909",
+            "ag-739-uncompacted.report.json": "34a184ee515105734d8344b9481fe7b7b9a3b51c2bff5cb4b676ceff489a50e0",
+            "ag-739-uncompacted.svg": "2c86a444e24ecf1cb3fda54bb3894f7ca59cc872cf38e7d691a5233571cf9247"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  400,
+                  20
+                ],
+                [
+                  420,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  440,
+                  100
+                ],
+                [
+                  420,
+                  120
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  400,
+                  20
+                ],
+                [
+                  400,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  440,
+                  20
+                ],
+                [
+                  440,
+                  100
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "bbbe80a4b88d6a0f8c1683d1df293db9e322e58c4b6b98efeecc8be74af72c77",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 7,
+                  "iteration": 0,
+                  "name": "net4",
+                  "net": 5
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net4"
+                },
+                {
+                  "drawn": true,
+                  "group": 1,
+                  "members": 3,
+                  "net": "net4"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-uncompacted-high-budget.json": "636bd811788c27d15959ec70701e69646fe0e5cc5e17f88225b7502cb0f1d093",
+            "ag-739-uncompacted-high-budget.report.json": "113347d8dffe07daba9f447b45b902653ab10de1cb654570256f16ceeb8f2800",
+            "ag-739-uncompacted-high-budget.svg": "9917f7e165af5bf02e363666482ed612561c959d4d51e6f5016764f203c96a05"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  400,
+                  20
+                ],
+                [
+                  420,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  440,
+                  100
+                ],
+                [
+                  420,
+                  120
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  400,
+                  20
+                ],
+                [
+                  400,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  440,
+                  20
+                ],
+                [
+                  440,
+                  100
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "95bca1adf146b221cc5029d7e767f6b4ea5d2a264e71d70501e9f303dc5d4749",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-compact.json": "eaf23ab31ace0010ecaf2d323a673d899ac08f2697bdbecc9cb36b9d56c9710c",
+            "ag-739-compact.report.json": "6fedf3db4e66b5d9a655dca4741561ac391ea39fbff887448ee634b9d7e476ff",
+            "ag-739-compact.svg": "162e6c6e3168d1ff63918b6349e0c9d7e5599a58a40b729edb11d2f75803d8f7"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  20
+                ],
+                [
+                  260,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  100
+                ],
+                [
+                  260,
+                  120
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  20
+                ],
+                [
+                  240,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  20
+                ],
+                [
+                  280,
+                  100
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "ad94ca055fe8d316f252376b065307e2a40c1c333854e3e3276a9bef83673b2a",
+          "rounds": [
+            {
+              "changes": [
+                {
+                  "after": "cut",
+                  "before": "auto",
+                  "count": 7,
+                  "iteration": 0,
+                  "name": "net4",
+                  "net": 5
+                }
+              ],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 0,
+              "whole_part_labels": []
+            },
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net4"
+                },
+                {
+                  "drawn": true,
+                  "group": 1,
+                  "members": 3,
+                  "net": "net4"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 1,
+              "whole_part_labels": []
+            }
+          ]
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-compact-high-budget.json": "931fa592d3dca1a3e7121e0444bca9e8f5d1655ddbcdc6dcb9a5f53e7d7b4e78",
+            "ag-739-compact-high-budget.report.json": "ed6dfa76250f84703f9269d1d76c032e82ee0d67bf0c5b9cd66b5c787e9c552c",
+            "ag-739-compact-high-budget.svg": "44af7ec8ec1f5481428d04b35e9f978f023bcfca2ac0d6cc732bd1daa64be4a5"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  20
+                ],
+                [
+                  260,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  100
+                ],
+                [
+                  260,
+                  120
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  20
+                ],
+                [
+                  240,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  20
+                ],
+                [
+                  280,
+                  100
+                ]
+              ]
+            }
+          ],
+          "raw_trace_sha256": "4d9aa5e32291c362f9dfdcb7006e8c4725d6a7a436b4a260e505ed8f59f31ef5",
+          "rounds": [
+            {
+              "changes": [],
+              "part_trunks": [
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 2,
+                  "net": "net0"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net0"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net7"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net7"
+                },
+                {
+                  "drawn": true,
+                  "group": 0,
+                  "members": 3,
+                  "net": "net8"
+                },
+                {
+                  "drawn": false,
+                  "group": 2,
+                  "members": 1,
+                  "net": "net8"
+                }
+              ],
+              "round": 0,
+              "whole_part_labels": []
+            }
+          ]
+        }
+      ],
+      "source_sha256": {
+        "build.zig": "2595801bdce1261404da16dc45534ab6919d95891b5a1904ce3d77198a6a9e63",
+        "build.zig.zon": "48025dc71270a98ad8fd963ae41b257bb15e47642032b242bee193aff8906be0",
+        "flake.lock": "3f44ae2624f7ce14ab14aa2b404668da6efda24854689ee7878856aa58d196e8",
+        "flake.nix": "1e91c5054899691d8871b45d9a59705b588fadf172068e88de08cb243082c321",
+        "src/abi.zig": "cfa9ccf24615491e7a2f596e30398cd2835c31e79c94ea4bbdf9fcaba71c81b8",
+        "src/analysis.zig": "d53f3a30665ce1b449cbb0aaeb50a0a5899196e4b8ed5240a6238256edb95f27",
+        "src/antiparallel.zig": "d65e2aee4d9dc8749ec4d10d6f5d8addbc2d570beb6f6e99b4fa0fc928e25a3c",
+        "src/bias_neighbors.zig": "f4aa7496a42f9926496270b7cdb58244f4a45d8d7c329477b979910b2e1f7f89",
+        "src/block_symbols.zig": "1cd07ea50b6dbc1fca12d333568705de916177350a3f46e5754bb6c8e73e8d06",
+        "src/bridges.zig": "6ca4b9c12ba661dc7e04a6d97d09b0cba4bb16713cfb587bd411c0e4e3395f13",
+        "src/canvas.zig": "eaf8358e280e5bab94ff378dbc3dbda6985f05fdb56c0cab3a8f249f8eae9c92",
+        "src/cells.zig": "622bc4e2826bc42d86ac0879227c01734d47c5f7fdb2a9a95390bc19ccad5d25",
+        "src/center_tap.zig": "e5de82634a16d261f06f2739fcb99b98f739e1be71d4051d7e3530cbd8cfd61d",
+        "src/checks.zig": "022cd9b73dd49d9272405f761e7ce6dfc82a8b4ee071fd957e7204905d2135ed",
+        "src/coil_bank_place.zig": "f1a39e9a05b2b770ca10acb70fa03be1c9588027959bfbd4c482f5ded42e1bb4",
+        "src/coil_banks.zig": "5522443b598a14696f4cf6276e8f17bcdc32c21b59f66adbfae6b1d19e03a741",
+        "src/coil_tanks.zig": "97eda86453e87724507074085cc753e123f799cf1dbfaa7a470300392ffe6aff",
+        "src/columns.zig": "f2ffe1027e6ed150ae7644c6a614a38637b07ddb950bb0fc273537c55e49ded2",
+        "src/compact.zig": "308837d33b24bbbcd7e17670a09a3001f23283ca068fab392b4e88dd613e2b24",
+        "src/config.zig": "c3a50f8f8211e6562bb14b4228559d26d4b5fc62986aadf47ed7b47dad1bc0e6",
+        "src/csr.zig": "7c0733dd123a557693fc0e151fe19c096f114422cb7b81fd1915680d5454147c",
+        "src/device.zig": "a43849ba54f2a7469d9f375605e3db39e5c5e26e536868d8558fd53dc9f02e0d",
+        "src/dots.zig": "3c13630ca5e6a016feaf5524866b0612386e688584cc1ba2e4204d5df31c6281",
+        "src/forms.zig": "caa4847114da4b325f15823a1e9f443292ef9486fe330157b9649450686bef2b",
+        "src/geom.zig": "1740223dc8ec5ebacaff432e4a3774fad9253e8ed78ef7a46d6ee10fadf000e5",
+        "src/hints.zig": "bab48b0d3b65a1cd7244ddd2ea86e9f3737e5b5229edadc48b4095722d2c3b5a",
+        "src/input_place.zig": "110df57d26ed8cb2e33feaa2b61c4b9e813ec261c9d88f840228367522255b56",
+        "src/input_resistors.zig": "df673976ffd151a198343efcfb35b6b5d66c5e36db1db564096c36fb586d1603",
+        "src/json.zig": "2dfc511dfc1cc465bbc8da1a0ea20be6fa91dc08912b6e21692448a67abe3b67",
+        "src/latex.zig": "c6bd7f39c0dea60b1272ab8862146d9c82d0dfc118aed0c17965d13749812b12",
+        "src/levels.zig": "dde4b1ca09844349ad0129f3f860a300048cc700b75e1c563f3f61100f33d31a",
+        "src/library.zig": "1b032c179646a5709810bc473977896591249b3163214e446f5feffaeb062a63",
+        "src/lint.zig": "4c88dbf811f7a56b6c09aca9e1ba6cb3dfbd6ae99e0b08f1c81b9373f1af2ac0",
+        "src/loop_place.zig": "11d12052aca9f625a06da1dff6a616dbe370d7b788c66884ef471b0f83e00de5",
+        "src/mates.zig": "4c846b670ceaa32fa857541c46ea69b7c1b75839164ee8a707ac402900fb596b",
+        "src/maze.zig": "cfc4279115843252fb69754907785fc17c785cdb09ab5a0254a436af7f118afe",
+        "src/netlines.zig": "7752bb801de63ccc10b46f6dac36a70c8bb6a5a63a64ca000ad120d900c9ade9",
+        "src/netlist.zig": "eb27d9ae77bdf73ebf553bf5f02f65224e6ceabb548aa7a923708d40fee25825",
+        "src/opamp.zig": "36d310befb06b65f2467d3e6706ef2294378b934a0dff57baaf84bd6c1daad70",
+        "src/opamp_grow.zig": "c49e7a1132c8fd3ccd3e0ab7f46b99668cfabff6837c747975aa3bf723b76b27",
+        "src/pin_escape_codegen.zig": "954a971997558789051dab61aa969960df102a2a1ab9d2e1a37f8871fa120850",
+        "src/pin_escape_test.zig": "ef33f4227b0ce4f26204036754cb43238fedb827a9ad69733902a19c109145bb",
+        "src/pinned.zig": "cf7777afe86da652bd0f3c4038d9195853adfa6b01c16dd2b842a8eacaeec7f3",
+        "src/placed.zig": "7ddefacf5b6f8308a3b5307af0931f58465c57232f3776b9be081df79697e733",
+        "src/power_compact.zig": "b54ec5ff9d8c564780c44865742fdd49acdc6ee87e3b417338ef707193c0afb8",
+        "src/power_loop_wires.zig": "7cc7e4a2f12b72f655e9c29a806033be81d0db6d2926c7549ceeefad28820019",
+        "src/power_loops.zig": "431100f05e12daa0db4ad58b05e88b3514ec142cbad9f50b04d18d1672d914f2",
+        "src/power_paths.zig": "a2a514173b4152c4f4c14044a7e9751170ef9618b3bf62ba4c1ce7012fd0df31",
+        "src/relations.zig": "5dc99acf6bd049ddf406238e162de5b6bade369a0455e0f6e3406384fa8febf9",
+        "src/relay.zig": "cb395308eaedbfea02ab731a14f3f9caa19ac25230bd49392e729e8541ae7e73",
+        "src/report.zig": "d6635e3a8275cfc8ec3cccd15fee1c64facd2a468ac0e518b297d9ebfd45cccc",
+        "src/root.zig": "c09402929f7a44d44f76d99fd5bbf60e4ffb9647c68ecf458975245f7b73a366",
+        "src/routes.zig": "c272ac15c4a24b3182bc18d3eea781853708312f1978d0110f8f08ee45d16de4",
+        "src/schematic.zig": "14d2a7bb9bd0d5995392a3b86228a7caa745387809118f35f746345e7ab02900",
+        "src/sequence.zig": "6e31b243e94684d51344c217f9c78837710199fd66d6a9af787104b228b9587c",
+        "src/skeleton.zig": "41223786ee8384a3b48fb2cd2e026c6a9ca6fff1366d6ce45c280f0300d33dcf",
+        "src/sketch.zig": "e8fbe70ac043ec25bfaeb29b769fe88e11e98243d3b522aab35e0a88d78887e5",
+        "src/span.zig": "9cabfb947b4107700d778cc1d81918a27a5d9803bff4916b521a3d299d186470",
+        "src/structure.zig": "d0755ca1ff80313d6088fa2bdb97c0f0b96c335d092fc0e45f9a64f53117eef5",
+        "src/symmetry.zig": "71d0350d7fc6c8d4b87bd832fb75f3f7750e3c48120df283f9a5be086d5a1fbc",
+        "src/thin.zig": "3966c6daf9a0a9cb52732bee6e121c5a4b3f6d9ab4783a5f0f9bbc100d479831",
+        "src/thin_crossings_test.zig": "997afd995a77d3fa1ec1aaa6761f84881a9e4fd3ddb73e5ef22fba5afc282029",
+        "src/thin_parts_test.zig": "c01e0ba12d04c38bf5fe91f786f6adc81957f752ea7704e6660d53626d689958",
+        "src/transmission.zig": "fdcd15f1eecfe81ea5ccd6faa479b535722cd176914123292e64d00449813451",
+        "src/trunk.zig": "bd1c86348409cfbee88fde2ce0da0259e6c2f0d0df728a1276fb1bf011bdf601",
+        "src/trunk_row_test.zig": "11488b650fb2d7d35c4d0aaeaef6cb94b1722639becde088a037c5f3b9a15dd0",
+        "src/trunk_taps_test.zig": "09d80084f1743099c02721c6bfceda4892026e74fdd61f83eaf65ac107d9cf84",
+        "src/wires.zig": "60848c4e19ad4a69722eae0bc8d9ca7ad5607412f635385dfec84c2961cf3633",
+        "src/wires_parts_test.zig": "1fead1e2a5dc8a75879fa7a5ae403af414a582a0fefc2006edc785546ae72b1e",
+        "src/wrap.zig": "a4f14633ca5e73600ddda48d9a0100f682c8d73aa74d273e6b8795fff9dcc12c",
+        "tests/svg.zig": "1ec54614d2c93c872e98677e616206ef73264412ce6a05adff235a3ab534de5c",
+        "tests/symbols.zon": "8d036df1547103ae92fd83f3e5b60a14bb7d70f343aaaedab3ce60442abff459",
+        "tools/json.zig": "e4f91b6917b59b3338f463d5a24f738cc67bbcb6bfc7811491caa593dc2dbaf9",
+        "tools/schemify/abi.zig": "a580008a4a48b42130f8bcfacd13d643c1af805f282deede8a46f6d27140edb5",
+        "tools/schemify/convert.zig": "21ec0ff7a10e3755f4a55d7567f5f477dd88992f68603482080f2bca75dc42df",
+        "tools/schemify/emit.zig": "af866947b899746fbda5eefb19e52f0ca311398260a2e7f56e90167c334d82db",
+        "tools/schemify/hints.zig": "9e2a1e60524fb89a7120bb9e8223c432c3d806ced2d6965c8907fe0745e4bc84",
+        "tools/schemify/layout.zig": "c34ad032e45ab85ffd67f186425d34c229382462d4e117d8ca87d5bcef5efff0",
+        "tools/schemify/names.zig": "0d8c7955755da9386c9d738ffeafb4e4f550f8eaac5bb72ba59183f28d00d18a",
+        "tools/schemify/place.zig": "10c6fbeae45bfae607c44e5fdeaaf7ac02b633822c6e3dce09c58c4a5b35e03f",
+        "tools/schemify/plugin.zig": "5f452c8802e4c275a1672881bd4d7c6a34774656936c19feeb5d5f0a43d283f9",
+        "tools/schemify/recognize.zig": "ffdfee9eee4c5bcd2cd82a3786a90c18bdd1e8728a5832106e692d583197aeac",
+        "tools/schemify/spice.zig": "64126bf0d4b040898f6e46866db0411d9e5e29d8573e2b63f26e67748d732a87",
+        "tools/tex.zig": "b1aa5812ecf51e478b8d50b96a68becbd41bc7f530315d05aa5b5e294687352b"
+      },
+      "trace_binary_sha256": "5600c96779d6b52db770dae0809fe9479b7aef7f9d7fcb2e0d8e19dc48427863",
+      "trace_only_inputs_sha256": {
+        "tests/symbols.zon": "8d036df1547103ae92fd83f3e5b60a14bb7d70f343aaaedab3ce60442abff459"
+      },
+      "version": "a"
+    },
+    {
+      "binary_sha256": "4092617e9bff0ce8f4fb30e7466392be81c159ba1af523993831d20bd01af73a",
+      "capture_sha256": {
+        "observations": "af7213fe7e4ee4c898aed5c7d6345d426c2dfdc28581e18ea6a69a27fc6578e8",
+        "trace": "f1aa6e622afbc094bccedc38139b795395479fb8d1c621b3860a9e0f8b206ffb"
+      },
+      "exact_names": [
+        "ag-1048:compact=false:high_budget=false",
+        "ag-1048:compact=false:high_budget=true",
+        "ag-1048:compact=true:high_budget=false",
+        "ag-1048:compact=true:high_budget=true",
+        "ag-1052:compact=false:high_budget=false",
+        "ag-1052:compact=false:high_budget=true",
+        "ag-1052:compact=true:high_budget=false",
+        "ag-1052:compact=true:high_budget=true",
+        "ag-1149:compact=false:high_budget=false",
+        "ag-1149:compact=false:high_budget=true",
+        "ag-1149:compact=true:high_budget=false",
+        "ag-1149:compact=true:high_budget=true",
+        "ag-739:compact=false:high_budget=false",
+        "ag-739:compact=false:high_budget=true",
+        "ag-739:compact=true:high_budget=false",
+        "ag-739:compact=true:high_budget=true"
+      ],
+      "generated_inputs_sha256": {
+        "/tmp/cktimg-human-rules/iteration21-placement-b/generated/options.zig": "af9ee6e0842b3b871bfa120927f6237612f7b93e51560a70b471a57c4bac02a2",
+        "/tmp/cktimg-human-rules/iteration21-placement-b/generated/symbols.zig": "2677253840fa1a50323c67a04282483898146517aec3482b7d8f68aa1ee9a308",
+        "/tmp/cktimg-human-rules/iteration21-placement-b/generated/symbols.zon": "8d036df1547103ae92fd83f3e5b60a14bb7d70f343aaaedab3ce60442abff459"
+      },
+      "instrumented_source_sha256": {
+        "src/clamp_anchors.zig": "71251b48bae867e09cf1c1d587937132209632a0f37b973198a96a658b0265fc"
+      },
+      "rows": [
+        {
+          "artifacts_sha256": {
+            "ag-1048-uncompacted.json": "1e1485e58cb221749b50c1ec2fb99b8d63220de7a20477df90b607a7b8a7b81f",
+            "ag-1048-uncompacted.report.json": "322015131aed6798230b2c1cb861aa5f631c96587eba27f1c0780e0130f59bb4",
+            "ag-1048-uncompacted.svg": "b3264119ea08a587ac81c2938988d0a2f98b1fa6fe606f17c3f707a064e7a17d"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  800,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  420
+                ],
+                [
+                  800,
+                  440
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  820,
+                  420
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  340
+                ],
+                [
+                  780,
+                  420
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m5 m6",
+            "CLAMP member m5 drawn=true at=false shelf=0 held_sk=false held_st=false mate=15",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=14",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=12",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=13",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=1",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=10",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "ea23fb0bdeee61d3ab7bd22430a3761fdaeee350c477ed645a9335ea38aa4798",
+          "reciprocal_mates": {
+            "m5": {
+              "handle": 14,
+              "mate": 15
+            },
+            "m6": {
+              "handle": 15,
+              "mate": 14
+            }
+          },
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m5.0": {
+                "point": [
+                  820,
+                  340
+                ],
+                "strict": false
+              },
+              "m5.2": {
+                "point": [
+                  780,
+                  340
+                ],
+                "strict": false
+              },
+              "m6.0": {
+                "point": [
+                  780,
+                  420
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  820,
+                  420
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              400,
+              40,
+              1000,
+              120
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-uncompacted-high-budget.json": "7c85a64e2515d27707af8cd317942218eeb621cfbc98c5338e799beb074f2f33",
+            "ag-1048-uncompacted-high-budget.report.json": "8d53c0f599de5c70afa3678b5ac458c4ee8021c415a3371bd834a1192bd4f7b6",
+            "ag-1048-uncompacted-high-budget.svg": "81339638d6057e04879830c109b8e0063f21b9f94ca434115ac8546d280cd455"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  800,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  420
+                ],
+                [
+                  800,
+                  440
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  820,
+                  340
+                ],
+                [
+                  820,
+                  420
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  780,
+                  340
+                ],
+                [
+                  780,
+                  420
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m5 m6",
+            "CLAMP member m5 drawn=true at=false shelf=0 held_sk=false held_st=false mate=15",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=14",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=12",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=13",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=1",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=10",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "ea23fb0bdeee61d3ab7bd22430a3761fdaeee350c477ed645a9335ea38aa4798",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m5.0": {
+                "point": [
+                  820,
+                  340
+                ],
+                "strict": false
+              },
+              "m5.2": {
+                "point": [
+                  780,
+                  340
+                ],
+                "strict": false
+              },
+              "m6.0": {
+                "point": [
+                  780,
+                  420
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  820,
+                  420
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              400,
+              40,
+              1000,
+              120
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-compact.json": "174fda4c36a039c9e992c3f2cd11d746f5eefe6ae103027b6f8c1332db91d316",
+            "ag-1048-compact.report.json": "3baf6b101cdfb1b72ec66787362464c1292de09efd74538ad3e1fed445ce0201",
+            "ag-1048-compact.svg": "e2722e1749fd2f44a1d624beed860b4c7be90c78625a32b24c38091e2929e557"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": false,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  400,
+                  280
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  320
+                ],
+                [
+                  400,
+                  340
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  420,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  300
+                ],
+                [
+                  380,
+                  320
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m5 m6",
+            "CLAMP member m5 drawn=true at=false shelf=0 held_sk=false held_st=false mate=15",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=14",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=12",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=13",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=1",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=10",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "ea23fb0bdeee61d3ab7bd22430a3761fdaeee350c477ed645a9335ea38aa4798",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m5.0": {
+                "point": [
+                  420,
+                  300
+                ],
+                "strict": false
+              },
+              "m5.2": {
+                "point": [
+                  380,
+                  300
+                ],
+                "strict": false
+              },
+              "m6.0": {
+                "point": [
+                  380,
+                  320
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  420,
+                  320
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              210,
+              40,
+              500,
+              110
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1048-compact-high-budget.json": "0a5536f2d3af82cd31b5180b3f2ea828a266711c8b6ebd84aced85522bed974c",
+            "ag-1048-compact-high-budget.report.json": "cd005d8bc63f437a65faacf708e0252de4ac86685a7f36a477c1b5e8c4f1e6f9",
+            "ag-1048-compact-high-budget.svg": "876464212d9a4a0b75febacf5b68d50c947ce8a784e98d855c0d7b5cc2f6d0ed"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1048",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m5.1",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m5",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  400,
+                  280
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m6.0--m6.1",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  320
+                ],
+                [
+                  400,
+                  340
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vp1:m5.0--m6.2",
+              "net": "vp1",
+              "pins": [
+                [
+                  "m5",
+                  0
+                ],
+                [
+                  "m6",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  420,
+                  300
+                ],
+                [
+                  420,
+                  320
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1048:vm1:m5.2--m6.0",
+              "net": "vm1",
+              "pins": [
+                [
+                  "m5",
+                  2
+                ],
+                [
+                  "m6",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  380,
+                  300
+                ],
+                [
+                  380,
+                  320
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m5 m6",
+            "CLAMP member m5 drawn=true at=false shelf=0 held_sk=false held_st=false mate=15",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=14",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=12",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=13",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=1",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=10",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "ea23fb0bdeee61d3ab7bd22430a3761fdaeee350c477ed645a9335ea38aa4798",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m5.0": {
+                "point": [
+                  420,
+                  300
+                ],
+                "strict": false
+              },
+              "m5.2": {
+                "point": [
+                  380,
+                  300
+                ],
+                "strict": false
+              },
+              "m6.0": {
+                "point": [
+                  380,
+                  320
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  420,
+                  320
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              210,
+              40,
+              500,
+              110
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-uncompacted.json": "8607bcd05c87c320ce8d2c73fb9d143892374cad52e578c0ccc1b9ff93c99173",
+            "ag-1052-uncompacted.report.json": "bccb2afd30527a350353f1d4b5c1bd9a0391fdf697693820793eb053c8b2a905",
+            "ag-1052-uncompacted.svg": "e89d00671e11348c7d114cd3d59c97717fb55dd5a9114eaea4abc1e36f8f1120"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1320,
+                  540
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  640
+                ],
+                [
+                  1320,
+                  660
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1340,
+                  640
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  560
+                ],
+                [
+                  1300,
+                  640
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m6 m7",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=25",
+            "CLAMP member m7 drawn=true at=false shelf=0 held_sk=false held_st=false mate=24",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=0",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=11",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=21",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=22",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "29f7476cf65c8ff49ee8499a1e69134d647360b0079280fae95dd50f8ca50c66",
+          "reciprocal_mates": {
+            "m6": {
+              "handle": 24,
+              "mate": 25
+            },
+            "m7": {
+              "handle": 25,
+              "mate": 24
+            }
+          },
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m6.0": {
+                "point": [
+                  1340,
+                  560
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  1300,
+                  560
+                ],
+                "strict": false
+              },
+              "m7.0": {
+                "point": [
+                  1300,
+                  640
+                ],
+                "strict": false
+              },
+              "m7.2": {
+                "point": [
+                  1340,
+                  640
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              980,
+              40,
+              1460,
+              220
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-uncompacted-high-budget.json": "888168292a3e732195e0cbecaba43bba297b921f9e1379cd56204d5813dd32ce",
+            "ag-1052-uncompacted-high-budget.report.json": "44226908fffcf50bc463df723b21e7e462780d7d4295bdc2217b55098310cab5",
+            "ag-1052-uncompacted-high-budget.svg": "bfa2ac9fe1a7195db07c53a9bf6f4e092ac1f4a38bee213c6fe12b335e8f0ded"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1320,
+                  540
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  640
+                ],
+                [
+                  1320,
+                  660
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  560
+                ],
+                [
+                  1340,
+                  640
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  1300,
+                  560
+                ],
+                [
+                  1300,
+                  640
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m6 m7",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=25",
+            "CLAMP member m7 drawn=true at=false shelf=0 held_sk=false held_st=false mate=24",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=0",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=11",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=21",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=22",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "29f7476cf65c8ff49ee8499a1e69134d647360b0079280fae95dd50f8ca50c66",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m6.0": {
+                "point": [
+                  1340,
+                  560
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  1300,
+                  560
+                ],
+                "strict": false
+              },
+              "m7.0": {
+                "point": [
+                  1300,
+                  640
+                ],
+                "strict": false
+              },
+              "m7.2": {
+                "point": [
+                  1340,
+                  640
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              980,
+              40,
+              1460,
+              220
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-compact.json": "9e334f11cf770420048e3ad4c08e740ca1c315fcb74ac68d9c917161a6e93671",
+            "ag-1052-compact.report.json": "ec878919d16f5722f9553341cf7aa6be508021b02e4cc9cb9204f60c90605500",
+            "ag-1052-compact.svg": "4bd938c7431d66adbacde57ededae6de00a268afcb145243783b8a7b41ac3a6b"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  740,
+                  520
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  560
+                ],
+                [
+                  740,
+                  580
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  760,
+                  560
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  540
+                ],
+                [
+                  720,
+                  560
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m6 m7",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=25",
+            "CLAMP member m7 drawn=true at=false shelf=0 held_sk=false held_st=false mate=24",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=0",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=11",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=21",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=22",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "29f7476cf65c8ff49ee8499a1e69134d647360b0079280fae95dd50f8ca50c66",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m6.0": {
+                "point": [
+                  760,
+                  540
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  720,
+                  540
+                ],
+                "strict": false
+              },
+              "m7.0": {
+                "point": [
+                  720,
+                  560
+                ],
+                "strict": false
+              },
+              "m7.2": {
+                "point": [
+                  760,
+                  560
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              570,
+              40,
+              800,
+              220
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1052-compact-high-budget.json": "3102041f882fe408c10fce412739e7380264a10967f1e5aca29f83b56e78706a",
+            "ag-1052-compact-high-budget.report.json": "e28c09f85bfba2c8094e5b94490c16d50d2e82ec090882330a718173b2bda4d7",
+            "ag-1052-compact-high-budget.svg": "3556f58cb29eb689572eac1a88ea9f384687adced427cd2920124df07ef58366"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1052",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m6.1",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m6",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  740,
+                  520
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m7.0--m7.1",
+              "net": "net1",
+              "pins": [
+                [
+                  "m7",
+                  0
+                ],
+                [
+                  "m7",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  560
+                ],
+                [
+                  740,
+                  580
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net11:m6.0--m7.2",
+              "net": "net11",
+              "pins": [
+                [
+                  "m6",
+                  0
+                ],
+                [
+                  "m7",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  760,
+                  540
+                ],
+                [
+                  760,
+                  560
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1052:net1:m6.2--m7.0",
+              "net": "net1",
+              "pins": [
+                [
+                  "m6",
+                  2
+                ],
+                [
+                  "m7",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  720,
+                  540
+                ],
+                [
+                  720,
+                  560
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found m6 m7",
+            "CLAMP member m6 drawn=true at=false shelf=0 held_sk=false held_st=false mate=25",
+            "CLAMP member m7 drawn=true at=false shelf=0 held_sk=false held_st=false mate=24",
+            "CLAMP member m2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=0",
+            "CLAMP member m1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=11",
+            "CLAMP member m4 drawn=true at=false shelf=0 held_sk=false held_st=false mate=21",
+            "CLAMP member m3 drawn=true at=false shelf=0 held_sk=false held_st=false mate=22",
+            "CLAMP collect mate"
+          ],
+          "raw_trace_sha256": "29f7476cf65c8ff49ee8499a1e69134d647360b0079280fae95dd50f8ca50c66",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "m6.0": {
+                "point": [
+                  760,
+                  540
+                ],
+                "strict": false
+              },
+              "m6.2": {
+                "point": [
+                  720,
+                  540
+                ],
+                "strict": false
+              },
+              "m7.0": {
+                "point": [
+                  720,
+                  560
+                ],
+                "strict": false
+              },
+              "m7.2": {
+                "point": [
+                  760,
+                  560
+                ],
+                "strict": false
+              }
+            },
+            "bounds": [
+              570,
+              40,
+              800,
+              220
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-uncompacted.json": "06c95e9dcbe4b8c1cc11c6e5b8e734bbc327fb683cef35a5379d026ec498ee88",
+            "ag-1149-uncompacted.report.json": "bebe11ebe47d7afb7c9e0bafa028f48403e295da7a715a8cf05dfdb8e04f94aa",
+            "ag-1149-uncompacted.svg": "b39025cd7aef3769be2fe5ba60c870acfbaa02175580b74c5c9a474fdf88ba2c"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  530,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  80
+                ],
+                [
+                  530,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  550,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  20
+                ],
+                [
+                  510,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  100
+                ],
+                [
+                  20,
+                  200
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  580,
+                  120
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [],
+          "raw_trace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "strict_anchor_relation": null
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-uncompacted-high-budget.json": "c3a3403f8d0bb13cf89f19f1ee1abc0d4f293b425df31b4ad485b23eddd7485d",
+            "ag-1149-uncompacted-high-budget.report.json": "e09747983357e79e59ce4957ec215935fbd2e082f5aa3fd35ce18b96d13094d8",
+            "ag-1149-uncompacted-high-budget.svg": "fc93ddd978f2a84e20518eb2c5876b38e082895906bc0f448b78bb9bb72f824d"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  530,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  80
+                ],
+                [
+                  530,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  550,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  510,
+                  20
+                ],
+                [
+                  510,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  1340,
+                  100
+                ],
+                [
+                  20,
+                  200
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  550,
+                  20
+                ],
+                [
+                  580,
+                  120
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [],
+          "raw_trace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "strict_anchor_relation": null
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-compact.json": "c8af66eba087a08e5af460a9c7e8c88669a5443e2fdd52bbe73bdc1bc6691120",
+            "ag-1149-compact.report.json": "2f87bfdb1cf71f0eebb533043a37fa4e34b1e7985ebc5d0f8484e58f2573d234",
+            "ag-1149-compact.svg": "1d0b5d3a33a44e545f21cd2fa04c266a9069ac3f8df6cf539000b41ca2b3d329"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  350,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  80
+                ],
+                [
+                  350,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  370,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  20
+                ],
+                [
+                  330,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  930,
+                  100
+                ],
+                [
+                  20,
+                  160
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  400,
+                  120
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [],
+          "raw_trace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "strict_anchor_relation": null
+        },
+        {
+          "artifacts_sha256": {
+            "ag-1149-compact-high-budget.json": "c684ea35c2b24be77378948cdcf8285f73cd364064b2a64846722d03048f5cac",
+            "ag-1149-compact-high-budget.report.json": "f5a7fa030a2af244994c0df7c7eb8b1b42bd5107b46f6da76f72691c0733db86",
+            "ag-1149-compact-high-budget.svg": "724f4832ffc5dec8a3c2cfe01b2f0376fa83716b7f8111d77e342f76b613c31b"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-1149",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q3.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q3",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  350,
+                  0
+                ]
+              ]
+            },
+            {
+              "continuous": false,
+              "name": "ag-1149:net10:q4.0--q4.1",
+              "net": "net10",
+              "pins": [
+                [
+                  "q4",
+                  0
+                ],
+                [
+                  "q4",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  80
+                ],
+                [
+                  350,
+                  100
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--q4.2",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "q4",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  370,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net10:q3.2--q4.0",
+              "net": "net10",
+              "pins": [
+                [
+                  "q3",
+                  2
+                ],
+                [
+                  "q4",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  330,
+                  20
+                ],
+                [
+                  330,
+                  80
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net7:c2.1--q1.1",
+              "net": "net7",
+              "pins": [
+                [
+                  "c2",
+                  1
+                ],
+                [
+                  "q1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  930,
+                  100
+                ],
+                [
+                  20,
+                  160
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-1149:net8:q3.0--xlp.1",
+              "net": "net8",
+              "pins": [
+                [
+                  "q3",
+                  0
+                ],
+                [
+                  "xlp",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  20
+                ],
+                [
+                  400,
+                  120
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [],
+          "raw_trace_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+          "strict_anchor_relation": null
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-uncompacted.json": "71ab548a15f36572367435c75df7669a219d6c6d95ae6234ee62893a041c6a1c",
+            "ag-739-uncompacted.report.json": "d920e02d7208948e59089ef472579bf1bd195b2b219840e6071ded418d4c7885",
+            "ag-739-uncompacted.svg": "854b9477e8cf2729eba806e99616b3b31c27db4b6abaf44d2a751daec45be6fb"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  50
+                ],
+                [
+                  390,
+                  30
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  410,
+                  70
+                ],
+                [
+                  390,
+                  90
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  50
+                ],
+                [
+                  370,
+                  70
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  410,
+                  50
+                ],
+                [
+                  410,
+                  70
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found md1 md2",
+            "CLAMP member md1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member md2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP collect styled=false",
+            "CLAMP place md1 md2",
+            "CLAMP origin md1 { 420, 20 }",
+            "CLAMP origin md2 { 420, 100 }",
+            "CLAMP origin mp1 { 280, 20 }",
+            "CLAMP origin mp2 { 500, 20 }",
+            "CLAMP origin mn1 { 280, 100 }",
+            "CLAMP origin mn2 { 500, 100 }",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }",
+            "CLAMP rectangle .{ .min = .{ .x = 280, .y = 40 }, .max = .{ .x = 500, .y = 80 } }",
+            "CLAMP tips md1 ends={ .{ .x = -20, .y = 0 }, .{ .x = 20, .y = 0 } } control=.{ .x = 0, .y = -20 } side=.up",
+            "CLAMP tips md2 ends={ .{ .x = 20, .y = 0 }, .{ .x = -20, .y = 0 } } control=.{ .x = 0, .y = 20 } side=.down",
+            "CLAMP midpoint 390 50 gap=20 upper=0",
+            "CLAMP proposal { .{ .x = 390, .y = 50 }, .{ .x = 390, .y = 70 } }",
+            "CLAMP collision_result blocked=false mutual=false",
+            "CLAMP committed"
+          ],
+          "raw_trace_sha256": "168e0eafbf80b35e86398faa6cfd5ee0db95bfa1a751524204275abd50688c08",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "md1.0": {
+                "point": [
+                  370,
+                  50
+                ],
+                "strict": true
+              },
+              "md1.2": {
+                "point": [
+                  410,
+                  50
+                ],
+                "strict": true
+              },
+              "md2.0": {
+                "point": [
+                  410,
+                  70
+                ],
+                "strict": true
+              },
+              "md2.2": {
+                "point": [
+                  370,
+                  70
+                ],
+                "strict": true
+              }
+            },
+            "bounds": [
+              280,
+              40,
+              500,
+              80
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-uncompacted-high-budget.json": "115b3e44ef0218b1592c334a50bf2bd5acc1c354b69b5e95fd4a65c4990eac4b",
+            "ag-739-uncompacted-high-budget.report.json": "6245f855cd0214cb9765ebb2f239209da0a7719e398197f7d1961453f37329a3",
+            "ag-739-uncompacted-high-budget.svg": "e0df37ec1e5485c2ce5a7b21a6008ea38cf1f5aa7fbb4a6aef368e3b93fa6920"
+          },
+          "compact": false,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  50
+                ],
+                [
+                  390,
+                  30
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  410,
+                  70
+                ],
+                [
+                  390,
+                  90
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  370,
+                  50
+                ],
+                [
+                  370,
+                  70
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  410,
+                  50
+                ],
+                [
+                  410,
+                  70
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found md1 md2",
+            "CLAMP member md1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member md2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP collect styled=false",
+            "CLAMP place md1 md2",
+            "CLAMP origin md1 { 420, 20 }",
+            "CLAMP origin md2 { 420, 100 }",
+            "CLAMP origin mp1 { 280, 20 }",
+            "CLAMP origin mp2 { 500, 20 }",
+            "CLAMP origin mn1 { 280, 100 }",
+            "CLAMP origin mn2 { 500, 100 }",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }",
+            "CLAMP rectangle .{ .min = .{ .x = 280, .y = 40 }, .max = .{ .x = 500, .y = 80 } }",
+            "CLAMP tips md1 ends={ .{ .x = -20, .y = 0 }, .{ .x = 20, .y = 0 } } control=.{ .x = 0, .y = -20 } side=.up",
+            "CLAMP tips md2 ends={ .{ .x = 20, .y = 0 }, .{ .x = -20, .y = 0 } } control=.{ .x = 0, .y = 20 } side=.down",
+            "CLAMP midpoint 390 50 gap=20 upper=0",
+            "CLAMP proposal { .{ .x = 390, .y = 50 }, .{ .x = 390, .y = 70 } }",
+            "CLAMP collision_result blocked=false mutual=false",
+            "CLAMP committed"
+          ],
+          "raw_trace_sha256": "168e0eafbf80b35e86398faa6cfd5ee0db95bfa1a751524204275abd50688c08",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "md1.0": {
+                "point": [
+                  370,
+                  50
+                ],
+                "strict": true
+              },
+              "md1.2": {
+                "point": [
+                  410,
+                  50
+                ],
+                "strict": true
+              },
+              "md2.0": {
+                "point": [
+                  410,
+                  70
+                ],
+                "strict": true
+              },
+              "md2.2": {
+                "point": [
+                  370,
+                  70
+                ],
+                "strict": true
+              }
+            },
+            "bounds": [
+              280,
+              40,
+              500,
+              80
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-compact.json": "42338dac9b66365bc97e061355b65ebfe86154c1f20b4db50fec1e55adaacb62",
+            "ag-739-compact.report.json": "f470426534d21b8675f1f1cb6678188c63914ae0814910e7ac08c7333a5186e9",
+            "ag-739-compact.svg": "c1847ff5513145e8fe870258a849841bf5e0aa3587df2d7def5d94614a73d0b3"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": false,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  50
+                ],
+                [
+                  260,
+                  30
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  70
+                ],
+                [
+                  260,
+                  90
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  50
+                ],
+                [
+                  240,
+                  70
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  50
+                ],
+                [
+                  280,
+                  70
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found md1 md2",
+            "CLAMP member md1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member md2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP collect styled=false",
+            "CLAMP place md1 md2",
+            "CLAMP origin md1 { 420, 20 }",
+            "CLAMP origin md2 { 420, 100 }",
+            "CLAMP origin mp1 { 280, 20 }",
+            "CLAMP origin mp2 { 500, 20 }",
+            "CLAMP origin mn1 { 280, 100 }",
+            "CLAMP origin mn2 { 500, 100 }",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }",
+            "CLAMP rectangle .{ .min = .{ .x = 280, .y = 40 }, .max = .{ .x = 500, .y = 80 } }",
+            "CLAMP tips md1 ends={ .{ .x = -20, .y = 0 }, .{ .x = 20, .y = 0 } } control=.{ .x = 0, .y = -20 } side=.up",
+            "CLAMP tips md2 ends={ .{ .x = 20, .y = 0 }, .{ .x = -20, .y = 0 } } control=.{ .x = 0, .y = 20 } side=.down",
+            "CLAMP midpoint 390 50 gap=20 upper=0",
+            "CLAMP proposal { .{ .x = 390, .y = 50 }, .{ .x = 390, .y = 70 } }",
+            "CLAMP collision_result blocked=false mutual=false",
+            "CLAMP committed",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }"
+          ],
+          "raw_trace_sha256": "c2c8418a88a8ae179d470907960dcb7d43dd32dcf2c29bdffa822e34b1bf770e",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "md1.0": {
+                "point": [
+                  240,
+                  50
+                ],
+                "strict": true
+              },
+              "md1.2": {
+                "point": [
+                  280,
+                  50
+                ],
+                "strict": true
+              },
+              "md2.0": {
+                "point": [
+                  280,
+                  70
+                ],
+                "strict": true
+              },
+              "md2.2": {
+                "point": [
+                  240,
+                  70
+                ],
+                "strict": true
+              }
+            },
+            "bounds": [
+              180,
+              40,
+              350,
+              80
+            ]
+          }
+        },
+        {
+          "artifacts_sha256": {
+            "ag-739-compact-high-budget.json": "cdb2bef2a1e1718912d967959797077dd516da6e6437c1827d206548ecfa5604",
+            "ag-739-compact-high-budget.report.json": "e45575a9f3443e2d693b565989d5ac6153d31982ea400e2f80cc8ca2a7584b83",
+            "ag-739-compact-high-budget.svg": "3f92dca0321e5f4287fef1d614b29ad2510d1d412885bdd31a1174bb54ff336f"
+          },
+          "compact": true,
+          "geometry": {
+            "distinct_channel_rows": true,
+            "horizontal": true,
+            "outward_controls": true,
+            "same_net_order": true
+          },
+          "high_budget": true,
+          "id": "ag-739",
+          "paths": [
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md1.1",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md1",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  50
+                ],
+                [
+                  260,
+                  30
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md2.0--md2.1",
+              "net": "net2",
+              "pins": [
+                [
+                  "md2",
+                  0
+                ],
+                [
+                  "md2",
+                  1
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  70
+                ],
+                [
+                  260,
+                  90
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net5:md1.0--md2.2",
+              "net": "net5",
+              "pins": [
+                [
+                  "md1",
+                  0
+                ],
+                [
+                  "md2",
+                  2
+                ]
+              ],
+              "points": [
+                [
+                  240,
+                  50
+                ],
+                [
+                  240,
+                  70
+                ]
+              ]
+            },
+            {
+              "continuous": true,
+              "name": "ag-739:net2:md1.2--md2.0",
+              "net": "net2",
+              "pins": [
+                [
+                  "md1",
+                  2
+                ],
+                [
+                  "md2",
+                  0
+                ]
+              ],
+              "points": [
+                [
+                  280,
+                  50
+                ],
+                [
+                  280,
+                  70
+                ]
+              ]
+            }
+          ],
+          "placement_trace": [
+            "CLAMP found md1 md2",
+            "CLAMP member md1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member md2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mp2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn1 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP member mn2 drawn=true at=false shelf=0 held_sk=false held_st=false mate=4294967295",
+            "CLAMP collect styled=false",
+            "CLAMP place md1 md2",
+            "CLAMP origin md1 { 420, 20 }",
+            "CLAMP origin md2 { 420, 100 }",
+            "CLAMP origin mp1 { 280, 20 }",
+            "CLAMP origin mp2 { 500, 20 }",
+            "CLAMP origin mn1 { 280, 100 }",
+            "CLAMP origin mn2 { 500, 100 }",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }",
+            "CLAMP rectangle .{ .min = .{ .x = 280, .y = 40 }, .max = .{ .x = 500, .y = 80 } }",
+            "CLAMP tips md1 ends={ .{ .x = -20, .y = 0 }, .{ .x = 20, .y = 0 } } control=.{ .x = 0, .y = -20 } side=.up",
+            "CLAMP tips md2 ends={ .{ .x = 20, .y = 0 }, .{ .x = -20, .y = 0 } } control=.{ .x = 0, .y = 20 } side=.down",
+            "CLAMP midpoint 390 50 gap=20 upper=0",
+            "CLAMP proposal { .{ .x = 390, .y = 50 }, .{ .x = 390, .y = 70 } }",
+            "CLAMP collision_result blocked=false mutual=false",
+            "CLAMP committed",
+            "CLAMP anchor mp1 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mp2 tips=.{ .x = 0, .y = 20 }/.{ .x = 0, .y = -20 } sides=.down/.up down=true",
+            "CLAMP anchor mn1 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP anchor mn2 tips=.{ .x = 0, .y = -20 }/.{ .x = 0, .y = 20 } sides=.up/.down down=false",
+            "CLAMP drains { .{ .x = 280, .y = 40 }, .{ .x = 500, .y = 40 }, .{ .x = 280, .y = 80 }, .{ .x = 500, .y = 80 } }"
+          ],
+          "raw_trace_sha256": "c2c8418a88a8ae179d470907960dcb7d43dd32dcf2c29bdffa822e34b1bf770e",
+          "strict_anchor_relation": {
+            "actual_tips": {
+              "md1.0": {
+                "point": [
+                  240,
+                  50
+                ],
+                "strict": true
+              },
+              "md1.2": {
+                "point": [
+                  280,
+                  50
+                ],
+                "strict": true
+              },
+              "md2.0": {
+                "point": [
+                  280,
+                  70
+                ],
+                "strict": true
+              },
+              "md2.2": {
+                "point": [
+                  240,
+                  70
+                ],
+                "strict": true
+              }
+            },
+            "bounds": [
+              180,
+              40,
+              350,
+              80
+            ]
+          }
+        }
+      ],
+      "source_sha256": {
+        "build.zig": "2595801bdce1261404da16dc45534ab6919d95891b5a1904ce3d77198a6a9e63",
+        "build.zig.zon": "48025dc71270a98ad8fd963ae41b257bb15e47642032b242bee193aff8906be0",
+        "flake.lock": "3f44ae2624f7ce14ab14aa2b404668da6efda24854689ee7878856aa58d196e8",
+        "flake.nix": "1e91c5054899691d8871b45d9a59705b588fadf172068e88de08cb243082c321",
+        "src/abi.zig": "cfa9ccf24615491e7a2f596e30398cd2835c31e79c94ea4bbdf9fcaba71c81b8",
+        "src/actual_anchor.zig": "715381e38b51ec3f2e7b58e99ee0ac8f71b32294e55f3e5eb3b7f5b961831e19",
+        "src/analysis.zig": "d53f3a30665ce1b449cbb0aaeb50a0a5899196e4b8ed5240a6238256edb95f27",
+        "src/antiparallel.zig": "d65e2aee4d9dc8749ec4d10d6f5d8addbc2d570beb6f6e99b4fa0fc928e25a3c",
+        "src/bias_neighbors.zig": "f4aa7496a42f9926496270b7cdb58244f4a45d8d7c329477b979910b2e1f7f89",
+        "src/block_symbols.zig": "1cd07ea50b6dbc1fca12d333568705de916177350a3f46e5754bb6c8e73e8d06",
+        "src/bridges.zig": "eb2c371b3a0384baaed34b17e12373ebdb6c3d5d2cfc472097f3a50bca446c8a",
+        "src/canvas.zig": "eaf8358e280e5bab94ff378dbc3dbda6985f05fdb56c0cab3a8f249f8eae9c92",
+        "src/cells.zig": "622bc4e2826bc42d86ac0879227c01734d47c5f7fdb2a9a95390bc19ccad5d25",
+        "src/center_tap.zig": "e5de82634a16d261f06f2739fcb99b98f739e1be71d4051d7e3530cbd8cfd61d",
+        "src/checks.zig": "022cd9b73dd49d9272405f761e7ce6dfc82a8b4ee071fd957e7204905d2135ed",
+        "src/clamp_anchors.zig": "4bf5d9fe3b019255d689a889c17d0fb346e743208750ec08fb9b5e57e02d53d9",
+        "src/clamp_anchors_test.zig": "3d830bb6ce770d79ffab0082984d2bab5e8e58073306b45a5868da2d18baa8d0",
+        "src/coil_bank_place.zig": "1122bb9f2b177b4742b30b6e7adcd3d234d44ec996008dcb5bd430a14a07ec99",
+        "src/coil_banks.zig": "3d836f49c50aed9a414386e35614f2b1ad726a3ae4226138f54b21c40c3a8bcc",
+        "src/coil_chain_place.zig": "d42ef1ca7cee856bb0199bbe4df069bb14d624af9a1c661530f1115a7011af7c",
+        "src/coil_chain_place_test.zig": "0fe19097bd3578850095ab8250681fd3b9a51fa192fbde246ea6d1c81d514c6f",
+        "src/coil_chains.zig": "6aa2a120820cf8f330faa13f91d0d178ff34732c84cf113467ae3e015af7387f",
+        "src/coil_tanks.zig": "97eda86453e87724507074085cc753e123f799cf1dbfaa7a470300392ffe6aff",
+        "src/columns.zig": "f2ffe1027e6ed150ae7644c6a614a38637b07ddb950bb0fc273537c55e49ded2",
+        "src/compact.zig": "308837d33b24bbbcd7e17670a09a3001f23283ca068fab392b4e88dd613e2b24",
+        "src/config.zig": "c3a50f8f8211e6562bb14b4228559d26d4b5fc62986aadf47ed7b47dad1bc0e6",
+        "src/csr.zig": "7c0733dd123a557693fc0e151fe19c096f114422cb7b81fd1915680d5454147c",
+        "src/ct_controls.zig": "c05f342402a765047bbfba46ee001bb898db4d1746c56d94e145ef084ed2ba86",
+        "src/device.zig": "a43849ba54f2a7469d9f375605e3db39e5c5e26e536868d8558fd53dc9f02e0d",
+        "src/dots.zig": "3c13630ca5e6a016feaf5524866b0612386e688584cc1ba2e4204d5df31c6281",
+        "src/forms.zig": "caa4847114da4b325f15823a1e9f443292ef9486fe330157b9649450686bef2b",
+        "src/geom.zig": "1740223dc8ec5ebacaff432e4a3774fad9253e8ed78ef7a46d6ee10fadf000e5",
+        "src/hints.zig": "bab48b0d3b65a1cd7244ddd2ea86e9f3737e5b5229edadc48b4095722d2c3b5a",
+        "src/input_place.zig": "110df57d26ed8cb2e33feaa2b61c4b9e813ec261c9d88f840228367522255b56",
+        "src/input_resistors.zig": "df673976ffd151a198343efcfb35b6b5d66c5e36db1db564096c36fb586d1603",
+        "src/json.zig": "2dfc511dfc1cc465bbc8da1a0ea20be6fa91dc08912b6e21692448a67abe3b67",
+        "src/latex.zig": "c6bd7f39c0dea60b1272ab8862146d9c82d0dfc118aed0c17965d13749812b12",
+        "src/levels.zig": "dde4b1ca09844349ad0129f3f860a300048cc700b75e1c563f3f61100f33d31a",
+        "src/library.zig": "1b032c179646a5709810bc473977896591249b3163214e446f5feffaeb062a63",
+        "src/lint.zig": "4c88dbf811f7a56b6c09aca9e1ba6cb3dfbd6ae99e0b08f1c81b9373f1af2ac0",
+        "src/loop_place.zig": "11d12052aca9f625a06da1dff6a616dbe370d7b788c66884ef471b0f83e00de5",
+        "src/mates.zig": "4c846b670ceaa32fa857541c46ea69b7c1b75839164ee8a707ac402900fb596b",
+        "src/maze.zig": "cfc4279115843252fb69754907785fc17c785cdb09ab5a0254a436af7f118afe",
+        "src/netlines.zig": "7752bb801de63ccc10b46f6dac36a70c8bb6a5a63a64ca000ad120d900c9ade9",
+        "src/netlist.zig": "eb27d9ae77bdf73ebf553bf5f02f65224e6ceabb548aa7a923708d40fee25825",
+        "src/opamp.zig": "36d310befb06b65f2467d3e6706ef2294378b934a0dff57baaf84bd6c1daad70",
+        "src/opamp_grow.zig": "c49e7a1132c8fd3ccd3e0ab7f46b99668cfabff6837c747975aa3bf723b76b27",
+        "src/pin_escape_codegen.zig": "954a971997558789051dab61aa969960df102a2a1ab9d2e1a37f8871fa120850",
+        "src/pin_escape_test.zig": "ef33f4227b0ce4f26204036754cb43238fedb827a9ad69733902a19c109145bb",
+        "src/pinned.zig": "cf7777afe86da652bd0f3c4038d9195853adfa6b01c16dd2b842a8eacaeec7f3",
+        "src/placed.zig": "7ddefacf5b6f8308a3b5307af0931f58465c57232f3776b9be081df79697e733",
+        "src/power_compact.zig": "b54ec5ff9d8c564780c44865742fdd49acdc6ee87e3b417338ef707193c0afb8",
+        "src/power_loop_wires.zig": "7cc7e4a2f12b72f655e9c29a806033be81d0db6d2926c7549ceeefad28820019",
+        "src/power_loops.zig": "431100f05e12daa0db4ad58b05e88b3514ec142cbad9f50b04d18d1672d914f2",
+        "src/power_paths.zig": "a2a514173b4152c4f4c14044a7e9751170ef9618b3bf62ba4c1ce7012fd0df31",
+        "src/relations.zig": "5dc99acf6bd049ddf406238e162de5b6bade369a0455e0f6e3406384fa8febf9",
+        "src/relay.zig": "cb395308eaedbfea02ab731a14f3f9caa19ac25230bd49392e729e8541ae7e73",
+        "src/report.zig": "d6635e3a8275cfc8ec3cccd15fee1c64facd2a468ac0e518b297d9ebfd45cccc",
+        "src/root.zig": "c09402929f7a44d44f76d99fd5bbf60e4ffb9647c68ecf458975245f7b73a366",
+        "src/routes.zig": "c272ac15c4a24b3182bc18d3eea781853708312f1978d0110f8f08ee45d16de4",
+        "src/schematic.zig": "14d2a7bb9bd0d5995392a3b86228a7caa745387809118f35f746345e7ab02900",
+        "src/sequence.zig": "6e31b243e94684d51344c217f9c78837710199fd66d6a9af787104b228b9587c",
+        "src/skeleton.zig": "41223786ee8384a3b48fb2cd2e026c6a9ca6fff1366d6ce45c280f0300d33dcf",
+        "src/sketch.zig": "24a77c03f802ccb072f08c87869d1418276bb876f1dd1cb4f25b0f69ddaab003",
+        "src/span.zig": "9cabfb947b4107700d778cc1d81918a27a5d9803bff4916b521a3d299d186470",
+        "src/structure.zig": "d0755ca1ff80313d6088fa2bdb97c0f0b96c335d092fc0e45f9a64f53117eef5",
+        "src/symmetry.zig": "71d0350d7fc6c8d4b87bd832fb75f3f7750e3c48120df283f9a5be086d5a1fbc",
+        "src/thin.zig": "3966c6daf9a0a9cb52732bee6e121c5a4b3f6d9ab4783a5f0f9bbc100d479831",
+        "src/thin_crossings_test.zig": "997afd995a77d3fa1ec1aaa6761f84881a9e4fd3ddb73e5ef22fba5afc282029",
+        "src/thin_parts_test.zig": "c01e0ba12d04c38bf5fe91f786f6adc81957f752ea7704e6660d53626d689958",
+        "src/transmission.zig": "fdcd15f1eecfe81ea5ccd6faa479b535722cd176914123292e64d00449813451",
+        "src/trunk.zig": "bd1c86348409cfbee88fde2ce0da0259e6c2f0d0df728a1276fb1bf011bdf601",
+        "src/trunk_row_test.zig": "11488b650fb2d7d35c4d0aaeaef6cb94b1722639becde088a037c5f3b9a15dd0",
+        "src/trunk_taps_test.zig": "09d80084f1743099c02721c6bfceda4892026e74fdd61f83eaf65ac107d9cf84",
+        "src/wires.zig": "85c7f571c92b4d4e6ff99a105e1913931487635d00330322582e1c3dab8e71d8",
+        "src/wires_parts_test.zig": "1fead1e2a5dc8a75879fa7a5ae403af414a582a0fefc2006edc785546ae72b1e",
+        "src/wrap.zig": "a4f14633ca5e73600ddda48d9a0100f682c8d73aa74d273e6b8795fff9dcc12c",
+        "tests/svg.zig": "1ec54614d2c93c872e98677e616206ef73264412ce6a05adff235a3ab534de5c",
+        "tools/json.zig": "e4f91b6917b59b3338f463d5a24f738cc67bbcb6bfc7811491caa593dc2dbaf9",
+        "tools/schemify/abi.zig": "a580008a4a48b42130f8bcfacd13d643c1af805f282deede8a46f6d27140edb5",
+        "tools/schemify/convert.zig": "21ec0ff7a10e3755f4a55d7567f5f477dd88992f68603482080f2bca75dc42df",
+        "tools/schemify/emit.zig": "af866947b899746fbda5eefb19e52f0ca311398260a2e7f56e90167c334d82db",
+        "tools/schemify/hints.zig": "9e2a1e60524fb89a7120bb9e8223c432c3d806ced2d6965c8907fe0745e4bc84",
+        "tools/schemify/layout.zig": "c34ad032e45ab85ffd67f186425d34c229382462d4e117d8ca87d5bcef5efff0",
+        "tools/schemify/names.zig": "0d8c7955755da9386c9d738ffeafb4e4f550f8eaac5bb72ba59183f28d00d18a",
+        "tools/schemify/place.zig": "10c6fbeae45bfae607c44e5fdeaaf7ac02b633822c6e3dce09c58c4a5b35e03f",
+        "tools/schemify/plugin.zig": "5f452c8802e4c275a1672881bd4d7c6a34774656936c19feeb5d5f0a43d283f9",
+        "tools/schemify/recognize.zig": "ffdfee9eee4c5bcd2cd82a3786a90c18bdd1e8728a5832106e692d583197aeac",
+        "tools/schemify/spice.zig": "64126bf0d4b040898f6e46866db0411d9e5e29d8573e2b63f26e67748d732a87",
+        "tools/tex.zig": "b1aa5812ecf51e478b8d50b96a68becbd41bc7f530315d05aa5b5e294687352b"
+      },
+      "trace_binary_sha256": "863ed6f4f1bc6074d87089e47ca4c4237a92a2acef3053aba88098c3e863c261",
+      "trace_only_inputs_sha256": {},
+      "version": "b"
+    }
+  ],
+  "limits": "Historical placement-a/b diagnostics, not final checkpoint validation. High-budget states are diagnostic only. AG1149 remains a named source-connected failure. Captured source manifests identify dirty snapshots; neither is a claimed Git revision.",
+  "methods": [
+    "literal_equal_bytes",
+    "changed_geometry",
+    "changed_report",
+    "changed_svg",
+    "exact_sixteen_named_states",
+    "every_frozen_source_hash",
+    "every_instrumented_source_hash",
+    "every_binary_hash",
+    "every_raw_trace_hash",
+    "every_native_source_path_name",
+    "reciprocal_mate_handles_bound_to_device_names"
+  ],
+  "source_certificate_sha256": "450143215c358bd41b9908513c46beb2515d76d139d9bd6fde4c7d5a174b9f09"
+}

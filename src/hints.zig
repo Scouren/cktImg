@@ -4,7 +4,9 @@
 //!     *@ [weak] <verb> <arguments>
 //!     *@ group pair m1 m2        (also mirror, bank, stack, cross)
 //!     *@ above m9 iss m7         m9 above iss above m7
+//!     *@ column m5 m6           m5 directly over m6, one column
 //!     *@ face m3 g left          m3's gate on its left
+//!     *@ hang c1 m3.g            c1 hung from m3's gate
 //!
 //! Each stage applies the lines it owns and says what became of each;
 //! `report` gathers the verdicts. What each verb draws is the rule of the
@@ -59,10 +61,14 @@ pub const Verb = enum(u8) {
     expand,
     row,
     above,
+    column,
     order,
+    stage,
+    repeat,
     upright,
     bridge,
     face,
+    hang,
     label,
     wire,
     port,
@@ -125,7 +131,8 @@ pub const Hint = struct {
     weak: bool,
     /// Its arguments as written, split at blanks and commas.
     args: []const []const u8,
-    /// 1-based line in the text read.
+    /// 1-based line in the text read; a front end may renumber it to its
+    /// file's lines, 0 for a line it added (`report` leaves those out).
     line: u32,
     /// The whole line, trimmed.
     text: []const u8,
@@ -173,6 +180,10 @@ pub const Code = enum(u8) {
     taken,
     /// No symmetry of the circuit swaps what it names.
     asymmetric,
+    /// Its devices are not joined as the group it names is: a mirror's or
+    /// a bank's gates on one net, a stack's each on a channel net of the
+    /// next that is not a rail.
+    unjoined,
     /// No free cell where it asks.
     no_room,
     /// The engine took it, but the finished drawing does not show it: a
@@ -183,7 +194,13 @@ pub const Code = enum(u8) {
     guarantee,
     /// A verb on a rung the engine does not take yet.
     not_built,
+    /// On the deck's first line, which SPICE reads as the title: nothing
+    /// taken. Move it below the title.
+    title,
 };
+
+/// `Verdict.arg` of a line no single argument fails.
+pub const no_arg = std.math.maxInt(u32);
 
 pub const Verdict = struct {
     state: State,
@@ -193,11 +210,23 @@ pub const Verdict = struct {
     blocked_by: []const u32 = &.{},
     /// Per `blocked_by` member: deleting it alone would admit this line.
     alone: []const bool = &.{},
+    /// The argument at fault, an index into the line's `args`, when one of
+    /// several is (`unknown_name`, `not_placeable`); `no_arg` else.
+    arg: u32 = no_arg,
 
     /// The verdict of a line read with `code`: honoured when it is `ok`,
     /// else rejected.
     pub fn of(code: Code) Verdict {
         return .{ .state = if (code == .ok) .honoured else .rejected, .code = code };
+    }
+
+    /// The verdict of a line read with `code`, `args[arg]` at fault; `arg`
+    /// is `no_arg` for none.
+    pub fn at(code: Code, arg: u32) Verdict {
+        assert(code != .ok or arg == no_arg);
+        var v: Verdict = .of(code);
+        v.arg = arg;
+        return v;
     }
 
     /// The verdict of a line that gives way (`state`: dropped or relaxed) to
@@ -233,7 +262,12 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
     var lines = std.mem.splitScalar(u8, text, '\n');
     while (lines.next()) |raw| {
         line += 1;
-        if (line == 1) continue;
+        // The title, as SPICE reads it: a line there takes nothing, but is
+        // listed (verb `unknown`, line 1) so the report can say so.
+        if (line == 1) {
+            if (read(raw) != null) try out.append(arena, .{ .verb = .unknown, .weak = false, .args = &.{}, .line = 1, .text = std.mem.trim(u8, raw, " \t\r") });
+            continue;
+        }
         var words = std.mem.tokenizeAny(u8, raw, " \t\r");
         depth = nesting(depth, words.next() orelse continue, ".subckt", ".ends");
         if (depth > 0) continue;
@@ -243,7 +277,7 @@ pub fn collect(arena: Allocator, text: []const u8) Allocator.Error![]const Hint 
         try out.append(arena, .{ .verb = h.verb, .weak = h.weak, .args = args.items, .line = line, .text = std.mem.trim(u8, raw, " \t\r") });
     }
     assert(depth <= line);
-    var last: u32 = 1;
+    var last: u32 = 0;
     for (out.items) |h| {
         assert(h.line > last and h.line <= line);
         last = h.line;
@@ -396,6 +430,8 @@ test "read: the forms, weak, and what is no verb" {
     try std.testing.expectEqual(Verb.off, read("*@ grouping off").?.verb);
     try std.testing.expectEqual(Verb.symmetry_off, read("*@ symmetry off").?.verb);
     try std.testing.expectEqual(Verb.above, read("*@ above m9 iss").?.verb);
+    try std.testing.expectEqual(Verb.column, read("*@ column m5 m6").?.verb);
+    try std.testing.expectEqual(@as(u8, 2), Verb.column.rung());
     const w = read("*@ weak cell m5 2 4").?;
     try std.testing.expectEqual(Verb.cell, w.verb);
     try std.testing.expect(w.weak);

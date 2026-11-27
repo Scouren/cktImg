@@ -95,8 +95,15 @@ pub fn main(init: std.process.Init) !void {
         }
         // Every line a verdict; none honoured that the drawing lacks.
         for (sk.nl.hints, try np.report.verdicts(a, &sk.nl, sk.roles, &sk.st, &sk.sk, &sk.p, lib)) |h, v| {
-            if (v.state == .relaxed and v.code == .not_drawn) {
-                std.debug.print("`{s}` honoured but not drawn:\n{s}\n", .{ h.text, text });
+            const absent = v.state == .relaxed and v.code == .not_drawn;
+            if (h.verb == .stack and (v.state == .honoured or absent)) {
+                std.debug.assert(h.args.len == 2); // randomLines generates pairs.
+                if (support.generatedStack(&sk.p, h.args[0], h.args[1]) == (v.state == .honoured)) continue;
+                std.debug.print("stack verdict disagrees with final terminals: `{s}` {t}/{t}\n{s}\n", .{ h.text, v.state, v.code, text });
+                return error.StackVerdict;
+            }
+            if (absent) {
+                std.debug.print("`{s}` accepted without visible effect:\n{s}\n", .{ h.text, text });
                 return error.NotDrawn;
             }
         }

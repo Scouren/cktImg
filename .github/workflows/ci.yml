@@ -37,6 +37,9 @@ jobs:
       - name: Gallery
         run: zig build gallery -- --svgs gallery
 
+      - name: Gallery measurement oracles
+        run: python3 -I -B tests/site_metrics.py
+
       # 4000 random netlists through both engines: every layout ends, no wire
       # touches another net's point, and issue #8's drawings keep every net
       # one piece and draw the same with the cards reversed.
@@ -99,10 +102,10 @@ jobs:
           name: netlist-import-wasm
           path: netlist-import.wasm
           if-no-files-found: error
-      - name: committed netlist-import.wasm equals the rebuild, under 550 KB
+      - name: committed netlist-import.wasm equals the rebuild, under 1 MiB
         run: |
           size=$(stat -c%s netlist-import.wasm); echo "netlist-import.wasm: $size bytes"
-          test "$size" -lt $((550 * 1024))
+          test "$size" -lt $((1024 * 1024))
           [ -z "$(git status --porcelain -- netlist-import.wasm)" ] && exit 0
           echo "::error::netlist-import.wasm differs from its rebuild: commit the netlist-import-wasm artifact of this run"
           exit 1

@@ -83,8 +83,9 @@ typedef struct {
 typedef enum {
   CKTIMG_OP_LINE = 0,     /* xy: x0,y0,x1,y1                        */
   CKTIMG_OP_POLYLINE = 1, /* xy: count points; closed repeats first */
-  CKTIMG_OP_CIRCLE = 2,   /* xy: centre; r                          */
+  CKTIMG_OP_CIRCLE = 2,   /* xy: centre; r; hollow outline          */
   CKTIMG_OP_TEXT = 3,     /* xy: centre; text, size (drawn upright) */
+  CKTIMG_OP_FILLED_CIRCLE = 4, /* xy: centre; r; solid ink disk      */
   CKTIMG_OP_NONE = 255
 } CktimgOpKind;
 
@@ -110,7 +111,8 @@ size_t cktimg_lib_count(const CktimgLib *lib);
  * drawn around the terminals. Returns the class index, which never changes
  * meaning, or SIZE_MAX (no terminals, two terminals on one point, a name
  * already added with other terminals, bad arguments, out of memory). An
- * exact repeat returns the existing index. */
+ * exact repeat returns the existing index. Circle radii must be nonnegative
+ * and centre +/- radius must fit int32_t on both axes. */
 size_t cktimg_lib_add(CktimgLib *lib, const char *name, uint8_t role,
                       const CktimgTerminal *terms, size_t n_terms,
                       const CktimgOp *ops, size_t n_ops);
@@ -134,6 +136,14 @@ bool cktimg_lib_load_zon(CktimgLib *lib, const char *text, char **out_report);
  * with -Dzon_config=false returns NULL for any non-NULL zon. */
 CktimgSch *cktimg_parse_place(CktimgLib *lib, const char *src, const char *zon,
                               char **out_report);
+
+/* Legacy placement emits Manhattan wires. Pass CKTIMG_ALLOW_45 to admit a
+ * verified reciprocal gate pair with two interior diagonals; all coordinates
+ * are still int32_t, and no layout is required to contain a diagonal.
+ * Unknown geometry values return NULL. */
+enum { CKTIMG_MANHATTAN = 0, CKTIMG_ALLOW_45 = 1 };
+CktimgSch *cktimg_parse_place_geometry(CktimgLib *lib, const char *src, const char *zon,
+                                       uint8_t geometry, char **out_report);
 
 void cktimg_sch_free(CktimgSch *sch);
 void cktimg_string_free(char *s);
@@ -182,9 +192,15 @@ const char *cktimg_pin_net(const CktimgSch *sch, size_t d, size_t p);
 bool cktimg_pin_xy(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
                    int32_t *y);
 
+/* World coordinate of a visible terminal on the selected class. Returns
+ * false and leaves x/y untouched for an absent or hidden terminal or an
+ * invalid index. A contact at the class origin is a valid result. */
+bool cktimg_pin_contact(const CktimgSch *sch, size_t d, size_t p, int32_t *x,
+                        int32_t *y);
+
 /* ---------------------------------------------------------------------------
  * Nets and wires. WIRE INDEX IS NET INDEX; a net drawn with no wire has 0
- * segments. A segment is a Manhattan polyline of >= 2 points.
+ * segments. A segment is a polyline of >= 2 points using the admitted wire geometry.
  * ------------------------------------------------------------------------- */
 
 size_t cktimg_net_count(const CktimgSch *sch);
@@ -229,6 +245,7 @@ size_t cktimg_device_op_count(const CktimgSch *sch, size_t d);
 uint8_t cktimg_device_op_kind(const CktimgSch *sch, size_t d, size_t o);
 size_t cktimg_device_op_points(const CktimgSch *sch, size_t d, size_t o,
                                int32_t *xy, size_t cap);
+/* Both circle kinds; use op_kind to distinguish hollow from solid. */
 bool cktimg_device_op_circle(const CktimgSch *sch, size_t d, size_t o,
                              int32_t *cx, int32_t *cy, int32_t *r);
 const char *cktimg_device_op_text(const CktimgSch *sch, size_t d, size_t o,

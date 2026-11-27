@@ -1,0 +1,47 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="670" height="281" viewBox="0 0 670 281" font-family="Helvetica, Arial, sans-serif">
+<rect width="100%" height="100%" fill="#ffffff"/>
+<g fill="none" stroke="#1d2330" stroke-width="1.6" stroke-linejoin="round" stroke-linecap="round">
+<polyline points="326.4,96.0 294.4,96.0 "/>
+<polyline points="230.4,96.0 262.4,96.0 "/>
+<polyline points="262.4,96.0 294.4,96.0 "/>
+<polyline points="262.4,96.0 262.4,64.0 "/>
+<polyline points="390.4,96.0 422.4,96.0 "/>
+<polyline points="486.4,96.0 454.4,96.0 "/>
+<polyline points="454.4,96.0 422.4,96.0 "/>
+<polyline points="454.4,96.0 454.4,64.0 "/>
+<polyline points="102.4,128.0 102.4,112.0 "/>
+<polyline points="550.4,96.0 582.4,96.0 582.4,112.0 "/>
+<polyline points="166.4,96.0 134.4,96.0 134.4,112.0 "/>
+<polyline points="102.4,112.0 134.4,112.0 "/>
+<polyline points="134.4,112.0 582.4,112.0 "/>
+<polyline points="326.4,96.0 353.6,96.0 "/>
+<polyline points="363.2,96.0 390.4,96.0 "/>
+<polyline points="353.6,83.2 353.6,108.8 "/>
+<polyline points="363.2,83.2 363.2,108.8 "/>
+<polyline points="102.4,128.0 102.4,155.2 "/>
+<polyline points="102.4,164.8 102.4,192.0 "/>
+<polyline points="89.6,155.2 115.2,155.2 "/>
+<polyline points="89.6,164.8 115.2,164.8 "/>
+<polyline points="550.4,96.0 537.6,96.0 "/>
+<polyline points="499.2,96.0 486.4,96.0 "/>
+<polyline points="537.6,96.0 532.8,102.4 528.0,89.6 523.2,102.4 518.4,89.6 513.6,102.4 508.8,89.6 504.0,102.4 499.2,96.0 "/>
+<polyline points="230.4,96.0 217.6,96.0 "/>
+<polyline points="179.2,96.0 166.4,96.0 "/>
+<polyline points="217.6,96.0 212.8,102.4 208.0,89.6 203.2,102.4 198.4,89.6 193.6,102.4 188.8,89.6 184.0,102.4 179.2,96.0 "/>
+<polyline points="88.0,192.0 116.8,192.0 "/>
+<polyline points="92.8,196.8 112.0,196.8 "/>
+<polyline points="99.2,201.6 105.6,201.6 "/>
+<circle cx="262.4" cy="64.0" r="4.8" fill="#ffffff"/>
+<text x="262.4" y="58.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">a</text>
+<circle cx="454.4" cy="64.0" r="4.8" fill="#ffffff"/>
+<text x="454.4" y="58.0" text-anchor="middle" font-size="12" fill="#1d2330" stroke="none">b</text>
+</g>
+<circle cx="262.4" cy="96.0" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="454.4" cy="96.0" r="3.8" fill="#1d2330" stroke="none"/>
+<circle cx="134.4" cy="112.0" r="3.8" fill="#1d2330" stroke="none"/>
+<text x="348.8" y="75.2" text-anchor="start" font-size="11" fill="#56607a" stroke="none">c3</text>
+<text x="120.0" y="160.0" text-anchor="start" font-size="11" fill="#56607a" stroke="none">c4</text>
+<text x="508.8" y="81.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r1</text>
+<text x="188.8" y="81.6" text-anchor="start" font-size="11" fill="#56607a" stroke="none">r2</text>
+<text x="40.0" y="274.8" text-anchor="start" font-size="12" fill="#1d2330" stroke="none"></text>
+</svg>

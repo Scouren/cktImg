@@ -28,11 +28,18 @@
 //! - routes.5 (unmeasured) An output's port leaves from the topmost of
 //!   its wires' outermost points, on the drawing's nearer side: the right
 //!   when the wires' middle is at or right of the drawing's. `port`
+//! - routes.6 (choice) A `port` line's side is tried first; where no stub
+//!   fits there, the port stands where it would with no line, a symbol
+//!   still: a name for want of the side asked lost the symbol the line
+//!   was about (ag-1108, a hinting trial: `port rfoutp top` drew a bare
+//!   name). The report says `no_room`. `port`
 //!
 //! Contents:
+//! - `pub fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void`
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror, anchors: []const u32) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
+//! - `pub fn attachRun(c: *Canvas, net: u32, pins: []const u32, run: u32) Allocator.Error!void`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
 //! - `pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool`
 
@@ -45,6 +52,7 @@ const canvas = @import("canvas.zig");
 const maze = @import("maze.zig");
 
 const Side = library.Side;
+const Rect = library.Rect;
 const Pt = library.Pt;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
@@ -115,24 +123,129 @@ pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Er
     try finish(c, net, anchor, failed.items);
 }
 
-/// An output's port out from the topmost of its wires' outermost points,
-/// on the drawing's nearer side; nothing for any other net.
-pub fn port(c: *Canvas, net: u32) !void {
-    if (c.s.roles[net] == .output) {
-        var lo: i32 = std.math.maxInt(i32);
-        var hi: i32 = std.math.minInt(i32);
-        for (c.segs.items) |g| if (g.net == net) {
-            lo = @min(lo, @min(g.a.x, g.b.x));
-            hi = @max(hi, @max(g.a.x, g.b.x));
+/// Joins each of `pins`, left to right, to segment `run` of `net`'s wires
+/// by its own way (a `wire over|under` run, which every pin taps): the
+/// net's other wires are walls to it, so no two ways meet off the run. A
+/// pin with no such way is then joined to any wire of the net (`attach`).
+pub fn attachRun(c: *Canvas, net: u32, pins: []const u32, run: u32) Allocator.Error!void {
+    const gpa = c.gpa;
+    assert(pins.len >= 1);
+    assert(c.segs.items[run].net == net);
+    const order = try gpa.dupe(u32, pins);
+    defer gpa.free(order);
+    std.sort.pdq(u32, order, c.s, struct {
+        fn lt(s: *const Schematic, a: u32, b: u32) bool {
+            return pinAt(s, a).x < pinAt(s, b).x;
+        }
+    }.lt);
+    var failed: std.ArrayList(u32) = .empty;
+    defer failed.deinit(gpa);
+    var wires: std.ArrayList(maze.Wire) = .empty;
+    defer wires.deinit(gpa);
+    const ats = try gpa.alloc(Pt, pins.len);
+    defer gpa.free(ats);
+    for (ats, pins) |*at, p| at.* = pinAt(c.s, p);
+    for (order) |p| {
+        wires.clearRetainingCapacity();
+        for (c.segs.items, 0..) |g, k| {
+            const own = g.net == net and k != run;
+            try wires.append(gpa, if (own) .{ .a = g.a, .b = g.b, .net = none, .wall = true } else g);
+        }
+        const path = try maze.route(gpa, .{
+            .net = net,
+            .from = .{ .at = pinAt(c.s, p), .side = c.s.pins.items(.side)[p] },
+            .to = null,
+            .pins = ats,
+            .boxes = c.boxes,
+            .wires = wires.items,
+            .marks = c.points.items,
+            .keep_out = c.glyphs.items,
+            .rails = c.rails,
+            .step = @max(1, @divFloor(c.len.unit, 4)),
+            .clear = c.len.clearance,
+            .bend = c.len.bend_cost,
+            .cross = c.len.cross_cost,
+        }) orelse {
+            try failed.append(gpa, p);
+            continue;
         };
-        if (lo <= hi) {
-            const right = lo + hi >= c.middle2();
-            const edge = if (right) hi else lo;
-            var from: ?Pt = null;
-            for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-                if (e.x == edge and (from == null or e.above(from.?))) from = e;
+        defer gpa.free(path);
+        if (!try c.commit(net, path)) try failed.append(gpa, p);
+    }
+    // A pin with no way of its own to the run joins the net's wires.
+    try attach(c, net, failed.items, order[0]);
+}
+
+/// An output's port out from the topmost of its wires' outermost points,
+/// on the side a `port` line asks, else the drawing's nearer side; for a
+/// line asking up or down, from the wires' topmost or bottommost point
+/// (the leftmost of them). Where a line's side has no stub that fits, the
+/// port stands where it would with no line: a symbol still, never a name
+/// for want of the side asked. An input's (with no `port` line) out from
+/// the leftmost point of its wires a stub fits at, left first, then up,
+/// down, right: one symbol, a name only when no point has room. Nothing
+/// for a net with no wire. Asserts the net is an input or an output.
+pub fn port(c: *Canvas, net: u32) !void {
+    assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
+    var lo: i32 = std.math.maxInt(i32);
+    var hi: i32 = std.math.minInt(i32);
+    for (c.segs.items) |g| if (g.net == net) {
+        lo = @min(lo, @min(g.a.x, g.b.x));
+        hi = @max(hi, @max(g.a.x, g.b.x));
+    };
+    if (lo > hi) return;
+    const line: ?Side = if (c.port_side.len > 0) c.port_side[net] else null;
+    if (line) |asked| if (try c.portStub(net, lineFrom(c, net, asked, lo, hi), &.{ asked, if (asked.isHorizontal() or c.s.roles[net] == .output) asked else .left, .up, .down })) return;
+    if (c.s.roles[net] == .input) {
+        // Column by column from the left; a stub along the net's own wire
+        // is no stub (`Canvas.port`).
+        var x = lo;
+        while (x <= hi) {
+            var next: i32 = std.math.maxInt(i32);
+            for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |from| {
+                if (from.x > x) next = @min(next, from.x);
+                if (from.x != x) continue;
+                for ([_]Side{ .left, .up, .down, .right }) |t| {
+                    if (c.onNet(net, canvas.stepPt(from, t, 1)) or c.onNet(net, canvas.stepPt(from, t, c.len.terminal))) continue;
+                    if (try c.stub(.terminal, net, from, t, c.len.terminal)) return;
+                }
             };
-            try c.port(net, from.?, if (right) .right else .left);
+            x = next;
+        }
+    }
+    const right = lo + hi >= c.middle2();
+    try c.port(net, edgePoint(c, net, if (right) hi else lo), if (right) .right else .left);
+}
+
+/// Promotes a fallback label on the existing gate span only once the routes
+/// are in place. The two gate pin indices and label pin belong to `net`.
+/// The caller supplies the fallback label after other nets have routed.
+pub fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void {
+    const s = c.s;
+    assert(gates.len == 2);
+    const node = s.pins.items(.home)[label];
+    assert(s.nodes.items(.kind)[node] == .label);
+    const a = pinAt(s, gates[0]);
+    const b = pinAt(s, gates[1]);
+    const span = Rect.fromCorners(a, b);
+    if (!span.contains(pinAt(s, label))) return;
+    const mid = @divFloor(a.x + b.x, 2);
+    const q = @max(1, @divFloor(c.len.unit, 4));
+    for ([_]i32{ mid - q, mid + q }) |x| {
+        if (x <= span.min.x or x >= span.max.x) continue;
+        const tap: Pt = .{ .x = x, .y = a.y };
+        for ([_]Side{ .down, .up }) |side| {
+            const tip = canvas.stepPt(tap, side, c.len.terminal);
+            const stub = Rect.fromCorners(tip, tap);
+            for (c.segs.items) |seg| {
+                if (seg.net != net and stub.intersects(Rect.fromCorners(seg.a, seg.b))) break;
+            } else {
+                if (!try c.commit(net, &.{ tap, tip })) continue;
+                s.nodes.items(.kind)[node] = .terminal;
+                s.pins.items(.side)[label] = side.opposite();
+                c.xy.items[node] = tip.toF();
+                return;
+            }
         }
     }
 }
@@ -157,6 +270,30 @@ pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: [
 }
 
 // ---- private ----
+
+/// Where a `port` line asking `asked` puts the net's port: for an output
+/// asked up or down, the topmost or bottommost point of its wires (the
+/// leftmost of them); else the topmost point on the wires' left (`lo`) or
+/// right (`hi`) edge.
+fn lineFrom(c: *const Canvas, net: u32, asked: Side, lo: i32, hi: i32) Pt {
+    if (c.s.roles[net] != .output or asked.isHorizontal()) return edgePoint(c, net, if (asked == .right) hi else lo);
+    const up = asked == .up;
+    var from: ?Pt = null;
+    for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
+        const f = from orelse e;
+        if (from == null or (if (up) e.y < f.y else e.y > f.y) or (e.y == f.y and e.x < f.x)) from = e;
+    };
+    return from.?;
+}
+
+/// The topmost point of net `net`'s wires at x `edge`; asserts one is.
+fn edgePoint(c: *const Canvas, net: u32, edge: i32) Pt {
+    var from: ?Pt = null;
+    for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
+        if (e.x == edge and (from == null or e.above(from.?))) from = e;
+    };
+    return from.?;
+}
 
 /// Joins `pins` by maze, the pin nearest a joined one next; returns the
 /// first pin's index (`topLeft`) and appends the pins no path reached to
@@ -203,6 +340,7 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
             .boxes = c.boxes,
             .wires = c.segs.items,
             .marks = c.points.items,
+            .keep_out = c.glyphs.items,
             .rails = c.rails,
             // A quarter unit, and never 0: a symbol set may have a unit
             // under four.
@@ -291,7 +429,7 @@ fn spineAndImage(c: *Canvas, net: u32, pins: []const u32, from: usize, axis: i32
 /// on the drawing's nearer side; labels at the pins in `failed` and, when
 /// any, at `first`.
 fn finish(c: *Canvas, net: u32, first: u32, failed: []const u32) !void {
-    try port(c, net);
+    if (c.s.roles[net] == .output) try port(c, net);
     if (failed.len == 0) return;
     for (failed) |p| try c.labelAt(p);
     try c.labelAt(first);

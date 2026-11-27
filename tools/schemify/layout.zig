@@ -17,6 +17,9 @@
 //! port's net becomes the `port`); its no-connect crosses become `noconn`; junction dots
 //! are dropped (Schemify derives them). A net nothing names but the cell needs by name (a
 //! port, a `.global`, a net its code text mentions) gets a label on its first pin.
+//!
+//! Contents:
+//! - `pub fn drawSource`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -34,6 +37,7 @@ const Range = spice.Range;
 const Recognized = recognize.Recognized;
 const Family = recognize.Family;
 const Pt = engine.Pt;
+const segments = @import("wire_segments.zig");
 
 /// Devices the engine draws per conversion (cells in file order, each wholly drawn by the
 /// engine or wholly labelled). With `cell_devices_max` it bounds a conversion's time and
@@ -93,13 +97,13 @@ pub fn facing(o: u8, px: i32, py: i32) u8 {
 /// (already horizontal) and generated boxes.
 pub fn toCanonical(fam: Family) u8 {
     return switch (fam) {
-        .tline, .box => 0,
+        .tline, .box, .oblique_cap => 0,
         else => 1,
     };
 }
 
-/// Whether pin `k` of a `fam` symbol gets no wire: a MOSFET's bulk, drawn on the symbol
-/// and joined by name.
+/// Hidden routing contact of the compact class. The core four-lead variant
+/// makes the same MOS body coordinate available for a wire.
 fn hiddenPin(fam: Family, k: usize) bool {
     return (fam == .nmos or fam == .pmos) and k == 3;
 }
@@ -109,6 +113,7 @@ fn hiddenPin(fam: Family, k: usize) bool {
 fn classNames(fam: Family) []const []const u8 {
     return switch (fam) {
         .two => &.{ "res", "cap", "ind", "vsource", "isource", "diode", "bsource" },
+        .oblique_cap => &.{"cap_oblique"},
         .nmos => &.{"nmos"},
         .pmos => &.{"pmos"},
         .npn => &.{"npn"},
@@ -150,7 +155,25 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
             o.* = .{ .x = q[0], .y = q[1] };
         }
         const box_ops = [_]engine.library.DrawOp{.{ .polyline = &outline }};
-        const ops = if (syms.shape.items[s] == .box) &box_ops else glyph: {
+        // Core MOS terminals have physical leads. The registered ink here
+        // preserves their exact contact/attachment points and pin bounds;
+        // Schemify paints the host's complete core symbol on import.
+        var core_mos: [7]engine.library.DrawOp = undefined;
+        const is_core_mos = syms.origin.items[s] == .core and (fam == .nmos or fam == .pmos);
+        const ops = if (is_core_mos) blk: {
+            const strokes = [_][4]i32{
+                .{ -20, 0, -10, 0 },   .{ -10, -10, -10, 10 },
+                .{ 20, -30, 20, -10 }, .{ 0, -10, 20, -10 },
+                .{ 20, 30, 20, 10 },   .{ 0, 10, 20, 10 },
+                .{ 0, 0, 20, 0 },
+            };
+            for (strokes, &core_mos) |seg, *op| {
+                const from = xform(t, seg[0], seg[1]);
+                const to = xform(t, seg[2], seg[3]);
+                op.* = .ln(from[0], from[1], to[0], to[1]);
+            }
+            break :blk &core_mos;
+        } else if (fam == .oblique_cap) &@import("polyphase_caps.zig").strokes else if (syms.shape.items[s] == .box) &box_ops else glyph: {
             const port_names = try a.alloc([]const u8, pins.len);
             for (pins, port_names) |p, *name| name.* = p.name;
             const glyph = try engine.block_symbols.draw(a, syms.shape.items[s], port_names, 20);
@@ -159,9 +182,16 @@ pub fn library(gpa: Allocator, a: Allocator, rec: *const Recognized, refused: *A
         const block = try a.print("b{d}", .{s});
         const names: []const []const u8 = if (fam == .box) &.{block} else classNames(fam);
         for (names) |name| {
-            _ = lib.register(.{ .name = name, .terminals = terms, .draw = ops }) catch |e| switch (e) {
+            _ = lib.register(.{ .name = name, .terminals = terms, .draw = if (is_core_mos) ops[0..6] else ops }) catch |e| switch (e) {
                 error.OutOfMemory => return error.OutOfMemory,
                 else => try refused.append(a, try a.print("the engine refused class {s} ({s}: {t}); its cells are drawn with labels", .{ name, syms.stem.items[s], e })),
+            };
+        }
+        if (is_core_mos) {
+            terms[3].hidden = false;
+            _ = lib.register(.{ .name = if (fam == .nmos) "nmos_body" else "pmos_body", .body_for = names[0], .terminals = terms, .draw = ops }) catch |e| switch (e) {
+                error.OutOfMemory => return error.OutOfMemory,
+                else => unreachable, // the same D/G/S, and the shipped core's real B
             };
         }
     }
@@ -296,6 +326,11 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
         try text.print(a, " {s}\n", .{card.tail});
     }
     try hints.write(a, &text, deck, c, dev_names, names);
+    for (rec.lattices.items) |lattice| if (lattice.cell == c) {
+        var ink: std.Io.Writer.Allocating = .init(a);
+        engine.polyphase_caps.hints(&ink.writer, lattice.layout, dev_names, true) catch return error.OutOfMemory;
+        try text.appendSlice(a, ink.written());
+    };
     return text.items;
 }
 
@@ -308,6 +343,16 @@ pub fn cellDeck(a: Allocator, deck: *const Deck, rec: *const Recognized, c: u32,
 /// counts, every pin on its symbol's position), which would otherwise mean a wrong class
 /// library.
 pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
+    return drawSource(gpa, a, "", lib, deck, rec, c, budget);
+}
+
+/// Draws the cell with its original, unprojected source available to local-parent analysis.
+pub fn drawSource(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32) Allocator.Error!Drawn {
+    return drawSourceGeometry(gpa, a, source, lib, deck, rec, c, budget, .manhattan);
+}
+
+/// Draws one cell using the caller’s supported wire direction set.
+pub fn drawSourceGeometry(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, budget: *u32, mode: engine.wire_geometry.Mode) Allocator.Error!Drawn {
     const devs = deck.devs(c);
     const names = try netNames(a, deck, c);
     var out: Drawn = .{};
@@ -328,7 +373,7 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
     }
     const text = try cellDeck(a, deck, rec, c, names);
     var diag: engine.netlist.Diagnostic = .{};
-    var placed = engine.place(gpa, &engine.Config.default, lib, &.{text}, &diag) catch |e| switch (e) {
+    var placed = placeCell(gpa, a, source, lib, deck, rec, c, names, text, &diag, mode) catch |e| switch (e) {
         error.OutOfMemory => return error.OutOfMemory,
         else => {
             out.fallback = try a.print("the engine refused the cell: line {d}: {t} near '{s}'", .{ diag.line, e, diag.token() });
@@ -339,10 +384,28 @@ pub fn draw(gpa: Allocator, a: Allocator, lib: *engine.Library, deck: *const Dec
     defer placed.deinit();
     budget.* -= wired_devs;
     try hints.notes(gpa, a, &out.notes, deck, c, text, &placed, lib);
-    try translate(a, &out, &placed, lib, deck, rec, c, names);
+    translate(a, &out, &placed, lib, deck, rec, c, names) catch |err| switch (err) {
+        error.OutOfMemory => return error.OutOfMemory,
+        error.IncompatibleClass => {
+            out = .{ .fallback = "the selected class has different contact coordinates from the bound editor symbol" };
+            try labelled(a, &out, deck, rec, c);
+            return out;
+        },
+    };
     try placeFree(a, &out, deck, rec, c);
     assert(out.x.items.len == devs.len());
     return out;
+}
+
+fn placeCell(gpa: Allocator, a: Allocator, source: []const u8, lib: *engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8, text: []const u8, diag: *engine.netlist.Diagnostic, mode: engine.wire_geometry.Mode) engine.PlaceError!engine.Placed {
+    var nl = try engine.netlist.parse(gpa, &.{text}, diag);
+    defer nl.deinit(gpa);
+    const owners = try @import("parent_outputs.zig").forCellGeometry(gpa, a, source, deck, rec, c, names, &nl, mode);
+    if (owners.bridge) |request| return engine.placeSourceLayout(gpa, &.default, lib, &nl, request);
+    var result = try engine.placeOrganized(gpa, &.default, lib, &nl, owners.pairs, owners.stages);
+    errdefer result.deinit();
+    if (owners.crossover) |pair| _ = try engine.crossover.apply(gpa, lib, &result, &nl, pair);
+    return result;
 }
 
 /// Places the node-less devices of cell `c` (nothing to wire, so the engine never sees
@@ -381,12 +444,12 @@ fn faceAt(faces: []const Face, p: P) u8 {
 }
 
 fn onAny(wires: []const Seg, p: P) bool {
-    for (wires) |w| if (onSeg(p, w)) return true;
+    for (wires) |w| if (segments.onSeg(p, w)) return true;
     return false;
 }
 
 /// Fills `out` from the engine's placement `placed` of cell `c`.
-fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) Allocator.Error!void {
+fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *const engine.Library, deck: *const Deck, rec: *const Recognized, c: u32, names: []const []const u8) (Allocator.Error || error{IncompatibleClass})!void {
     const syms = &rec.syms;
     const devs = deck.devs(c);
     const n = devs.len();
@@ -436,16 +499,16 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
         try out.place(a, pos.x, pos.y, o);
         const lo, const hi = placed.pinRange(i);
         const pins = syms.pins(s);
-        assert(hi - lo == pins.len);
+        if (hi - lo != pins.len) return error.IncompatibleClass;
         for (pins, 0..) |p, k| {
             const dd = xform(o, p.x, p.y);
             const at: P = .{ pos.x + dd[0], pos.y + dd[1] };
-            assert(placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] }));
+            if (!placed.pin_xy[lo + k].eql(.{ .x = at[0], .y = at[1] })) return error.IncompatibleClass;
             const net = nets[k];
             assert(local.of(placed.pin_net[lo + k]) == net);
             const face = facing(o, p.x, p.y);
             try faces.append(a, .{ .at = at, .face = face });
-            if (hiddenPin(syms.family.items[s], k))
+            if (!lib.at(placed.dev_class[i]).shows(k))
                 try hidden.append(a, .{ .at = at, .net = net, .face = face })
             else
                 try pin_pts[net].append(a, at);
@@ -498,13 +561,13 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
         var net_wires: ArrayList(Seg) = .empty;
         while (segs.next()) |poly| {
             for (poly[0 .. poly.len - 1], poly[1..]) |p, q| {
-                assert(p.x == q.x or p.y == q.y); // Manhattan
+                assert(engine.wire_geometry.direction(p, q) != null);
                 try net_wires.append(a, .{ p.x, p.y, q.x, q.y });
             }
             try polys[net].append(a, poly);
         }
         const start: u32 = @intCast(out.wire.items.len);
-        try out.wire.appendSlice(a, try merged(a, net_wires.items));
+        try out.wire.appendSlice(a, try segments.merged(a, net_wires.items));
         wire_of[net] = .{ .lo = start, .hi = @intCast(out.wire.items.len) };
     }
     for (pin_pts, 0..) |pins, net| if (pins.items.len >= 2 and !rails[net] and terms[net] < 2) {
@@ -528,7 +591,7 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     for (pin_pts, 0..) |pins, ni| {
         const net: u32 = @intCast(ni);
         if (pins.items.len < 2 or out.hasMark(net)) continue;
-        if (try spot(a, out.wire.items, wire_of[net])) |p|
+        if (try segments.spot(a, out.wire.items, wire_of[net])) |p|
             try out.addMark(a, p, net, 0)
         else
             try out.addMark(a, pins.items[0], net, faceAt(faces.items, pins.items[0]));
@@ -555,102 +618,9 @@ fn translate(a: Allocator, out: *Drawn, placed: *const engine.Placed, lib: *cons
     growBounds(out);
 }
 
-const Line = struct { vertical: bool, at: i32, lo: i32, hi: i32 };
-
-fn lineLess(_: void, x: Line, y: Line) bool {
-    if (x.vertical != y.vertical) return !x.vertical;
-    if (x.at != y.at) return x.at < y.at;
-    if (x.lo != y.lo) return x.lo < y.lo;
-    return x.hi < y.hi;
-}
-
-/// One net's axis-aligned segments without overlaps: each normalized so `(x1, y1) <
-/// (x2, y2)` (the format's wire order), zero-length ones dropped, and collinear ones that
-/// overlap cut at every original endpoint into disjoint pieces. Every original endpoint
-/// stays an endpoint, so connectivity is unchanged (netlist spec §3: joining two pieces
-/// through a junction would turn it into an interior crossing, which does not connect).
-fn merged(a: Allocator, segs: []const Seg) Allocator.Error![]const Seg {
-    var lines: ArrayList(Line) = .empty;
-    for (segs) |s0| {
-        const swap = s0[2] < s0[0] or (s0[2] == s0[0] and s0[3] < s0[1]);
-        const s: Seg = if (swap) .{ s0[2], s0[3], s0[0], s0[1] } else s0;
-        if (s[0] == s[2] and s[1] == s[3]) continue;
-        try lines.append(a, if (s[1] == s[3])
-            .{ .vertical = false, .at = s[1], .lo = s[0], .hi = s[2] }
-        else
-            .{ .vertical = true, .at = s[0], .lo = s[1], .hi = s[3] });
-    }
-    const ls = lines.items;
-    std.sort.heap(Line, ls, {}, lineLess);
-    var out: ArrayList(Seg) = try .initCapacity(a, ls.len);
-    var cuts: ArrayList(i32) = .empty;
-    var k: usize = 0;
-    while (k < ls.len) {
-        const vertical = ls[k].vertical;
-        const at = ls[k].at;
-        var end = k;
-        while (end < ls.len and ls[end].vertical == vertical and ls[end].at == at) end += 1;
-        cuts.clearRetainingCapacity();
-        for (ls[k..end]) |l| try cuts.appendSlice(a, &.{ l.lo, l.hi });
-        std.sort.heap(i32, cuts.items, {}, std.sort.asc(i32));
-        // Sweep the union of the intervals; emit the pieces between consecutive cuts.
-        var lo = ls[k].lo;
-        var hi = ls[k].hi;
-        for (k + 1..end + 1) |j| {
-            const sentinel = j == end;
-            if (!sentinel and ls[j].lo <= hi) {
-                hi = @max(hi, ls[j].hi);
-                continue;
-            }
-            var prev: ?i32 = null;
-            for (cuts.items) |cut| {
-                if (cut < lo or cut > hi or (prev != null and prev.? == cut)) continue;
-                if (prev) |p| try out.append(a, if (vertical) .{ at, p, at, cut } else .{ p, at, cut, at });
-                prev = cut;
-            }
-            if (!sentinel) {
-                lo = ls[j].lo;
-                hi = ls[j].hi;
-            }
-        }
-        k = end;
-    }
-    for (out.items) |s| assert((s[0] < s[2] or (s[0] == s[2] and s[1] < s[3])) and (s[0] == s[2] or s[1] == s[3]));
-    return out.items;
-}
-
-/// Whether point `p` lies on segment `w` (normalized, as `merged` leaves it), ends included.
-fn onSeg(p: P, w: Seg) bool {
-    return w[0] <= p[0] and p[0] <= w[2] and w[1] <= p[1] and p[1] <= w[3];
-}
-
-/// Where to write a net's name on its wires `wires[mine]`: the middle of one of its four
-/// longest segments that no other net's wire passes through (a name there would join that
-/// wire too). Null when every candidate tried is crossed.
-fn spot(a: Allocator, wires: []const Seg, mine: Range) Allocator.Error!?P {
-    const order = try a.alloc(u32, mine.len());
-    for (order, mine.lo..) |*o, i| o.* = @intCast(i);
-    mem.sort(u32, order, wires, struct {
-        fn lt(ws: []const Seg, x: u32, y: u32) bool {
-            const lx = (ws[x][2] - ws[x][0]) + (ws[x][3] - ws[x][1]);
-            const ly = (ws[y][2] - ws[y][0]) + (ws[y][3] - ws[y][1]);
-            return lx > ly or (lx == ly and x < y);
-        }
-    }.lt);
-    for (order[0..@min(order.len, 4)]) |i| {
-        const w = wires[i];
-        const m: P = .{ @divFloor(w[0] + w[2], 2), @divFloor(w[1] + w[3], 2) };
-        const clear = for (wires, 0..) |o, j| {
-            if ((j < mine.lo or j >= mine.hi) and onSeg(m, o)) break false;
-        } else true;
-        if (clear) return m;
-    }
-    return null;
-}
-
 fn onPoly(p: Pt, poly: []const Pt) bool {
     for (poly[0 .. poly.len - 1], poly[1..]) |s, t| {
-        if (@min(s.x, t.x) <= p.x and p.x <= @max(s.x, t.x) and @min(s.y, t.y) <= p.y and p.y <= @max(s.y, t.y)) return true;
+        if (engine.wire_geometry.contains(s, t, p)) return true;
     }
     return false;
 }
@@ -858,7 +828,7 @@ test "the canonical turn puts core two-pins on the x axis" {
 test "merged cuts overlaps at every endpoint" {
     var arena: std.heap.ArenaAllocator = .init(testing.allocator);
     defer arena.deinit();
-    const w = try merged(arena.allocator(), &.{
+    const w = try segments.merged(arena.allocator(), &.{
         .{ 30, 0, 0, 0 }, // reversed
         .{ 10, 0, 60, 0 }, // overlaps it
         .{ 60, 0, 90, 0 }, // touches it: stays a separate piece
@@ -870,7 +840,22 @@ test "merged cuts overlaps at every endpoint" {
     try testing.expectEqualSlices(Seg, &.{
         .{ 0, 0, 10, 0 }, .{ 10, 0, 30, 0 }, .{ 30, 0, 60, 0 }, .{ 60, 0, 90, 0 }, .{ 0, -20, 0, 10 }, .{ 0, 40, 0, 50 },
     }, w);
-    try testing.expectEqual(0, (try merged(arena.allocator(), &.{})).len);
+    try testing.expectEqual(0, (try segments.merged(arena.allocator(), &.{})).len);
+}
+
+test "editor wires retain oblique endpoints, gaps, and labels on the actual ink" {
+    var arena: std.heap.ArenaAllocator = .init(testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const descending: Seg = .{ 0, 9, 9, 0 };
+    try testing.expect(!segments.onSeg(.{ 2, 8 }, .{ 0, 0, 10, 10 }));
+    try testing.expect(segments.onSeg(.{ 4, 5 }, descending));
+    try testing.expectEqual(P{ 4, 5 }, (try segments.spot(a, &.{descending}, .{ .lo = 0, .hi = 1 })).?);
+    const pieces = try segments.merged(a, &.{ .{ 8, 8, 0, 0 }, .{ 4, 4, 10, 10 }, .{ 12, 12, 13, 13 }, descending });
+    try testing.expectEqualSlices(Seg, &.{ .{ 0, 0, 4, 4 }, .{ 4, 4, 8, 8 }, .{ 8, 8, 10, 10 }, .{ 12, 12, 13, 13 }, descending }, pieces);
+    const path = [_]Pt{ .{ .x = 0, .y = 0 }, .{ .x = 10, .y = 10 } };
+    try testing.expect(!try wired(a, &.{ .{ 0, 0 }, .{ 2, 8 } }, &.{&path}));
+    try testing.expect(try wired(a, &.{ .{ 0, 0 }, .{ 8, 8 } }, &.{&path}));
 }
 
 test "net names keep readable names and fold ground" {

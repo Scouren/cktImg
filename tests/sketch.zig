@@ -2012,3 +2012,31 @@ test "sketch: a dependent source is an upright two-pin part, its control unwired
     } else unreachable;
     try std.testing.expectEqual(4, lib.at(q.dev_class[e]).terminals.len);
 }
+
+test "AG1167 a resistor connected to a hidden MOS body has a name and no no-connect cross" {
+    const t = std.testing;
+    const lib = try support.library(t.allocator);
+    defer support.freeLibrary(t.allocator, lib);
+    // AG1167 M1.B / R1.1; R2's truly isolated terminal is a control.
+    const deck = "body contact\n*@ class m1 nmos\n.model nch nmos\nM1 d g 0 well nch\nR1 well 0 1k\nR2 spare 0 1k\n";
+    var p = try np.place(t.allocator, &np.Config.default, lib, &.{deck}, null);
+    defer p.deinit();
+    var found: usize = 0;
+    for (p.dev_name, 0..) |name, d| {
+        const connected = std.mem.eql(u8, name, "r1");
+        if (!connected and !std.mem.eql(u8, name, "r2")) continue;
+        const lo, _ = p.pinRange(d);
+        const xy = p.pin_xy[lo];
+        const net = p.pin_net[lo];
+        const marked = for (p.no_connects) |q| {
+            if (q.eql(xy)) break true;
+        } else false;
+        try t.expectEqual(!connected, marked);
+        const named = for (p.labels) |l| {
+            if (l.net == net and l.at.eql(xy)) break true;
+        } else false;
+        try t.expectEqual(connected, named);
+        found += 1;
+    }
+    try t.expectEqual(@as(usize, 2), found);
+}

@@ -87,10 +87,22 @@
 //!   aside): a track that would is not taken, and a part no track fits
 //!   ends in ports (wires.13). People: 3,926 of 4,080 wired bias nets
 //!   (5,263 hand-drawn schematics). `cost`
+//! - trunk.16 (invariant) A trunk's lines close no loop (wire_tree.1): a
+//!   track on which one pin's way runs through another's, or through the
+//!   trunk, and on to it is never taken. Before, 36 of the engine's
+//!   drawings of the 5,274 corpus decks held a net in a loop, AMS385's
+//!   input and AG2449's `vea` among them. `drawPreferred`
+//!
+//! - trunk.15 (choice, bounded) A complete complementary-mirror CT stage
+//!   may nominate one actual opposing gate interval (ct_mirror_controls.1).
+//!   Only an exact tie after full length, corner, crossing, obstacle and
+//!   free-end checks prefers candidate ink covering that interval. Every
+//!   cheaper legal candidate wins; null preserves the original tie order.
 //!
 //! Contents:
 //! - `pub const End = enum { port, name }`
-//! - `pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool`
+//! - `pub inline fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool`
+//! - `pub fn drawPreferred(c: *Canvas, net: u32, pins: []const u32, end: End, preferred: ?[2]Pt) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -98,12 +110,14 @@ const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const canvas = @import("canvas.zig");
+const wire_tree = @import("wire_tree.zig");
 
 const Pt = library.Pt;
 const Side = library.Side;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
 const Line = canvas.Line;
+const crosses = canvas.crosses;
 const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
@@ -156,7 +170,15 @@ const Lay = enum {
 /// more) the wire carries the net's name on a stub from a free end. False,
 /// with nothing drawn, when the lines would touch another net's point or
 /// run through a device.
-pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool {
+pub inline fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool {
+    return drawPreferred(c, net, pins, end, null);
+}
+
+/// Draws the least-cost legal trunk, preferring the nominated actual
+/// horizontal interval only on an exact full-cost tie. Null keeps the
+/// ordinary first-on-tie policy. The caller owns and validates the pair;
+/// no candidate may bypass the normal obstacle or free-end checks.
+pub fn drawPreferred(c: *Canvas, net: u32, pins: []const u32, end: End, preferred: ?[2]Pt) Allocator.Error!bool {
     const s = c.s;
     assert(pins.len >= 1);
     assert(end == .port or pins.len >= 2);
@@ -203,6 +225,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     var y_t = tap;
     var free: ?Side = null;
     var fewest: i64 = std.math.maxInt(i64);
+    var best_straight = false;
     // A column has one way to be drawn. Else facing gates joined by a gate
     // line first (a mirror's, as the book draws it), then every pin on its
     // own way to the trunk; then an upright trunk, where it costs less
@@ -235,14 +258,17 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
                 }
                 // Rungs need full corner checks even when too costly:
                 // cost pruning alone must not replace a legal midpoint.
-                const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else fewest);
-                if (lay != .rungs and !tap_row and count >= fewest) continue;
+                const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else if (preferred != null) fewest +| 1 else fewest);
+                if (lay != .rungs and !tap_row and (if (preferred != null) count > fewest else count >= fewest)) continue;
                 if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
+                if (try loops(c.gpa, tried.items)) continue;
                 // An upright trunk has no end to mark: its ends are not read.
                 const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
                 if (needs_end and t_free == null) continue;
                 tapped = tapped or (tap_row and tap_dx == 0);
-                if (count < fewest) {
+                const straight = count <= fewest and (if (preferred) |pair| straightInterval(pair, tried.items) else false);
+                if (count < fewest or (count == fewest and straight and !best_straight)) {
+                    best_straight = straight;
                     std.mem.swap(std.ArrayList(Line), &lines, &tried);
                     lo = t_lo;
                     hi = t_hi;
@@ -265,7 +291,9 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     // side. Nearer is narrower here than in `routes.port`, which sets the
     // wire's middle against the drawing's: a trunk whose right end reaches
     // the drawing's middle leaves right.
-    const side: Side = free orelse if (end == .name) return nameOnPin(c, pins) else if (2 * hi >= c.middle2()) .right else .left;
+    // A `port` line asking left or right takes that end.
+    const asked: ?Side = if (c.port_side.len > 0) c.port_side[net] else null;
+    const side: Side = free orelse if (end == .name) return nameOnPin(c, pins) else if (asked != null and asked.?.isHorizontal()) asked.? else if (2 * hi >= c.middle2()) .right else .left;
     const from: Pt = .{ .x = if (side == .right) hi else lo, .y = y_t };
     if (end == .port) {
         try c.port(net, from, side);
@@ -276,6 +304,27 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
 }
 
 // ---- private ----
+
+// Cover exactly the nominated interval by candidate ink, never labels.
+fn straightInterval(pair: [2]Pt, lines: []const Line) bool {
+    const a, const b = .{ pair[0], pair[1] };
+    assert(a.y == b.y and a.x < b.x);
+    var reached = a.x;
+    for (0..lines.len * 5 + 1) |_| {
+        const before = reached;
+        for (lines) |*line| {
+            const pts = line.slice();
+            for (pts[0 .. pts.len - 1], pts[1..]) |u, v| {
+                if (u.y != a.y or v.y != a.y) continue;
+                if (@min(u.x, v.x) <= reached and @max(u.x, v.x) > reached)
+                    reached = @max(u.x, v.x);
+            }
+        }
+        if (reached >= b.x) return true;
+        if (reached == before) break;
+    }
+    return false;
+}
 
 /// The part's name at its top-left pin, by place, so card order changes
 /// nothing: the wire has no free end to carry it.
@@ -330,14 +379,15 @@ fn cost(c: *const Canvas, net: u32, pins: []const u32, lines: []const Line, unde
     return total;
 }
 
-/// Whether wire `a`..`b` and wire `p`..`q`, each along a row or a column,
-/// cross at a point inside both.
-fn crosses(a: Pt, b: Pt, p: Pt, q: Pt) bool {
-    if ((a.y == b.y) == (p.y == q.y)) return false;
-    const lv, const up = if (a.y == b.y) .{ [2]Pt{ a, b }, [2]Pt{ p, q } } else .{ [2]Pt{ p, q }, [2]Pt{ a, b } };
-    const x = up[0].x;
-    const y = lv[0].y;
-    return x > @min(lv[0].x, lv[1].x) and x < @max(lv[0].x, lv[1].x) and y > @min(up[0].y, up[1].y) and y < @max(up[0].y, up[1].y);
+/// Whether `lines` close a loop (trunk.16).
+fn loops(gpa: Allocator, lines: []const Line) Allocator.Error!bool {
+    var segs: std.ArrayList([2]Pt) = .empty;
+    defer segs.deinit(gpa);
+    for (lines) |*l| {
+        const pts = l.slice();
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| try segs.append(gpa, .{ a, b });
+    }
+    return wire_tree.cyclic(gpa, segs.items);
 }
 
 /// The corners of a net's lines as a reader counts them: the points its
@@ -676,4 +726,5 @@ test "trunk: opposed pins keep their straight rung when the trunk needs a later 
 
 test {
     _ = @import("trunk_taps_test.zig");
+    _ = @import("trunk_tie_test.zig");
 }

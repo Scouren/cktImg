@@ -445,7 +445,7 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
     defer one.deinit();
     const pin = supplyPin(&one, lib);
     try testing.expectEqual(@as(u4, 0), np.checks.ways(&one, one.pin_net[pin], one.pin_xy[pin]));
-    try testing.expectEqual(np.Side.right, np.geom.railSide(&one, pin));
+    try testing.expectEqual(np.Side.right, np.geom.railSide(&one, lib, pin));
     // Three pins on one bar carrying its symbol (`rail_past` off; the
     // default bar is a named rail with none, wires.6): the symbol stands on
     // the bar's run.
@@ -455,7 +455,7 @@ test "geom: a supply's name stands beside its bar, and above it where the wire r
     const on = supplyPin(&bar, lib);
     const ways = np.checks.ways(&bar, bar.pin_net[on], bar.pin_xy[on]);
     try testing.expectEqual(bit(.left) | bit(.right), ways & (bit(.left) | bit(.right) | bit(.up)));
-    try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, on));
+    try testing.expectEqual(np.Side.up, np.geom.railSide(&bar, lib, on));
 }
 
 test "place: a coupling card remains electrical data and needs no drawable class" {
@@ -497,6 +497,7 @@ test "place: a coupling card remains electrical data and needs no drawable class
 }
 
 test {
+    _ = @import("parent_parts.zig");
     _ = @import("block_symbols.zig");
     _ = @import("block_aliases.zig");
     _ = @import("transmission.zig");
@@ -514,15 +515,42 @@ test {
     _ = @import("converter_bus.zig");
     _ = @import("converter_bus_remote.zig");
     _ = @import("input_resistors.zig");
+    _ = @import("passive_filters.zig");
     _ = @import("input_order.zig");
     _ = @import("trunk_taps.zig");
     _ = @import("thin_parts.zig");
+    _ = @import("drawing_text.zig");
+    _ = @import("wire_gates.zig");
     _ = @import("trunk_row.zig");
     _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");
+    _ = @import("hint_columns.zig");
+    _ = @import("block_turns.zig");
+    _ = @import("stages.zig");
     _ = @import("flat_gate_facing.zig");
     _ = @import("opamp_feedback.zig");
     _ = @import("driven_banks.zig");
     _ = @import("reference_gate_tree.zig");
     _ = @import("bias_block_neighbors.zig");
+    _ = @import("filled_circles.zig");
+    _ = @import("filled_circle_body_bounds.zig");
+}
+
+test {
+    _ = @import("cross_loads.zig");
+    _ = @import("sampling_bridge.zig");
+    _ = @import("center_tap_symbols.zig");
+    _ = @import("center_tap_body_bounds.zig");
+    _ = @import("center_tap_continuity.zig");
+    _ = @import("center_tap_networks.zig");
+    _ = @import("center_tap_tanks.zig");
+    _ = @import("ct_common_controls.zig");
+    _ = @import("ct_mirror_controls.zig");
+    _ = @import("ct_feedback_stage.zig");
+    _ = @import("coil_couplers.zig");
+    _ = @import("coil_chain_frames.zig");
+    _ = @import("coil_bridge_frames.zig");
+    _ = @import("coil_banks.zig");
+    _ = @import("coil_reflection.zig");
+    _ = @import("pin_escape.zig");
 }

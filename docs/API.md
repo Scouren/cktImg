@@ -38,6 +38,20 @@ or load a whole symbol file (`tests/symbols.zon` is the set the tests use):
 try lib.loadZon(arena, symbols_text, &diags);
 ```
 
+`DrawOp.circle` is hollow; `DrawOp.filled_circle` is a solid ink disk.
+Both use `{ .c = point, .r = radius }`, rotate with the symbol, and
+contribute their full radius to body bounds. The C ABI retains kinds 0–3
+and adds `CKTIMG_OP_FILLED_CIRCLE = 4` without changing `CktimgOp` or any
+function signature. `cktimg_device_op_circle` reads either circle kind;
+renderers use `cktimg_device_op_kind` to select fill. Exhaustive Zig
+switches and C drawing consumers must handle the new kind.
+Native SVG and TikZ omit the disk outline. Schemify's `fill true` adds fill
+while retaining the host's normal screen-width stroke; its format has no
+zero-outline circle. This preserves a solid tap dot, with a renderer-specific
+outer stroke rather than identical raster radius.
+For hollow circles, native SVG and TikZ use a white interior; Schemify's
+existing unfilled circle keeps the host's normal transparent interior.
+
 Which class a device gets is decided by name: `res`, `cap`, `ind`,
 `vsource`, `isource`, `cvsource` (E), `cisource` (G), `ccvs` (H), `cccs` (F),
 `vcvs` (an E that is a dependent source and no ideal amplifier, when the
@@ -122,6 +136,14 @@ decisions on rungs 1 to 4 as the `*@` lines that state them
 (`report.decisions`), and each lattice row. A deck plus its decisions, under
 `*@ grouping off`, draws the same picture.
 
+#### Source-qualified local placement
+
+The JSON, SVG and TeX commands can select the last subcircuit in a file containing only definitions. The Schemify importer already knows which cell it is drawing. These frontends can bind the original ordered cards, model declarations and external ports to the selected graph. The plain `place` and C ABI entry points continue to draw the top-level graph supplied by their caller.
+
+A Zig caller that retains the original source can use `parent_context.bind` and `local_parents.collect` before choosing a layout. `placeBound` accepts the qualified output-wire pairs. `placeOrganized` also accepts qualified local stages. `source_bridge.fromSource` and `placeSourceBridge` cover the equal-resistor source bridge. The geometry proposals require compatible actual symbols and the default layout. The native CLI and editor call sites show those checks and the ordinary-layout fallback. [Native selection](../tools/json.zig) · [Schemify selection](../tools/schemify/parent_outputs.zig) · [Production comparisons](research/production-patterns/README.md)
+
+A consumer that accepts integer 45-degree wire segments can set `cfg.geometry = .allow_45`. The C entry point is `cktimg_parse_place_geometry(lib, src, zon, CKTIMG_ALLOW_45, &report)`. The ordinary C entry point and the default Zig configuration produce Manhattan wires. A matching differential stage may receive two crossing feedback segments between cardinal terminal leads. A through-crossing of distinct nets has no junction, including when it falls halfway between integer coordinates. The wire point and pin APIs retain integer coordinates.
+
 ### 4. Many documents, one set of pages
 
 ```zig
@@ -185,6 +207,13 @@ for (size_t d = 0; d < cktimg_device_count(sch); d++) { ... cktimg_device_pos(sc
 cktimg_sch_free(sch);
 cktimg_lib_free(lib);
 ```
+
+`CKTIMG_OP_FILLED_CIRCLE` is tag 4; existing line, polyline, hollow circle
+and text tags remain 0–3. It uses the existing `CktimgOp` record: `xy` is
+the center, `count` is 1, and `r` is the radius. `cktimg_lib_add` rejects a
+negative radius or an unrepresentable circle extent before registering
+the class. `cktimg_device_op_circle` returns the placed center and radius
+for either circle kind; `cktimg_device_op_kind` distinguishes their fill.
 
 Same accessors as cktImg's (devices, pins, nets, wires, junctions, labels,
 bounds, placed draw ops, JSON into your buffer), plus device roles, label

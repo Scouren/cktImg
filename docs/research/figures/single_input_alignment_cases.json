@@ -1,0 +1,9781 @@
+{
+  "audit_sha256": {
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "reference_amplifiers.py": "a0c97f5446e4820701a9c3e578035443e4111af37fdc96b352cd65c7da3e2502",
+    "single_input_alignment.py": "fc5c3b338ba7832a712e991b4735836ca66e3dbefbde7d9f1ea1762850c316bb",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a"
+  },
+  "cohorts": {
+    "added_aea": {
+      "attachment_aligned": [
+        "ag-2423:x1"
+      ],
+      "endpoint_aligned": [
+        "ag-2423:x1"
+      ],
+      "endpoint_offsets": {
+        "0.0": 1
+      },
+      "input_roles": {
+        "negative": 1
+      },
+      "names": [
+        "ag-2423:x1"
+      ]
+    },
+    "old_single_input": {
+      "attachment_aligned": [],
+      "endpoint_aligned": [],
+      "endpoint_offsets": {
+        "-10.0": 5,
+        "-20.0": 27,
+        "-30.0": 13,
+        "-40.0": 1,
+        "-50.0": 1
+      },
+      "input_roles": {
+        "negative": 35,
+        "positive": 1,
+        "unsigned": 11
+      },
+      "names": [
+        "ag-1363:x1",
+        "ag-1364:x1",
+        "ag-1366:x1",
+        "ag-1368:x1",
+        "ag-1369:x1",
+        "ag-1371:x1",
+        "ag-1391:x1",
+        "ag-1394:x1",
+        "ag-1395:x1",
+        "ag-1397:x1",
+        "ag-1400:x1",
+        "ag-1401:x1",
+        "ag-1402:x1",
+        "ag-1403:x1",
+        "ag-1406:x1",
+        "ag-1408:x1",
+        "ag-1413:x1",
+        "ag-1414:x1",
+        "ag-1416:x1",
+        "ag-1417:x1",
+        "ag-1421:x1",
+        "ag-1422:x1",
+        "ag-1424:x1",
+        "ag-1425:x1",
+        "ag-1426:x1",
+        "ag-1427:x1",
+        "ag-1429:x1",
+        "ag-1430:x1",
+        "ag-1432:x1",
+        "ag-1434:x1",
+        "ag-1436:x1",
+        "ag-1437:x1",
+        "ag-1438:x1",
+        "ag-1439:x1",
+        "ag-1441:x1",
+        "ag-1442:x1",
+        "ag-1444:x1",
+        "ag-1445:x1",
+        "ag-1446:x1",
+        "ag-1448:x1",
+        "ag-1449:x1",
+        "ag-1452:x1",
+        "ag-1453:x1",
+        "ag-1454:x1",
+        "ag-1455:x1",
+        "ag-1460:x1",
+        "ag-2418:x1"
+      ]
+    }
+  },
+  "corpus_counts": {
+    "amsnet": 734,
+    "analoggenie": 2202
+  },
+  "corpus_sha256": {
+    "amsnet": "4d9e2ff15cc8a8ea814cfe8a6762ef90f3631cd63ca7f64c4035c6a824033b6c",
+    "analoggenie": "b882223f01fef03f98ef636783c6ad0db5d4ea7086a917ad6d7647cb864a95bd"
+  },
+  "method_checks": [
+    "centered_negative",
+    "offset_negative",
+    "offset_positive",
+    "centered_unsigned",
+    "rotate_and_reflect_same_alignment",
+    "reject_wrong_polarity",
+    "reject_missing_polarity",
+    "reject_missing_apex_lead",
+    "reject_ambiguous_signed_lead",
+    "reject_unsigned_bias_ambiguity",
+    "resolve_unsigned_by_connected_lead",
+    "reject_disconnected_unsigned_proof"
+  ],
+  "rows": [
+    {
+      "alignment": {
+        "apex": [
+          550.0,
+          170.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1,
+          2,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 3,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "net1",
+        "net2"
+      ],
+      "body": [
+        [
+          510.0,
+          240.0
+        ],
+        [
+          590.0,
+          240.0
+        ],
+        [
+          550.0,
+          170.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            566.906,
+            200.0
+          ],
+          "endpoint": [
+            590.0,
+            160.0
+          ],
+          "path": [
+            [
+              566.906,
+              200.0
+            ],
+            [
+              590.0,
+              200.0
+            ],
+            [
+              590.0,
+              160.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            550.0,
+            240.0
+          ],
+          "endpoint": [
+            550.0,
+            250.0
+          ],
+          "path": [
+            [
+              550.0,
+              240.0
+            ],
+            [
+              550.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            580.0,
+            240.0
+          ],
+          "endpoint": [
+            580.0,
+            250.0
+          ],
+          "path": [
+            [
+              580.0,
+              240.0
+            ],
+            [
+              580.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            520.0,
+            240.0
+          ],
+          "endpoint": [
+            520.0,
+            250.0
+          ],
+          "path": [
+            [
+              520.0,
+              240.0
+            ],
+            [
+              520.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            550.0,
+            170.718
+          ],
+          "endpoint": [
+            550.0,
+            160.0
+          ],
+          "path": [
+            [
+              550.0,
+              170.718
+            ],
+            [
+              550.0,
+              160.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1363",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            520.0,
+            232.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                516.5,
+                232.0
+              ],
+              [
+                523.5,
+                232.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "c9148be454b59248d9ff53e19f6fb1264544c81832d6057e7ad0c4c6d6c4d8a8",
+        ".human.json": "b8683cc48d6ef5d0b6796536def9fd0bf9603845a868efb80c062479de992bf4",
+        ".svg": "ebc1e54cb165da4dadaf9a90358ae7f4c953ef2e18d9ac02b0f49fcd1a8310a4"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          198.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0"
+      ],
+      "body": [
+        [
+          450.0,
+          250.0
+        ],
+        [
+          510.0,
+          250.0
+        ],
+        [
+          480.0,
+          198.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            498.453,
+            230.0
+          ],
+          "endpoint": [
+            530.0,
+            230.0
+          ],
+          "path": [
+            [
+              498.453,
+              230.0
+            ],
+            [
+              530.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            250.0
+          ],
+          "endpoint": [
+            460.0,
+            260.0
+          ],
+          "path": [
+            [
+              460.0,
+              250.0
+            ],
+            [
+              460.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            198.038
+          ],
+          "endpoint": [
+            480.0,
+            190.0
+          ],
+          "path": [
+            [
+              480.0,
+              198.038
+            ],
+            [
+              480.0,
+              190.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1364",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            460.0,
+            242.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                456.5,
+                242.0
+              ],
+              [
+                463.5,
+                242.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "0df00b36a6d47b83d08eaa3806660166d8a00c5fc75bfaf0315bd008c4f0f8f5",
+        ".human.json": "1c4662d6b35e8f00cff4af5626058da2aad9046adc7fd1300628ec2b92e5bed4",
+        ".svg": "e60432503fb1b12504c3d299686790ab5bbd861e60e7f7f3bbf8d8be0217d3e8"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          629.282,
+          260.0
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          2
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          1,
+          0
+        ],
+        "input_lead": 2,
+        "output_lead": 1,
+        "transverse_axis": [
+          0,
+          1
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net2",
+        "vb2",
+        "vb1"
+      ],
+      "body": [
+        [
+          560.0,
+          220.0
+        ],
+        [
+          560.0,
+          300.0
+        ],
+        [
+          629.282,
+          260.0
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            590.0,
+            237.321
+          ],
+          "endpoint": [
+            590.0,
+            200.0
+          ],
+          "path": [
+            [
+              590.0,
+              237.321
+            ],
+            [
+              590.0,
+              200.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            629.282,
+            260.0
+          ],
+          "endpoint": [
+            640.0,
+            260.0
+          ],
+          "path": [
+            [
+              629.282,
+              260.0
+            ],
+            [
+              640.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            560.0,
+            240.0
+          ],
+          "endpoint": [
+            550.0,
+            240.0
+          ],
+          "path": [
+            [
+              560.0,
+              240.0
+            ],
+            [
+              550.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            610.0,
+            271.132
+          ],
+          "endpoint": [
+            610.0,
+            340.0
+          ],
+          "path": [
+            [
+              610.0,
+              271.132
+            ],
+            [
+              610.0,
+              340.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            580.0,
+            288.453
+          ],
+          "endpoint": [
+            580.0,
+            340.0
+          ],
+          "path": [
+            [
+              580.0,
+              288.453
+            ],
+            [
+              580.0,
+              340.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1366",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "out",
+        "inn",
+        "vb2",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            568.0,
+            240.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                564.5,
+                240.0
+              ],
+              [
+                571.5,
+                240.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "c0a556d7d8658d42845cf68e14e9318e65053e5999d1e4d4df7912bd8c8f3368",
+        ".human.json": "0e5e74245918be9506c2aafea05b18f3a816dd174b36c0e56ef060f63e7ec816",
+        ".svg": "e2f6f807b4dbedb28586902846e2ef22ab258f1cae6d78a3086c05810cb1ab60"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          153.397
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -40.0,
+        "base_leads": [
+          0,
+          1,
+          3,
+          4
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -40.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "net1",
+        "net2",
+        "vb2",
+        "vb3"
+      ],
+      "body": [
+        [
+          450.0,
+          240.0
+        ],
+        [
+          550.0,
+          240.0
+        ],
+        [
+          500.0,
+          153.397
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            480.0,
+            240.0
+          ],
+          "endpoint": [
+            480.0,
+            250.0
+          ],
+          "path": [
+            [
+              480.0,
+              240.0
+            ],
+            [
+              480.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            240.0
+          ],
+          "endpoint": [
+            460.0,
+            250.0
+          ],
+          "path": [
+            [
+              460.0,
+              240.0
+            ],
+            [
+              460.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            153.397
+          ],
+          "endpoint": [
+            500.0,
+            140.0
+          ],
+          "path": [
+            [
+              500.0,
+              153.397
+            ],
+            [
+              500.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            240.0
+          ],
+          "endpoint": [
+            500.0,
+            250.0
+          ],
+          "path": [
+            [
+              500.0,
+              240.0
+            ],
+            [
+              500.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            530.0,
+            240.0
+          ],
+          "endpoint": [
+            530.0,
+            250.0
+          ],
+          "path": [
+            [
+              530.0,
+              240.0
+            ],
+            [
+              530.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            526.906,
+            200.0
+          ],
+          "endpoint": [
+            550.0,
+            200.0
+          ],
+          "path": [
+            [
+              526.906,
+              200.0
+            ],
+            [
+              550.0,
+              200.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1368",
+      "input_evidence": {
+        "declared_net": "net1",
+        "markers": [],
+        "method": "named_marker_or_outside_pin_and_actual_wire",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              400.0,
+              150.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  400.0,
+                  100.0
+                ],
+                [
+                  400.0,
+                  148.8
+                ]
+              ],
+              [
+                [
+                  400.0,
+                  100.0
+                ],
+                [
+                  440.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  400.0,
+                  148.8
+                ],
+                [
+                  400.0,
+                  150.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  100.0
+                ],
+                [
+                  440.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  260.0
+                ],
+                [
+                  460.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  460.0,
+                  250.0
+                ],
+                [
+                  460.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  460.0,
+                  251.2
+                ],
+                [
+                  460.0,
+                  260.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              480.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  440.0,
+                  100.0
+                ],
+                [
+                  440.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  100.0
+                ],
+                [
+                  478.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  260.0
+                ],
+                [
+                  460.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  460.0,
+                  250.0
+                ],
+                [
+                  460.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  460.0,
+                  251.2
+                ],
+                [
+                  460.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  478.8,
+                  100.0
+                ],
+                [
+                  480.0,
+                  100.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vin",
+        "vo",
+        "vb2",
+        "vb3"
+      ],
+      "source_marks": [],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "614a5c670747bec0f6afe592184ad02b4ec9306824ba8e0f12c47ee1ebf07874",
+        ".human.json": "ed7914774ca99526e239470c1868ab22e2b9c383893c1d6c58aa16bec1e24286",
+        ".svg": "9c29a68feb7e3eaee440729c9b4f453740e568a517105e5d6ee14a46ea98816d"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          643.923,
+          250.0
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          1,
+          0
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          0,
+          1
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1",
+        "vb1",
+        "vb2",
+        "vb3"
+      ],
+      "body": [
+        [
+          540.0,
+          190.0
+        ],
+        [
+          540.0,
+          310.0
+        ],
+        [
+          643.923,
+          250.0
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            570.0,
+            207.321
+          ],
+          "endpoint": [
+            570.0,
+            190.0
+          ],
+          "path": [
+            [
+              570.0,
+              207.321
+            ],
+            [
+              570.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            540.0,
+            230.0
+          ],
+          "endpoint": [
+            530.0,
+            230.0
+          ],
+          "path": [
+            [
+              540.0,
+              230.0
+            ],
+            [
+              530.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            643.923,
+            250.0
+          ],
+          "endpoint": [
+            650.0,
+            250.0
+          ],
+          "path": [
+            [
+              643.923,
+              250.0
+            ],
+            [
+              650.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            560.0,
+            298.453
+          ],
+          "endpoint": [
+            560.0,
+            330.0
+          ],
+          "path": [
+            [
+              560.0,
+              298.453
+            ],
+            [
+              560.0,
+              330.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            590.0,
+            281.132
+          ],
+          "endpoint": [
+            590.0,
+            330.0
+          ],
+          "path": [
+            [
+              590.0,
+              281.132
+            ],
+            [
+              590.0,
+              330.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            620.0,
+            263.812
+          ],
+          "endpoint": [
+            620.0,
+            330.0
+          ],
+          "path": [
+            [
+              620.0,
+              263.812
+            ],
+            [
+              620.0,
+              330.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1369",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1",
+        "vb2",
+        "vb3"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            548.0,
+            230.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                544.5,
+                230.0
+              ],
+              [
+                551.5,
+                230.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "d3e597dedb691bce2cbd5f62b4506bd691acac990503d74a3712635e50e55886",
+        ".human.json": "e2b9798e0df224f68226f5e75f167fec7021e7b2e7d633bab0d0607219aa27a8",
+        ".svg": "8c68e907f58667d21cda80dab0fe16c629226dc2ff26bcabc17509e6e2386cfc"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          440.0,
+          150.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1,
+          2,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "vb2",
+        "vb1",
+        "net0"
+      ],
+      "body": [
+        [
+          400.0,
+          220.0
+        ],
+        [
+          480.0,
+          220.0
+        ],
+        [
+          440.0,
+          150.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            462.679,
+            190.0
+          ],
+          "endpoint": [
+            490.0,
+            190.0
+          ],
+          "path": [
+            [
+              462.679,
+              190.0
+            ],
+            [
+              490.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            410.0,
+            220.0
+          ],
+          "endpoint": [
+            410.0,
+            230.0
+          ],
+          "path": [
+            [
+              410.0,
+              220.0
+            ],
+            [
+              410.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            220.0
+          ],
+          "endpoint": [
+            460.0,
+            230.0
+          ],
+          "path": [
+            [
+              460.0,
+              220.0
+            ],
+            [
+              460.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            430.0,
+            220.0
+          ],
+          "endpoint": [
+            430.0,
+            230.0
+          ],
+          "path": [
+            [
+              430.0,
+              220.0
+            ],
+            [
+              430.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            440.0,
+            150.718
+          ],
+          "endpoint": [
+            440.0,
+            140.0
+          ],
+          "path": [
+            [
+              440.0,
+              150.718
+            ],
+            [
+              440.0,
+              140.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1371",
+      "input_evidence": {
+        "declared_net": "net2",
+        "markers": [],
+        "method": "named_marker_or_outside_pin_and_actual_wire",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net2",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              320.0,
+              160.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  320.0,
+                  100.0
+                ],
+                [
+                  320.0,
+                  158.8
+                ]
+              ],
+              [
+                [
+                  320.0,
+                  100.0
+                ],
+                [
+                  370.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  320.0,
+                  158.8
+                ],
+                [
+                  320.0,
+                  160.0
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  100.0
+                ],
+                [
+                  370.0,
+                  250.0
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  250.0
+                ],
+                [
+                  410.0,
+                  250.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  230.0
+                ],
+                [
+                  410.0,
+                  231.2
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  231.2
+                ],
+                [
+                  410.0,
+                  250.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net2",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              420.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  370.0,
+                  100.0
+                ],
+                [
+                  370.0,
+                  250.0
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  100.0
+                ],
+                [
+                  418.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  250.0
+                ],
+                [
+                  410.0,
+                  250.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  230.0
+                ],
+                [
+                  410.0,
+                  231.2
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  231.2
+                ],
+                [
+                  410.0,
+                  250.0
+                ]
+              ],
+              [
+                [
+                  418.8,
+                  100.0
+                ],
+                [
+                  420.0,
+                  100.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "vb2",
+        "vb1",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "cada4ada60eef00fa81fe8e2222b96b099f4b8f4f54867538fd7666e0c8ce069",
+        ".human.json": "b4c6f9761d35494dd0e5b434f228a670a24b6fd7e33e8aec9ea1d97437975ff6",
+        ".svg": "6cb009be4db5b3b439c4d5cffccdc85ed73eca900c4624b9bf2d4654242f3a46"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          360.0,
+          73.397
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 3,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "net2",
+        "net0"
+      ],
+      "body": [
+        [
+          310.0,
+          160.0
+        ],
+        [
+          410.0,
+          160.0
+        ],
+        [
+          360.0,
+          73.397
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            369.585,
+            90.0
+          ],
+          "endpoint": [
+            460.0,
+            90.0
+          ],
+          "path": [
+            [
+              369.585,
+              90.0
+            ],
+            [
+              460.0,
+              90.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            386.906,
+            120.0
+          ],
+          "endpoint": [
+            460.0,
+            120.0
+          ],
+          "path": [
+            [
+              386.906,
+              120.0
+            ],
+            [
+              460.0,
+              120.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            404.226,
+            150.0
+          ],
+          "endpoint": [
+            460.0,
+            150.0
+          ],
+          "path": [
+            [
+              404.226,
+              150.0
+            ],
+            [
+              460.0,
+              150.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            330.0,
+            160.0
+          ],
+          "endpoint": [
+            330.0,
+            170.0
+          ],
+          "path": [
+            [
+              330.0,
+              160.0
+            ],
+            [
+              330.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            360.0,
+            73.397
+          ],
+          "endpoint": [
+            360.0,
+            60.0
+          ],
+          "path": [
+            [
+              360.0,
+              73.397
+            ],
+            [
+              360.0,
+              60.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1391",
+      "input_evidence": {
+        "declared_net": "net2",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net2",
+            "lead": 3,
+            "pin": "D",
+            "terminal": [
+              260.0,
+              50.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  260.0,
+                  0.0
+                ],
+                [
+                  260.0,
+                  48.8
+                ]
+              ],
+              [
+                [
+                  260.0,
+                  0.0
+                ],
+                [
+                  300.0,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  260.0,
+                  48.8
+                ],
+                [
+                  260.0,
+                  50.0
+                ]
+              ],
+              [
+                [
+                  300.0,
+                  0.0
+                ],
+                [
+                  300.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  300.0,
+                  180.0
+                ],
+                [
+                  330.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  330.0,
+                  170.0
+                ],
+                [
+                  330.0,
+                  171.2
+                ]
+              ],
+              [
+                [
+                  330.0,
+                  171.2
+                ],
+                [
+                  330.0,
+                  180.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net2",
+            "lead": 3,
+            "pin": "D",
+            "terminal": [
+              340.0,
+              -0.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  300.0,
+                  0.0
+                ],
+                [
+                  300.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  300.0,
+                  0.0
+                ],
+                [
+                  338.8,
+                  0.0
+                ]
+              ],
+              [
+                [
+                  300.0,
+                  180.0
+                ],
+                [
+                  330.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  330.0,
+                  170.0
+                ],
+                [
+                  330.0,
+                  171.2
+                ]
+              ],
+              [
+                [
+                  330.0,
+                  171.2
+                ],
+                [
+                  330.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  338.8,
+                  0.0
+                ],
+                [
+                  340.0,
+                  -0.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "9a7d7407b2aa6690874452569504cf96444662db79c283b2992fb79200517bcd",
+        ".human.json": "88ff1b0fe55338ced475df25c54ce2833530ae98774f7f85a2530b9f31ccca05",
+        ".svg": "a9ad1d569c9b471c9788a54975ac2c694920691bc326d94b050a94a9dfa6099b"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          400.0,
+          170.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          0,
+          1,
+          2
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 3,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "vb1",
+        "vb2",
+        "net0"
+      ],
+      "body": [
+        [
+          360.0,
+          240.0
+        ],
+        [
+          440.0,
+          240.0
+        ],
+        [
+          400.0,
+          170.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            370.0,
+            240.0
+          ],
+          "endpoint": [
+            370.0,
+            250.0
+          ],
+          "path": [
+            [
+              370.0,
+              240.0
+            ],
+            [
+              370.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            400.0,
+            240.0
+          ],
+          "endpoint": [
+            400.0,
+            250.0
+          ],
+          "path": [
+            [
+              400.0,
+              240.0
+            ],
+            [
+              400.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            430.0,
+            240.0
+          ],
+          "endpoint": [
+            430.0,
+            250.0
+          ],
+          "path": [
+            [
+              430.0,
+              240.0
+            ],
+            [
+              430.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            400.0,
+            170.718
+          ],
+          "endpoint": [
+            400.0,
+            160.0
+          ],
+          "path": [
+            [
+              400.0,
+              170.718
+            ],
+            [
+              400.0,
+              160.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            422.679,
+            210.0
+          ],
+          "endpoint": [
+            470.0,
+            210.0
+          ],
+          "path": [
+            [
+              422.679,
+              210.0
+            ],
+            [
+              470.0,
+              210.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1394",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "vb1",
+        "vb2",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            370.0,
+            232.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                366.5,
+                232.0
+              ],
+              [
+                373.5,
+                232.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "1b997a0757031d03193fe2c68d8f3ce4a2c0c3cd0a759cdcdb2bd9d4b8fd246b",
+        ".human.json": "16315e4e2e9c89bd9e5420e6621647be04c972e2641ad98c591d482fe447d4b6",
+        ".svg": "f55f83b9a527768945c33c200d71804247e5c8c227c583e559cba1bbc5b9295e"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          440.0,
+          148.756
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 3,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "net1",
+        "net0",
+        "vb3"
+      ],
+      "body": [
+        [
+          370.0,
+          270.0
+        ],
+        [
+          510.0,
+          270.0
+        ],
+        [
+          440.0,
+          148.756
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            458.038,
+            180.0
+          ],
+          "endpoint": [
+            510.0,
+            180.0
+          ],
+          "path": [
+            [
+              458.038,
+              180.0
+            ],
+            [
+              510.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            481.132,
+            220.0
+          ],
+          "endpoint": [
+            510.0,
+            220.0
+          ],
+          "path": [
+            [
+              481.132,
+              220.0
+            ],
+            [
+              510.0,
+              220.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            492.679,
+            240.0
+          ],
+          "endpoint": [
+            510.0,
+            240.0
+          ],
+          "path": [
+            [
+              492.679,
+              240.0
+            ],
+            [
+              510.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            420.0,
+            270.0
+          ],
+          "endpoint": [
+            420.0,
+            280.0
+          ],
+          "path": [
+            [
+              420.0,
+              270.0
+            ],
+            [
+              420.0,
+              280.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            440.0,
+            148.756
+          ],
+          "endpoint": [
+            440.0,
+            140.0
+          ],
+          "path": [
+            [
+              440.0,
+              148.756
+            ],
+            [
+              440.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            504.226,
+            260.0
+          ],
+          "endpoint": [
+            510.0,
+            260.0
+          ],
+          "path": [
+            [
+              504.226,
+              260.0
+            ],
+            [
+              510.0,
+              260.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1395",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb2",
+        "inn",
+        "out",
+        "vb3"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            420.0,
+            262.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                416.5,
+                262.0
+              ],
+              [
+                423.5,
+                262.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "461951c48f3fb37588b4b3d888eac00cdef7f68a5fa2f3adbb1a80dd5ce60d3c",
+        ".human.json": "1a1b51423e89fed318433cc9692efdbc18f4dde2720b738a63a19b56bedd6cd0",
+        ".svg": "9b1aa88b2bbb344cdf4ac4501383a775928bdb500404b75f9af36bdb80d1b653"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          160.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1,
+          2,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 2,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "net0",
+        "vb2",
+        "net2"
+      ],
+      "body": [
+        [
+          440.0,
+          230.0
+        ],
+        [
+          520.0,
+          230.0
+        ],
+        [
+          480.0,
+          160.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            502.679,
+            200.0
+          ],
+          "endpoint": [
+            530.0,
+            200.0
+          ],
+          "path": [
+            [
+              502.679,
+              200.0
+            ],
+            [
+              530.0,
+              200.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            230.0
+          ],
+          "endpoint": [
+            480.0,
+            240.0
+          ],
+          "path": [
+            [
+              480.0,
+              230.0
+            ],
+            [
+              480.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            450.0,
+            230.0
+          ],
+          "endpoint": [
+            450.0,
+            240.0
+          ],
+          "path": [
+            [
+              450.0,
+              230.0
+            ],
+            [
+              450.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            510.0,
+            230.0
+          ],
+          "endpoint": [
+            510.0,
+            240.0
+          ],
+          "path": [
+            [
+              510.0,
+              230.0
+            ],
+            [
+              510.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            160.718
+          ],
+          "endpoint": [
+            480.0,
+            150.0
+          ],
+          "path": [
+            [
+              480.0,
+              160.718
+            ],
+            [
+              480.0,
+              150.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1397",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "inn",
+        "vb2",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            450.0,
+            222.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                446.5,
+                222.0
+              ],
+              [
+                453.5,
+                222.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "db98494d8cb508266766d2a9328ffb85bb94759a8843b479ef8479ec375e550b",
+        ".human.json": "c61ca0c16ceba1e8182f22974df5c6e51e2dd3de1c0f8b303b6ccc236f710246",
+        ".svg": "c37c865027f4d7177eafedb747a287920a31914c5962d8111b9f3260dcd8f0a7"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          680.0,
+          240.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1"
+      ],
+      "body": [
+        [
+          640.0,
+          310.0
+        ],
+        [
+          720.0,
+          310.0
+        ],
+        [
+          680.0,
+          240.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            660.0,
+            310.0
+          ],
+          "endpoint": [
+            660.0,
+            320.0
+          ],
+          "path": [
+            [
+              660.0,
+              310.0
+            ],
+            [
+              660.0,
+              320.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            680.0,
+            240.718
+          ],
+          "endpoint": [
+            680.0,
+            230.0
+          ],
+          "path": [
+            [
+              680.0,
+              240.718
+            ],
+            [
+              680.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            708.453,
+            290.0
+          ],
+          "endpoint": [
+            730.0,
+            290.0
+          ],
+          "path": [
+            [
+              708.453,
+              290.0
+            ],
+            [
+              730.0,
+              290.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1400",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            660.0,
+            302.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                656.5,
+                302.0
+              ],
+              [
+                663.5,
+                302.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "aef7d225af8c18516545c47c40a1c9892f1358ac121ed9222bebc396a3572478",
+        ".human.json": "29e195ab67b850216d7d85ac99b091adeeab9cc82172b093f62440404080bc13",
+        ".svg": "1049cf5c46c33bdef5f126debd3ef4864826b24d74b15fc6e522815faaa5406e"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          570.0,
+          220.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          3,
+          4,
+          5
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 3,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "net1",
+        "net0",
+        "vb2",
+        "vb3"
+      ],
+      "body": [
+        [
+          530.0,
+          290.0
+        ],
+        [
+          610.0,
+          290.0
+        ],
+        [
+          570.0,
+          220.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            581.132,
+            240.0
+          ],
+          "endpoint": [
+            620.0,
+            240.0
+          ],
+          "path": [
+            [
+              581.132,
+              240.0
+            ],
+            [
+              620.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            592.679,
+            260.0
+          ],
+          "endpoint": [
+            650.0,
+            260.0
+          ],
+          "path": [
+            [
+              592.679,
+              260.0
+            ],
+            [
+              650.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            570.0,
+            220.718
+          ],
+          "endpoint": [
+            570.0,
+            210.0
+          ],
+          "path": [
+            [
+              570.0,
+              220.718
+            ],
+            [
+              570.0,
+              210.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            540.0,
+            290.0
+          ],
+          "endpoint": [
+            540.0,
+            300.0
+          ],
+          "path": [
+            [
+              540.0,
+              290.0
+            ],
+            [
+              540.0,
+              300.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            600.0,
+            290.0
+          ],
+          "endpoint": [
+            600.0,
+            300.0
+          ],
+          "path": [
+            [
+              600.0,
+              290.0
+            ],
+            [
+              600.0,
+              300.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            580.0,
+            290.0
+          ],
+          "endpoint": [
+            580.0,
+            300.0
+          ],
+          "path": [
+            [
+              580.0,
+              290.0
+            ],
+            [
+              580.0,
+              300.0
+            ]
+          ]
+        }
+      ],
+      "family": "opamp",
+      "id": "ag-1401",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "out",
+        "inn",
+        "vb2",
+        "vb3"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            540.0,
+            282.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                536.5,
+                282.0
+              ],
+              [
+                543.5,
+                282.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "6bc31cd263351567c1b09ea35e54056247c80a90ec0ded84ff845c0e09d672ea",
+        ".human.json": "61b6bbed140647431aa95c58673885194dff82948abd0bbd890f7bce1064654d",
+        ".svg": "20688ca5db836c1d50522e3c2699fa46a8c95bc2cc2395b6d47a6db64441693a"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          230.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          460.0,
+          300.0
+        ],
+        [
+          540.0,
+          300.0
+        ],
+        [
+          500.0,
+          230.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            522.679,
+            270.0
+          ],
+          "endpoint": [
+            560.0,
+            270.0
+          ],
+          "path": [
+            [
+              522.679,
+              270.0
+            ],
+            [
+              560.0,
+              270.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            300.0
+          ],
+          "endpoint": [
+            480.0,
+            310.0
+          ],
+          "path": [
+            [
+              480.0,
+              300.0
+            ],
+            [
+              480.0,
+              310.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            230.718
+          ],
+          "endpoint": [
+            500.0,
+            220.0
+          ],
+          "path": [
+            [
+              500.0,
+              230.718
+            ],
+            [
+              500.0,
+              220.0
+            ]
+          ]
+        }
+      ],
+      "family": "opamp",
+      "id": "ag-1402",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            480.0,
+            292.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                476.5,
+                292.0
+              ],
+              [
+                483.5,
+                292.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "404824ea92ad8540d4a67e485411322a1a3781dbda26f357e42e98b92b45461a",
+        ".human.json": "38e58fd26d13d77b279598298b76240b81b6d02091b92678cf6b36c755d00a14",
+        ".svg": "86b3ae91f8010b9e863659b7142a7b693d10eed233ca68e11756db144af7d214"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          360.0,
+          68.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -10.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -10.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          330.0,
+          120.0
+        ],
+        [
+          390.0,
+          120.0
+        ],
+        [
+          360.0,
+          68.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            384.226,
+            110.0
+          ],
+          "endpoint": [
+            400.0,
+            110.0
+          ],
+          "path": [
+            [
+              384.226,
+              110.0
+            ],
+            [
+              400.0,
+              110.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            350.0,
+            120.0
+          ],
+          "endpoint": [
+            350.0,
+            130.0
+          ],
+          "path": [
+            [
+              350.0,
+              120.0
+            ],
+            [
+              350.0,
+              130.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            360.0,
+            68.038
+          ],
+          "endpoint": [
+            360.0,
+            60.0
+          ],
+          "path": [
+            [
+              360.0,
+              68.038
+            ],
+            [
+              360.0,
+              60.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1403",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            350.0,
+            112.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                346.5,
+                112.0
+              ],
+              [
+                353.5,
+                112.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "d469669b9e23acf1ba5ba552365a52710633cd0e9e2a09c0795ac895011bc481",
+        ".human.json": "3330aa7bf0e1c029a663ca9965288149e85aaf594539de1433d59218b6ac19d7",
+        ".svg": "fc9ea6defd865ac88939445f54052f1a0cf050394de689e0d7d73ede79653709"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          420.0,
+          196.077
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -50.0,
+        "base_leads": [
+          1,
+          2,
+          3,
+          5
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -50.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 5,
+        "output_lead": 4,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb3",
+        "vb2",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          360.0,
+          300.0
+        ],
+        [
+          480.0,
+          300.0
+        ],
+        [
+          420.0,
+          196.077
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            433.812,
+            220.0
+          ],
+          "endpoint": [
+            470.0,
+            220.0
+          ],
+          "path": [
+            [
+              433.812,
+              220.0
+            ],
+            [
+              470.0,
+              220.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            400.0,
+            300.0
+          ],
+          "endpoint": [
+            400.0,
+            310.0
+          ],
+          "path": [
+            [
+              400.0,
+              300.0
+            ],
+            [
+              400.0,
+              310.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            300.0
+          ],
+          "endpoint": [
+            460.0,
+            310.0
+          ],
+          "path": [
+            [
+              460.0,
+              300.0
+            ],
+            [
+              460.0,
+              310.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            430.0,
+            300.0
+          ],
+          "endpoint": [
+            430.0,
+            310.0
+          ],
+          "path": [
+            [
+              430.0,
+              300.0
+            ],
+            [
+              430.0,
+              310.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            420.0,
+            196.077
+          ],
+          "endpoint": [
+            420.0,
+            190.0
+          ],
+          "path": [
+            [
+              420.0,
+              196.077
+            ],
+            [
+              420.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            370.0,
+            300.0
+          ],
+          "endpoint": [
+            370.0,
+            310.0
+          ],
+          "path": [
+            [
+              370.0,
+              300.0
+            ],
+            [
+              370.0,
+              310.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1406",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "vb3",
+        "vb2",
+        "out",
+        "inn"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            370.0,
+            292.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                366.5,
+                292.0
+              ],
+              [
+                373.5,
+                292.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "894b4751e7e2b5f8653133980a1075cfa60cab18782c672cd694b0025b195a6b",
+        ".human.json": "ad2bcc38789b1e1204a78f347dbd6dddb5767b2b271e10bf13b01b9f01bfd0e5",
+        ".svg": "9dafb1b3758425b0e8e1172a0017cff6ef89b761c13c1ef414931a87c1c30442"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          420.0,
+          180.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          380.0,
+          250.0
+        ],
+        [
+          460.0,
+          250.0
+        ],
+        [
+          420.0,
+          180.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            400.0,
+            250.0
+          ],
+          "endpoint": [
+            400.0,
+            260.0
+          ],
+          "path": [
+            [
+              400.0,
+              250.0
+            ],
+            [
+              400.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            420.0,
+            180.718
+          ],
+          "endpoint": [
+            420.0,
+            170.0
+          ],
+          "path": [
+            [
+              420.0,
+              180.718
+            ],
+            [
+              420.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            442.679,
+            220.0
+          ],
+          "endpoint": [
+            470.0,
+            220.0
+          ],
+          "path": [
+            [
+              442.679,
+              220.0
+            ],
+            [
+              470.0,
+              220.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1408",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            400.0,
+            242.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                396.5,
+                242.0
+              ],
+              [
+                403.5,
+                242.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "aadfedb04a2408c7a0e334f8e207d0b54b3e82118cd707a5c17cbea82ccefcc5",
+        ".human.json": "ab4221ff0cdd4a7ebc125b5fb54f4bd63e913310eeeda7a692e9ddc828ec7d35",
+        ".svg": "8bf8fa074537d2aae18396b086585312df64ef0b03dea419f71ae66157ab7497"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          180.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          440.0,
+          250.0
+        ],
+        [
+          520.0,
+          250.0
+        ],
+        [
+          480.0,
+          180.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            491.132,
+            200.0
+          ],
+          "endpoint": [
+            530.0,
+            170.0
+          ],
+          "path": [
+            [
+              491.132,
+              200.0
+            ],
+            [
+              530.0,
+              200.0
+            ],
+            [
+              530.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            250.0
+          ],
+          "endpoint": [
+            460.0,
+            260.0
+          ],
+          "path": [
+            [
+              460.0,
+              250.0
+            ],
+            [
+              460.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            180.718
+          ],
+          "endpoint": [
+            480.0,
+            170.0
+          ],
+          "path": [
+            [
+              480.0,
+              180.718
+            ],
+            [
+              480.0,
+              170.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1413",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            460.0,
+            242.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                456.5,
+                242.0
+              ],
+              [
+                463.5,
+                242.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "98a652ccd2345c93954e476cacde75f6937bb0c597b7db285bc8996faf1cc6ce",
+        ".human.json": "8662942a80a38df5d9ee1abac312eabc87da56ff7ab425e8e30090ae0bef9033",
+        ".svg": "539554016fd51ba0af2d7a963b04346c521d76005a768319aab6f1987ee73330"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          460.0,
+          170.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0",
+        "vb1"
+      ],
+      "body": [
+        [
+          420.0,
+          240.0
+        ],
+        [
+          500.0,
+          240.0
+        ],
+        [
+          460.0,
+          170.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            471.132,
+            190.0
+          ],
+          "endpoint": [
+            510.0,
+            190.0
+          ],
+          "path": [
+            [
+              471.132,
+              190.0
+            ],
+            [
+              510.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            440.0,
+            240.0
+          ],
+          "endpoint": [
+            440.0,
+            250.0
+          ],
+          "path": [
+            [
+              440.0,
+              240.0
+            ],
+            [
+              440.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            170.718
+          ],
+          "endpoint": [
+            460.0,
+            160.0
+          ],
+          "path": [
+            [
+              460.0,
+              170.718
+            ],
+            [
+              460.0,
+              160.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            240.0
+          ],
+          "endpoint": [
+            480.0,
+            250.0
+          ],
+          "path": [
+            [
+              480.0,
+              240.0
+            ],
+            [
+              480.0,
+              250.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1414",
+      "input_evidence": {
+        "declared_net": "net1",
+        "markers": [],
+        "method": "named_marker_or_outside_pin_and_actual_wire",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              340.0,
+              160.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  340.0,
+                  100.0
+                ],
+                [
+                  340.0,
+                  158.8
+                ]
+              ],
+              [
+                [
+                  340.0,
+                  100.0
+                ],
+                [
+                  390.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  340.0,
+                  158.8
+                ],
+                [
+                  340.0,
+                  160.0
+                ]
+              ],
+              [
+                [
+                  390.0,
+                  100.0
+                ],
+                [
+                  390.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  390.0,
+                  270.0
+                ],
+                [
+                  440.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  250.0
+                ],
+                [
+                  440.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  251.2
+                ],
+                [
+                  440.0,
+                  270.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              440.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  390.0,
+                  100.0
+                ],
+                [
+                  390.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  390.0,
+                  100.0
+                ],
+                [
+                  438.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  390.0,
+                  270.0
+                ],
+                [
+                  440.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  438.8,
+                  100.0
+                ],
+                [
+                  440.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  250.0
+                ],
+                [
+                  440.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  251.2
+                ],
+                [
+                  440.0,
+                  270.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "c9185c65f2a74b8758c3139d983b14796d14da125ea9f041c48a0a5242d6902a",
+        ".human.json": "1e47d933c20c661023d0c47cd4d674263fb4f547e6971610a4f04f28c1830a09",
+        ".svg": "e372dca1f45090ec810c8e6e2c1d7eb7f55637879393d7ee4899cfa70ae2cf22"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          198.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -10.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -10.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          470.0,
+          250.0
+        ],
+        [
+          530.0,
+          250.0
+        ],
+        [
+          500.0,
+          198.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            490.0,
+            250.0
+          ],
+          "endpoint": [
+            490.0,
+            260.0
+          ],
+          "path": [
+            [
+              490.0,
+              250.0
+            ],
+            [
+              490.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            198.038
+          ],
+          "endpoint": [
+            500.0,
+            190.0
+          ],
+          "path": [
+            [
+              500.0,
+              198.038
+            ],
+            [
+              500.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            512.679,
+            220.0
+          ],
+          "endpoint": [
+            540.0,
+            220.0
+          ],
+          "path": [
+            [
+              512.679,
+              220.0
+            ],
+            [
+              540.0,
+              220.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1416",
+      "input_evidence": {
+        "declared_net": "net1",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net1",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              400.0,
+              150.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  400.0,
+                  90.0
+                ],
+                [
+                  400.0,
+                  148.8
+                ]
+              ],
+              [
+                [
+                  400.0,
+                  90.0
+                ],
+                [
+                  430.0,
+                  90.0
+                ]
+              ],
+              [
+                [
+                  400.0,
+                  148.8
+                ],
+                [
+                  400.0,
+                  150.0
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  90.0
+                ],
+                [
+                  430.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  270.0
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  260.0
+                ],
+                [
+                  490.0,
+                  261.2
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  261.2
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net1",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              480.0,
+              90.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  430.0,
+                  90.0
+                ],
+                [
+                  430.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  90.0
+                ],
+                [
+                  478.8,
+                  90.0
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  270.0
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  478.8,
+                  90.0
+                ],
+                [
+                  480.0,
+                  90.0
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  260.0
+                ],
+                [
+                  490.0,
+                  261.2
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  261.2
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "b3357a12d61db7ccffee15011846d1f186d6062d0ef4c344e4c478fb06b342f8",
+        ".human.json": "cf5e9642228d6d1b4cf658f20dd4b11b64a40e62efa95c8ef695edf64443a7a8",
+        ".svg": "8a8f376fcd3925152fb86269b8d8b97df5781824f78c818b874e211e22f4b0c4"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          680.0,
+          210.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1",
+        "vb1"
+      ],
+      "body": [
+        [
+          640.0,
+          280.0
+        ],
+        [
+          720.0,
+          280.0
+        ],
+        [
+          680.0,
+          210.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            660.0,
+            280.0
+          ],
+          "endpoint": [
+            660.0,
+            290.0
+          ],
+          "path": [
+            [
+              660.0,
+              280.0
+            ],
+            [
+              660.0,
+              290.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            680.0,
+            210.718
+          ],
+          "endpoint": [
+            680.0,
+            200.0
+          ],
+          "path": [
+            [
+              680.0,
+              210.718
+            ],
+            [
+              680.0,
+              200.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            714.226,
+            270.0
+          ],
+          "endpoint": [
+            740.0,
+            270.0
+          ],
+          "path": [
+            [
+              714.226,
+              270.0
+            ],
+            [
+              740.0,
+              270.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            696.906,
+            240.0
+          ],
+          "endpoint": [
+            740.0,
+            240.0
+          ],
+          "path": [
+            [
+              696.906,
+              240.0
+            ],
+            [
+              740.0,
+              240.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1417",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            660.0,
+            272.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                656.5,
+                272.0
+              ],
+              [
+                663.5,
+                272.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "4049085bfac61add6673b0d1b7c60c1fb2d25e858d2448990fa5fd2f22ae48a6",
+        ".human.json": "0f85e1c90bb00ea107bd30e2ba48a92e987c243200d45be3b35d1451fa8dc515",
+        ".svg": "e19ac77a818d389aceb9ba29ff49d3d6c995e4d24bfffe581fd05f159e6b5fd0"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          380.0,
+          240.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1",
+        "vb1"
+      ],
+      "body": [
+        [
+          340.0,
+          310.0
+        ],
+        [
+          420.0,
+          310.0
+        ],
+        [
+          380.0,
+          240.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            391.132,
+            260.0
+          ],
+          "endpoint": [
+            440.0,
+            260.0
+          ],
+          "path": [
+            [
+              391.132,
+              260.0
+            ],
+            [
+              440.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            360.0,
+            310.0
+          ],
+          "endpoint": [
+            360.0,
+            320.0
+          ],
+          "path": [
+            [
+              360.0,
+              310.0
+            ],
+            [
+              360.0,
+              320.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            380.0,
+            240.718
+          ],
+          "endpoint": [
+            380.0,
+            230.0
+          ],
+          "path": [
+            [
+              380.0,
+              240.718
+            ],
+            [
+              380.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            414.226,
+            300.0
+          ],
+          "endpoint": [
+            450.0,
+            300.0
+          ],
+          "path": [
+            [
+              414.226,
+              300.0
+            ],
+            [
+              450.0,
+              300.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1421",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            360.0,
+            302.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                356.5,
+                302.0
+              ],
+              [
+                363.5,
+                302.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "68c447404944b571875acf92a7ff2dc749edd0dbead5989767826913db363b1c",
+        ".human.json": "27fb36828cfedb2666b823aaebeb3f95ac738d1328601b2eb2a1e642bc89f164",
+        ".svg": "bce7614f800625392a2292ab01362b08a0217815d2b923542909683b23e88c95"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          390.0,
+          188.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -10.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -10.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          360.0,
+          240.0
+        ],
+        [
+          420.0,
+          240.0
+        ],
+        [
+          390.0,
+          188.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            408.453,
+            220.0
+          ],
+          "endpoint": [
+            450.0,
+            180.0
+          ],
+          "path": [
+            [
+              408.453,
+              220.0
+            ],
+            [
+              450.0,
+              220.0
+            ],
+            [
+              450.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            380.0,
+            240.0
+          ],
+          "endpoint": [
+            380.0,
+            250.0
+          ],
+          "path": [
+            [
+              380.0,
+              240.0
+            ],
+            [
+              380.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            390.0,
+            188.038
+          ],
+          "endpoint": [
+            390.0,
+            180.0
+          ],
+          "path": [
+            [
+              390.0,
+              188.038
+            ],
+            [
+              390.0,
+              180.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1422",
+      "input_evidence": {
+        "declared_net": "net1",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              320.0,
+              200.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  320.0,
+                  100.0
+                ],
+                [
+                  320.0,
+                  198.8
+                ]
+              ],
+              [
+                [
+                  320.0,
+                  100.0
+                ],
+                [
+                  350.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  320.0,
+                  198.8
+                ],
+                [
+                  320.0,
+                  200.0
+                ]
+              ],
+              [
+                [
+                  350.0,
+                  100.0
+                ],
+                [
+                  350.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  350.0,
+                  260.0
+                ],
+                [
+                  380.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  250.0
+                ],
+                [
+                  380.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  251.2
+                ],
+                [
+                  380.0,
+                  260.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net1",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              370.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  350.0,
+                  100.0
+                ],
+                [
+                  350.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  350.0,
+                  100.0
+                ],
+                [
+                  368.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  350.0,
+                  260.0
+                ],
+                [
+                  380.0,
+                  260.0
+                ]
+              ],
+              [
+                [
+                  368.8,
+                  100.0
+                ],
+                [
+                  370.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  250.0
+                ],
+                [
+                  380.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  251.2
+                ],
+                [
+                  380.0,
+                  260.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "eaa4b414d7361671ec6a37083109a0a9f69b7329b00420ebb8f6b9c788f7d20e",
+        ".human.json": "4b38838fe421d25a41d3bcc41f9369b7468c8788506d66883a367fb9eafd033a",
+        ".svg": "b7e9d9d873c1c6769364f65b9432315e30f9de4c3af25d6f9c99c21cf0d0d087"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          420.0,
+          90.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net2"
+      ],
+      "body": [
+        [
+          380.0,
+          160.0
+        ],
+        [
+          460.0,
+          160.0
+        ],
+        [
+          420.0,
+          90.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            400.0,
+            160.0
+          ],
+          "endpoint": [
+            400.0,
+            170.0
+          ],
+          "path": [
+            [
+              400.0,
+              160.0
+            ],
+            [
+              400.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            420.0,
+            90.718
+          ],
+          "endpoint": [
+            420.0,
+            80.0
+          ],
+          "path": [
+            [
+              420.0,
+              90.718
+            ],
+            [
+              420.0,
+              80.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            431.132,
+            110.0
+          ],
+          "endpoint": [
+            460.0,
+            110.0
+          ],
+          "path": [
+            [
+              431.132,
+              110.0
+            ],
+            [
+              460.0,
+              110.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1424",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            400.0,
+            152.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                396.5,
+                152.0
+              ],
+              [
+                403.5,
+                152.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "1717dfd8515a9a143d812534b31a109872cd88a09859d53008c5baa692dd68f2",
+        ".human.json": "9a0f31532afe30df6a22408d1fed6f14cfc50ea7c8b0a46db9efdd91cdac33b3",
+        ".svg": "3ceed516245f5ff2933ace8385918f3b287415eb05d84678d9fa2a76b8640993"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          240.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0"
+      ],
+      "body": [
+        [
+          460.0,
+          310.0
+        ],
+        [
+          540.0,
+          310.0
+        ],
+        [
+          500.0,
+          240.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            480.0,
+            310.0
+          ],
+          "endpoint": [
+            480.0,
+            320.0
+          ],
+          "path": [
+            [
+              480.0,
+              310.0
+            ],
+            [
+              480.0,
+              320.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            240.718
+          ],
+          "endpoint": [
+            500.0,
+            230.0
+          ],
+          "path": [
+            [
+              500.0,
+              240.718
+            ],
+            [
+              500.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            511.132,
+            260.0
+          ],
+          "endpoint": [
+            540.0,
+            260.0
+          ],
+          "path": [
+            [
+              511.132,
+              260.0
+            ],
+            [
+              540.0,
+              260.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1425",
+      "input_evidence": {
+        "declared_net": "net1",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net1",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              430.0,
+              150.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  430.0,
+                  100.0
+                ],
+                [
+                  430.0,
+                  148.8
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  430.0,
+                  148.8
+                ],
+                [
+                  430.0,
+                  150.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  330.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  330.0
+                ],
+                [
+                  480.0,
+                  330.0
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  320.0
+                ],
+                [
+                  480.0,
+                  321.2
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  321.2
+                ],
+                [
+                  480.0,
+                  330.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net1",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              480.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  330.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  478.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  330.0
+                ],
+                [
+                  480.0,
+                  330.0
+                ]
+              ],
+              [
+                [
+                  478.8,
+                  100.0
+                ],
+                [
+                  480.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  320.0
+                ],
+                [
+                  480.0,
+                  321.2
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  321.2
+                ],
+                [
+                  480.0,
+                  330.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "d613895f1f7551e7e4a88a68e04a3bd4342e40ab1c43cbf06db050e5d4a57cd2",
+        ".human.json": "b0a879a546191f5fbb22eb5e1ede2a546bc23763f900bc7ec6abdd321c7698eb",
+        ".svg": "7fefaed8d5b0f0c25671d262fc5e2be2e87e9f1d676cc3fb77c3a5c028537b48"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          148.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net2",
+        "vb1"
+      ],
+      "body": [
+        [
+          470.0,
+          200.0
+        ],
+        [
+          530.0,
+          200.0
+        ],
+        [
+          500.0,
+          148.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            518.453,
+            180.0
+          ],
+          "endpoint": [
+            570.0,
+            180.0
+          ],
+          "path": [
+            [
+              518.453,
+              180.0
+            ],
+            [
+              570.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            200.0
+          ],
+          "endpoint": [
+            480.0,
+            210.0
+          ],
+          "path": [
+            [
+              480.0,
+              200.0
+            ],
+            [
+              480.0,
+              210.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            148.038
+          ],
+          "endpoint": [
+            500.0,
+            140.0
+          ],
+          "path": [
+            [
+              500.0,
+              148.038
+            ],
+            [
+              500.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            200.0
+          ],
+          "endpoint": [
+            500.0,
+            210.0
+          ],
+          "path": [
+            [
+              500.0,
+              200.0
+            ],
+            [
+              500.0,
+              210.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1426",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            480.0,
+            192.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                476.5,
+                192.0
+              ],
+              [
+                483.5,
+                192.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "50ab35878a9c4160e1386e2f2187d86c98b5b40ce9553007f235a98451aee0b1",
+        ".human.json": "ecdc23e84df65138bc7e4b78f51bfe4faf623def06699c621e17fbb4d6f412a5",
+        ".svg": "9b80fd84e8d4c2010a2ff6ce4d7f62e38368140e91d9b312765bf8c38a80cb57"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          460.0,
+          160.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net2",
+        "vb1"
+      ],
+      "body": [
+        [
+          420.0,
+          230.0
+        ],
+        [
+          500.0,
+          230.0
+        ],
+        [
+          460.0,
+          160.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            440.0,
+            230.0
+          ],
+          "endpoint": [
+            440.0,
+            240.0
+          ],
+          "path": [
+            [
+              440.0,
+              230.0
+            ],
+            [
+              440.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            160.718
+          ],
+          "endpoint": [
+            460.0,
+            150.0
+          ],
+          "path": [
+            [
+              460.0,
+              160.718
+            ],
+            [
+              460.0,
+              150.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            471.132,
+            180.0
+          ],
+          "endpoint": [
+            500.0,
+            180.0
+          ],
+          "path": [
+            [
+              471.132,
+              180.0
+            ],
+            [
+              500.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            230.0
+          ],
+          "endpoint": [
+            480.0,
+            240.0
+          ],
+          "path": [
+            [
+              480.0,
+              230.0
+            ],
+            [
+              480.0,
+              240.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1427",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            440.0,
+            222.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                436.5,
+                222.0
+              ],
+              [
+                443.5,
+                222.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "c4de8fee38f4fdba3894871f5e33bf3a6b19ad8b3767d3a88113691d7b30b024",
+        ".human.json": "1fe04c6a25c64b302eed94b85023ae4eaa2eb7223223a52e715b527ca4affc88",
+        ".svg": "cd0a9c2c55f0ad75881d59cec11afe982222173b9cbfcd13c370a416cf3a6ed0"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          720.0,
+          210.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 3,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "vb2",
+        "net1"
+      ],
+      "body": [
+        [
+          680.0,
+          280.0
+        ],
+        [
+          760.0,
+          280.0
+        ],
+        [
+          720.0,
+          210.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            736.906,
+            240.0
+          ],
+          "endpoint": [
+            770.0,
+            240.0
+          ],
+          "path": [
+            [
+              736.906,
+              240.0
+            ],
+            [
+              770.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            700.0,
+            280.0
+          ],
+          "endpoint": [
+            700.0,
+            290.0
+          ],
+          "path": [
+            [
+              700.0,
+              280.0
+            ],
+            [
+              700.0,
+              290.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            691.547,
+            260.0
+          ],
+          "endpoint": [
+            660.0,
+            260.0
+          ],
+          "path": [
+            [
+              691.547,
+              260.0
+            ],
+            [
+              660.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            720.0,
+            210.718
+          ],
+          "endpoint": [
+            720.0,
+            200.0
+          ],
+          "path": [
+            [
+              720.0,
+              210.718
+            ],
+            [
+              720.0,
+              200.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1429",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "vb2",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            700.0,
+            272.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                696.5,
+                272.0
+              ],
+              [
+                703.5,
+                272.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "da10f04180a6c3614f2749a4912d1582eca009af329342cfaf5e09e44d99c09b",
+        ".human.json": "d0b8b709be70bd24fd68baffa4d5cf839cc86a00b33ace4c09b528fd929b40fe",
+        ".svg": "71871765e00d32e57974d23c85339f41537e8ea91f9c21dfa05303f5bf9d0652"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          700.0,
+          240.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0"
+      ],
+      "body": [
+        [
+          660.0,
+          310.0
+        ],
+        [
+          740.0,
+          310.0
+        ],
+        [
+          700.0,
+          240.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            722.679,
+            280.0
+          ],
+          "endpoint": [
+            760.0,
+            280.0
+          ],
+          "path": [
+            [
+              722.679,
+              280.0
+            ],
+            [
+              760.0,
+              280.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            670.0,
+            310.0
+          ],
+          "endpoint": [
+            670.0,
+            320.0
+          ],
+          "path": [
+            [
+              670.0,
+              310.0
+            ],
+            [
+              670.0,
+              320.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            700.0,
+            240.718
+          ],
+          "endpoint": [
+            700.0,
+            230.0
+          ],
+          "path": [
+            [
+              700.0,
+              240.718
+            ],
+            [
+              700.0,
+              230.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1430",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            670.0,
+            302.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                666.5,
+                302.0
+              ],
+              [
+                673.5,
+                302.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "e9c752d966260460c3adce77e93a2958a9b4e42b09a2430cf967757469e8bce2",
+        ".human.json": "dbe21c0d17d500f776246e7995afc87623364e39c34158af238e495d428113e4",
+        ".svg": "76766b251dee72bfea71fd50696c158207f4d826a871f9f825f0e8955b14a039"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          490.0,
+          150.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0,
+          2
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 2,
+        "output_lead": 3,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb1",
+        "net0",
+        "net2"
+      ],
+      "body": [
+        [
+          450.0,
+          220.0
+        ],
+        [
+          530.0,
+          220.0
+        ],
+        [
+          490.0,
+          150.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            510.0,
+            220.0
+          ],
+          "endpoint": [
+            510.0,
+            230.0
+          ],
+          "path": [
+            [
+              510.0,
+              220.0
+            ],
+            [
+              510.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            506.906,
+            180.0
+          ],
+          "endpoint": [
+            540.0,
+            180.0
+          ],
+          "path": [
+            [
+              506.906,
+              180.0
+            ],
+            [
+              540.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            470.0,
+            220.0
+          ],
+          "endpoint": [
+            470.0,
+            230.0
+          ],
+          "path": [
+            [
+              470.0,
+              220.0
+            ],
+            [
+              470.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            490.0,
+            150.718
+          ],
+          "endpoint": [
+            490.0,
+            140.0
+          ],
+          "path": [
+            [
+              490.0,
+              150.718
+            ],
+            [
+              490.0,
+              140.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1432",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "positive",
+      "ports": [
+        "vdd",
+        "vss",
+        "vb1",
+        "inp",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            470.0,
+            212.0
+          ],
+          "role": "positive",
+          "strokes": [
+            [
+              [
+                466.5,
+                212.0
+              ],
+              [
+                473.5,
+                212.0
+              ]
+            ],
+            [
+              [
+                470.0,
+                208.5
+              ],
+              [
+                470.0,
+                215.5
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "2d2731a0131548d2ad2079bed85cba003c8dcee242af0a4f4cd3cd545e7b4b2f",
+        ".human.json": "e4a7ccf2cb35489ef47c639fa831ca5fe839cd91ccd710ceecebfcf640ee9114",
+        ".svg": "8f204f6f6bbc92208e63c08d804aa8dd263a1c180405e455692c2d2dd10fcae8"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          760.0,
+          180.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          720.0,
+          250.0
+        ],
+        [
+          800.0,
+          250.0
+        ],
+        [
+          760.0,
+          180.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            782.679,
+            220.0
+          ],
+          "endpoint": [
+            850.0,
+            220.0
+          ],
+          "path": [
+            [
+              782.679,
+              220.0
+            ],
+            [
+              850.0,
+              220.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            730.0,
+            250.0
+          ],
+          "endpoint": [
+            730.0,
+            260.0
+          ],
+          "path": [
+            [
+              730.0,
+              250.0
+            ],
+            [
+              730.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            760.0,
+            180.718
+          ],
+          "endpoint": [
+            760.0,
+            170.0
+          ],
+          "path": [
+            [
+              760.0,
+              180.718
+            ],
+            [
+              760.0,
+              170.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1434",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            730.0,
+            242.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                726.5,
+                242.0
+              ],
+              [
+                733.5,
+                242.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "5137d7ddb6fad26e02c845c818eb538d1ee5e31cd5fb961b2ff1a9537a53766b",
+        ".human.json": "8630ea5c3ae420d87a444578cb54eda571739adb3c0b4af55c391efb9b1d7ef2",
+        ".svg": "bb5b71026f03c5185e9e82cabb450506f11fcd156058cf5030bf793513db74d6"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          510.0,
+          160.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0,
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net5",
+        "vb3",
+        "net1"
+      ],
+      "body": [
+        [
+          470.0,
+          230.0
+        ],
+        [
+          550.0,
+          230.0
+        ],
+        [
+          510.0,
+          160.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            490.0,
+            230.0
+          ],
+          "endpoint": [
+            490.0,
+            240.0
+          ],
+          "path": [
+            [
+              490.0,
+              230.0
+            ],
+            [
+              490.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            530.0,
+            230.0
+          ],
+          "endpoint": [
+            530.0,
+            240.0
+          ],
+          "path": [
+            [
+              530.0,
+              230.0
+            ],
+            [
+              530.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            510.0,
+            160.718
+          ],
+          "endpoint": [
+            510.0,
+            150.0
+          ],
+          "path": [
+            [
+              510.0,
+              160.718
+            ],
+            [
+              510.0,
+              150.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            521.132,
+            180.0
+          ],
+          "endpoint": [
+            560.0,
+            180.0
+          ],
+          "path": [
+            [
+              521.132,
+              180.0
+            ],
+            [
+              560.0,
+              180.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1436",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "vb",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            490.0,
+            222.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                486.5,
+                222.0
+              ],
+              [
+                493.5,
+                222.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "bc9a8099c866161f65ccc2225eff1e2d681dd725596f8dfc9e245f1a483a543a",
+        ".human.json": "5b8f6d3b2c6ab0a105c8b535a77cbdda136b0a19556ee705d2ffc3f304279a7b",
+        ".svg": "f32d1e94b5ade46401f4377ae4ea08494ece41b00370dc89ebddb2147462b657"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          200.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0",
+        "vb1"
+      ],
+      "body": [
+        [
+          460.0,
+          270.0
+        ],
+        [
+          540.0,
+          270.0
+        ],
+        [
+          500.0,
+          200.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            480.0,
+            270.0
+          ],
+          "endpoint": [
+            480.0,
+            280.0
+          ],
+          "path": [
+            [
+              480.0,
+              270.0
+            ],
+            [
+              480.0,
+              280.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            200.718
+          ],
+          "endpoint": [
+            500.0,
+            190.0
+          ],
+          "path": [
+            [
+              500.0,
+              200.718
+            ],
+            [
+              500.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            511.132,
+            220.0
+          ],
+          "endpoint": [
+            540.0,
+            220.0
+          ],
+          "path": [
+            [
+              511.132,
+              220.0
+            ],
+            [
+              540.0,
+              220.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            528.453,
+            250.0
+          ],
+          "endpoint": [
+            560.0,
+            250.0
+          ],
+          "path": [
+            [
+              528.453,
+              250.0
+            ],
+            [
+              560.0,
+              250.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1437",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            480.0,
+            262.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                476.5,
+                262.0
+              ],
+              [
+                483.5,
+                262.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "7062edbc4bbb876251c88fe939c2426db28744ca3faccc4f2869987bfaf94a16",
+        ".human.json": "0d092f7bc5b979b122154fe59bc8072427619fad0a8366496f1e8ac264f7fbbc",
+        ".svg": "6fb61229f0ef9249cce41c1191abcd652ae4c99820b3659a0cf4a3ad71086683"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          520.0,
+          160.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          480.0,
+          230.0
+        ],
+        [
+          560.0,
+          230.0
+        ],
+        [
+          520.0,
+          160.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            542.679,
+            200.0
+          ],
+          "endpoint": [
+            600.0,
+            200.0
+          ],
+          "path": [
+            [
+              542.679,
+              200.0
+            ],
+            [
+              600.0,
+              200.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            490.0,
+            230.0
+          ],
+          "endpoint": [
+            490.0,
+            240.0
+          ],
+          "path": [
+            [
+              490.0,
+              230.0
+            ],
+            [
+              490.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            520.0,
+            160.718
+          ],
+          "endpoint": [
+            520.0,
+            150.0
+          ],
+          "path": [
+            [
+              520.0,
+              160.718
+            ],
+            [
+              520.0,
+              150.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1438",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            490.0,
+            222.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                486.5,
+                222.0
+              ],
+              [
+                493.5,
+                222.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "df7cd0a64ffe0260f2fff29d83d370e9080ebd0f2e1a10da11e61ec6b0b7f04b",
+        ".human.json": "0f1bbade0cfd374444c000f46cca63571f4a54f1fec2219d7a20d7e3c8535560",
+        ".svg": "ba160fe65d76c8e688d3614620bfb050ed60cec24982ff487defff7ebcca4975"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          500.0,
+          190.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1"
+      ],
+      "body": [
+        [
+          460.0,
+          260.0
+        ],
+        [
+          540.0,
+          260.0
+        ],
+        [
+          500.0,
+          190.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            480.0,
+            260.0
+          ],
+          "endpoint": [
+            480.0,
+            270.0
+          ],
+          "path": [
+            [
+              480.0,
+              260.0
+            ],
+            [
+              480.0,
+              270.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            500.0,
+            190.718
+          ],
+          "endpoint": [
+            500.0,
+            180.0
+          ],
+          "path": [
+            [
+              500.0,
+              190.718
+            ],
+            [
+              500.0,
+              180.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            511.132,
+            210.0
+          ],
+          "endpoint": [
+            540.0,
+            210.0
+          ],
+          "path": [
+            [
+              511.132,
+              210.0
+            ],
+            [
+              540.0,
+              210.0
+            ]
+          ]
+        }
+      ],
+      "family": "opamp",
+      "id": "ag-1439",
+      "input_evidence": {
+        "declared_net": "net0",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net0",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              380.0,
+              160.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  380.0,
+                  100.0
+                ],
+                [
+                  380.0,
+                  158.8
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  100.0
+                ],
+                [
+                  420.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  380.0,
+                  158.8
+                ],
+                [
+                  380.0,
+                  160.0
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  100.0
+                ],
+                [
+                  420.0,
+                  290.0
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  290.0
+                ],
+                [
+                  480.0,
+                  290.0
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  270.0
+                ],
+                [
+                  480.0,
+                  271.2
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  271.2
+                ],
+                [
+                  480.0,
+                  290.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net0",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              480.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  420.0,
+                  100.0
+                ],
+                [
+                  420.0,
+                  290.0
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  100.0
+                ],
+                [
+                  478.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  290.0
+                ],
+                [
+                  480.0,
+                  290.0
+                ]
+              ],
+              [
+                [
+                  478.8,
+                  100.0
+                ],
+                [
+                  480.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  270.0
+                ],
+                [
+                  480.0,
+                  271.2
+                ]
+              ],
+              [
+                [
+                  480.0,
+                  271.2
+                ],
+                [
+                  480.0,
+                  290.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "cca9003e8f3cdb9a29c78d9773c49712affaa67826cb4defe9596a23e321c1d5",
+        ".human.json": "b84bcddd1c66a01bd3f06c4ff6b06382ba8f21b3c3c1767e72f232ce8fd72773",
+        ".svg": "93d73162c6203dd5906cf4e997ba1b62e8574befbeecba8cc840eaa5fb88a2e8"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          390.0,
+          128.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -10.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -10.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          360.0,
+          180.0
+        ],
+        [
+          420.0,
+          180.0
+        ],
+        [
+          390.0,
+          128.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            414.226,
+            170.0
+          ],
+          "endpoint": [
+            440.0,
+            170.0
+          ],
+          "path": [
+            [
+              414.226,
+              170.0
+            ],
+            [
+              440.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            380.0,
+            180.0
+          ],
+          "endpoint": [
+            380.0,
+            190.0
+          ],
+          "path": [
+            [
+              380.0,
+              180.0
+            ],
+            [
+              380.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            390.0,
+            128.038
+          ],
+          "endpoint": [
+            390.0,
+            120.0
+          ],
+          "path": [
+            [
+              390.0,
+              128.038
+            ],
+            [
+              390.0,
+              120.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1441",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            380.0,
+            172.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                376.5,
+                172.0
+              ],
+              [
+                383.5,
+                172.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "06f770b9ba4649164551887c49c982fee64c8664a64d4229cf5c35cbd4bfbef9",
+        ".human.json": "c8c836b4d36d9e892c434a0f5ea56e9817554cb9667249e8386f795c8b0ee644",
+        ".svg": "44ba181cd0b72e6beca68eacc6df651a0b4e461beb3598c53a18828415f793a4"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          470.0,
+          170.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          1,
+          3
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1",
+        "vb1"
+      ],
+      "body": [
+        [
+          430.0,
+          240.0
+        ],
+        [
+          510.0,
+          240.0
+        ],
+        [
+          470.0,
+          170.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            498.453,
+            220.0
+          ],
+          "endpoint": [
+            520.0,
+            240.0
+          ],
+          "path": [
+            [
+              498.453,
+              220.0
+            ],
+            [
+              520.0,
+              220.0
+            ],
+            [
+              520.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            440.0,
+            240.0
+          ],
+          "endpoint": [
+            440.0,
+            250.0
+          ],
+          "path": [
+            [
+              440.0,
+              240.0
+            ],
+            [
+              440.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            470.0,
+            170.718
+          ],
+          "endpoint": [
+            470.0,
+            160.0
+          ],
+          "path": [
+            [
+              470.0,
+              170.718
+            ],
+            [
+              470.0,
+              160.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            490.0,
+            240.0
+          ],
+          "endpoint": [
+            490.0,
+            250.0
+          ],
+          "path": [
+            [
+              490.0,
+              240.0
+            ],
+            [
+              490.0,
+              250.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1442",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            440.0,
+            232.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                436.5,
+                232.0
+              ],
+              [
+                443.5,
+                232.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "41dc61b540be754fd63586de51933887558aac412196ac5957dc3e07a5efb15f",
+        ".human.json": "c6ade7dc1f1434b464ce674199951c8ede834bd9f652da62ecc90d8ed75e5f3b",
+        ".svg": "f941e191b150146fdfb328e893ffe366d700bdfa423104da5d0f80194ba3345f"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          620.0,
+          170.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1,
+          2
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 3,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net4",
+        "vb3",
+        "net1"
+      ],
+      "body": [
+        [
+          580.0,
+          240.0
+        ],
+        [
+          660.0,
+          240.0
+        ],
+        [
+          620.0,
+          170.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            631.132,
+            190.0
+          ],
+          "endpoint": [
+            670.0,
+            190.0
+          ],
+          "path": [
+            [
+              631.132,
+              190.0
+            ],
+            [
+              670.0,
+              190.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            600.0,
+            240.0
+          ],
+          "endpoint": [
+            600.0,
+            250.0
+          ],
+          "path": [
+            [
+              600.0,
+              240.0
+            ],
+            [
+              600.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            640.0,
+            240.0
+          ],
+          "endpoint": [
+            640.0,
+            250.0
+          ],
+          "path": [
+            [
+              640.0,
+              240.0
+            ],
+            [
+              640.0,
+              250.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            620.0,
+            170.718
+          ],
+          "endpoint": [
+            620.0,
+            160.0
+          ],
+          "path": [
+            [
+              620.0,
+              170.718
+            ],
+            [
+              620.0,
+              160.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1444",
+      "input_evidence": {
+        "declared_net": "net4",
+        "markers": [],
+        "method": "named_marker_or_outside_pin_and_actual_wire",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net4",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              500.0,
+              180.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  500.0,
+                  100.0
+                ],
+                [
+                  500.0,
+                  178.8
+                ]
+              ],
+              [
+                [
+                  500.0,
+                  100.0
+                ],
+                [
+                  550.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  500.0,
+                  178.8
+                ],
+                [
+                  500.0,
+                  180.0
+                ]
+              ],
+              [
+                [
+                  550.0,
+                  100.0
+                ],
+                [
+                  550.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  550.0,
+                  270.0
+                ],
+                [
+                  600.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  600.0,
+                  250.0
+                ],
+                [
+                  600.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  600.0,
+                  251.2
+                ],
+                [
+                  600.0,
+                  270.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net4",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              600.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  550.0,
+                  100.0
+                ],
+                [
+                  550.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  550.0,
+                  100.0
+                ],
+                [
+                  598.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  550.0,
+                  270.0
+                ],
+                [
+                  600.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  598.8,
+                  100.0
+                ],
+                [
+                  600.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  600.0,
+                  250.0
+                ],
+                [
+                  600.0,
+                  251.2
+                ]
+              ],
+              [
+                [
+                  600.0,
+                  251.2
+                ],
+                [
+                  600.0,
+                  270.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "vb3",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "360c7302686c12380c4d365f3f1943671187643114edba92f2998b6e3915a548",
+        ".human.json": "a8cce16f923b6059ca3855936796e61239496208f8ab4fb4f7448cd0a42fe347",
+        ".svg": "b3a6bbc48b8aecfd5132d46b3d75f9d1dabba8a982142cdaef9c28fcd38102c3"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          220.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0",
+        "vb1",
+        "vb2"
+      ],
+      "body": [
+        [
+          440.0,
+          290.0
+        ],
+        [
+          520.0,
+          290.0
+        ],
+        [
+          480.0,
+          220.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            460.0,
+            290.0
+          ],
+          "endpoint": [
+            460.0,
+            300.0
+          ],
+          "path": [
+            [
+              460.0,
+              290.0
+            ],
+            [
+              460.0,
+              300.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            220.718
+          ],
+          "endpoint": [
+            480.0,
+            210.0
+          ],
+          "path": [
+            [
+              480.0,
+              220.718
+            ],
+            [
+              480.0,
+              210.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            485.359,
+            230.0
+          ],
+          "endpoint": [
+            550.0,
+            230.0
+          ],
+          "path": [
+            [
+              485.359,
+              230.0
+            ],
+            [
+              550.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            508.453,
+            270.0
+          ],
+          "endpoint": [
+            530.0,
+            300.0
+          ],
+          "path": [
+            [
+              508.453,
+              270.0
+            ],
+            [
+              530.0,
+              270.0
+            ],
+            [
+              530.0,
+              300.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            496.906,
+            250.0
+          ],
+          "endpoint": [
+            560.0,
+            300.0
+          ],
+          "path": [
+            [
+              496.906,
+              250.0
+            ],
+            [
+              560.0,
+              250.0
+            ],
+            [
+              560.0,
+              300.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1445",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb1",
+        "vb2"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            460.0,
+            282.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                456.5,
+                282.0
+              ],
+              [
+                463.5,
+                282.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "b83d8712db7a365b7bf659d23748f0f209d091253686a790a83fcaf631576b55",
+        ".human.json": "e4afe2009f5e9ee75ad949364088996c6f0d92716c17ae1af1cfbf9bc8cc4928",
+        ".svg": "d8194f48619b9e7d91061ad224c7090c001d6c0ea5ec7c2b07a5376b24b90878"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          520.0,
+          180.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0"
+      ],
+      "body": [
+        [
+          480.0,
+          250.0
+        ],
+        [
+          560.0,
+          250.0
+        ],
+        [
+          520.0,
+          180.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            490.0,
+            250.0
+          ],
+          "endpoint": [
+            490.0,
+            260.0
+          ],
+          "path": [
+            [
+              490.0,
+              250.0
+            ],
+            [
+              490.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            520.0,
+            180.718
+          ],
+          "endpoint": [
+            520.0,
+            170.0
+          ],
+          "path": [
+            [
+              520.0,
+              180.718
+            ],
+            [
+              520.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            542.679,
+            220.0
+          ],
+          "endpoint": [
+            580.0,
+            220.0
+          ],
+          "path": [
+            [
+              542.679,
+              220.0
+            ],
+            [
+              580.0,
+              220.0
+            ]
+          ]
+        }
+      ],
+      "family": "comp",
+      "id": "ag-1446",
+      "input_evidence": {
+        "declared_net": "net2",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net2",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              420.0,
+              190.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  420.0,
+                  100.0
+                ],
+                [
+                  420.0,
+                  188.8
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  420.0,
+                  188.8
+                ],
+                [
+                  420.0,
+                  190.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  270.0
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  260.0
+                ],
+                [
+                  490.0,
+                  261.2
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  261.2
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net2",
+            "lead": 0,
+            "pin": "D",
+            "terminal": [
+              500.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  450.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  100.0
+                ],
+                [
+                  498.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  450.0,
+                  270.0
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  260.0
+                ],
+                [
+                  490.0,
+                  261.2
+                ]
+              ],
+              [
+                [
+                  490.0,
+                  261.2
+                ],
+                [
+                  490.0,
+                  270.0
+                ]
+              ],
+              [
+                [
+                  498.8,
+                  100.0
+                ],
+                [
+                  500.0,
+                  100.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "ff0a5832df19a4e75037c726587e7e18e57599efa0ae2a9c51e92c114288b015",
+        ".human.json": "2f220d458457d6878ad9d3ac38cce671f4d842620d6f08b76e8d06ccc8d65ef6",
+        ".svg": "e05201024b53f2c3c2dd5522f0491fb6f849bc702256ab0836a5e52f98a12e24"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          210.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          440.0,
+          280.0
+        ],
+        [
+          520.0,
+          280.0
+        ],
+        [
+          480.0,
+          210.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            491.132,
+            230.0
+          ],
+          "endpoint": [
+            530.0,
+            230.0
+          ],
+          "path": [
+            [
+              491.132,
+              230.0
+            ],
+            [
+              530.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            460.0,
+            280.0
+          ],
+          "endpoint": [
+            460.0,
+            290.0
+          ],
+          "path": [
+            [
+              460.0,
+              280.0
+            ],
+            [
+              460.0,
+              290.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            210.718
+          ],
+          "endpoint": [
+            480.0,
+            200.0
+          ],
+          "path": [
+            [
+              480.0,
+              210.718
+            ],
+            [
+              480.0,
+              200.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1448",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            460.0,
+            272.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                456.5,
+                272.0
+              ],
+              [
+                463.5,
+                272.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "bf308d7393bf90f1a0c212f17a808a548f8281835f9572d11ce106a03660e65e",
+        ".human.json": "188d316174c1fec1eac98649d8363b2f666fe9751eac5778d6c1aaa9e129f749",
+        ".svg": "4a83048fe62f4ae11aa670cdc17753d5040497e9e24aea803988723e6026f859"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          680.0,
+          200.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net0"
+      ],
+      "body": [
+        [
+          640.0,
+          270.0
+        ],
+        [
+          720.0,
+          270.0
+        ],
+        [
+          680.0,
+          200.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            702.679,
+            240.0
+          ],
+          "endpoint": [
+            720.0,
+            240.0
+          ],
+          "path": [
+            [
+              702.679,
+              240.0
+            ],
+            [
+              720.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            660.0,
+            270.0
+          ],
+          "endpoint": [
+            660.0,
+            280.0
+          ],
+          "path": [
+            [
+              660.0,
+              270.0
+            ],
+            [
+              660.0,
+              280.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            680.0,
+            200.718
+          ],
+          "endpoint": [
+            680.0,
+            190.0
+          ],
+          "path": [
+            [
+              680.0,
+              200.718
+            ],
+            [
+              680.0,
+              190.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1449",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            660.0,
+            262.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                656.5,
+                262.0
+              ],
+              [
+                663.5,
+                262.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XC",
+      "source_sha256": {
+        ".cir": "842afe73d8edc767f4a73affb49ffc1c5ef463c242f7c63020d50ade0e944877",
+        ".human.json": "dadcd5fc9247d12890733c5f36c803596825863fa8d71bb5fe0cc64f93d0d95f",
+        ".svg": "321f152283f878da341d98f7dd9735cb289f902917c4fa3fffee3f6560e75764"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          560.0,
+          180.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net2",
+        "net1"
+      ],
+      "body": [
+        [
+          520.0,
+          250.0
+        ],
+        [
+          600.0,
+          250.0
+        ],
+        [
+          560.0,
+          180.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            530.0,
+            250.0
+          ],
+          "endpoint": [
+            530.0,
+            260.0
+          ],
+          "path": [
+            [
+              530.0,
+              250.0
+            ],
+            [
+              530.0,
+              260.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            560.0,
+            180.718
+          ],
+          "endpoint": [
+            560.0,
+            170.0
+          ],
+          "path": [
+            [
+              560.0,
+              180.718
+            ],
+            [
+              560.0,
+              170.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            582.679,
+            220.0
+          ],
+          "endpoint": [
+            600.0,
+            220.0
+          ],
+          "path": [
+            [
+              582.679,
+              220.0
+            ],
+            [
+              600.0,
+              220.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1452",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            530.0,
+            242.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                526.5,
+                242.0
+              ],
+              [
+                533.5,
+                242.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XCMP",
+      "source_sha256": {
+        ".cir": "a9e7d1c21933ddec06b9421fe11e5928584b61f966fa29a261c1f70e9a02f163",
+        ".human.json": "ee21d8f2361ad82b527a0163fd4284e6dd0971de651d382cc2d2055743d849fb",
+        ".svg": "de623d532542535526fe0441fca8a79dd7434bd172a53ad687dd57b1aefe9cd0"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          400.0,
+          60.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1,
+          2
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 3,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net1",
+        "net0",
+        "net3"
+      ],
+      "body": [
+        [
+          360.0,
+          130.0
+        ],
+        [
+          440.0,
+          130.0
+        ],
+        [
+          400.0,
+          60.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            411.132,
+            80.0
+          ],
+          "endpoint": [
+            450.0,
+            80.0
+          ],
+          "path": [
+            [
+              411.132,
+              80.0
+            ],
+            [
+              450.0,
+              80.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            380.0,
+            130.0
+          ],
+          "endpoint": [
+            380.0,
+            140.0
+          ],
+          "path": [
+            [
+              380.0,
+              130.0
+            ],
+            [
+              380.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            420.0,
+            130.0
+          ],
+          "endpoint": [
+            420.0,
+            140.0
+          ],
+          "path": [
+            [
+              420.0,
+              130.0
+            ],
+            [
+              420.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            400.0,
+            60.718
+          ],
+          "endpoint": [
+            400.0,
+            50.0
+          ],
+          "path": [
+            [
+              400.0,
+              60.718
+            ],
+            [
+              400.0,
+              50.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1453",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "vb3",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            380.0,
+            122.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                376.5,
+                122.0
+              ],
+              [
+                383.5,
+                122.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "e365b0f09f3e389934422fc44816dd3cce735750f2daaaf871074659389584b7",
+        ".human.json": "a5057664f137fb754946b7380e9d423ef7638267732a16111a7c20123a390082",
+        ".svg": "d013fc65410538a2db1c2dbc37f2f05c62d9993e818057b088683bee830ed501"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          380.0,
+          78.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1"
+      ],
+      "body": [
+        [
+          350.0,
+          130.0
+        ],
+        [
+          410.0,
+          130.0
+        ],
+        [
+          380.0,
+          78.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            398.453,
+            110.0
+          ],
+          "endpoint": [
+            440.0,
+            70.0
+          ],
+          "path": [
+            [
+              398.453,
+              110.0
+            ],
+            [
+              440.0,
+              110.0
+            ],
+            [
+              440.0,
+              70.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            360.0,
+            130.0
+          ],
+          "endpoint": [
+            360.0,
+            140.0
+          ],
+          "path": [
+            [
+              360.0,
+              130.0
+            ],
+            [
+              360.0,
+              140.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            380.0,
+            78.038
+          ],
+          "endpoint": [
+            380.0,
+            70.0
+          ],
+          "path": [
+            [
+              380.0,
+              78.038
+            ],
+            [
+              380.0,
+              70.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1454",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            360.0,
+            122.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                356.5,
+                122.0
+              ],
+              [
+                363.5,
+                122.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "742367510e5b0e4bbb590f2ab0ec22d6a6b39ad0f0cedcbc8f282ce6997d37ac",
+        ".human.json": "cf1a6c23b8d78f8cf5ba1ece54236cd95e87010b43a4ccf36c1576421fa6ae5e",
+        ".svg": "dc9705cd37b98ee25acfa09efdcb126174e194fcf62775c3aaffbb10dfd68b28"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          480.0,
+          160.718
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -30.0,
+        "base_leads": [
+          0
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -30.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 0,
+        "output_lead": 1,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net1"
+      ],
+      "body": [
+        [
+          440.0,
+          230.0
+        ],
+        [
+          520.0,
+          230.0
+        ],
+        [
+          480.0,
+          160.718
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            450.0,
+            230.0
+          ],
+          "endpoint": [
+            450.0,
+            240.0
+          ],
+          "path": [
+            [
+              450.0,
+              230.0
+            ],
+            [
+              450.0,
+              240.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            480.0,
+            160.718
+          ],
+          "endpoint": [
+            480.0,
+            150.0
+          ],
+          "path": [
+            [
+              480.0,
+              160.718
+            ],
+            [
+              480.0,
+              150.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            502.679,
+            200.0
+          ],
+          "endpoint": [
+            530.0,
+            200.0
+          ],
+          "path": [
+            [
+              502.679,
+              200.0
+            ],
+            [
+              530.0,
+              200.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1455",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            450.0,
+            222.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                446.5,
+                222.0
+              ],
+              [
+                453.5,
+                222.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XOA",
+      "source_sha256": {
+        ".cir": "0b3070edfe070a545f20667d13e0974bda5a57d7ba64851fdcaf2f9ee0d4944d",
+        ".human.json": "451fed1a80af528f8c5deee70be4ef48728453d84906786f5a166854cc5885b5",
+        ".svg": "a809426c8215998a780e440e297c5c32aabb50b26a90618cd5bc1aff014da9b3"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          450.0,
+          208.038
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -10.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -10.0,
+        "forward_axis": [
+          0,
+          -1
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          1,
+          0
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "net0",
+        "net2"
+      ],
+      "body": [
+        [
+          420.0,
+          260.0
+        ],
+        [
+          480.0,
+          260.0
+        ],
+        [
+          450.0,
+          208.038
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            462.679,
+            230.0
+          ],
+          "endpoint": [
+            500.0,
+            230.0
+          ],
+          "path": [
+            [
+              462.679,
+              230.0
+            ],
+            [
+              500.0,
+              230.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            440.0,
+            260.0
+          ],
+          "endpoint": [
+            440.0,
+            270.0
+          ],
+          "path": [
+            [
+              440.0,
+              260.0
+            ],
+            [
+              440.0,
+              270.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            450.0,
+            208.038
+          ],
+          "endpoint": [
+            450.0,
+            200.0
+          ],
+          "path": [
+            [
+              450.0,
+              208.038
+            ],
+            [
+              450.0,
+              200.0
+            ]
+          ]
+        }
+      ],
+      "family": "comparator",
+      "id": "ag-1460",
+      "input_evidence": {
+        "declared_net": "net0",
+        "markers": [],
+        "method": "sole_base_lead",
+        "outside_pins": [
+          {
+            "card": "mn2",
+            "declared_net": "net0",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              360.0,
+              170.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  360.0,
+                  100.0
+                ],
+                [
+                  360.0,
+                  168.8
+                ]
+              ],
+              [
+                [
+                  360.0,
+                  100.0
+                ],
+                [
+                  410.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  360.0,
+                  168.8
+                ],
+                [
+                  360.0,
+                  170.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  100.0
+                ],
+                [
+                  410.0,
+                  280.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  280.0
+                ],
+                [
+                  440.0,
+                  280.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  270.0
+                ],
+                [
+                  440.0,
+                  271.2
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  271.2
+                ],
+                [
+                  440.0,
+                  280.0
+                ]
+              ]
+            ]
+          },
+          {
+            "card": "mp2",
+            "declared_net": "net0",
+            "lead": 1,
+            "pin": "D",
+            "terminal": [
+              430.0,
+              100.0
+            ],
+            "wire_tree": [
+              [
+                [
+                  410.0,
+                  100.0
+                ],
+                [
+                  410.0,
+                  280.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  100.0
+                ],
+                [
+                  428.8,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  410.0,
+                  280.0
+                ],
+                [
+                  440.0,
+                  280.0
+                ]
+              ],
+              [
+                [
+                  428.8,
+                  100.0
+                ],
+                [
+                  430.0,
+                  100.0
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  270.0
+                ],
+                [
+                  440.0,
+                  271.2
+                ]
+              ],
+              [
+                [
+                  440.0,
+                  271.2
+                ],
+                [
+                  440.0,
+                  280.0
+                ]
+              ]
+            ]
+          }
+        ]
+      },
+      "input_role": "unsigned",
+      "ports": [
+        "vdd",
+        "vss",
+        "in",
+        "out"
+      ],
+      "source_marks": [],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "1e916d59375f94037a2794f21647631a6e13e45f949fffc8ca7355378fafbc85",
+        ".human.json": "2bbd91478c1b93d7894fdc5a72f84068d619ce88bb80daf2b3c34fcf0dfb92ae",
+        ".svg": "4840b9af5b07adb00a0784097b419e073be76a1db1dbda1225e2951abb0c0c14"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          219.282,
+          140.0
+        ],
+        "attachment_aligned": false,
+        "attachment_offset": -20.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": false,
+        "endpoint_offset": -20.0,
+        "forward_axis": [
+          1,
+          0
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          0,
+          1
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "net1"
+      ],
+      "body": [
+        [
+          150.0,
+          100.0
+        ],
+        [
+          150.0,
+          180.0
+        ],
+        [
+          219.282,
+          140.0
+        ]
+      ],
+      "card": "x1",
+      "cohort": "old_single_input",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            190.0,
+            123.094
+          ],
+          "endpoint": [
+            190.0,
+            90.0
+          ],
+          "path": [
+            [
+              190.0,
+              123.094
+            ],
+            [
+              190.0,
+              90.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            150.0,
+            120.0
+          ],
+          "endpoint": [
+            140.0,
+            120.0
+          ],
+          "path": [
+            [
+              150.0,
+              120.0
+            ],
+            [
+              140.0,
+              120.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            219.282,
+            140.0
+          ],
+          "endpoint": [
+            230.0,
+            140.0
+          ],
+          "path": [
+            [
+              219.282,
+              140.0
+            ],
+            [
+              230.0,
+              140.0
+            ]
+          ]
+        }
+      ],
+      "family": "opamp",
+      "id": "ag-2418",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            158.0,
+            120.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                154.5,
+                120.0
+              ],
+              [
+                161.5,
+                120.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "XA",
+      "source_sha256": {
+        ".cir": "f71222dcc021a752026234665b84aa26764c672f2103b85a6dd72fdcb9dbbba2",
+        ".human.json": "2e2c3580331be1012f02b3a3eee2b41b077b580203ae8da7c64176a282565533",
+        ".svg": "c5b35ab52a1163e050c366832059b8443cf0e6e00c4ddf11e1d4edc1120c29c0"
+      }
+    },
+    {
+      "alignment": {
+        "apex": [
+          199.282,
+          100.0
+        ],
+        "attachment_aligned": true,
+        "attachment_offset": 0.0,
+        "base_leads": [
+          1
+        ],
+        "endpoint_aligned": true,
+        "endpoint_offset": 0.0,
+        "forward_axis": [
+          1,
+          0
+        ],
+        "input_lead": 1,
+        "output_lead": 2,
+        "transverse_axis": [
+          0,
+          1
+        ]
+      },
+      "bindings": [
+        "vdd",
+        "vss",
+        "vref",
+        "veaout",
+        "net0"
+      ],
+      "body": [
+        [
+          130.0,
+          60.0
+        ],
+        [
+          130.0,
+          140.0
+        ],
+        [
+          199.282,
+          100.0
+        ]
+      ],
+      "card": "x1",
+      "cohort": "added_aea",
+      "corpus": "analoggenie",
+      "external_leads": [
+        {
+          "attachment": [
+            180.0,
+            88.868
+          ],
+          "endpoint": [
+            180.0,
+            50.0
+          ],
+          "path": [
+            [
+              180.0,
+              88.868
+            ],
+            [
+              180.0,
+              50.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            130.0,
+            100.0
+          ],
+          "endpoint": [
+            120.0,
+            100.0
+          ],
+          "path": [
+            [
+              130.0,
+              100.0
+            ],
+            [
+              120.0,
+              100.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            199.282,
+            100.0
+          ],
+          "endpoint": [
+            210.0,
+            100.0
+          ],
+          "path": [
+            [
+              199.282,
+              100.0
+            ],
+            [
+              210.0,
+              100.0
+            ]
+          ]
+        },
+        {
+          "attachment": [
+            190.0,
+            105.359
+          ],
+          "endpoint": [
+            210.0,
+            150.0
+          ],
+          "path": [
+            [
+              190.0,
+              105.359
+            ],
+            [
+              190.0,
+              150.0
+            ],
+            [
+              210.0,
+              150.0
+            ]
+          ]
+        }
+      ],
+      "family": "aea",
+      "id": "ag-2423",
+      "input_evidence": {
+        "method": "polarity_mark"
+      },
+      "input_role": "negative",
+      "ports": [
+        "vdd",
+        "vss",
+        "inn",
+        "out",
+        "vb"
+      ],
+      "source_marks": [
+        {
+          "center": [
+            138.0,
+            100.0
+          ],
+          "role": "negative",
+          "strokes": [
+            [
+              [
+                134.5,
+                100.0
+              ],
+              [
+                141.5,
+                100.0
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_object": "X1",
+      "source_sha256": {
+        ".cir": "616944abea9ad75eca96209373272711fd80cf0f885a2b586689eaec8a43dd37",
+        ".human.json": "3647987bdd28a20a937a0de260b5d01b65e27aea3cde86d00939e61e9bef4c77",
+        ".svg": "e4f6bec9ff2704187e54a662da7fb177ffb5c054a6c4a36bbe4cc1954eeae39c"
+      }
+    }
+  ]
+}

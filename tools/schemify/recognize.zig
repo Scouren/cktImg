@@ -7,6 +7,11 @@
 //! instance of a generated *leaf* (`spice_<kind>.shprim`, template `{name} {pins} {args}`)
 //! that re-emits the card text verbatim. `X` cards call the generated cell of a subckt in
 //! the file, or a generated stub leaf named after an undefined subckt.
+//!
+//! Human Rules:
+//! - recognize.1 (symbol contract) A named center-tapped inductor has three
+//!   passive ports. Left/right drawing position never invents an input or
+//!   output direction; explicit PININFO and caller side geometry win.
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -22,6 +27,7 @@ const Tok = spice.Tok;
 const Range = spice.Range;
 const keyOf = spice.keyOf;
 const Place = @import("place.zig").Place;
+const cap_lattice = @import("NetlistParser").polyphase_caps;
 const block_symbols = @import("NetlistParser").block_symbols;
 
 /// Symbols per conversion (core rows + generated cells).
@@ -31,6 +37,8 @@ pub const symbols_max = 8192;
 pub const Family = enum {
     /// Two pins `p` (0,-30) / `n` (0,30).
     two,
+    /// Capacitor with two physical diagonal leads in its own frame.
+    oblique_cap,
     /// MOSFET `d g s b`, n-channel drawing.
     nmos,
     /// MOSFET `d g s b`, p-channel drawing (drain at the bottom).
@@ -125,7 +133,7 @@ pub const Symbols = struct {
         if (s.pin_start.items.len == 0) try s.pin_start.append(a, 0);
         var body: Body = .{ 0, 0, 0, 0 };
         for (pins_, 0..) |p, i| {
-            assert(origin == .lib or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
+            assert(origin == .lib or family == .oblique_cap or (@rem(p.x, 10) == 0 and @rem(p.y, 10) == 0));
             if (i == 0) body = .{ p.x, p.y, p.x, p.y };
             body = .{ @min(body[0], p.x), @min(body[1], p.y), @max(body[2], p.x), @max(body[3], p.y) };
         }
@@ -219,6 +227,7 @@ pub fn subSymbol(c: u32) u32 {
 /// order, then leaves in first-use order) and one `Parts` row per deck device.
 pub const Recognized = struct {
     syms: Symbols = .{},
+    lattices: ArrayList(struct { cell: u32, layout: cap_lattice.Layout }) = .empty,
     parts: Parts = .{},
     warnings: ArrayList([]const u8) = .empty,
     /// The `spice_code` leaf (one pin, template `{text}`) that carries a subckt's code
@@ -285,9 +294,37 @@ pub fn recognize(a: Allocator, deck: *const Deck, libs: []const LibCell) Allocat
             }
         }
     }
+    try @import("regulator.zig").select(a, deck, &r);
+    try selectCapLattices(a, deck, &r);
     assert(r.parts.sym.items.len == deck.dev_name.len);
     assert(r.parts.over_start.items.len == deck.dev_name.len + 1);
     return r;
+}
+
+/// A private generated primitive keeps the core capacitor's electrical
+/// parameters and both ordered terminals. Actual caller-steered cells use
+/// their existing ordinary layout and symbols.
+fn selectCapLattices(a: Allocator, deck: *const Deck, r: *Recognized) Allocator.Error!void {
+    var symbol: ?u32 = null;
+    for (0..deck.cells()) |ci| {
+        const c: u32 = @intCast(ci);
+        const matcher = @import("polyphase_caps.zig");
+        const layout = matcher.match(deck, r, c);
+        if (layout == null and deck.directive.len == 0) continue;
+        const ds = deck.devs(c);
+        for (ds.lo..ds.hi, 0..) |d, i| {
+            if (r.parts.sym.items[d] != coreSym("cap")) continue;
+            if (layout == null and !matcher.requested(deck, c, deck.dev_name[d])) continue;
+            if (layout) |l| assert(l[i].cap);
+            if (symbol == null) {
+                const stem = try uniqueStem(a, "polyphase_cap", &r.taken);
+                const pins = [_]Pin{ pin("p", -21, -21, .inout), pin("n", 21, 21, .inout) };
+                symbol = try r.syms.push(a, stem, .leaf, .oblique_cap, &pins, null);
+            }
+            r.parts.sym.items[d] = symbol.?;
+        }
+        if (layout) |l| try r.lattices.append(a, .{ .cell = c, .layout = l });
+    }
 }
 
 /// True when `n` equals one of `names`, case-insensitively (file stems on a case-folding disk).
@@ -350,7 +387,7 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
         const pins = try a.alloc(Pin, names.len);
         var agrees = true;
         for (ports, glyph.terminals, pins) |n, t, *p| {
-            const dir: Dir = switch (t.side.?) {
+            const dir: Dir = if (shape == .center_tap) deck.pinInfo(deck.netKey(c, n)) orelse .inout else if (shape == .clocked_comparator and block_symbols.clockFormal(t.name)) .in else switch (t.side.?) {
                 .left => .in,
                 .right => .out,
                 .up, .down => .inout,
@@ -358,7 +395,22 @@ fn boxPins(a: Allocator, deck: *const Deck, c: u32) Allocator.Error!BoxPins {
             if (deck.pinInfo(deck.netKey(c, n))) |given| agrees = agrees and given == dir;
             p.* = .{ .name = t.name, .x = t.at.x, .y = t.at.y, .dir = dir };
         }
-        if (agrees) return .{ .pins = pins, .body = .{ -60, -60, 60, 60 }, .shape = shape };
+        if (agrees) {
+            const reach: i32 = if (shape == .four_bias_amplifier) 80 else 60;
+            return .{ .pins = pins, .body = .{ -reach, -reach, reach, reach }, .shape = shape };
+        }
+    }
+    if (block_symbols.boxSlots(deck.cell_name[c], names)) |frame| {
+        const sides = try a.dupe(Side, deck.port_side[r.lo..r.hi]);
+        const ranks = try a.dupe(u16, deck.port_rank[r.lo..r.hi]);
+        for (sides, ranks, ports, 0..) |*side, *rank, net, k| {
+            // PININFO already places inputs left and other directions right
+            // in boxLayout. An explicit graphical side has highest priority.
+            if (side.* == .auto and deck.pinInfo(deck.netKey(c, net)) == null)
+                side.* = if (frame[k] < 2) .left else .right;
+            if (rank.* == spice.rank_none) rank.* = spice.rank_none - 4 + @as(u16, frame[k]);
+        }
+        return boxLayout(a, names, dirs, sides, ranks);
     }
     return boxLayout(a, names, dirs, deck.port_side[r.lo..r.hi], deck.port_rank[r.lo..r.hi]);
 }
@@ -394,7 +446,7 @@ fn boxLayout(a: Allocator, names: []const []const u8, dirs: []const Dir, sides: 
             on[m] = @intCast(k);
             m += 1;
         };
-        mem.sort(u32, on[0..m], ranks, struct {
+        std.sort.heap(u32, on[0..m], ranks, struct {
             fn lt(rk: []const u16, x: u32, y: u32) bool {
                 return rk[x] < rk[y] or (rk[x] == rk[y] and x < y);
             }
@@ -1144,4 +1196,80 @@ test "faithful cards map to core, others to leaves" {
     } else false);
     try overOf(&r, 6, &.{.{ "args", "undefined_sub w=1" }});
     try testing.expectEqualStrings("undefined_sub", r.syms.args_default.items[r.parts.sym.items[6]]);
+}
+
+test "AG2187 regulator keeps the generated VDD lead above positive and FB below it" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const deck =
+        \\.model nch nmos
+        \\.subckt opamp VDD VSS INN INP OUT
+        \\.ends
+        \\.subckt reg VDD VSS VIN VREF VOUT
+        \\CL VOUT ESR 1p
+        \\MNP VIN gate VOUT VSS nch l=1u w=1u m=1
+        \\R1 VOUT FB 1k
+        \\R2 FB VSS 1k
+        \\R3 ESR VSS 1k
+        \\X1 VDD VSS FB VREF gate opamp
+        \\.ends
+        \\
+    ;
+    // The raw AG2187 book drawing puts VREF at the upper sign. A second
+    // use of the same cell must retain its shared definition's default.
+    for ([_][]const u8{ "", "Xother a b c d e opamp\n" }, [_]bool{ true, false }) |extra, positive_above| {
+        const d = try spice.parse(a, try mem.concat(a, u8, &.{ deck, extra }));
+        const r = try recognize(a, &d, &.{});
+        const pins = r.syms.pins(subSymbol(1));
+        try t.expectEqual(positive_above, pins[3].y < pins[2].y);
+        try t.expect(pins[0].y < @min(pins[2].y, pins[3].y));
+        try t.expect(pins[1].y > @max(pins[2].y, pins[3].y));
+        try t.expectEqualStrings("OUT", pins[4].name);
+    }
+}
+
+test "clocked comparator follows its input declaration and explicit side authority" {
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "*.PININFO CLK:I", "*.PININFO CLK:O", "*@ top CLK" }, 0..) |hint, k| {
+        const raw = try a.print(".subckt comparator vss inp inn out clk\n{s}\n.ends\n", .{hint});
+        const deck = try spice.parse(a, raw);
+        const r = try recognize(a, &deck, &.{});
+        const id = subSymbol(deck.findCell("comparator").?);
+        const pins = r.syms.pins(id);
+        try std.testing.expectEqual(@as(usize, 5), pins.len);
+        try std.testing.expectEqual(if (k == 0) block_symbols.Shape.clocked_comparator else .box, r.syms.shape.items[id]);
+        if (k == 0) try std.testing.expectEqual(Dir.in, pins[4].dir);
+    }
+}
+
+test "PFD box slots keep SPICE order and PININFO direction under a graphical override" {
+    const t = std.testing;
+    var arena = std.heap.ArenaAllocator.init(t.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    for ([_][]const u8{ "", "*@ top QA\n" }, [_]bool{ false, true }) |hint, top| {
+        const text = try std.mem.concat(a, u8, &.{
+            ".subckt PFD QB B QA A\n*.PININFO A:O QB:I\n", hint,
+            ".ends PFD\nX1 out_b in_b out_a in_a PFD\n",
+        });
+        const d = try spice.parse(a, text);
+        const r = try recognize(a, &d, &.{});
+        const pins = r.syms.pins(subSymbol(1));
+        try t.expectEqual(.box, r.syms.shape.items[subSymbol(1)]);
+        const names = [_][]const u8{ "QB", "B", "QA", "A" };
+        for (pins, names) |terminal, name| try t.expectEqualStrings(name, terminal.name);
+        try t.expectEqual(.in, pins[0].dir);
+        try t.expectEqual(.out, pins[3].dir);
+        try t.expect(pins[0].x < 0 and pins[1].x == pins[0].x and pins[1].y < pins[0].y);
+        try t.expect(pins[3].x > 0);
+        if (top) {
+            try t.expect(pins[2].y < pins[0].y and pins[2].x == 0);
+        } else {
+            try t.expect(pins[2].x == pins[3].x and pins[3].y < pins[2].y);
+        }
+    }
 }

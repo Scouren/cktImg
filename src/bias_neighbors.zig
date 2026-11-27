@@ -18,6 +18,7 @@
 //!   Actual class origins, tips and strokes determine the relation, never
 //!   a guessed below-row or a rewritten library class. This does not copy
 //!   source upward amplifier biases or every other peer port side. `place`
+//!   Hollow circles and solid disks both belong wholly behind the tip.
 //! - bias_neighbors.4 (invariant) Admitted cells, relations, faces, fixed
 //!   origins including weak stays, definition sides and mates take
 //!   precedence, including admitted members of a relaxed caller group.
@@ -30,7 +31,7 @@
 //! Data: existing netlist/CSR, roles, hints and settled classes in; one
 //! cold 12-byte certificate per possible amplifier out, then existing
 //! peer orientation/grid-position writes. Handles are u32, port indices
-//! u3 (complete contracts have at most eight ports). Collection reserves
+//! u4 (complete contracts have at most nine ports). Collection reserves
 //! once from the block count; the caller frees it. No per-device role
 //! cache, callbacks or retained state. Attempts follow canonical rank.
 //! This is bounded block-layout work, outside routing/cost inner loops;
@@ -43,6 +44,7 @@
 //! - `pub fn orders(s: *const Schematic, pairs: []const Pair, storage: [][2]i32) [2][]const [2]i32`
 
 const std = @import("std");
+const actual_lead = @import("actual_lead.zig");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const netlist = @import("netlist.zig");
@@ -64,7 +66,7 @@ const Side = library.Side;
 
 /// Cold immediate certificate: two existing devices and
 /// their declared port indices. No class or electrical binding is changed.
-pub const Pair = struct { amp: EdgeId, peer: EdgeId, pins: [2]u3 };
+pub const Pair = struct { amp: EdgeId, peer: EdgeId, pins: [2]u4 };
 
 /// Caller-owned temporary certificates and coordinate-order capacity.
 /// Both buffers die at the end of this drawing's geometry stage.
@@ -139,7 +141,7 @@ pub fn place(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []cons
     assert(sk.drawn.len == at.len);
     var kept: usize = 0;
     for (pairs.items) |pair| {
-        const side = leadSide(s, pair.amp.index(), pair.pins[0]) orelse continue;
+        const side = actual_lead.leadSide(s, pair.amp.index(), pair.pins[0]) orelse continue;
         const a = tip(s, pair.amp.index(), pair.pins[0], Pt.round(at[pair.amp.index()]));
         const before = s.devices.get(pair.peer.index());
         if (!turn(s, nl, pair.peer.index(), pair.pins[1], side.opposite())) continue;
@@ -187,8 +189,8 @@ pub fn orders(s: *const Schematic, pairs: []const Pair, storage: [][2]i32) [2][]
     for (pairs) |pair| {
         const na = s.deviceNode(pair.amp.index()) orelse continue;
         const nb = s.deviceNode(pair.peer.index()) orelse continue;
-        const side = leadSide(s, pair.amp.index(), pair.pins[0]) orelse continue;
-        if (leadSide(s, pair.peer.index(), pair.pins[1]) != side.opposite()) continue;
+        const side = actual_lead.leadSide(s, pair.amp.index(), pair.pins[0]) orelse continue;
+        if (actual_lead.leadSide(s, pair.peer.index(), pair.pins[1]) != side.opposite()) continue;
         const a = tip(s, pair.amp.index(), pair.pins[0], Pt.round(s.xy[na]));
         const b = tip(s, pair.peer.index(), pair.pins[1], Pt.round(s.xy[nb]));
         if ((side.isHorizontal() and a.y != b.y) or (!side.isHorizontal() and a.x != b.x)) continue;
@@ -262,7 +264,7 @@ fn held(nl: *const Netlist, sk: *const Skeleton, a: u32, b: u32) bool {
     for (nl.hints, sk.verdicts) |hint, verdict| {
         if ((verdict orelse continue).state != .honoured) continue;
         switch (hint.verb) {
-            .row, .above, .order, .cell, .face, .upright, .bridge => {},
+            .row, .above, .column, .order, .cell, .face, .hang, .upright, .bridge => {},
             else => continue,
         }
         for (hint.args) |name| {
@@ -273,7 +275,7 @@ fn held(nl: *const Netlist, sk: *const Skeleton, a: u32, b: u32) bool {
     return false;
 }
 
-fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u3, want: Side) bool {
+fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u4, want: Side) bool {
     const before = s.devices.get(d);
     const info = s.devices.slice();
     for ([_]sch.Orientation{ .horizontal, .vertical }) |form| for ([_][2]bool{ .{ false, false }, .{ true, true } }) |flips| {
@@ -281,13 +283,13 @@ fn turn(s: *Schematic, nl: *const Netlist, d: u32, pin: u3, want: Side) bool {
         info.items(.flip_x)[d] = flips[0];
         info.items(.flip_y)[d] = flips[1];
         sch.settleDevice(s, &nl.graph, d);
-        if (leadSide(s, d, pin) == want and sch.alignPin(s, &nl.graph, d, pin)) return true;
+        if (actual_lead.leadSide(s, d, pin) == want and sch.alignPin(s, &nl.graph, d, pin)) return true;
     };
     s.devices.set(d, before);
     return false;
 }
 
-fn leadSide(s: *const Schematic, d: u32, pin: u3) ?Side {
+fn leadSide(s: *const Schematic, d: u32, pin: u4) ?Side {
     const info = s.devices.slice();
     const c = s.lib.at(info.items(.class)[d]);
     if (pin >= s.device_pin_count[d] or !c.shows(pin)) return null;
@@ -301,8 +303,9 @@ fn leadSide(s: *const Schematic, d: u32, pin: u3) ?Side {
     };
     const delta = t.sub(attachment orelse return null);
     const side = Side.of(delta).?;
-    for (c.draw) |op| if (op == .circle) {
-        if (project(op.circle.c.sub(t), side) + op.circle.r >= 0) return null;
+    for (c.draw) |op| switch (op) {
+        .circle, .filled_circle => |circle| if (project(circle.c.sub(t), side) + circle.r >= 0) return null,
+        else => {},
     };
     var body = false;
     var attached = false;
@@ -338,7 +341,7 @@ fn leadSide(s: *const Schematic, d: u32, pin: u3) ?Side {
     return if (body and attached and c.side(pin, o) == actual) actual else null;
 }
 
-fn tip(s: *const Schematic, d: u32, pin: u3, at: Pt) Pt {
+fn tip(s: *const Schematic, d: u32, pin: u4, at: Pt) Pt {
     const info = s.devices.slice();
     const c = s.lib.at(info.items(.class)[d]);
     return at.sub(info.items(.grid)[d]).add(info.items(.orient)[d].apply(c.terminals[pin].at));

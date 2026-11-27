@@ -1,0 +1,41 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt ct_inductor n1 n2 n3 params: l1=1n l2=1n k=0
+L1 n1 n3 {l1}
+L2 n3 n2 {l2}
+K12 L1 L2 {k}
+.ends ct_inductor
+
+C1 M2 P2 1p
+C2 M1 P1 1p
+LS1 P2 P4 1n
+LS2 M2 M4 1n
+LS3 P3 P1 1n
+LS4 M3 M1 1n
+M10 P2 M2 VSS VSS nch l=0.06 w=14 nf=1 m=1
+M11 M2 P2 VSS VSS nch l=0.06 w=14 nf=1 m=1
+M12 P2 M2 net2 VSS nch l=0.06 w=8 nf=1 m=1
+M13 M2 P2 net2 VSS nch l=0.06 w=8 nf=1 m=1
+M14 net2 LB VSS VSS nch l=0.06 w=1 nf=1 m=1
+M15 P4 P3 net0 VSS nch l=0.06 w=14 nf=1 m=1
+M16 P3 P4 net0 VSS nch l=0.06 w=14 nf=1 m=1
+M17 net0 HB VSS VSS nch l=0.06 w=1 nf=1 m=1
+M18 P4 LB P3 VSS nch l=0.06 w=1 nf=1 m=1
+M19 M4 M3 net3 VSS nch l=0.06 w=14 nf=1 m=1
+M20 M3 M4 net3 VSS nch l=0.06 w=14 nf=1 m=1
+M21 net3 HB VSS VSS nch l=0.06 w=1 nf=1 m=1
+M22 M4 LB M3 VSS nch l=0.06 w=1 nf=1 m=1
+M5 P1 M1 VSS VSS nch l=0.06 w=14 nf=1 m=1
+M6 M1 P1 VSS VSS nch l=0.06 w=14 nf=1 m=1
+M7 P1 M1 net1 VSS nch l=0.06 w=8 nf=1 m=1
+M8 M1 P1 net1 VSS nch l=0.06 w=8 nf=1 m=1
+M9 net1 LB VSS VSS nch l=0.06 w=1 nf=1 m=1
+XL1 P4 M4 Vdd ct_inductor l1=1n l2=1n k=0
+XL2 P3 M3 Vdd ct_inductor l1=1n l2=1n k=0
+*@ weak role p1 output
+*@ weak role m1 output
+*@ weak role p2 output
+*@ weak role m2 output
+*@ weak role lb input
+*@ weak role hb input
