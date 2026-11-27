@@ -92,7 +92,10 @@ on a device overrides the relations on it.
   <dev> <x> <y> [turn]` lines are the same stays written by hand; they
   anchor the device's column and row; a strong `*@ at` fixes the device
   itself and anchors them too, so making a pasted stay strong moves
-  nothing else.
+  nothing else. A device no `at` places that the lattice stands on a
+  pinned place steps right off it, so pinning all devices but a new one
+  keeps every `at`. A driver drawn apart takes no `at`: write
+  `*@ driver <src> inline` before it.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
   `weak` one (a stay). Arguments split at blanks and commas. In a deck of
