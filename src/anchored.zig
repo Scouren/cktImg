@@ -111,9 +111,12 @@ pub fn hang(gpa: Allocator, nl: *const Netlist, drawn: []const bool, form: []con
     for (order) |i| {
         const h = nl.hints[i];
         if (h.verb != .hang) continue;
+        // The argument a name refusal points at.
+        var arg: u32 = 0;
         const code: hints.Code = code: {
             if (h.args.len != 2) break :code .bad_args;
             const p = (nl.device(h.args[0]) orelse break :code .unknown_name).index();
+            arg = 1;
             const dot = std.mem.lastIndexOfScalar(u8, h.args[1], '.') orelse break :code .bad_args;
             const d = (nl.device(h.args[1][0..dot]) orelse break :code .unknown_name).index();
             const pin = relations.pinIndex(nl, d, h.args[1][dot + 1 ..]) orelse break :code .unknown_name;
@@ -150,7 +153,11 @@ pub fn hang(gpa: Allocator, nl: *const Netlist, drawn: []const bool, form: []con
             if (steps > 0) break :code .no_room;
             break :code .ok;
         };
-        verdicts[i] = if (code == .no_room) .{ .state = .relaxed, .code = code } else .of(code);
+        verdicts[i] = switch (code) {
+            .no_room => .{ .state = .relaxed, .code = code },
+            .unknown_name, .not_placeable => .at(code, arg),
+            else => .of(code),
+        };
     }
     for (0..n) |d| if (drawn[d]) assert(taken.contains(.{ x[d], y[d] }));
 }

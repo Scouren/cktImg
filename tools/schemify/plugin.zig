@@ -99,6 +99,7 @@ const Job = struct {
     arena: std.heap.ArenaAllocator,
     /// This job's number: the id of its timers (an older job's timer finds no match).
     serial: u32,
+    allow_45: bool,
     source: []const u8,
     dir: []const u8,
     /// Where the host puts bare file names (the manifest's `place` and `lib` rows); empty
@@ -158,18 +159,23 @@ pub fn onEvent(ev: schemify.Event, out: *Out) void {
         .command => |c| if (mem.eql(u8, c.name, "netlist.import_close")) {
             contribute(out, false);
         } else if (mem.eql(u8, c.name, "netlist.import") or mem.eql(u8, c.name, "cktimg.import")) {
+            var allow_45 = false;
             var path_buf: [1024]u8 = undefined;
             var path: Out = .init(&path_buf);
             var word_buf: [1024]u8 = undefined;
             var values = schemify.values(c.args);
             while (values.next(&word_buf) catch null) |w| {
+                if (!allow_45 and path.len == 0 and mem.eql(u8, w, "--allow-45")) {
+                    allow_45 = true;
+                    continue;
+                }
                 if (path.len > 0) path.put(" ");
                 path.put(w);
             }
             if (path.len == 0 or path.overflow) return contribute(out, true);
             contribute(out, false);
             abandon();
-            start(path.slice(), out);
+            start(path.slice(), allow_45, out);
         },
         .io_done => |io| {
             const job = &(job_slot orelse return);
@@ -201,7 +207,7 @@ fn hint(e: schemify.Error) []const u8 {
 }
 
 /// Starts an import of `path` (project-relative).
-fn start(path: []const u8, out: *Out) void {
+fn start(path: []const u8, allow_45: bool, out: *Out) void {
     assert(path.len > 0);
     const known = for ([_][]const u8{ ".sp", ".cir", ".spice", ".net", ".cdl" }) |e| {
         if (std.ascii.endsWithIgnoreCase(path, e)) break true;
@@ -214,6 +220,7 @@ fn start(path: []const u8, out: *Out) void {
     var job: Job = .{
         .arena = arena,
         .serial = jobs,
+        .allow_45 = allow_45,
         .source = source,
         .dir = source[0 .. mem.lastIndexOfScalar(u8, source, '/') orelse 0],
     };
@@ -325,6 +332,7 @@ fn convert(job: *Job, out: *Out) Allocator.Error!bool {
     }
     job.conv = try .initLibs(gpa, a, job.source, job.text, libs.items);
     job.conv.?.place = job.place;
+    job.conv.?.allow_45 = job.allow_45;
     if (job.conv.?.cellsLeft() == 0) {
         logf(out, .warn, "{s}: no subckt or top-level card to import", .{job.source});
         return false;

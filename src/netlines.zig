@@ -4,6 +4,7 @@
 //! deck, so the drawing (`wires`) and the report read the same.
 //!
 //!     *@ label vb1
+//!     *@ label vx at m5.d m7.d
 //!     *@ wire vb1 [ladder|trunk|route|over|under]
 //!     *@ port out right
 //!     *@ rail 0 bar|each|plain
@@ -14,6 +15,12 @@
 //! Human Rules:
 //! - netlines.1 (invariant) `label`: the net is a name at each of its pins
 //!   and has no wire. `read`
+//! - netlines.13 (invariant) `label <net> at <dev>.<pin> ...`: the pins
+//!   named carry the net's name and no wire; the net's other pins are
+//!   wired as a `wire` line wires them, unless another line styles the
+//!   net, and their wire carries the name once. A pin is a terminal name,
+//!   a number from 1 or a net the device touches (`relations.pinIndex`).
+//!   `read`
 //! - netlines.2 (invariant) `wire`: the net is a wire, by the pattern
 //!   named or any that fits; one the canvas cannot draw falls back to
 //!   names, and the report says so. `over` and `under` run the wire
@@ -36,9 +43,9 @@
 //!   rail, the preferred one (`hints.admitOrder`) stands: one answer
 //!   whatever the order of the lines. `read`
 //! - netlines.9 (unmeasured) A rail is its symbols: no line names it or
-//!   wires it, and only `rail` styles it; an input is a port at its pins,
-//!   never wired by a line; only an input or an output takes `port`.
-//!   `admits`
+//!   wires it, and only `rail` styles it; an input takes `wire` (one wire,
+//!   one port) but no `route` or `via`; only an input or an output takes
+//!   `port`. `admits`
 //! - netlines.10 (unmeasured) Unless a line says, a supply is one bar over
 //!   its pins. `read`
 //! - netlines.11 (book) Unless a line says, a ground is a symbol at each
@@ -59,6 +66,7 @@ const netlist = @import("netlist.zig");
 const hints = @import("hints.zig");
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
+const relations = @import("relations.zig");
 
 const Netlist = netlist.Netlist;
 const Verdict = hints.Verdict;
@@ -112,6 +120,9 @@ pub const NetLines = struct {
     first: []const u32,
     /// Strongest first.
     routes: []const Route,
+    /// `[device, pin]`: the pins `label ... at` lines name, in the
+    /// netlist's numbering.
+    named_at: []const [2]u32 = &.{},
 };
 
 /// Reads the lines; each valid one honoured (the report checks `label`,
@@ -128,6 +139,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
     const rail = try arena.alloc(Rail, n);
     @memset(rail, .auto);
     var first: std.ArrayList(u32) = .empty;
+    var named_at: std.ArrayList([2]u32) = .empty;
     // What a line says of one net: its words counted, its net known, the
     // net one the verb draws (`admits`), then what it says of it. The
     // preferred line on a net applied last, so it wins.
@@ -139,15 +151,33 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             else => continue,
         };
         const code: hints.Code = blk: {
-            if (h.args.len < least or h.args.len > 2) break :blk .bad_args;
+            if (h.args.len < least or (h.args.len > 2 and h.verb != .label)) break :blk .bad_args;
             const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
             if (!admits(h.verb, roles[net])) break :blk .not_placeable;
             switch (h.verb) {
                 // Counted as `wire` is: a second word is refused only here,
                 // after the net's name and role.
                 .label => {
-                    if (h.args.len == 2) break :blk .bad_args;
-                    style[net] = .label;
+                    if (h.args.len == 1) {
+                        style[net] = .label;
+                        break :blk .ok;
+                    }
+                    if (h.args.len < 3 or !std.mem.eql(u8, h.args[1], "at")) break :blk .bad_args;
+                    // Every pin valid, or none is taken.
+                    const from = named_at.items.len;
+                    const bad: ?hints.Code = for (h.args[2..]) |word| {
+                        const dot = std.mem.lastIndexOfScalar(u8, word, '.') orelse break .bad_args;
+                        const d = (nl.device(word[0..dot]) orelse break .unknown_name).index();
+                        const k = relations.pinIndex(nl, d, word[dot + 1 ..]) orelse break .unknown_name;
+                        if (nl.graph.members(netlist.EdgeId.from(d))[k].index() != net) break .bad_args;
+                        try named_at.append(arena, .{ d, k });
+                    } else null;
+                    if (bad) |code| {
+                        named_at.shrinkRetainingCapacity(from);
+                        break :blk code;
+                    }
+                    // The rest is wired.
+                    if (style[net] == .auto) style[net] = .wire;
                 },
                 .wire => {
                     var s: Style = .wire;
@@ -223,19 +253,21 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             .input, .bias, .internal, .output => continue,
         };
     }
-    return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items };
+    return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items, .named_at = named_at.items };
 }
 
 // ---- private ----
 
 /// Whether `verb` says something of a net of `role`: a rail is its symbols,
-/// never named or wired; an input is a port at its pins, never one wire. A
+/// never named or wired; an input is a port at its pins unless a `wire`
+/// line wires it, and no `route` or `via` pins it. A
 /// verb that is no net line's says nothing of any.
 fn admits(verb: hints.Verb, role: Role) bool {
     const rail = role.isRail();
     return switch (verb) {
         .label => !rail,
-        .wire, .route, .via => !rail and role != .input,
+        .wire => !rail,
+        .route, .via => !rail and role != .input,
         .port => role == .input or role == .output,
         .rail => rail,
         else => false,

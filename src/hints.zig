@@ -4,6 +4,7 @@
 //!     *@ [weak] <verb> <arguments>
 //!     *@ group pair m1 m2        (also mirror, bank, stack, cross)
 //!     *@ above m9 iss m7         m9 above iss above m7
+//!     *@ column m5 m6           m5 directly over m6, one column
 //!     *@ face m3 g left          m3's gate on its left
 //!     *@ hang c1 m3.g            c1 hung from m3's gate
 //!
@@ -60,6 +61,7 @@ pub const Verb = enum(u8) {
     expand,
     row,
     above,
+    column,
     order,
     upright,
     bridge,
@@ -127,7 +129,8 @@ pub const Hint = struct {
     weak: bool,
     /// Its arguments as written, split at blanks and commas.
     args: []const []const u8,
-    /// 1-based line in the text read.
+    /// 1-based line in the text read; a front end may renumber it to its
+    /// file's lines, 0 for a line it added (`report` leaves those out).
     line: u32,
     /// The whole line, trimmed.
     text: []const u8,
@@ -175,6 +178,10 @@ pub const Code = enum(u8) {
     taken,
     /// No symmetry of the circuit swaps what it names.
     asymmetric,
+    /// Its devices are not joined as the group it names is: a mirror's or
+    /// a bank's gates on one net, a stack's each on a channel net of the
+    /// next that is not a rail.
+    unjoined,
     /// No free cell where it asks.
     no_room,
     /// The engine took it, but the finished drawing does not show it: a
@@ -187,6 +194,9 @@ pub const Code = enum(u8) {
     not_built,
 };
 
+/// `Verdict.arg` of a line no single argument fails.
+pub const no_arg = std.math.maxInt(u32);
+
 pub const Verdict = struct {
     state: State,
     code: Code,
@@ -195,11 +205,23 @@ pub const Verdict = struct {
     blocked_by: []const u32 = &.{},
     /// Per `blocked_by` member: deleting it alone would admit this line.
     alone: []const bool = &.{},
+    /// The argument at fault, an index into the line's `args`, when one of
+    /// several is (`unknown_name`, `not_placeable`); `no_arg` else.
+    arg: u32 = no_arg,
 
     /// The verdict of a line read with `code`: honoured when it is `ok`,
     /// else rejected.
     pub fn of(code: Code) Verdict {
         return .{ .state = if (code == .ok) .honoured else .rejected, .code = code };
+    }
+
+    /// The verdict of a line read with `code`, `args[arg]` at fault; `arg`
+    /// is `no_arg` for none.
+    pub fn at(code: Code, arg: u32) Verdict {
+        assert(code != .ok or arg == no_arg);
+        var v: Verdict = .of(code);
+        v.arg = arg;
+        return v;
     }
 
     /// The verdict of a line that gives way (`state`: dropped or relaxed) to
@@ -398,6 +420,8 @@ test "read: the forms, weak, and what is no verb" {
     try std.testing.expectEqual(Verb.off, read("*@ grouping off").?.verb);
     try std.testing.expectEqual(Verb.symmetry_off, read("*@ symmetry off").?.verb);
     try std.testing.expectEqual(Verb.above, read("*@ above m9 iss").?.verb);
+    try std.testing.expectEqual(Verb.column, read("*@ column m5 m6").?.verb);
+    try std.testing.expectEqual(@as(u8, 2), Verb.column.rung());
     const w = read("*@ weak cell m5 2 4").?;
     try std.testing.expectEqual(Verb.cell, w.verb);
     try std.testing.expect(w.weak);

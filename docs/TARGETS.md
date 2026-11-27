@@ -65,3 +65,7 @@ the deck is placed.
 `device` indexes the document's `devices`; `pins` indexes that device's
 `pins`, already in the target's order. With `skip`, unmapped devices have no
 entry. Nothing is written if the manifest is malformed or a mapping fails.
+
+## Optional native port bundles
+
+Pass `--bundles` to request a `port_bundles` array and draw proven groups in the SVG. Each row contains `device`, `label`, `contact` and `atoms`. Each atom contains its original zero-based `slot`, `term`, `net` and `xy`. The owning device retains its original scalar pin list and wires. A renderer can ignore the extra field or expand each row back to its individual atoms. An unsupported or caller-owned symbol yields an empty array. [Four-bit example](research/production-patterns/control-bus/README.md)

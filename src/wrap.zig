@@ -17,7 +17,7 @@
 //!   core stays whole on one shelf and keeps its x. `cutCost`
 //! - wrap.4 (unmeasured) Every shelf starts at the left edge of the core's
 //!   shelf, or of the first shelf when there is no core. `cut`
-//! - wrap.5 (choice) No cut parts an honoured `row` or `order` group,
+//! - wrap.5 (choice) No cut parts an honoured `row`, `order` or `column` group,
 //!   or puts an `above` line's upper device on a later shelf than its
 //!   lower device. Left shelves precede right shelves, so an upper-left
 //!   to lower-right pair may cross a cut. Rejected, dropped and unhandled
@@ -59,6 +59,10 @@
 //!   source branches have continuous source legs and a straight approach
 //!   to that gate. Its two-row source drop is reserved with the protected
 //!   interval, using the same caller-owned span mechanism. `input_place`
+//! - wrap.11 (habit, bounded) A unique center-tapped coil and its parallel
+//!   tank capacitor share a shelf. Cold collection supplies cut-only spans;
+//!   it does not preserve all empty rows. A custom class may decline the
+//!   later relative placement while retaining semantic grouping. `coil_tanks`
 //!
 //! Contents:
 //! - `pub fn shelves(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, form: []const Form, mate: []const u32, columns: u32, x: []i32, y: []i32, shelf: []u32, verdicts: []?hints.Verdict, protected: []const [2]i32) Allocator.Error!void`
@@ -71,6 +75,8 @@ const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
 const power_paths = @import("power_paths.zig");
+const coil_tanks = @import("coil_tanks.zig");
+const ct_four_sides = @import("ct_four_sides.zig");
 
 const Netlist = netlist.Netlist;
 const VertexId = netlist.VertexId;
@@ -155,6 +161,12 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
     };
     if (cols <= shelf_cols) return;
     const col = xs.items[0..cols];
+    var tanks = try coil_tanks.spans(gpa, nl, drawn, x, protected);
+    defer tanks.deinit(gpa);
+    const tank_spans = if (tanks.items.len == 0) protected else tanks.items;
+    var stage = try ct_four_sides.spans(gpa, nl, roles, drawn, x, tank_spans);
+    defer stage.deinit(gpa);
+    const cut_spans = if (stage.items.len == 0) tank_spans else stage.items;
 
     // Each shelf's first column: shelves of equal width, each cut moved to
     // the cheapest gap within a third of a shelf of its place.
@@ -172,7 +184,7 @@ fn cut(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const b
         var best: ?usize = null;
         var best_cost: u64 = std.math.maxInt(u64);
         for (@max(first + 1, ideal -| slack)..@min(cols, ideal + slack + 1)) |j| {
-            const cost = cutCost(nl, roles, drawn, form, mate, x, verdicts, protected, col[first], col[j]) orelse continue;
+            const cost = cutCost(nl, roles, drawn, form, mate, x, verdicts, cut_spans, col[first], col[j]) orelse continue;
             // Fewest nets cut, then nearest its place.
             const key = (@as(u64, cost) << 32) | @abs(@as(i64, @intCast(j)) - @as(i64, @intCast(ideal)));
             if (key < best_cost) {
@@ -300,7 +312,7 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         if (lo < at and hi >= at) return null;
     }
     for (nl.hints, verdicts) |h, verdict| {
-        if (h.verb != .row and h.verb != .order and h.verb != .above) continue;
+        if (h.verb != .row and h.verb != .order and h.verb != .above and h.verb != .column) continue;
         const v = verdict orelse continue;
         if (v.state != .honoured) continue;
         if (h.verb == .above) {

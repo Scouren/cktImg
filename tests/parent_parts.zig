@@ -170,3 +170,43 @@ test "reflected parent outputs: releasing a caller-owned pair equals ordinary ro
         try testing.expectEqualDeep(ordinary.labels, supplied.labels);
     }
 }
+
+fn trialFeedback(allocator: std.mem.Allocator, lib: *const np.Library, ordinary: *const np.Placed, nl: *const np.Netlist, pair: np.crossover.Pair) !void {
+    // Borrow immutable rows. Own all replacement wire rows in a separate arena.
+    var trial = ordinary.*;
+    trial.arena = .init(allocator);
+    defer trial.deinit();
+    const applied = np.crossover.apply(allocator, lib, &trial, nl, pair) catch |err| {
+        try testing.expect(trial.net_seg.ptr == ordinary.net_seg.ptr);
+        try testing.expect(trial.seg_pt.ptr == ordinary.seg_pt.ptr);
+        try testing.expect(trial.wire_pts.ptr == ordinary.wire_pts.ptr);
+        try testing.expect(trial.junctions.ptr == ordinary.junctions.ptr);
+        return err;
+    };
+    try testing.expect(applied);
+}
+
+test "crossed feedback retains the complete ordinary drawing at every allocation failure" {
+    const gpa = testing.allocator;
+    const lib = try support.library(gpa);
+    defer support.freeLibrary(gpa, lib);
+    const deck =
+        \\Reciprocal PMOS loads
+        \\.model n nmos
+        \\.model p pmos
+        \\M1 vout1 vin1 tail 0 n
+        \\M2 vout2 vin2 tail 0 n
+        \\M3 vout1 vout2 vdd vdd p
+        \\M4 vout2 vout1 vdd vdd p
+        \\M5 tail vb 0 0 n
+    ;
+    var nl = try np.netlist.parse(gpa, &.{deck}, null);
+    defer nl.deinit(gpa);
+    const roles = try np.guessRoles(gpa, &nl);
+    defer gpa.free(roles);
+    const pair = np.crossover.collect(&nl, roles) orelse return error.InvalidStage;
+    var ordinary = try np.placeBound(gpa, gpa, &.{}, lib, &nl, &.{});
+    defer ordinary.deinit();
+    var no_resize = testing.FailingAllocator.init(gpa, .{ .resize_fail_index = 0 });
+    try testing.checkAllAllocationFailures(no_resize.allocator(), trialFeedback, .{ lib, &ordinary, &nl, pair });
+}

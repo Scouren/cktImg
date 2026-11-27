@@ -10,7 +10,12 @@ const np = @import("NetlistParser");
 const Pt = np.Pt;
 const Writer = std.Io.Writer;
 
+/// A display-only grouping of four scalar pins with independently verified port links.
+pub const Bundle = struct { dev: usize, first: usize, ports: [4]usize, nets: [4]u32, label: []const u8 };
+
 pub const Style = struct {
+    /// The scalar occurrence table stays intact when this optional grouping is drawn.
+    bundle: ?Bundle = null,
     /// Pixels per target unit (a symbol is 40 units: 64 px).
     scale: f32 = 1.6,
     /// Pixels around the drawing.
@@ -70,10 +75,14 @@ pub fn write(gpa: std.mem.Allocator, p: *const np.Placed, lib: *const np.Library
     // Wires under symbols, dots over both.
     try w.print("<g fill=\"none\" stroke=\"{s}\" stroke-width=\"1.6\" stroke-linejoin=\"round\" stroke-linecap=\"round\">\n", .{ink});
     for (0..p.netCount()) |n| {
+        if (st.bundle) |b| if (std.mem.indexOfScalar(u32, b.nets[1..], @intCast(n)) != null) continue;
         var it = p.segments(n);
         while (it.next()) |poly| try pen.polyline(poly);
     }
-    for (0..p.deviceCount()) |d| try drawDevice(&pen, p, lib, d);
+    for (0..p.deviceCount()) |d| {
+        if (st.bundle) |b| if (std.mem.indexOfScalar(usize, b.ports[1..], d) != null) continue;
+        try drawDevice(&pen, p, lib, d);
+    }
     for (p.no_connects) |c| {
         try pen.polyline(&.{ .{ .x = c.x - 3, .y = c.y - 3 }, .{ .x = c.x + 3, .y = c.y + 3 } });
         try pen.polyline(&.{ .{ .x = c.x - 3, .y = c.y + 3 }, .{ .x = c.x + 3, .y = c.y - 3 } });
@@ -108,27 +117,40 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
             return np.geom.placePoint(or_, b, q);
         }
     }.f;
-    for (class.draw) |op| switch (op) {
-        .line => |l| try pen.polyline(&.{ place(o, base, l.a), place(o, base, l.b) }),
-        .polyline => |ps| {
-            var buf: [64]Pt = undefined;
-            const n = @min(ps.len, buf.len);
-            for (ps[0..n], buf[0..n]) |q, *r| r.* = place(o, base, q);
-            try pen.polyline(buf[0..n]);
-        },
-        .circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"#ffffff\""),
-        .text => |t| try pen.text(place(o, base, t.at), 0, 3, t.s, "middle", @floatFromInt(t.size + 4), ink, false),
-    };
+    for (class.draw) |op| {
+        if (pen.st.bundle) |b| {
+            if (d == b.dev) {
+                const first = b.first - p.dev_pin0[d];
+                const hide = for (class.terminals[first..][0..4], 0..) |t, i| {
+                    if (op == .text and std.mem.eql(u8, op.text.s, t.name)) break true;
+                    if (i > 0 and op == .line and (op.line.a.eql(t.at) or op.line.b.eql(t.at))) break true;
+                } else false;
+                if (hide) continue;
+            }
+        }
+        switch (op) {
+            .line => |l| try pen.polyline(&.{ place(o, base, l.a), place(o, base, l.b) }),
+            .polyline => |ps| {
+                var buf: [64]Pt = undefined;
+                const n = @min(ps.len, buf.len);
+                for (ps[0..n], buf[0..n]) |q, *r| r.* = place(o, base, q);
+                try pen.polyline(buf[0..n]);
+            },
+            .circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"#ffffff\""),
+            .filled_circle => |c| try pen.circle(place(o, base, c.c), @floatFromInt(c.r), "fill=\"" ++ ink ++ "\" stroke=\"none\""),
+            .text => |t| try pen.text(place(o, base, t.at), 0, 3, t.s, "middle", @floatFromInt(t.size + 4), ink, false),
+        }
+    }
     // A rail or port the layout added carries its net's name.
     if (p.dev_name[d].len == 0 and class.role != .none) {
         const lo, _ = p.pinRange(d);
-        const net = p.net_name[p.pin_net[lo]];
+        const net = if (pen.st.bundle != null and pen.st.bundle.?.ports[0] == d) pen.st.bundle.?.label else p.net_name[p.pin_net[lo]];
         const at = p.pin_xy[lo];
         switch (class.role) {
-            .power_rail => try railName(pen, at, np.geom.railSide(p, lo), net, 12, ink),
-            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try railName(pen, at, np.geom.railSide(p, lo), net, 11, name_ink),
-            .input_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
-            .output_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
+            .power_rail => try railName(pen, at, np.geom.railSide(p, lib, lo), net, 12, ink),
+            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try railName(pen, at, np.geom.railSide(p, lib, lo), net, 11, name_ink),
+            .input_port => try netName(pen, at, np.geom.nameSide(p, lib, lo), net, false),
+            .output_port => try netName(pen, at, np.geom.nameSide(p, lib, lo), net, false),
             .none => {},
         }
     }

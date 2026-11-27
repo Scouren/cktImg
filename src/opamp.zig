@@ -6,7 +6,7 @@
 //! of a unit on a quarter-unit grid, y down.
 //!
 //! Human Rules:
-//! - opamp.1 (invariant) A deck with a line that places or turns a device
+//! - opamp.1 (invariant) A deck with an admitted line that places or turns a device
 //!   (`upright`, `bridge`, `row`, `above`, `order`, `face`, `cell`, a
 //!   strong `at`) is laid by its lines, not along the signal; a stay
 //!   (`weak at`) is no such line. `steered`
@@ -44,8 +44,8 @@
 //!
 //! Contents:
 //! - `pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) bool`
-//! - `pub fn steered(nl: *const Netlist) bool`
-//! - `pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At`
+//! - `pub fn steered`
+//! - `pub fn place`
 //! - for `opamp_grow.zig`: `pub const none`, `unit`, `quarter`, `tries`; `pub const P`, `R`, `Kind`, `Link`, `Pin`, `Block`, `Two`, `Canvas`, `Put`
 //! - `pub const Placer = struct`, `Placer.canvas`, `Placer.free`, `Placer.wire`, `Placer.add`, `Placer.anchor`, `Placer.aOn`, `Placer.put`
 //! - `pub fn partRect(kind: Kind, cx: i32, cy: i32, tall: bool) R`, `pub fn ceilQuarter(v: i32) i32`, `pub fn roundEven(num: i64, den: i64) i32`
@@ -234,24 +234,24 @@ pub fn applies(nl: *const Netlist, roles: []const Role, drawn: []const bool) boo
     return blocks > 0 and (switches == 0 or (cap and rc));
 }
 
-/// Whether a line of the deck says where a device stands or how it is
-/// turned (a relation, a cell or a place): the lines place such a deck, not
-/// this procedure. A stay (`weak at`, a relay's) is none: the same deck is
-/// placed the same way again.
-pub fn steered(nl: *const Netlist) bool {
-    for (nl.hints) |h| switch (h.verb) {
-        .upright, .bridge, .row, .above, .order, .face, .hang, .cell => return true,
-        .at => if (!h.weak) return true,
-        else => {},
-    };
+/// Whether an admitted structural or precise placement request selects the
+/// lattice. Uses the same pre-drawing verdicts as the public report. Weak
+/// relay stays do not constrain the amplifier's signal placement.
+pub fn steered(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const structure.Structure, sk: *const @import("skeleton.zig").Skeleton) Allocator.Error!bool {
+    for (nl.hints) |h| {
+        if (positional(h)) break;
+    } else return false;
+    const verdicts = try @import("report.zig").verdicts(arena, nl, roles, st, sk, null, null);
+    for (nl.hints, verdicts) |h, v| if (v.state == .honoured and positional(h)) return true;
     return false;
 }
 
 /// A place and a turn for every drawn device of an op-amp circuit, in
 /// drawing units, or null when the deck is `steered`, `applies` says no, or
 /// a block's symbol has an input right of its output. `classes` is each device's class in `lib`.
-pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, drawn: []const bool, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At {
-    if (steered(nl) or !applies(nl, roles, drawn)) return null;
+pub fn place(arena: Allocator, nl: *const Netlist, roles: []const Role, st: *const structure.Structure, sk: *const @import("skeleton.zig").Skeleton, lib: *const Library, classes: []const ClassId) Allocator.Error!?[]?At {
+    const drawn = sk.drawn;
+    if (!applies(nl, roles, drawn) or try steered(arena, nl, roles, st, sk)) return null;
     const c = &nl.graph;
     const n = c.edgeCount();
     const nets = c.vertexCount();
@@ -396,6 +396,14 @@ pub fn roundEven(num: i64, den: i64) i32 {
 }
 
 // ---- private ----
+
+fn positional(h: @import("hints.zig").Hint) bool {
+    return switch (h.verb) {
+        .upright, .bridge, .row, .above, .column, .order, .face, .hang, .cell => true,
+        .at => !h.weak,
+        else => false,
+    };
+}
 
 /// A control net that touches only MOS gates and independent voltage
 /// sources whose opposite terminal is a rail. Read every incidence, even

@@ -43,57 +43,76 @@ Work down this list. Stop at the first round whose picture meets the target.
 
 1. **Draw unhinted** with `--svg --report`; render the PNG. Read `requests`,
    then `grid`, then the picture. Done when you can name each crossing and
-   each unforced corner by its devices or net.
+   each unforced corner by its devices or net. On a deck of 30 devices or
+   more, draw once more with `*@ shelf off` before any other line: one row
+   of columns is often the better start, and every later line is judged
+   against it.
 
-2. **Roles.** Three misreadings cost the most:
+2. **Roles.** Four misreadings cost the most:
    - In a deck of only `.subckt`s every port the names do not settle is an
-     output. Say `role vi input` for each that only drives gates.
+     input when only gates hang on it, else an output. Say `role vi input`
+     for an input a drain or a part also touches.
    - A `vb*` net the circuit makes itself (a drain is on it) gets a port at
      each pin. `role vb3 internal` wires it.
    - In a parts-only circuit the reference net is a ground and refuses
      `wire`. `role <net> internal` frees it.
+   - An input on pins far apart gets a port at each. `wire <net>` draws
+     one port wired to them all.
 
 3. **One `order` line along the signal.** The best-paying line: it turned
    the signal on 4 circuits and took 2 crossings to 0 on a fifth. An order
    across a mirrored pair names the device on the axis too
-   (`order m9 m1 iss m2 m10`), or the axis device is pushed aside.
+   (`order m9 m1 iss m2 m10`), or the axis device is pushed aside. An
+   `order` line reflows the columns it does not name: when you move one
+   device, name the device after it too, or the rest close up around it.
+   `row` and `above` set no column: `row` keeps its devices level in no
+   left-to-right order, `above` puts them in vertical order only.
    Two independent tail current sources can share a requested axis on
    separate rows. With `--report`, a device symmetry request is honoured
    when both origins and all corresponding terminals reflect across the
    common axis. An honoured exact placement that breaks the reflection
    appears in the request's `blocked_by` entries.
 
-4. **`face` for gates and flat parts.** Turn a stack's gates to the side
+4. **`column` for devices that belong over each other.** `above a b` sets
+   only the rows: a and b may stand columns apart. `column a b` stands b
+   directly under a in one column, in parallel or not. A `column` line
+   wins over an `order` line that would part its devices.
+
+5. **`label <net> at <dev>.<pin>` for one far pin.** The pins named carry
+   the name; the rest stay one wire.
+
+6. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
    `label <net>` with it, or one port is wired round. `face <part> <pin>
    left|right` turns a flat part end for end; its mate needs a line of its
    own.
 
-5. **`group stack <upper> <lower>`** names members from top to bottom. For
+7. **`group stack <upper> <lower>`** names members from top to bottom. For
    a pair in series, put their shared conduction terminals in the same
    column. A reversed request can select the intended branch while its
    final order is reported `relaxed/not_drawn`. The decision export uses
    the physical direction. Opaque blocks with their own port anchors can
    keep their horizontal positions while satisfying the vertical order.
 
-6. **`row` for devices.** Name transistors and upright parts. A flat part
+8. **`row` for devices.** Name transistors and upright parts. A flat part
    named in `row` lands on the gates' level; left out, it settles on the node
    between the rows, which is usually where a person draws it.
 
-7. **Blocks.** Set the port sides in the child `.subckt` before any line on
+9. **Blocks.** Set the port sides in the child `.subckt` before any line on
    the block's neighbours. Then `above <part> <block> <part>` puts feedback
-   parts over and under the block, and `above <block> <block>` stacks two. A three-port part with two ends (a centre-tapped
+   parts over and under the block, and `above <block> <block>` stacks two.
+   A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
 
-8. **`rail <supply> each`** when a wire must pass over the top, or when the
+10. **`rail <supply> each`** when a wire must pass over the top, or when the
    bar joins only two pins (its two end corners go).
 
-9. **Cells, as a full set.** The cell frame shifts when relation lines
+11. **Cells, as a full set.** The cell frame shifts when relation lines
    change, so numbers from an earlier round land elsewhere. Paste every
    `weak cell` line of one `--decisions 3` report, make them strong, delete
    the relation lines on those devices, then edit the cells.
 
-10. **Places, as a full set.** `at` on some devices moves the others. Paste
+12. **Places, as a full set.** `at` on some devices moves the others. Paste
     every `at` of one `--decisions 4` report, then edit. Read pin offsets per
     class and turn from `d.json` (a two-pin part's ends are half a unit from
     its centre). Use this when you already know the arrangement and the
@@ -101,7 +120,7 @@ Work down this list. Stop at the first round whose picture meets the target.
     op-amp circuit starts here: its decisions are
     `at` lines already.
 
-11. **`wire <net> over|under`** for a wire round the top or the bottom of
+13. **`wire <net> over|under`** for a wire round the top or the bottom of
     the drawing (a feedback wire); **`route <net> x,y ...`** for any other
     way the router does not take. `wire <net>` forces a wire,
     not a good one: when crossings rise, take it out.
@@ -117,8 +136,7 @@ complaint open.
 
 | you want | reach for |
 |---|---|
-| One pin of a net named, the rest wired | `label <net>` names the whole net; else leave it |
 | A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
-A `group stack` reported `relaxed not_drawn` can reflect opposite series order or two devices anchored to the same rail at equal height. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.
+A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.

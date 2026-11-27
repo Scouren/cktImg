@@ -63,6 +63,12 @@
 //!   transistors of a pair that stand level with the pair's other or with
 //!   another transistor on their gate net, not both, 153 stand with the
 //!   pair's (5,263 hand drawings). `blocks`
+//! - structure.13 (habit, bounded) The complete paired CT-bank network
+//!   of AG1180 reflects whole banks and their two private C-S-C paths.
+//!   Try that graph-proved reflection before maximizing moved devices;
+//!   combine it with admitted caller symmetry, and retain ordinary search
+//!   if the trial fails. Global grouping/symmetry off exclude it. The
+//!   source contains one such context. `mates`; coil_network.preferred
 //!
 //! Contents:
 //! - `pub const none: u32`
@@ -80,6 +86,7 @@ const netlist = @import("netlist.zig");
 const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const symmetry = @import("symmetry.zig");
+const coil_network = @import("coil_network.zig");
 const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
@@ -199,6 +206,8 @@ const Pins = struct {
     net_rank: []const u32,
     /// By hint: the pair a line names.
     pin: []symmetry.Pin,
+    /// Cold automatic requests, tried only after caller admission.
+    preference: []const [2]EdgeId = &.{},
     device_mate: []u32,
     net_mate: []u32,
 
@@ -206,6 +215,7 @@ const Pins = struct {
         var pins: std.ArrayList(symmetry.Pin) = .empty;
         defer pins.deinit(p.gpa);
         for (lines) |i| try pins.append(p.gpa, p.pin[i]);
+        for (p.preference) |pair| try pins.append(p.gpa, .{ .net = false, .a = pair[0].index(), .b = pair[1].index() });
         return symmetry.find(p.gpa, p.nl, p.roles, p.device_rank, p.net_rank, pins.items, p.device_mate, p.net_mate);
     }
 };
@@ -323,7 +333,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
     var list: BlockList = .{};
     // Hints first: a hinted group stands as written, a device kept out of
     // groups is in none, and `grouping off` leaves the hinted ones only.
-    const hinted = try groupLines(gpa, arena, nl, device_rank, taken, &list, verdicts);
+    const hinted = try groupLines(gpa, arena, nl, roles, device_rank, taken, &list, verdicts);
     defer gpa.free(hinted.held);
     const recognize = !hinted.off;
 
@@ -455,7 +465,7 @@ fn blocks(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const R
 /// recognized stacks); a device `*@ nogroup` names `taken` and `held`.
 /// Lines are admitted later first (`hints.admitOrder`). `off`: the deck
 /// turns recognition off.
-fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank: []const u32, taken: []bool, list: *BlockList, verdicts: []?Verdict) !struct { off: bool, held: []bool } {
+fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role, device_rank: []const u32, taken: []bool, list: *BlockList, verdicts: []?Verdict) !struct { off: bool, held: []bool } {
     const n = taken.len;
     assert(device_rank.len == n);
     assert(verdicts.len == nl.hints.len);
@@ -516,6 +526,10 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
             verdicts[i] = if (blockers.items.len > 0 and !(two and members.items.len > 2)) try .blocked(arena, .dropped, .taken, blockers.items) else .of(if (unknown) .unknown_name else .bad_args);
             continue;
         }
+        if (!joined(nl, roles, kind, members.items)) {
+            verdicts[i] = .of(.unjoined);
+            continue;
+        }
         // In rank order, as recognition lists them; a stack top to bottom as
         // written. ponytail: insertion sort, quadratic, for the handful of
         // names a hint gives; `std.mem.sort` costs the plugin 8 KB more.
@@ -537,6 +551,48 @@ fn groupLines(gpa: Allocator, arena: Allocator, nl: *const Netlist, device_rank:
         assert(b[1] == none or h);
     }
     return .{ .off = off, .held = held };
+}
+
+/// Whether devices `ms` are joined as a block of `kind` is: a mirror's or a
+/// bank's gates on one net, a stack's each on a channel net of the next
+/// that is not a rail; a pair or a cross is any two (its line says which
+/// half is which).
+fn joined(nl: *const Netlist, roles: []const Role, kind: BlockKind, ms: []const u32) bool {
+    assert(ms.len >= 2);
+    const c = &nl.graph;
+    const kinds = c.edges.items(.kind);
+    switch (kind) {
+        .pair, .cross => return true,
+        .mirror, .bank => {
+            var net: ?VertexId = null;
+            for (ms) |d| {
+                const pins = c.members(EdgeId.from(d));
+                const g = device.of(kinds[d]).gate orelse return false;
+                if (g >= pins.len) return false;
+                const here = pins[g];
+                if (net) |first| if (first != here) return false;
+                net = here;
+            }
+            return true;
+        },
+        .stack => {
+            for (ms[0 .. ms.len - 1], ms[1..]) |u, l| {
+                const shared = for (c.members(EdgeId.from(u))) |n| {
+                    if (!isRail(roles[n.index()]) and onChannel(nl, u, n) and onChannel(nl, l, n)) break true;
+                } else false;
+                if (!shared) return false;
+            }
+            return true;
+        },
+    }
+}
+
+/// Whether a stack joins device `d` by net `n`: an end of its path, or,
+/// for a block or a part with none, any of its pins.
+fn onChannel(nl: *const Netlist, d: u32, n: VertexId) bool {
+    const pins = nl.graph.members(EdgeId.from(d));
+    if (nl.path(EdgeId.from(d))) |ends| return n.index() == ends[0] or n.index() == ends[1];
+    return std.mem.indexOfScalar(VertexId, pins, n) != null;
 }
 
 fn blockKind(v: hints.Verb) ?BlockKind {
@@ -585,6 +641,14 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
         @memset(net_mate, none);
         return true;
     }
+    const grouping_off = for (nl.hints) |h| {
+        if (h.verb == .off) break true;
+    } else false;
+    if (!grouping_off) if (coil_network.preferred(nl, roles, device_rank)) |pairs| {
+        var trial = check;
+        trial.preference = &pairs;
+        if (try trial.holds(admitted.items)) return false;
+    };
     const found = try check.holds(admitted.items);
     assert(found or admitted.items.len == 0);
     return false;
