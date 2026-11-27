@@ -32,6 +32,8 @@ sources, `--from`'s stays).
 | 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A flat device (a bridge, an `X` block) has no row of its own: in `row` it takes the row of the line's anchor, in `above` it stands in the anchor's column, above or below its neighbour (`above r5 x1 r4`: feedback over the block, a part under it). The anchor is the first upright device named, else the first block, else the first device | no cycle with column links (I1) | strong |
 | 2 | `column <devs>` | one column, each directly above the next, whatever their nets (parallel devices too); an `order` line that would part them gives way | no cycle with `row` and `above`; no device directly under, or over, two | strong |
 | 2 | `order <devs>` | columns left to right. The devices named stand in different columns, so a link the engine chose between them is dropped; a bridge named goes in the channel between its neighbours | no cycle | strong |
+| 2 | `stage <name> <devs>` | a unit: `row`, `order` and `repeat` lines name it and move its devices rigidly; a device of no unit within the box it lands on steps out to the nearest free cell of its row, nothing else moves; the unit's grounded transistors share its own bottom row (levels.11) | the name no device's, the members drawn and in no other stage (else `taken`) | strong |
+| 2 | `repeat <stages>` | each stage after the first laid as the first, member k on member k's cell, level and left to right (units.4); alike on the lattice, so in the drawing in rows and column order, the columns' widths each unit's own | stages of one size (else `bad_args`) | strong |
 | 2 | `group stack <devs>` | a column's chain, top to bottom (built) | each on a non-rail channel net of the next (else `unjoined`), no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form | upright: a transistor, or a two-pin device on two nets | strong |
 | 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's, the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
@@ -104,6 +106,7 @@ whose result other lines state, after which nothing is searched.
 | K.form | `upright`, `bridge` |
 | K.ends | `face <dev> <pin> up` |
 | K.linkstack, K.linkscore | `group stack` and `column` join; `order` splits; `cell` |
+| K.unit (a group moved whole) | `stage`, then `row`, `order` or `repeat` on its name |
 | K.matesrc, K.pairmates, K.mirrorable | `symmetric`; relations that conflict displace the engine's mates (reported) |
 | K.rowedge, K.rowlevel, K.rowlong | `row`, `above`; `cell` |
 | K.rowground | tentative: yields to a strong `row` or `above` |

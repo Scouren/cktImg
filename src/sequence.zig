@@ -50,6 +50,7 @@ const netlist = @import("netlist.zig");
 const structure = @import("structure.zig");
 const hints = @import("hints.zig");
 const skeleton = @import("skeleton.zig");
+const units = @import("units.zig");
 
 const Netlist = netlist.Netlist;
 const Structure = structure.Structure;
@@ -116,7 +117,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     const own = try arena.alloc([]const u32, nl.hints.len);
     @memset(own, &.{});
     for (nl.hints, 0..) |h, i| {
-        if (h.verb != .order) continue;
+        if (h.verb != .order or units.claims(nl, h)) continue;
         var devs: std.ArrayList(u32) = .empty;
         var at: u32 = hints.no_arg;
         const bad: ?hints.Code = for (h.args, 0..) |name, k| {
@@ -145,7 +146,7 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     var stated: std.ArrayList(Stated) = .empty;
     var images: std.ArrayList(Stated) = .empty;
     for (try hints.admitOrder(arena, nl.hints)) |i| {
-        if (nl.hints[i].verb != .order or verdicts[i] != null) continue;
+        if (nl.hints[i].verb != .order or verdicts[i] != null or units.claims(nl, nl.hints[i])) continue;
         try admitted.append(gpa, i);
         if (!try check.holds(admitted.items)) {
             _ = admitted.pop();
