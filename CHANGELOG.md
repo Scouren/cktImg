@@ -162,6 +162,13 @@ the size cap below are the open follow-ups.
   6 of 19 on ag-1289, 4 of 43 on ag-1067). `--decisions <rung>` does not always redraw the same
   picture (200 decks: moves at rung 2 in 35, rung 4 in 8, those 8 also on the base); the skill now
   says so. 0 of 5,274 drawings change. `netlist-import.wasm` 713,470 -> 714,171 bytes.
+- Pinned places hold (`fix/verdicts` 5803d60f): taken because Schemify's pin-every-device redraw
+  dropped `at` lines as `guarantee` when one device had no `at`: the fresh lattice stood it on a
+  pinned place. A device no `at` places now steps right, a unit at a time, off any pinned place.
+  Six corpus circuits pinned from `--decisions 4` but one device (184 decks): unhonoured lines
+  25 -> 0, no new gate findings. 0 of 5,274 corpus drawings change; on the hinting-trial decks
+  fable2's ag-1168.p2 gains its two dropped `at` lines and loses on metrics (crossings 7 -> 12).
+  `netlist-import.wasm` 714,171 -> 714,699 bytes.
 
 ### Changed
 
