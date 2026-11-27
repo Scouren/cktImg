@@ -357,8 +357,10 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
         mated = mated or (m.* != none and drawn[d] and form[d] == .vertical);
     }
     try bridges.place(gpa, nl, roles, st, devices_by_rank, drawn, form, upper, lower, rank, mate, seq.pairs, if (mated) 0 else null, x, y);
-    try anchored.place(gpa, nl, drawn, form, x, y, verdicts);
+    // Bridges an order line moves first: a block it moves carries the parts
+    // an `above` line stands in its column.
     try sequence.bridges(gpa, &seq, rel.bridge_row, devices_by_rank, drawn, form, x, y, verdicts);
+    try anchored.place(gpa, nl, drawn, form, x, y, verdicts);
     try units.apply(gpa, arena, nl, drawn, form, x, y, verdicts);
     try cells.apply(gpa, arena, nl, drawn, mate, x, y, verdicts);
     mated = false;

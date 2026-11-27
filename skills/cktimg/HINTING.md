@@ -175,7 +175,7 @@ complaint open.
 
 | you want | reach for |
 |---|---|
-| A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
+| A part level with a gate, or hung from a pin between two rows; a bias chain off a coupling cap (`hang c3 m5.g`, then `hang r1 c3.b`); a part by a block's port | `hang <part> <dev>.<pin>` |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
 A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.
