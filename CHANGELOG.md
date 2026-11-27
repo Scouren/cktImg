@@ -177,6 +177,11 @@ the size cap below are the open follow-ups.
   labelled 8 -> 4, text_overlaps 5 -> 1). A `row` line no longer un-levels a matched pair (levels.12;
   ag-2500 m3 and m6 level again, crossings 4 -> 3); a row takes the lowest row its members need,
   now documented. 0 of 5,274 drawings change. `netlist-import.wasm` 714,699 -> 716,402 bytes.
+- Per-model manifest keys (`feat/target-models`): taken because Schemify maps PDK flavours (lvt
+  and hvt, 3- and 4-pin variants, PDK resistors and caps) to their own symbols and pin orders. A
+  manifest key `<class>:<model>` (`nmos:nfet_01v8`) maps a device of that class and model before
+  the plain `<class>` key; the model is the M/Q/D/J/Z card's model, an R/C card's model word, or a
+  PDK X master drawn as a primitive, matched lowercased. Tool only: the guest is unchanged.
 
 ### Changed
 
