@@ -152,6 +152,16 @@ the size cap below are the open follow-ups.
   110 -> 3; crossings 6,303 -> 6,259, bends 32,087 -> 32,069, labels 10,690 -> 10,461;
   `text_overlaps` 535 -> 631, because own-wire names now count. `netlist-import.wasm`
   704,503 -> 713,470 bytes.
+- Verdicts (`fix/verdicts`): taken because the skill's stop rule trusts `requests`, and the Fable
+  agents found false ones. `wire`/`port` are judged on shown pins of devices drawn in the circuit
+  (a hidden bulk or a driver drawn apart made them `no_room`); a port at or past every shown pin
+  holds, and one with no room keeps its port symbol instead of a bare name; an upright hung part
+  holds within two units of its pin; `blocked_by[].alone` is proven by redrawing without each
+  blocker (up to 32 redraws); a `*@` on file line 1 is reported `rejected title`. A strong `at`
+  anchors its relay line, so making one stay strong moves nothing (before: 7 of 14 on ag-1350,
+  6 of 19 on ag-1289, 4 of 43 on ag-1067). `--decisions <rung>` does not always redraw the same
+  picture (200 decks: moves at rung 2 in 35, rung 4 in 8, those 8 also on the base); the skill now
+  says so. 0 of 5,274 drawings change. `netlist-import.wasm` 713,470 -> 714,171 bytes.
 
 ### Changed
 
