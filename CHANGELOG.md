@@ -97,6 +97,15 @@ the size cap below are the open follow-ups.
   not all named (208 decks change). `+<n>v` is a supply by name, and `vs` when it is the only
   supply candidate and sits on a p-type source (31 decks change). On the merged tree: 301 decks,
   535 findings. `netlist-import.wasm` 678,692 -> 684,239 bytes.
+- Column and partial-wiring hints (`feat/hint-columns-wiring`): taken because all five hinting
+  agents asked for a column and four for naming only some pins of a net. `*@ column <devs>` stands
+  each device over the next in one lattice column, parallel devices too; an `order` that would
+  split it is dropped and a shelf never cuts it (ag-641 `column q19 q21`: 130 units apart -> one
+  x, crossings 15 -> 10, bends 37 -> 32). `*@ label <net> at <dev>.<pin> ...` names those pins and
+  wires the rest (ag-1289 `vx1`: 5/14 with `wire` -> 3/12). `*@ wire <input>` draws one port on
+  one wire (ag-1067 `a0`: 3 ports -> 1, crossings 11 -> 16). `metrics.ported` lists nets drawn as
+  two or more ports. `wire <net> column` is not built: `wire` already draws it. Corpus numbers
+  unmeasured. `netlist-import.wasm` 684,239 -> 689,025 bytes.
 
 ### Changed
 
