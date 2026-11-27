@@ -1,5 +1,7 @@
 # Learning layout rules from AnalogGenie
 
+The [human layout pattern study](human-layout-patterns.md) follows AG100’s divider across all four cached collections and checks which AG1080 arrangements survive comparison with its published figure.
+
 The useful unit is a drawing decision with its conditions: which path a
 device belongs to, whether it stands upright, what it lines up with, and
 where a connection branches. A circuit name alone does not decide these.

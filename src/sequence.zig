@@ -118,14 +118,19 @@ pub fn read(gpa: Allocator, arena: Allocator, nl: *const Netlist, st: *const Str
     for (nl.hints, 0..) |h, i| {
         if (h.verb != .order) continue;
         var devs: std.ArrayList(u32) = .empty;
-        const bad: ?hints.Code = for (h.args) |name| {
+        var at: u32 = hints.no_arg;
+        const bad: ?hints.Code = for (h.args, 0..) |name, k| {
+            at = @intCast(k);
             const d = (nl.device(name) orelse break .unknown_name).index();
             if (!drawn[d]) break .not_placeable;
             if (std.mem.indexOfScalar(u32, devs.items, d) != null) break .bad_args;
             try devs.append(arena, d);
-        } else if (h.args.len < 2) .bad_args else null;
+        } else done: {
+            at = hints.no_arg;
+            break :done if (h.args.len < 2) .bad_args else null;
+        };
         if (bad) |code| {
-            verdicts[i] = .of(code);
+            verdicts[i] = .at(code, at);
             continue;
         }
         own[i] = devs.items;

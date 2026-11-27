@@ -52,6 +52,8 @@ fn blockOf(gpa: std.mem.Allocator, a: std.mem.Allocator, text: []const u8, p: []
 test {
     _ = @import("remaining_amplifiers.zig");
     _ = @import("reference_amplifiers.zig");
+    _ = @import("center_tap_bindings.zig");
+    _ = @import("center_tap_renderers.zig");
 }
 
 test "every fixture converts, deterministically" {
@@ -190,4 +192,66 @@ test "a hint naming a device the subckt lacks is a log line naming it, and the r
     for (out.files.items) |f| comps += @intFromBool(std.mem.endsWith(u8, f.name, ".shcomp"));
     try std.testing.expectEqual(1, comps);
     try std.testing.expectEqual(5, out.stats.devices);
+}
+
+test "steered oblique capacitor has two real tips; another cell cannot bind those tips to a resistor" {
+    const t = std.testing;
+    var arena: std.heap.ArenaAllocator = .init(t.allocator);
+    defer arena.deinit();
+    const deck =
+        \\separate target cells
+        \\.subckt selected a b
+        \\C1 a b 2.25p m=3
+        \\C2 a b 8p
+        \\*@ class C1 cap_oblique
+        \\*@ weak class C1 cap
+        \\.ends selected
+        \\.subckt incompatible c d
+        \\R1 c d 1k
+        \\*@ class R1 cap_oblique
+        \\.ends incompatible
+    ;
+    const out = try cktimg.convert(t.allocator, arena.allocator(), "probe.cir", deck);
+    var seen: u8 = 0;
+    for (out.files.items) |f| {
+        if (std.mem.eql(u8, f.name, "polyphase_cap.shprim")) {
+            for ([_][]const u8{ "pin p inout -21 -21", "pin n inout 21 21", "line -21 -21 -3 -3", "line 21 21 3 3", "{name} {p} {n} {value} m={m}" }) |s|
+                try t.expect(std.mem.indexOf(u8, f.bytes, s) != null);
+            seen |= 1;
+        } else if (std.mem.eql(u8, f.name, "selected.shcomp")) {
+            try t.expect(std.mem.indexOf(u8, f.bytes, "core:cap") != null);
+            try t.expect(std.mem.indexOf(u8, f.bytes, "polyphase_cap") != null);
+            seen |= 2;
+        } else if (std.mem.eql(u8, f.name, "incompatible.shcomp")) {
+            try t.expect(std.mem.indexOf(u8, f.bytes, "core:res") != null);
+            seen |= 4;
+        }
+    }
+    try t.expectEqual(@as(u8, 7), seen);
+    for (out.warnings.items) |msg| {
+        if (std.mem.indexOf(u8, msg, "different contact coordinates") != null) return;
+    }
+    return error.MissingCapabilityDiagnostic;
+}
+
+test "a closed switched-varactor control bus keeps four exact scalar names in one host contact" {
+    // Oracle: the editable host expands this ordered comma expression to these four
+    // literal names, independently netlisted from AG1146. A second scalar consumer
+    // or a differently ordered call must retain the complete scalar representation.
+    const text = "* bus\n.subckt Varactor_Switched_caps Von Vop B_3_ B_2_ B_1_ B_0_ Vcn Vcp\n.ends\n.subckt osc Von Vop Vcn Vcp B_3_ B_2_ B_1_ B_0_\nXbank Von Vop B_3_ B_2_ B_1_ B_0_ Vcn Vcp Varactor_Switched_caps\n";
+    var arena: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena.deinit();
+    const a = arena.allocator();
+    const bus = "pin B_3_,B_2_,B_1_,B_0_ ";
+    for ([_][]const u8{ ".ends\n", "Rextra B_1_ Vcn 1k\n.ends\n", ".ends\nXtop p n c d z y x w osc\n", "*@ label B_2_\n.ends\n", "*@ port B_2_ unknown-side\n.ends\n" }, 0..) |suffix, i| {
+        const files = try bytesOf(std.testing.allocator, a, "bank.sp", try std.mem.concat(a, u8, &.{ text, suffix }));
+        try std.testing.expectEqual(@as(usize, if (i == 0 or i == 4) 2 else 0), std.mem.count(u8, files, bus));
+        if (i == 0 or i == 4) {
+            try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, " B_3_,B_2_,B_1_,B_0_\n"));
+            try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, " B<3:0>\n"));
+        } else try std.testing.expectEqual(@as(usize, 2), std.mem.count(u8, files, "pin B_1_ "));
+    }
+    const reordered = try std.mem.replaceOwned(u8, a, text, "Xbank Von Vop B_3_ B_2_", "Xbank Von Vop B_2_ B_3_");
+    const files = try bytesOf(std.testing.allocator, a, "bank.sp", try std.mem.concat(a, u8, &.{ reordered, ".ends\n" }));
+    try std.testing.expectEqual(@as(usize, 0), std.mem.count(u8, files, bus));
 }

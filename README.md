@@ -277,7 +277,7 @@ on a pin.
 | `terminals` | The pins, **in SPICE node order** (an M line lists d, g, s, b), each with its position `at` |
 | `.hidden = true` | A pin that is connected but gets no wire, such as a MOSFET bulk |
 | `.ground_ref = true` | A pin that gets no wire when its net is ground, such as an op-amp reference |
-| `draw` | The body, as `line`, `polyline`, `circle` and `text` strokes; it sets how much room the device takes |
+| `draw` | The body, as `line`, `polyline`, hollow `circle`, `text`, and solid `filled_circle` strokes; it sets how much room the device takes |
 | `role` | Only for rails and ports: `power_rail`, `ground_rail`, `input_port`, `output_port` |
 | `unit` | The grid spacing that the layout's wire lengths are measured in |
 

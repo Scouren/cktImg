@@ -88,8 +88,8 @@ pub fn write(gpa: Allocator, p: *const Placed, lib: *const Library, cfg: *const 
             const name = p.net_name[p.pin_net[lo]];
             if (role == .ground_rail and !geom.namesRail(p, lib, p.pin_net[lo])) continue;
             const side: library.Side = switch (role) {
-                .power_rail, .ground_rail => geom.railSide(p, lo),
-                else => geom.nameSide(p, lo),
+                .power_rail, .ground_rail => geom.railSide(p, lib, lo),
+                else => geom.nameSide(p, lib, lo),
             };
             const at = p.pin_xy[lo];
             const box = p.deviceRect(lib, d);
@@ -296,6 +296,7 @@ fn writeDevice(p: *const Placed, lib: *const Library, d: usize, w: *Writer) Writ
         .line => |l| try writePath(w, "cktsym", o, base, &.{ l.a, l.b }),
         .polyline => |ps| try writePath(w, "cktsym", o, base, ps),
         .circle => |c| try writeCircle(w, "draw[cktsym,fill=white]", geom.placePoint(o, base, c.c), c.r),
+        .filled_circle => |c| try writeCircle(w, "fill[black]", geom.placePoint(o, base, c.c), c.r),
         .text => |t| {
             try w.print("  \\node[cktsymlbl,font=\\fontsize{{{d}}}{{{d}}}\\selectfont] at ", .{ t.size, t.size });
             try writePoint(w, geom.placePoint(o, base, t.at));

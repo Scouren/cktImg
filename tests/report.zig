@@ -102,6 +102,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
     const Doc = struct {
         gates: []const struct { rule: []const u8 },
+        text_overlaps: []const struct { text: []const u8 },
         metrics: struct { crossings: u32, bends: u32, labelled: []const []const u8, ported: []const []const u8 },
         requests: []const struct { line: u32 },
         decisions: []const []const u8,
@@ -109,6 +110,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     };
     const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{});
     try std.testing.expectEqual(0, doc.gates.len);
+    try std.testing.expectEqual(0, doc.text_overlaps.len);
     var have: std.ArrayList(u8) = .empty;
     for (doc.decisions) |l| if (std.mem.startsWith(u8, l, "*@ group")) try have.print(arena, "{s}\n", .{l});
     // Names as the parser keeps them (lower case); stacks top to bottom.
@@ -353,9 +355,10 @@ test "report: two controlled sources anchored to the same rail refuse both stack
         const roles = try np.guessRoles(a, &nl);
         const st = try np.schematic.structure.analyze(a, a, &nl, roles);
         const sk = try np.schematic.skeleton.place(a, a, &nl, roles, &st, .{});
+        // They share no net but the rail: no stack, refused before drawing.
         const v = (try np.report.verdicts(a, &nl, roles, &st, &sk, &p, lib))[0];
-        try std.testing.expectEqual(np.hints.State.relaxed, v.state);
-        try std.testing.expectEqual(np.hints.Code.not_drawn, v.code);
+        try std.testing.expectEqual(np.hints.State.rejected, v.state);
+        try std.testing.expectEqual(np.hints.Code.unjoined, v.code);
         try std.testing.expect(!support.generatedStack(&p, nl.hints[0].args[0], nl.hints[0].args[1]));
         for (try np.report.decisions(a, &nl, &st, &sk, &p, lib.unit, 1)) |line|
             try std.testing.expect(!std.mem.startsWith(u8, line, "*@ group stack"));

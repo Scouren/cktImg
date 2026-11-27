@@ -12,19 +12,27 @@ in the deck, in any case. A *pin* is a terminal name of the device's class
 (`g`, `inp`) or a net the device touches (`vin1`); the terminal name decides
 when two pins share a net (a diode-connected gate).
 
+A line stands at the deck's top level. In a deck of only `.subckt`s, which
+draws its last one (the top cell), a line before that `.subckt` or after its
+`.ends` is the top cell's as much as one in its body; a line in another
+definition's body is that definition's (`left|right|top|bottom`, `expand`).
+The report numbers each line by its 1-based line in the file, and leaves
+out the lines a front end adds itself (the top cell's port roles and
+sources, `--from`'s stays).
+
 | rung | line | decides | validated against | `--decisions` exports it |
 |---|---|---|---|---|
 | 1 | `role <net> supply\|ground\|input\|output\|bias\|internal` | the net's role (R1 to R3) | — | strong |
 | 1 | `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block` | the device's kind and polarity (an undefined `X` master, a model name misread) | the card's pin count | strong |
 | 1 | `class <dev> <class>` | the library class it is drawn with | the class has a terminal per drawn pin | strong |
-| 1 | `group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off` | blocks (built, but for `bank`) | known names; a pair or cross of two | strong |
+| 1 | `group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off` | blocks (built, but for `bank`) | known names; a pair or cross of two; a mirror's or bank's gates on one net, a stack's each on a non-rail channel net of the next (else `unjoined`) | strong |
 | 1 | `symmetric <a> <b>` (devices or nets), `axis <dev or net>`, `symmetry off` | the left-right mates; what maps to itself; `off` drops every mate, the blocks' too | an involution; mates of one kind and pin count | strong |
 | 1 | `driver <dev> apart\|inline` | a source drawn apart (R3) or in the circuit | a V source | strong |
 | 1 | `expand <instance>` | one instance flattened (the definition's `*@ expand` does all) | an `X` of a defined `.subckt` | strong |
 | 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A bridge named in `row` goes on that device row | no cycle with column links (I1) | strong |
 | 2 | `column <devs>` | one column, each directly above the next, whatever their nets (parallel devices too); an `order` line that would part them gives way | no cycle with `row` and `above`; no device directly under, or over, two | strong |
 | 2 | `order <devs>` | columns left to right. The devices named stand in different columns, so a link the engine chose between them is dropped; a bridge named goes in the channel between its neighbours | no cycle | strong |
-| 2 | `group stack <devs>` | a column's chain, top to bottom (built) | shared nets, no loop | strong |
+| 2 | `group stack <devs>` | a column's chain, top to bottom (built) | each on a non-rail channel net of the next (else `unjoined`), no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form | upright: a transistor, or a two-pin device on two nets | strong |
 | 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's, the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
 | 2 | `label <net> [at <dev>.<pin> ...]`, `wire <net> [ladder\|trunk\|route]` | names or a wire, and which pattern or pin: `at` names only those pins and wires the rest; `wire` on an input draws one wire with one port | the guarantees; a wire that cannot be drawn is reported, then labels | strong |

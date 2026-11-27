@@ -49,6 +49,7 @@ pub fn cardOf(a: Allocator, deck: *const Deck, rec: *const Recognized, d: u32) A
             'v', 'i' => .{ letter, try plainWords(a, deck.dev_rest[d]) },
             else => .{ 'b', "v=0" },
         },
+        .oblique_cap => .{ 'c', "" },
         .nmos => .{ 'm', "nmos" },
         .pmos => .{ 'm', "pmos" },
         .npn => .{ 'q', "npn" },

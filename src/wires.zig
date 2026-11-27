@@ -87,18 +87,7 @@
 //!   line pins, carries its name once, at its top-left pin: the name
 //!   joins it to its sources drawn apart, and card order chooses nothing.
 //!   `wire`
-//! - wires.17 (habit) A net joined by name falls into parts, each pin no
-//!   farther from another of its part (along x plus along y) than 15, 11
-//!   or 6 half units as neither, one or both of the two face sideways.
-//!   People: fitted on the connections people wire and name in 5,274
-//!   hand-drawn schematics (93.6% of nets right on those held out).
-//!   `within`
-//! - wires.18 (unmeasured) Each part of two pins or more of a net joined
-//!   by name is one trunk with one name at a free end; a pin alone, or a
-//!   part no trunk fits, carries the name at each pin. `parts`
-//! - wires.19 (choice) A net joined by name that is all one part is named
-//!   at every pin: it was cut because its one wire crossed too much.
-//!   `parts`
+//! - wires.17 to wires.19: a net joined by name, in parts (`name_parts.zig`).
 //! - wires.20 (habit, bounded) After rails claim their room, a certified
 //!   converter loop connects its selected local terminals before ordinary
 //!   nets. Its outside pins retain the normal port/name/wire choice.
@@ -110,16 +99,37 @@
 //!   the retained routing handle is not its boundary. Distant pins retain
 //!   ports. This native proximity choice does not infer source block layout.
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
-//! - wires.21 (invariant) An input a `wire` line wires is one wire with
+//! - wires.21 (habit, bounded) A complete CT-linked common-base bias stage
+//!   keeps its two actual opposing B leads in one cut part when the direct
+//!   interval fits. The five-member source observation and exclusions are
+//!   ct_controls.1; this changes neither ordinary near grouping nor the
+//!   whole-part fallback and later crossing cuts. `parts`
+//!
+//! - wires.22 (bounded observation) Successful complete resistor-load
+//!   stages put their load bar through the actual resistor tips. The cold
+//!   owner consumer runs after rails, uses ordinary contact checks, and
+//!   declines caller styles, sequencing or later cut/label rounds. No net
+//!   gets an exemption from automatic thinning. `resistor_load_wires.seed`
+//! - wires.23 (bounded observation) A successfully placed complete four-side
+//!   CT scene retains its source-separated components and one shared tap
+//!   supply. The cold owner checks actual pins, names and same-net contacts
+//!   atomically; normal trunk costs and later thinning remain. `ct_four_wires`
+//!
+//! - wires.24 (bounded observation) One qualified linked-load owner keeps
+//!   its two downstream local resistor/drain pieces separate from remote
+//!   input gates. Original caller intent and complete raw supply/body
+//!   contracts select; ordinary names, contacts and thinning remain.
+//!   `resistor_downstream`
+//! - wires.25 (invariant) An input a `wire` line wires is one wire with
 //!   one port: a trunk's, out from its free end, else the router's wire
 //!   with the port out from its outermost point (`routes.port`); a pin no
 //!   path reaches carries the name. `wire`
-//! - wires.22 (invariant) A pin a `label ... at` line names carries the
+//! - wires.26 (invariant) A pin a `label ... at` line names carries the
 //!   net's name and joins no wire; the net's other pins are drawn without
 //!   it, and their wire, if they are one, carries the name once. `wire`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -131,10 +141,20 @@ const routes = @import("routes.zig");
 const maze = @import("maze.zig");
 const netlines = @import("netlines.zig");
 const trunk = @import("trunk.zig");
+const name_parts = @import("name_parts.zig");
 const power_loops = @import("power_loops.zig");
 const power_loop_wires = @import("power_loop_wires.zig");
+const resistor_loads = @import("resistor_loads.zig");
+const resistor_load_wires = @import("resistor_load_wires.zig");
+const resistor_downstream = @import("resistor_downstream.zig");
+const ct_four_sides = @import("ct_four_sides.zig");
+const ct_four_wires = @import("ct_four_wires.zig");
+const ct_controls = @import("ct_controls.zig");
+const ct_mirror_controls = @import("ct_mirror_controls.zig");
+const Netlist = @import("netlist.zig").Netlist;
 const NetLines = netlines.NetLines;
 const parent_parts = @import("parent_parts.zig");
+const Requests = @import("wire_requests.zig").Requests;
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -162,12 +182,6 @@ const input_reach = 6;
 /// in 5,263 hand-drawn schematics, 97% are no longer.
 const rail_reach = 2;
 
-/// The longest connection kept as wire in a net joined by name, in half
-/// units, by how many of its two pins face sideways (a gate, a base):
-/// neither, one, both. Fitted on the connections people wire and name in
-/// 5,274 hand-drawn schematics (93.6% of nets right on those held out).
-const cut = [3]u32{ 15, 11, 6 };
-
 /// What a net is drawn as by its role.
 const Drawn = enum(u8) {
     /// A supply or a ground: its symbols, or a bar.
@@ -192,7 +206,13 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void {
+/// `nl` is the complete netlist that owns `s`'s borrowed device/net tables;
+/// a cut-net stage certificate counts its hidden and undrawn incidences too.
+/// requests borrows original admitted routes and poses, including those
+/// deferred during scaffolding; only lines.routes are actually drawn here.
+/// load_singles/load_pairs borrow successfully placed full stage owners;
+/// their automatic internal load trees retain ordinary thinning policies.
+pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -259,17 +279,21 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const drawn = try gpa.alloc(bool, n_nets);
     defer gpa.free(drawn);
     @memset(drawn, false);
+    try ct_four_wires.rail(&c, nl, four_groups, lines, requests, pins_of, routed, drawn);
     const mates: []u32 = if (loops.len != 0 and mirror != null) try gpa.dupe(u32, mirror.?.net_mate) else &.{};
     defer gpa.free(mates);
     const own_mirror: ?routes.Mirror = if (mates.len != 0) .{ .axis2 = mirror.?.axis2, .net_mate = mates } else mirror;
     const anchors: []u32 = if (loops.len != 0) try gpa.alloc(u32, n_nets) else &.{};
     defer gpa.free(anchors);
     @memset(anchors, sch.none);
-    var seeded = loops.len == 0 and trial.pairs.len == 0;
+    var seeded = loops.len == 0 and trial.pairs.len == 0 and load_singles.len == 0 and load_pairs.len == 0 and four_groups.len == 0;
     for (order, 0..) |net, position| {
         if (!seeded and position >= lead and !s.roles[net].isRail()) {
             if (loops.len != 0) try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
             try trial.draw(&c, lines, pins_of, routed, drawn);
+            try resistor_load_wires.seed(&c, nl, load_singles, load_pairs, lines, pins_of, routed, drawn);
+            try resistor_downstream.parts(&c, nl, downstream, lines, requests, pins_of, routed, drawn);
+            try ct_four_wires.parts(&c, nl, four_groups, lines, requests, pins_of, routed, drawn);
             seeded = true;
         }
         const pins = pins_of[net].items;
@@ -289,13 +313,14 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             continue;
         }
         if (style == .cut) {
-            try parts(&c, net, pins);
+            try name_parts.draw(&c, nl, net, pins, lines, requests);
             s.labeled[net] = true;
             continue;
         }
         if (bridged_t and style == .auto and lines.port[net] == null and s.roles[net].isPort()) {
             if (try @import("passive_filters.zig").port(&c, net, pins)) continue;
         }
+        const preferred = ct_mirror_controls.interval(&c, nl, net, pins, lines, requests);
         switch (Drawn.of(s.roles[net])) {
             // A rail's pins face out along the rows, a supply's up and a
             // ground's down: a symbol at each, or one bar past them all.
@@ -309,7 +334,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             // trunk, else from the wire the router draws.
             .port => if (style == .auto or pins.len < 2) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
                 if (s.roles[net] == .bias) try named.append(gpa, net);
-                if (!try patterned(&c, net, pins, axis2, if (s.roles[net] == .bias or style == .route) style else .trunk)) {
+                if (!try patterned(&c, net, pins, axis2, if (s.roles[net] == .bias or style == .route) style else .trunk, preferred)) {
                     try waiting.append(gpa, net);
                     if (s.roles[net] == .input) try ported_late.append(gpa, net);
                 }
@@ -318,7 +343,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
                 if (s.roles[net] == .output and try power_loop_wires.port(&c, net, pins, anchor)) continue;
                 const from = c.segs.items.len;
                 const pin_from = s.pins.len;
-                if (!try patterned(&c, net, pins, axis2, style)) {
+                if (!try patterned(&c, net, pins, axis2, style, preferred)) {
                     try waiting.append(gpa, net);
                     continue;
                 }
@@ -451,59 +476,6 @@ fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u
     }
 }
 
-/// A net joined by name between its parts: the pins standing near each
-/// other (each within `cut` of another of its part) on one trunk with one
-/// name; a pin on its own, or a part no trunk fits, a name at each pin.
-fn parts(c: *Canvas, net: u32, pins: []const u32) !void {
-    assert(pins.len >= 1);
-    const gpa = c.gpa;
-    // Each pin's part: the least index of a pin in it.
-    const part = try gpa.alloc(u32, pins.len);
-    defer gpa.free(part);
-    for (part, 0..) |*g, i| g.* = @intCast(i);
-    var merged = true;
-    var rounds: usize = 0;
-    while (merged) : (rounds += 1) {
-        assert(rounds <= pins.len); // every round but the last joins two parts
-        merged = false;
-        for (pins, 0..) |p, i| for (pins[i + 1 ..], i + 1..) |q, j| {
-            if (part[i] == part[j] or !within(c, p, q)) continue;
-            const keep = @min(part[i], part[j]);
-            const drop = @max(part[i], part[j]);
-            for (part) |*g| {
-                if (g.* == drop) g.* = keep;
-            }
-            merged = true;
-        };
-    }
-    // One part is the whole net, the wire that crossed too much: names.
-    if (std.mem.allEqual(u32, part, 0)) {
-        for (pins) |p| try c.labelAt(p);
-        return;
-    }
-    var members: std.ArrayList(u32) = .empty;
-    defer members.deinit(gpa);
-    for (0..pins.len) |g| {
-        members.clearRetainingCapacity();
-        for (pins, part) |p, of| {
-            if (of == g) try members.append(gpa, p);
-        }
-        if (members.items.len == 0) continue;
-        if (members.items.len >= 2 and try trunk.draw(c, net, members.items, .name)) continue;
-        for (members.items) |p| try c.labelAt(p);
-    }
-}
-
-/// Whether two pins of a net stand near enough to stay wired when the net
-/// is joined by name: the connections people keep (`cut`).
-fn within(c: *const Canvas, p: u32, q: u32) bool {
-    const a = pinAt(c.s, p);
-    const b = pinAt(c.s, q);
-    const sides = c.s.pins.items(.side);
-    const sideways = @as(usize, @intFromBool(sides[p].isHorizontal())) + @intFromBool(sides[q].isHorizontal());
-    return 2 * (@abs(a.x - b.x) + @abs(a.y - b.y)) <= cut[sideways] * @as(u32, @intCast(c.len.unit));
-}
-
 /// Whether an input's pins stand near enough to share one wire and one
 /// port: the box around them no more than `input_reach` units around half.
 /// With an existing tree, the outside cluster must also reach its ink
@@ -536,10 +508,10 @@ fn nearTree(box: Rect, net: u32, segments: []const maze.Wire, limit: i32) bool {
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
 /// trunk); false, with nothing drawn, when it does not fit (or for `route`):
 /// the router takes the net.
-fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
+fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style, preferred: ?[2]Pt) !bool {
     // One pin: nothing to route; its port, if any, as by default.
     return switch (if (pins.len < 2) .auto else style) {
-        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port),
+        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.drawPreferred(c, net, pins, .port, preferred),
         .ladder => try ladder(c, net, pins, axis2),
         .trunk => try trunk.draw(c, net, pins, .port),
         .route => false,
@@ -602,9 +574,13 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     if (plain and pieces > 0) s.labeled[net] = true;
     if (ups.items.len < 2) return;
     const y_bar = if (out == .up) top - c.len.rail else top + c.len.rail;
-    std.mem.sort(u32, ups.items, s, struct {
+    // pins_of is filled in ascending pin-id order; filtering keeps it.
+    // Pin ids therefore preserve the prior stable order at equal columns.
+    for (ups.items[0 .. ups.items.len - 1], ups.items[1..]) |a, b| assert(a < b);
+    std.sort.heap(u32, ups.items, s, struct {
         fn lt(sc: *Schematic, x: u32, y: u32) bool {
-            return pinAt(sc, x).x < pinAt(sc, y).x;
+            const a, const b = .{ pinAt(sc, x).x, pinAt(sc, y).x };
+            return if (a == b) x < y else a < b;
         }
     }.lt);
     // A pin whose stub would touch something gets a symbol of its own.
@@ -742,7 +718,8 @@ fn ladder(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32) !bool {
         hi = @min(hi, end.?);
     }
     if (2 * rungs.items.len != pins.len or hi - lo < 2) return false;
-    std.mem.sort([3]i32, rungs.items, {}, struct {
+    // Equal rows are rejected below, before any route is emitted.
+    std.sort.heap([3]i32, rungs.items, {}, struct {
         fn lt(_: void, a: [3]i32, b: [3]i32) bool {
             return a[0] < b[0];
         }

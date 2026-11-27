@@ -43,11 +43,15 @@ Work down this list. Stop at the first round whose picture meets the target.
 
 1. **Draw unhinted** with `--svg --report`; render the PNG. Read `requests`,
    then `grid`, then the picture. Done when you can name each crossing and
-   each unforced corner by its devices or net.
+   each unforced corner by its devices or net. On a deck of 30 devices or
+   more, draw once more with `*@ shelf off` before any other line: one row
+   of columns is often the better start, and every later line is judged
+   against it.
 
 2. **Roles.** Four misreadings cost the most:
    - In a deck of only `.subckt`s every port the names do not settle is an
-     output. Say `role vi input` for each that only drives gates.
+     input when only gates hang on it, else an output. Say `role vi input`
+     for an input a drain or a part also touches.
    - A `vb*` net the circuit makes itself (a drain is on it) gets a port at
      each pin. `role vb3 internal` wires it.
    - In a parts-only circuit the reference net is a ground and refuses
@@ -58,7 +62,11 @@ Work down this list. Stop at the first round whose picture meets the target.
 3. **One `order` line along the signal.** The best-paying line: it turned
    the signal on 4 circuits and took 2 crossings to 0 on a fifth. An order
    across a mirrored pair names the device on the axis too
-   (`order m9 m1 iss m2 m10`), or the axis device is pushed aside.
+   (`order m9 m1 iss m2 m10`), or the axis device is pushed aside. An
+   `order` line reflows the columns it does not name: when you move one
+   device, name the device after it too, or the rest close up around it.
+   `row` and `above` set no column: `row` keeps its devices level in no
+   left-to-right order, `above` puts them in vertical order only.
    Two independent tail current sources can share a requested axis on
    separate rows. With `--report`, a device symmetry request is honoured
    when both origins and all corresponding terminals reflect across the
@@ -130,4 +138,4 @@ complaint open.
 | "This net goes over the top" | `route`, in coordinates |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
-A `group stack` reported `relaxed not_drawn` can reflect opposite series order or two devices anchored to the same rail at equal height. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.
+A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.
