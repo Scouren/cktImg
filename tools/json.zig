@@ -122,7 +122,7 @@ pub fn main(init: std.process.Init) !void {
         // A backend with only the ordinary MOS symbol cannot land a new B
         // wire. Keep its mapped compact class unless it also maps the variant.
         for (lib.classes.items) |*c| if (c.body_variant) |id| {
-            if (t.lookup(c.name) != null and t.lookup(lib.at(id).name) == null) c.body_variant = null;
+            if (t.mapsClass(c.name) and !t.mapsClass(lib.at(id).name)) c.body_variant = null;
         };
     }
 
@@ -436,9 +436,16 @@ const Target = struct {
         if (mode.? == .box) try checkEntry("unmapped", u);
         const c = o.get("classes") orelse return bad("missing \"classes\"", .{});
         if (c != .object) return bad("\"classes\" must be an object", .{});
+        // The deck is read lowercased, so keys are matched lowercased.
+        var classes: std.json.ObjectMap = .empty;
         var it = c.object.iterator();
-        while (it.next()) |e| try checkEntry(e.key_ptr.*, e.value_ptr.*);
-        return .{ .root = o, .classes = c.object, .mode = mode.? };
+        while (it.next()) |e| {
+            try checkEntry(e.key_ptr.*, e.value_ptr.*);
+            const slot = try classes.getOrPut(arena, try std.ascii.allocLowerString(arena, e.key_ptr.*));
+            if (slot.found_existing) return bad("class keys \"{s}\" and \"{s}\" differ only in case", .{ slot.key_ptr.*, e.key_ptr.* });
+            slot.value_ptr.* = e.value_ptr.*;
+        }
+        return .{ .root = o, .classes = classes, .mode = mode.? };
     }
 
     fn checkEntry(key: []const u8, e: Value) !void {
@@ -457,6 +464,27 @@ const Target = struct {
         if (t.classes.get(class)) |e| return e;
         if (std.mem.startsWith(u8, class, "block:")) return t.classes.get(class["block:".len..]);
         return null;
+    }
+
+    /// Whether any key maps `class`: by its name or as `<class>:<model>`.
+    fn mapsClass(t: *const Target, class: []const u8) bool {
+        if (t.lookup(class) != null) return true;
+        for (t.classes.keys()) |k| {
+            if (k.len > class.len and k[class.len] == ':' and std.mem.startsWith(u8, k, class)) return true;
+        }
+        return false;
+    }
+
+    /// The mapping for a device of `class`: `<class>:<model>` when its card
+    /// names a model (`cardModel`), else `lookup`.
+    fn lookupDevice(t: *const Target, class: []const u8, name: []const u8, value: []const u8) ?Value {
+        if (cardModel(class, name, value)) |m| {
+            var buf: [256]u8 = undefined;
+            if (std.fmt.bufPrint(&buf, "{s}:{s}", .{ class, m })) |key| {
+                if (t.classes.get(key)) |e| return e;
+            } else |_| {} // ponytail: a key over 256 bytes falls back to the class key
+        }
+        return t.lookup(class);
     }
 
     /// The `"target"` member's value for `p`. Fails when `unmapped` is
@@ -478,7 +506,7 @@ const Target = struct {
         try s.beginArray();
         for (0..p.deviceCount()) |d| {
             const class = lib.at(p.dev_class[d]);
-            const entry = t.lookup(class.name) orelse switch (t.mode) {
+            const entry = t.lookupDevice(class.name, p.dev_name[d], p.dev_value[d]) orelse switch (t.mode) {
                 .box => t.root.get("unmapped").?,
                 .skip => continue,
                 .@"error" => return bad("no mapping for class \"{s}\", and \"unmapped\" is \"error\"", .{class.name}),
@@ -519,6 +547,22 @@ const Target = struct {
         return aw.written();
     }
 };
+
+/// The model a device's card names (docs/TARGETS.md): of the first two
+/// words after its nodes (`value`, lowercase), the first that is neither a
+/// number nor an expression, stopping at a `key=value`. Only an M, Q, D, J,
+/// Z, R or C card, or an X drawn as a primitive (netlist.4), has one.
+fn cardModel(class: []const u8, name: []const u8, value: []const u8) ?[]const u8 {
+    if (name.len == 0 or std.mem.indexOfScalar(u8, "mqdjzrcx", name[0]) == null) return null;
+    if (std.mem.startsWith(u8, class, "block:")) return null;
+    var it = std.mem.tokenizeScalar(u8, value, ' ');
+    for (0..2) |_| {
+        const w = it.next() orelse return null;
+        if (std.mem.indexOfScalar(u8, w, '=') != null) return null;
+        if (std.mem.indexOfScalar(u8, "0123456789.+-{'", w[0]) == null) return w;
+    }
+    return null;
+}
 
 fn parseArgs(argv: []const [:0]const u8) ?Options {
     var opts: Options = .{ .netlist = "" };
@@ -615,6 +659,65 @@ test "target: a manifest maps classes and subcircuits, and pins are checked" {
     try std.testing.expectError(error.Bad, wrong.block(arena, &placed, &lib));
     const strict = try Target.parse(arena, "{ \"target\": \"t\", \"version\": 1, \"unmapped\": { \"mode\": \"error\" }, \"classes\": {} }");
     try std.testing.expectError(error.Bad, strict.block(arena, &placed, &lib));
+}
+
+test "target: a class:model key wins over the class key, and its pins are checked" {
+    // Oracle: the manifest itself; each device's expected symbol is written
+    // by hand from its card's model, never computed the way `block` does.
+    const gpa = std.testing.allocator;
+    var arena_state: std.heap.ArenaAllocator = .init(gpa);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    var lib = np.Library.init(gpa);
+    defer lib.deinit();
+    try lib.loadZon(arena, symbols, null);
+    var placed = try np.place(gpa, &.default, &lib, &.{
+        \\t
+        \\M1 d1 g 0 0 nfet_01v8 w=1u
+        \\M2 d2 g 0 0 nfet_01v8_lvt
+        \\XM3 d3 g 0 0 sky130_fd_pr__nfet_01v8 w=1
+        \\R1 d1 vdd 1k
+        \\R2 d2 vdd 2k res_high_po
+        \\R3 d3 vdd rpoly l=10u
+        \\V1 vdd 0 1
+        \\V2 g 0 1
+    }, null);
+    defer placed.deinit();
+
+    const t = try Target.parse(arena,
+        \\{ "target": "t", "version": 1, "unmapped": { "mode": "skip" }, "classes": {
+        \\  "nmos": { "sym": "n.sym" }, "nmos_body": { "sym": "n.sym" },
+        \\  "nmos:nfet_01v8": { "sym": "fet.sym" }, "nmos_body:nfet_01v8": { "sym": "fet.sym" },
+        \\  "nmos:sky130_fd_pr__nfet_01v8": { "sym": "pdk.sym" }, "nmos_body:sky130_fd_pr__nfet_01v8": { "sym": "pdk.sym" },
+        \\  "res": { "sym": "r.sym" }, "RES:RES_HIGH_PO": { "sym": "hpo.sym", "pins": ["b", "a"] }, "res:rpoly": { "sym": "poly.sym" } } }
+    );
+    const out = try t.block(arena, &placed, &lib);
+    const doc = try std.json.parseFromSliceLeaky(Value, arena, out, .{});
+    const want = [_][2][]const u8{
+        .{ "m1", "fet.sym" }, // the model key wins over "nmos"
+        .{ "m2", "n.sym" }, // no key for nfet_01v8_lvt: the class key
+        .{ "xm3", "pdk.sym" }, // a PDK X drawn as nmos: its master is the model
+        .{ "r1", "r.sym" }, // a value, no model
+        .{ "r2", "hpo.sym" }, // value then model; the key is matched lowercased
+        .{ "r3", "poly.sym" }, // model, no value
+    };
+    var seen: usize = 0;
+    for (doc.object.get("devices").?.array.items) |e| {
+        const name = e.object.get("name").?.string;
+        for (want) |w| if (std.mem.eql(u8, w[0], name)) {
+            errdefer std.debug.print("{s}: {s}\n", .{ name, e.object.get("sym").?.string });
+            try std.testing.expectEqualStrings(w[1], e.object.get("sym").?.string);
+            if (std.mem.eql(u8, name, "r2")) try std.testing.expectEqual(1, e.object.get("pins").?.array.items[0].integer);
+            seen += 1;
+        };
+    }
+    try std.testing.expectEqual(want.len, seen);
+
+    const wrong = try Target.parse(arena,
+        \\{ "target": "t", "version": 1, "unmapped": { "mode": "skip" }, "classes": {
+        \\  "res": { "sym": "r.sym" }, "res:res_high_po": { "sym": "hpo.sym", "pins": ["a", "x"] } } }
+    );
+    try std.testing.expectError(error.Bad, wrong.block(arena, &placed, &lib));
 }
 
 test "deck: a subcircuit file draws its top cell" {
