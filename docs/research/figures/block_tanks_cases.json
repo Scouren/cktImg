@@ -1,0 +1,1332 @@
+{
+  "corpus_counts": {
+    "amsnet": 734,
+    "analoggenie": 2202
+  },
+  "corpus_sha256": {
+    "amsnet": "4d9e2ff15cc8a8ea814cfe8a6762ef90f3631cd63ca7f64c4035c6a824033b6c",
+    "analoggenie": "b882223f01fef03f98ef636783c6ad0db5d4ea7086a917ad6d7647cb864a95bd"
+  },
+  "dependencies": {
+    "biased_amplifiers.py": "3893d6c882f516da8182ccf5392f8edd0bd3138e54038b284a88f8c186ca3409",
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "block_aliases_native.py": "4b46a908e9b093d7ad3d8b65335dab494c049a6378d1037d70426e375e4c760f",
+    "block_tanks.py": "1246d8c1b831df50a3ca2435df51ad445405af641716c398a22baeea6a377bdd",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "center_tap_symbols_cases.json": "c829d1acde40d4bb8c69497974f11655e6bb74d881b6f3ca974ebe88d780f43f",
+    "center_tap_tanks.py": "4a183a9511491b3bba4ac1e880e5b795398aa0a2c9b6466e7180d077097b860d",
+    "center_tap_tanks_cases.json": "2f56fb8c9d230e620e7bf0a55c43a406547788778a845009215bb23f5a6014d0",
+    "channel_bridges.py": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "input_resistor_legs.py": "5660823e09293ed82ac57d5b9835dff0005c357d6ac55a09c13b4cb8bec40612",
+    "input_resistors.py": "46d3dfae5fae8fd7874519a84f5b9a36292c7b37a343583a0a847dd95233fea5",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "paired_amplifier_ports.py": "81209829b0f2c589af17f30aa2aa55f0644c09ca819a3de68a30720948ca734c",
+    "paired_amplifier_ports_cases.json": "6a034faf117a0cc7aa04d2254371affbf435742198164c1d77ca1942dff1b66d",
+    "power_paths.py": "179c721073ac9b18b8cff2985075326706c71bffc661d291a170275e3d648528",
+    "remaining_amplifiers.py": "4b727e43ec6ffd7f1786385df86e8604fb353633982a7cbc458d77e2d2f4b9bb",
+    "sampling_cells.py": "cf705df907cc88ab5e644a1de6c1e0d3c5297f971703a6e7376946834bbf2325",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a",
+    "thin_connectivity.py": "bdf216eb76714d0d2f6f3a0ce870f2c976fc0e68efb9959a9c842821b44886db",
+    "trunk_rungs.py": "c1a0a572481fb87e5f03960f3285cb944d16ecbb84d6c3d2f6f1e10364422fae"
+  },
+  "limits": [
+    "One correlated source group, not a universal output-load habit.",
+    "DA/PA remain rectangles; VSS has no source terminal geometry and is not inferred.",
+    "Capacitor/coil order and alignment are measured; no absolute distance is prescribed.",
+    "World pose must follow actual outward output leads, never declared names alone.",
+    "No native behavior or physical preservation is claimed by this source-only certificate."
+  ],
+  "method_checks": [
+    "literal_complete_block_tank",
+    "duplicate_capacitor_rejected",
+    "duplicate_coil_rejected",
+    "duplicate_block_rejected",
+    "second_block_with_unknown_roles_rejected",
+    "output_bound_twice_rejected",
+    "input_ports_are_not_outputs_rejected",
+    "unknown_extra_active_incidence_rejected",
+    "tap_alias_rejected",
+    "card_permutation_keeps_named_binding",
+    "literal_actual_three_midpoints_and_outward_order",
+    "eight_actual_frame_poses_and_translation",
+    "wrong_named_end_order_rejected",
+    "shifted_coil_midpoint_rejected",
+    "skew_coil_axis_rejected",
+    "cap_beyond_coil_rejected",
+    "tap_toward_block_rejected",
+    "opposite_actual_output_sides_rejected",
+    "body_beyond_named_output_rejected"
+  ],
+  "names": [
+    "ag-1103:x1:xl1--c1"
+  ],
+  "observations": [
+    {
+      "name": "ag-1103:xl1",
+      "selected": true
+    },
+    {
+      "name": "ag-1114:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1131:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1146:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1147:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1149:xlp",
+      "selected": false
+    },
+    {
+      "name": "ag-1151:xl",
+      "selected": false
+    },
+    {
+      "name": "ag-1152:xl1",
+      "selected": false
+    },
+    {
+      "name": "ag-1152:xl2",
+      "selected": false
+    },
+    {
+      "name": "ag-1153:xl1",
+      "selected": false
+    },
+    {
+      "name": "ag-1153:xl2",
+      "selected": false
+    },
+    {
+      "name": "ag-1168:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1168:x2",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xle1",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xle2",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xlo1",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xlo2",
+      "selected": false
+    },
+    {
+      "name": "ag-1187:xtb",
+      "selected": false
+    },
+    {
+      "name": "ag-1190:x1",
+      "selected": false
+    }
+  ],
+  "rows": [
+    {
+      "block_coil_paths": [
+        {
+          "actual_targets": [
+            [
+              460.0,
+              30.0
+            ],
+            [
+              520.0,
+              0.0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-8feb614d2e4ab71f",
+                "xy": [
+                  480.0,
+                  30.0
+                ]
+              },
+              {
+                "object": "wire-78ab3a30-cb66-4943-9572-3d433cea6f8e-to-junction",
+                "xy": [
+                  520.0,
+                  -10.0
+                ]
+              },
+              {
+                "object": "wire-11991c9c-0bbd-4d03-a8fb-b548ad6cac52-to-junction",
+                "xy": [
+                  650.0,
+                  160.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  460.0,
+                  30.0
+                ],
+                [
+                  480,
+                  30
+                ]
+              ],
+              [
+                [
+                  480,
+                  -10
+                ],
+                [
+                  480,
+                  30
+                ]
+              ],
+              [
+                [
+                  480,
+                  -10
+                ],
+                [
+                  520,
+                  -10
+                ]
+              ],
+              [
+                [
+                  520,
+                  -10
+                ],
+                [
+                  520.0,
+                  0.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                460.0,
+                30.0
+              ],
+              [
+                520.0,
+                0.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "name": "ag-1103:x1:xl1--c1:net9",
+          "net": "net9",
+          "verified_segments": [
+            [
+              [
+                460,
+                30
+              ],
+              [
+                480,
+                30
+              ]
+            ],
+            [
+              [
+                480,
+                30
+              ],
+              [
+                480,
+                -10
+              ]
+            ],
+            [
+              [
+                480,
+                -10
+              ],
+              [
+                520,
+                -10
+              ]
+            ],
+            [
+              [
+                520,
+                -10
+              ],
+              [
+                520,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                270
+              ],
+              [
+                -30,
+                270
+              ]
+            ],
+            [
+              [
+                -30,
+                270
+              ],
+              [
+                -30,
+                160
+              ]
+            ],
+            [
+              [
+                -30,
+                160
+              ],
+              [
+                650,
+                160
+              ]
+            ],
+            [
+              [
+                650,
+                160
+              ],
+              [
+                650,
+                -10
+              ]
+            ],
+            [
+              [
+                650,
+                -10
+              ],
+              [
+                520,
+                -10
+              ]
+            ],
+            [
+              [
+                670,
+                270
+              ],
+              [
+                710,
+                270
+              ]
+            ],
+            [
+              [
+                710,
+                270
+              ],
+              [
+                710,
+                160
+              ]
+            ],
+            [
+              [
+                710,
+                160
+              ],
+              [
+                650,
+                160
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              460.0,
+              70.0
+            ],
+            [
+              520.0,
+              100.0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-8fc0b9c72ad12554",
+                "xy": [
+                  480.0,
+                  70.0
+                ]
+              },
+              {
+                "object": "wire-f9b93890-5916-495d-87a4-c2372ddb4241-to-junction",
+                "xy": [
+                  520.0,
+                  110.0
+                ]
+              },
+              {
+                "object": "wire-2bb1f973-2e72-4ce4-946e-fa30278b8060-to-junction",
+                "xy": [
+                  670.0,
+                  180.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  460.0,
+                  70.0
+                ],
+                [
+                  480,
+                  70
+                ]
+              ],
+              [
+                [
+                  480,
+                  70
+                ],
+                [
+                  480,
+                  110
+                ]
+              ],
+              [
+                [
+                  480,
+                  110
+                ],
+                [
+                  520,
+                  110
+                ]
+              ],
+              [
+                [
+                  520.0,
+                  100.0
+                ],
+                [
+                  520,
+                  110
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                460.0,
+                70.0
+              ],
+              [
+                520.0,
+                100.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "name": "ag-1103:x1:xl1--c1:net8",
+          "net": "net8",
+          "verified_segments": [
+            [
+              [
+                460,
+                70
+              ],
+              [
+                480,
+                70
+              ]
+            ],
+            [
+              [
+                480,
+                70
+              ],
+              [
+                480,
+                110
+              ]
+            ],
+            [
+              [
+                480,
+                110
+              ],
+              [
+                520,
+                110
+              ]
+            ],
+            [
+              [
+                520,
+                110
+              ],
+              [
+                520,
+                100
+              ]
+            ],
+            [
+              [
+                0,
+                310
+              ],
+              [
+                -10,
+                310
+              ]
+            ],
+            [
+              [
+                -10,
+                310
+              ],
+              [
+                -10,
+                180
+              ]
+            ],
+            [
+              [
+                -10,
+                180
+              ],
+              [
+                670,
+                180
+              ]
+            ],
+            [
+              [
+                670,
+                180
+              ],
+              [
+                670,
+                110
+              ]
+            ],
+            [
+              [
+                670,
+                110
+              ],
+              [
+                520,
+                110
+              ]
+            ],
+            [
+              [
+                670,
+                310
+              ],
+              [
+                690,
+                310
+              ]
+            ],
+            [
+              [
+                690,
+                310
+              ],
+              [
+                690,
+                180
+              ]
+            ],
+            [
+              [
+                690,
+                180
+              ],
+              [
+                670,
+                180
+              ]
+            ]
+          ]
+        }
+      ],
+      "geometry": {
+        "cap_parallel_to_output_span": true,
+        "capacitor_between_output_and_coil": true,
+        "coil_parallel_to_output_span": true,
+        "matching_named_net_order": true,
+        "outputs_share_facing_plane": true,
+        "tap_faces_away_from_block": true,
+        "three_actual_midpoints_share_transverse_coordinate": true
+      },
+      "group": {
+        "block": "x1",
+        "block_indices": [
+          4,
+          5
+        ],
+        "block_ports": [
+          "outp",
+          "outn"
+        ],
+        "capacitor": "c1",
+        "coil": "xl1",
+        "outer_incidences": [
+          [
+            [
+              "c1",
+              0
+            ],
+            [
+              "cblk3",
+              0
+            ],
+            [
+              "cblk5",
+              1
+            ],
+            [
+              "x1",
+              4
+            ],
+            [
+              "xl1",
+              0
+            ]
+          ],
+          [
+            [
+              "c1",
+              1
+            ],
+            [
+              "cblk4",
+              0
+            ],
+            [
+              "cblk6",
+              1
+            ],
+            [
+              "x1",
+              5
+            ],
+            [
+              "xl1",
+              1
+            ]
+          ]
+        ],
+        "outer_nets": [
+          "net9",
+          "net8"
+        ],
+        "tap": "net21"
+      },
+      "name": "ag-1103:x1:xl1--c1",
+      "source_block": {
+        "bindings": [
+          "vss",
+          "vb_da",
+          "net10",
+          "net22",
+          "net9",
+          "net8",
+          "net11"
+        ],
+        "body": [
+          [
+            350.0,
+            -10.0
+          ],
+          [
+            450.0,
+            -10.0
+          ],
+          [
+            450.0,
+            110.0
+          ],
+          [
+            350.0,
+            110.0
+          ]
+        ],
+        "card": "x1",
+        "family": "da",
+        "id": "ag-1103",
+        "missing_geometry": [
+          "vss"
+        ],
+        "ports": [
+          "vss",
+          "vb",
+          "inp",
+          "inn",
+          "outp",
+          "outn",
+          "src"
+        ],
+        "source_object": "instance-ae4be71d-0189-4220-88f0-84130a682ee1",
+        "source_sha256": {
+          ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+          ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+          ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+        },
+        "visible_port_mapping": {
+          "inn": {
+            "attachment": [
+              350.0,
+              70.0
+            ],
+            "endpoint": [
+              340.0,
+              70.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "net22",
+            "path": [
+              [
+                350.0,
+                70.0
+              ],
+              [
+                340.0,
+                70.0
+              ]
+            ]
+          },
+          "inp": {
+            "attachment": [
+              350.0,
+              30.0
+            ],
+            "endpoint": [
+              340.0,
+              30.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "net10",
+            "path": [
+              [
+                350.0,
+                30.0
+              ],
+              [
+                340.0,
+                30.0
+              ]
+            ]
+          },
+          "outn": {
+            "attachment": [
+              450.0,
+              70.0
+            ],
+            "endpoint": [
+              460.0,
+              70.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "net8",
+            "path": [
+              [
+                450.0,
+                70.0
+              ],
+              [
+                460.0,
+                70.0
+              ]
+            ]
+          },
+          "outp": {
+            "attachment": [
+              450.0,
+              30.0
+            ],
+            "endpoint": [
+              460.0,
+              30.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "net9",
+            "path": [
+              [
+                450.0,
+                30.0
+              ],
+              [
+                460.0,
+                30.0
+              ]
+            ]
+          },
+          "src": {
+            "attachment": [
+              400.0,
+              110.0
+            ],
+            "endpoint": [
+              400.0,
+              120.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "net11",
+            "path": [
+              [
+                400.0,
+                110.0
+              ],
+              [
+                400.0,
+                120.0
+              ]
+            ]
+          },
+          "vb": {
+            "attachment": [
+              400.0,
+              -10.0
+            ],
+            "endpoint": [
+              400.0,
+              -20.0
+            ],
+            "method": "declared named port matches its own attached SVG lead",
+            "net": "vb_da",
+            "path": [
+              [
+                400.0,
+                -10.0
+              ],
+              [
+                400.0,
+                -20.0
+              ]
+            ]
+          }
+        }
+      },
+      "source_sha256": {
+        ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+        ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+        ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+      },
+      "source_tank": {
+        "actual_capacitor": {
+          "object": "instance-3aebda67-8b95-4f3a-a7e6-647f73d41cfc",
+          "terminals": {
+            "P1": [
+              480.0,
+              30.0
+            ],
+            "P2": [
+              480.0,
+              70.0
+            ]
+          }
+        },
+        "actual_coil": {
+          "n1": [
+            520.0,
+            0.0
+          ],
+          "n2": [
+            520.0,
+            100.0
+          ],
+          "n3": [
+            540.0,
+            50.0
+          ]
+        },
+        "capacitor": "c1",
+        "capacitor_bindings": [
+          "net9",
+          "net8"
+        ],
+        "capacitors_on_same_outer_pair": [
+          "c1"
+        ],
+        "coil": "xl1",
+        "coil_bindings": [
+          "net9",
+          "net8",
+          "net21"
+        ],
+        "coil_ports": [
+          "n1",
+          "n2",
+          "n3"
+        ],
+        "coils_on_same_outer_pair": [
+          "xl1"
+        ],
+        "connections": [
+          {
+            "actual_targets": [
+              [
+                520.0,
+                0.0
+              ],
+              [
+                480.0,
+                30.0
+              ]
+            ],
+            "cache_segments_without_ink": [],
+            "capacitor_pin": "P1",
+            "connection": {
+              "actual_junctions": [
+                {
+                  "object": "contact-8feb614d2e4ab71f",
+                  "xy": [
+                    480.0,
+                    30.0
+                  ]
+                },
+                {
+                  "object": "wire-78ab3a30-cb66-4943-9572-3d433cea6f8e-to-junction",
+                  "xy": [
+                    520.0,
+                    -10.0
+                  ]
+                },
+                {
+                  "object": "wire-11991c9c-0bbd-4d03-a8fb-b548ad6cac52-to-junction",
+                  "xy": [
+                    650.0,
+                    160.0
+                  ]
+                }
+              ],
+              "continuous": true,
+              "spanning_ink_segments": [
+                [
+                  [
+                    480,
+                    -10
+                  ],
+                  [
+                    480.0,
+                    30.0
+                  ]
+                ],
+                [
+                  [
+                    480,
+                    -10
+                  ],
+                  [
+                    520,
+                    -10
+                  ]
+                ],
+                [
+                  [
+                    520,
+                    -10
+                  ],
+                  [
+                    520.0,
+                    0.0
+                  ]
+                ]
+              ],
+              "targets": [
+                [
+                  520.0,
+                  0.0
+                ],
+                [
+                  480.0,
+                  30.0
+                ]
+              ]
+            },
+            "net": "net9",
+            "port": "n1",
+            "verified_segments": [
+              [
+                [
+                  460,
+                  30
+                ],
+                [
+                  480,
+                  30
+                ]
+              ],
+              [
+                [
+                  480,
+                  30
+                ],
+                [
+                  480,
+                  -10
+                ]
+              ],
+              [
+                [
+                  480,
+                  -10
+                ],
+                [
+                  520,
+                  -10
+                ]
+              ],
+              [
+                [
+                  520,
+                  -10
+                ],
+                [
+                  520,
+                  0
+                ]
+              ],
+              [
+                [
+                  0,
+                  270
+                ],
+                [
+                  -30,
+                  270
+                ]
+              ],
+              [
+                [
+                  -30,
+                  270
+                ],
+                [
+                  -30,
+                  160
+                ]
+              ],
+              [
+                [
+                  -30,
+                  160
+                ],
+                [
+                  650,
+                  160
+                ]
+              ],
+              [
+                [
+                  650,
+                  160
+                ],
+                [
+                  650,
+                  -10
+                ]
+              ],
+              [
+                [
+                  650,
+                  -10
+                ],
+                [
+                  520,
+                  -10
+                ]
+              ],
+              [
+                [
+                  670,
+                  270
+                ],
+                [
+                  710,
+                  270
+                ]
+              ],
+              [
+                [
+                  710,
+                  270
+                ],
+                [
+                  710,
+                  160
+                ]
+              ],
+              [
+                [
+                  710,
+                  160
+                ],
+                [
+                  650,
+                  160
+                ]
+              ]
+            ]
+          },
+          {
+            "actual_targets": [
+              [
+                520.0,
+                100.0
+              ],
+              [
+                480.0,
+                70.0
+              ]
+            ],
+            "cache_segments_without_ink": [],
+            "capacitor_pin": "P2",
+            "connection": {
+              "actual_junctions": [
+                {
+                  "object": "contact-8fc0b9c72ad12554",
+                  "xy": [
+                    480.0,
+                    70.0
+                  ]
+                },
+                {
+                  "object": "wire-f9b93890-5916-495d-87a4-c2372ddb4241-to-junction",
+                  "xy": [
+                    520.0,
+                    110.0
+                  ]
+                },
+                {
+                  "object": "wire-2bb1f973-2e72-4ce4-946e-fa30278b8060-to-junction",
+                  "xy": [
+                    670.0,
+                    180.0
+                  ]
+                }
+              ],
+              "continuous": true,
+              "spanning_ink_segments": [
+                [
+                  [
+                    480.0,
+                    70.0
+                  ],
+                  [
+                    480,
+                    110
+                  ]
+                ],
+                [
+                  [
+                    480,
+                    110
+                  ],
+                  [
+                    520,
+                    110
+                  ]
+                ],
+                [
+                  [
+                    520.0,
+                    100.0
+                  ],
+                  [
+                    520,
+                    110
+                  ]
+                ]
+              ],
+              "targets": [
+                [
+                  520.0,
+                  100.0
+                ],
+                [
+                  480.0,
+                  70.0
+                ]
+              ]
+            },
+            "net": "net8",
+            "port": "n2",
+            "verified_segments": [
+              [
+                [
+                  460,
+                  70
+                ],
+                [
+                  480,
+                  70
+                ]
+              ],
+              [
+                [
+                  480,
+                  70
+                ],
+                [
+                  480,
+                  110
+                ]
+              ],
+              [
+                [
+                  480,
+                  110
+                ],
+                [
+                  520,
+                  110
+                ]
+              ],
+              [
+                [
+                  520,
+                  110
+                ],
+                [
+                  520,
+                  100
+                ]
+              ],
+              [
+                [
+                  0,
+                  310
+                ],
+                [
+                  -10,
+                  310
+                ]
+              ],
+              [
+                [
+                  -10,
+                  310
+                ],
+                [
+                  -10,
+                  180
+                ]
+              ],
+              [
+                [
+                  -10,
+                  180
+                ],
+                [
+                  670,
+                  180
+                ]
+              ],
+              [
+                [
+                  670,
+                  180
+                ],
+                [
+                  670,
+                  110
+                ]
+              ],
+              [
+                [
+                  670,
+                  110
+                ],
+                [
+                  520,
+                  110
+                ]
+              ],
+              [
+                [
+                  670,
+                  310
+                ],
+                [
+                  690,
+                  310
+                ]
+              ],
+              [
+                [
+                  690,
+                  310
+                ],
+                [
+                  690,
+                  180
+                ]
+              ],
+              [
+                [
+                  690,
+                  180
+                ],
+                [
+                  670,
+                  180
+                ]
+              ]
+            ]
+          }
+        ],
+        "corpus": "analoggenie",
+        "geometry": {
+          "cap_opposes_tap": true,
+          "capacitor_axis": "vertical",
+          "coil_axis": "vertical",
+          "matched_net_order": true,
+          "parallel": true,
+          "same_axial_center": true,
+          "tap_on_transverse_axis": true
+        },
+        "id": "ag-1103",
+        "name": "ag-1103:xl1--c1",
+        "net_pair": [
+          "net8",
+          "net9"
+        ],
+        "source_sha256": {
+          ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+          ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+          ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+        },
+        "unique_owner": true
+      }
+    }
+  ]
+}

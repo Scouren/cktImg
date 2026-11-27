@@ -17,10 +17,11 @@
 //!
 //! Contents (shared symbol and source-qualified layout entries):
 //! - `pub const parent_context`, `pub const local_parents`, `pub const parent_outputs`, `pub const parent_stages`
-//! - `pub const source_regions`, `pub const source_bridge`
+//! - `pub const source_regions`, `pub const source_bridge`, `pub const source_layout`, `pub fn placeSourceLayout`, `pub const switch_rectangles`
 //! - `pub fn placeBound`, `pub fn placeOrganized`, `pub fn placeSourceBridge`
 //! - `pub const device = @import("device.zig")`
 //! - `pub const library = @import("library.zig")`
+//! - `pub const polyphase_caps`
 //! - `pub const regulator = @import("regulator.zig")`
 //! - `pub const block_symbols = @import("block_symbols.zig")`
 
@@ -40,6 +41,10 @@ pub const parent_stages = @import("parent_stages.zig");
 pub const source_regions = @import("source_regions.zig");
 /// An ordered horizontal two-arm source-degeneration bridge.
 pub const source_bridge = @import("source_bridge.zig");
+/// Original four-MOS channel rectangles, retaining every competing slot.
+pub const switch_rectangles = @import("switch_rectangles.zig");
+/// Complete source-certified mixed-device arrangements.
+pub const source_layout = @import("source_layout.zig");
 /// What a device of a kind is to a drawing: its current path and side pins.
 pub const device = @import("device.zig");
 /// The `*@` grouping hints a deck gives `layout` (issue #7).
@@ -47,7 +52,9 @@ pub const hints = @import("hints.zig");
 pub const analysis = @import("analysis.zig");
 pub const csr = @import("csr.zig");
 pub const library = @import("library.zig");
-/// Signed input order from raw NMOS regulator connections and declared cell ports.
+/// Complete two-bank passive RC lattice and ordered capacitor poses.
+pub const polyphase_caps = @import("polyphase_caps.zig");
+/// Certified signed controller pose for a regulated pass transistor.
 pub const regulator = @import("regulator.zig");
 /// Conventional glyphs for subcircuits with verified named port contracts.
 pub const block_symbols = @import("block_symbols.zig");
@@ -56,6 +63,8 @@ pub const schematic = @import("schematic.zig");
 pub const placed = @import("placed.zig");
 pub const geom = @import("geom.zig");
 /// Exact integer membership for horizontal, vertical and 45-degree wire records.
+/// Optional 45-degree reciprocal gate connections after ordinary routing.
+pub const crossover = @import("crossover.zig");
 pub const wire_geometry = @import("wire_geometry.zig");
 pub const lint = @import("lint.zig");
 /// The drawing's guarantees, checked on a finished `Placed`.
@@ -161,7 +170,12 @@ pub fn placeBound(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Libr
     defer tmp.free(roles);
     var s = try schematic.sketch.layWithParents(tmp, nl, roles, lib, cfg.layout, pairs);
     defer s.deinit();
-    return Placed.init(out, &s, nl);
+    var p = try Placed.init(out, &s, nl);
+    errdefer p.deinit();
+    if (cfg.geometry == .allow_45) if (crossover.collect(nl, roles)) |pair| {
+        _ = try crossover.apply(tmp, lib, &p, nl, pair);
+    };
+    return p;
 }
 
 /// Draws certified stages; a failed local room, mandatory route or final
@@ -172,6 +186,12 @@ pub fn placeOrganized(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *co
 
 /// Draws a certified complete two-arm bridge, with ordinary layout as fallback.
 pub fn placeSourceBridge(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_bridge.Request) PlaceError!Placed {
+    return placeSourceLayout(gpa, cfg, lib, nl, .{ .bridge = request });
+}
+
+/// Draws a complete mixed-device room, retaining the ordinary result if a
+/// selected symbol, original request, or final electrical gate declines it.
+pub fn placeSourceLayout(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, request: source_layout.Owner) PlaceError!Placed {
     return placeQualified(gpa, cfg, lib, nl, &.{}, &.{}, request);
 }
 
@@ -185,7 +205,7 @@ fn stages(tmp: Allocator, out: Allocator, cfg: *const Config, lib: *Library, sou
     return placeBound(tmp, out, cfg, lib, &nl, &.{});
 }
 
-fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_bridge.Request) PlaceError!Placed {
+fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const netlist.Netlist, pairs: []const parent_outputs.Pair, stages_: []const parent_stages.Stage, bridge: ?source_layout.Owner) PlaceError!Placed {
     if (stages_.len > 0 or bridge != null) {
         const roles = try guessRoles(gpa, nl);
         defer gpa.free(roles);
@@ -201,7 +221,7 @@ fn placeQualified(gpa: Allocator, cfg: *const Config, lib: *Library, nl: *const 
                 var findings: std.ArrayList(checks.Finding) = .empty;
                 defer findings.deinit(gpa);
                 try checks.find(gpa, &findings, &candidate, lib);
-                const bridge_intact = if (bridge) |rq| source_bridge.intact(&candidate, nl, rq, lib.unit) else true;
+                const bridge_intact = if (bridge) |r| source_layout.intact(r, &candidate, nl, lib) else true;
                 const receivers_clear = if (panels) clear: {
                     for (pairs) |pair| for (pair) |o| {
                         if (!parent_stages.clearDevice(&candidate, lib, nl, o.pmos) or !parent_stages.clearDevice(&candidate, lib, nl, o.nmos)) break :clear false;

@@ -9,6 +9,28 @@ Run local builds inside `nix develop -c` for the pinned toolchain. Serialize
 Zig processes and keep at least 6 GB available memory, as required by
 [AGENTS.md](AGENTS.md). Check command exit codes; output alone is not a pass.
 
+Cache collection must preserve tiny generated outputs together with their
+producing manifests. In the pinned Zig 0.17 toolchain, an `Options` step
+trusts its input manifest without checking that `o/<digest>/options.zig`
+still exists. A completed manifest with no file inputs contains **one NUL
+byte**, so deleting only empty manifests does not invalidate it. Removing
+generated output directories alone can leave every ordinary build reporting
+a cache hit for a missing source file. `--cache-poison=poisoned` bypasses
+configuration caching, not this generator's cache.
+
+Prefer retaining these small entries during idle collection. If an output
+was already collected, identify its exact producing manifest from the
+pinned cache implementation (or `zig cache-cat`), back up and invalidate
+that manifest while all cache users are idle, then rerun the unchanged
+build so the generator recreates the file. Do not fabricate generated
+source or clear unrelated warm compiler artifacts. Manifest names and
+formats are toolchain-specific; verify the input-to-output digest mapping
+before invalidating an entry. The same pairing applies to compiler outputs:
+if collection removes a compiled artifact, its exact producing manifest
+must be invalidated too. Repairing only generated options does not repair
+a separate stale compiler-output entry. Keep complete output directories
+and their metadata as one collection unit.
+
 ## Commands and coverage
 
 | Check | Command or entry point | Independent oracle |
@@ -19,6 +41,7 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Shared-query codegen | `nix develop -c zig build test-codegen` (also in `test`) | Runtime-input helper/direct assembly on fixed x86_64_v3 ReleaseFast; identical direct callees, no hidden tail wrappers, accepted static comparison and literal residue mutations. |
 | Random netlists | `nix develop -c zig build fuzz` | 4,000 deterministic cases checking electrical connectivity, shorts, dots, honoured hints and reversed-card determinism. Both honoured and physically refused stack requests are checked independently against emitted device rows and primary terminal coordinates. |
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |
+| Gallery measurements | `python3 -I -B tests/site_metrics.py` | Literal complete, absent, and unresolved label bindings; missing evidence is displayed as unknown. Runs in CI and before site publication. |
 | Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `netlist-import.wasm`; size is strictly below 563,200 bytes. |
 | Real editor round trip | `python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]` | Schemify imports, netlists back and compares with `spicecmp`; omitted decks mean the complete fixture list. |
 | Production comparison | [Implementation checkpoints and reproduction command](docs/research/production-patterns/checkpoints.md) | Compare the full native placement and SVG for both binaries and retain named changes and findings. |
@@ -26,9 +49,12 @@ Zig processes and keep at least 6 GB available memory, as required by
 | Parent structure census | `nix develop -c python3 tests/parent_corpus.py` | All 2,202 AnalogGenie dispositions, memberships, gate interfaces and uniquely witnessed reflections against the frozen ninth-study census. Its SHA-256 is recorded in the test. |
 | Rule-specific source evidence | Each research companion's documented `--check` command | Actual transformed SVG leads and conductor ink, complete named inventories and literal method mutations. |
 | Driven-bank physical continuity | [driven_banks_connectivity.py](docs/research/figures/driven_banks_connectivity.py), with the explicit inputs documented in [driven-banks.md](docs/research/driven-banks.md) | Every stable terminal pair on changed nets across both complete corpora, compared with actual source conductor ink; every historical mismatch is checked by name. |
+| Four-phase passive cells | [polyphase_caps.py](tests/polyphase_caps.py), in `zig build test` | Checks all 32 ordered device tips and both capacitor banks against AG493, card-order and pin-order reversals, a broken cycle, caller authority and the cardinal AG494 control. |
 | MOS bodies | [mos_bodies.py](tests/mos_bodies.py), in `zig build test` | Four named DUTs, ordered raw cards, actual B-tip conductors or attached names, compact class override, hidden/absent caller capabilities and rejected mistyped fourth terminal. |
 | Hint reports | [hint_reports.py](tests/hint_reports.py), in `zig build test` | Hand-written decks: every `*@` line's 1-based file line, text and verdict compared whole, subckt-only and untitled decks, the culprit `name`, `unjoined` groups, a `face` whose port fell back to a name; the lines `cktimg-json` adds left out. |
 | Private bias peers | [bias_block_neighbors.zig](tests/bias_block_neighbors.zig) and the source/native/continuity companions in [bias-block-neighbors.md](docs/research/bias-block-neighbors.md) | Actual own-body leads, outward peer body, opposing collinear terminals, full pin incidences, caller precedence and source-supported physical wire groups. |
+| Paired CT banks | [coil_banks.zig](tests/coil_banks.zig), [coil_reflection.zig](tests/coil_reflection.zig) and the [coupling study](docs/research/center-tap-chains.md) | Actual bank geometry, all four eight-terminal source buses, exact graph-validated whole-network mates, card/terminal-order mutations, caller precedence and allocation-failure cleanup. |
+| CT/NPN feedback stage | [ct_feedback_stage.zig](tests/ct_feedback_stage.zig) and the [source study](docs/research/ct-feedback-stage.md) | Imported ten-test suite: all 23 actual source leads, five complete physical trees in both compaction modes, inward bias columns, shifted frames, caller controls and raw-incidence exclusions. Private owner test covers whole-nine rollback and allocation failures. Focused checks pass; full-corpus parity remains separate. |
 
 `zig build test` includes allocation-failure sweeps where the operation's
 contract requires rollback or unchanged caller state. Its consumer suites

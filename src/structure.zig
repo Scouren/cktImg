@@ -63,6 +63,12 @@
 //!   transistors of a pair that stand level with the pair's other or with
 //!   another transistor on their gate net, not both, 153 stand with the
 //!   pair's (5,263 hand drawings). `blocks`
+//! - structure.13 (habit, bounded) The complete paired CT-bank network
+//!   of AG1180 reflects whole banks and their two private C-S-C paths.
+//!   Try that graph-proved reflection before maximizing moved devices;
+//!   combine it with admitted caller symmetry, and retain ordinary search
+//!   if the trial fails. Global grouping/symmetry off exclude it. The
+//!   source contains one such context. `mates`; coil_network.preferred
 //!
 //! Contents:
 //! - `pub const none: u32`
@@ -80,6 +86,7 @@ const netlist = @import("netlist.zig");
 const device = @import("device.zig");
 const sch = @import("schematic.zig");
 const symmetry = @import("symmetry.zig");
+const coil_network = @import("coil_network.zig");
 const hints = @import("hints.zig");
 
 const Netlist = netlist.Netlist;
@@ -199,6 +206,8 @@ const Pins = struct {
     net_rank: []const u32,
     /// By hint: the pair a line names.
     pin: []symmetry.Pin,
+    /// Cold automatic requests, tried only after caller admission.
+    preference: []const [2]EdgeId = &.{},
     device_mate: []u32,
     net_mate: []u32,
 
@@ -206,6 +215,7 @@ const Pins = struct {
         var pins: std.ArrayList(symmetry.Pin) = .empty;
         defer pins.deinit(p.gpa);
         for (lines) |i| try pins.append(p.gpa, p.pin[i]);
+        for (p.preference) |pair| try pins.append(p.gpa, .{ .net = false, .a = pair[0].index(), .b = pair[1].index() });
         return symmetry.find(p.gpa, p.nl, p.roles, p.device_rank, p.net_rank, pins.items, p.device_mate, p.net_mate);
     }
 };
@@ -631,6 +641,14 @@ fn mates(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Ro
         @memset(net_mate, none);
         return true;
     }
+    const grouping_off = for (nl.hints) |h| {
+        if (h.verb == .off) break true;
+    } else false;
+    if (!grouping_off) if (coil_network.preferred(nl, roles, device_rank)) |pairs| {
+        var trial = check;
+        trial.preference = &pairs;
+        if (try trial.holds(admitted.items)) return false;
+    };
     const found = try check.holds(admitted.items);
     assert(found or admitted.items.len == 0);
     return false;

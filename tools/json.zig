@@ -2,7 +2,7 @@
 //! document out (`src/json.zig` has the shape), for a script that would
 //! rather read a file than link the library.
 //!
-//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
+//!     cktimg-json [--config lint.zon] [--symbols file.zon] [--target manifest.json] [--bundles] [--svg out.svg] [--report r.json] [--decisions 1-4] [--from last.json] deck.spice [out.json]
 //!
 //! The symbol set is the tests' (`tests/symbols.zon`), embedded at build
 //! time, or `--symbols file.zon`: a backend whose symbols differ in size or
@@ -28,13 +28,14 @@
 //!
 //! Contents:
 //! - `pub fn main`
-//! - `pub fn deckSources`
+//! - `pub fn deckSources`, `pub fn deckSourcesFor`
 //! - `pub fn placeSelected`
 
 const std = @import("std");
 const np = @import("NetlistParser");
 const symbols = @import("symbols").text;
 const svg = @import("svg");
+const native_bundle = @import("native_bundle.zig");
 
 const Allocator = std.mem.Allocator;
 const Writer = std.Io.Writer;
@@ -48,14 +49,17 @@ const usage =
     \\
     \\Options:
     \\  --config <path>   layout settings and lint severities from a lint.zon file
+    \\  --allow-45        allow certified 45-degree feedback wires
     \\  --symbols <path>  device symbols from a .zon symbol file (default: built in)
     \\  --target <path>   map classes to a backend's symbols (docs/TARGETS.md) and
     \\                    add a "target" block to the document
     \\  --svg <path>      also draw the placed schematic as SVG
+    \\  --bundles         add ordered port_bundles to JSON and group their SVG contacts
     \\  --report <path>   also write the decision report: findings, each *@ line's
     \\                    verdict, scores, the engine's decisions, the lattice rows
     \\  --decisions <n>   print the engine's decisions on rungs 1 to n (1 to 4) as
     \\                    *@ lines to stdout
+    \\  --allow-45         permit 45-degree interiors on certified reciprocal gate wires
     \\  --from <path>     relay the deck from its last drawing (this tool's JSON):
     \\                    devices stay where it has them, and only what the deck's
     \\                    structure moves, or is new to it, is laid again
@@ -67,12 +71,14 @@ const usage =
 ;
 
 const Options = struct {
+    allow_45: bool = false,
     netlist: []const u8,
     out: ?[]const u8 = null,
     config: ?[]const u8 = null,
     symbols: ?[]const u8 = null,
     target: ?[]const u8 = null,
     svg: ?[]const u8 = null,
+    bundles: bool = false,
     report: ?[]const u8 = null,
     decisions: ?[]const u8 = null,
     from: ?[]const u8 = null,
@@ -89,13 +95,14 @@ pub fn main(init: std.process.Init) !void {
     const opts = parseArgs(try init.minimal.args.toSlice(arena)) orelse return;
 
     const raw = cwd.readFileAlloc(io, opts.netlist, arena, .limited(1 << 22)) catch |err| fatal("cannot read netlist '{s}': {t}", .{ opts.netlist, err });
-    const cfg: np.Config = if (opts.config) |path| blk: {
+    var cfg: np.Config = if (opts.config) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 20)) catch |err| fatal("cannot read config '{s}': {t}", .{ path, err });
         var diags: std.ArrayList(np.config.Diagnostic) = .empty;
         const c = try np.Config.parse(arena, t, &diags);
         for (diags.items) |d| std.log.warn("{s}:{d}: {t} '{s}'", .{ path, d.line, d.kind, d.key });
         break :blk c;
     } else .default;
+    if (opts.allow_45) cfg.geometry = .allow_45;
     // Read before placing: a manifest typo is reported before any work.
     const target: ?Target = if (opts.target) |path| blk: {
         const t = cwd.readFileAlloc(io, path, arena, .limited(1 << 22)) catch |err| fatal("cannot read target manifest '{s}': {t}", .{ path, err });
@@ -120,7 +127,8 @@ pub fn main(init: std.process.Init) !void {
     }
 
     var diag: np.netlist.Diagnostic = .{};
-    const srcs = deckSources(gpa, arena, &lib, opts.netlist, raw, &diag) catch |err| switch (err) {
+    const lattice = opts.from == null and opts.config == null and opts.symbols == null and (target == null or target.?.lookup("cap_oblique") != null);
+    const srcs = deckSourcesFor(gpa, arena, &lib, opts.netlist, raw, &diag, lattice) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
@@ -138,8 +146,9 @@ pub fn main(init: std.process.Init) !void {
     };
     defer placed.deinit();
 
+    const view = if (opts.bundles and opts.symbols == null) try native_bundle.select(arena, raw, srcs, &placed, &lib) else null;
     if (opts.svg) |path| {
-        const pic = try svg.alloc(gpa, &placed, &lib, .{});
+        const pic = try svg.alloc(gpa, &placed, &lib, .{ .bundle = view });
         defer gpa.free(pic);
         cwd.writeFile(io, .{ .sub_path = path, .data = pic }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
     }
@@ -192,6 +201,9 @@ pub fn main(init: std.process.Init) !void {
         // `json.write` ends the document with "\n}\n": add one member before it.
         doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"target\": ", b, "\n}\n" });
     }
+    if (opts.bundles) {
+        doc = try std.mem.concat(arena, u8, &.{ doc[0 .. doc.len - 3], ",\n  \"port_bundles\": ", try native_bundle.json(arena, &placed, &lib, view), "\n}\n" });
+    }
     if (opts.out) |path| {
         cwd.writeFile(io, .{ .sub_path = path, .data = doc }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
     } else {
@@ -205,6 +217,11 @@ pub fn main(init: std.process.Init) !void {
 /// The sources to place for deck `raw` (see the module comment): itself, or
 /// its top cell's body followed by the deck for the definitions.
 pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic) ![][]const u8 {
+    return deckSourcesFor(gpa, arena, lib, path, raw, diag, false);
+}
+
+/// Selects the same cell while permitting the stock oblique-symbol capability.
+pub fn deckSourcesFor(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []const u8, raw: []const u8, diag: *np.netlist.Diagnostic, lattice: bool) ![][]const u8 {
     const text = if (titled(raw)) raw else try std.fmt.allocPrint(arena, "{s}\n{s}", .{ path, raw });
     var nl = try np.netlist.parse(gpa, &.{text}, diag);
     defer nl.deinit(gpa);
@@ -215,7 +232,7 @@ pub fn deckSources(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path: []
     const body = try topCell(arena, text);
     const inline_lines = try cellSources(gpa, arena, &.{ body, rest }, diag);
     const with_sources = try std.mem.concat(arena, u8, &.{ body, "\n", inline_lines });
-    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag);
+    const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag, lattice and top.ports.len == 8 and @import("polyphase_caps.zig").plain(top.body));
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
 
@@ -289,8 +306,8 @@ pub fn placeSelected(gpa: Allocator, arena: Allocator, cfg: *const np.Config, li
     if (srcs.len == 2 and nl.defs.len != 0)
         nl.block_frames = try @import("regulator.zig").instances(arena, &nl, nl.defs[nl.defs.len - 1].ports, lib, cfg);
     if (std.meta.eql(cfg.layout, np.Config.default.layout)) {
-        if (try np.source_bridge.fromSource(arena, source, &nl)) |request| {
-            if (!custom_symbols or try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeSourceBridge(gpa, cfg, lib, &nl, request);
+        if (try np.source_layout.collect(arena, source, &nl)) |request| {
+            if (!custom_symbols or try @import("stock_geometry.zig").equivalent(arena, lib, &nl, symbols)) return np.placeSourceLayout(gpa, cfg, lib, &nl, request);
             return np.placeBound(gpa, gpa, cfg, lib, &nl, &.{});
         }
     }
@@ -357,7 +374,7 @@ fn cellSources(gpa: Allocator, arena: Allocator, sources: []const []const u8, di
 /// their role (R1 leaves them internal): a port only gates hang on is an
 /// input, any other an output. So every port is drawn as one, and a port on
 /// one gate is no dangling pin.
-fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic) ![]const u8 {
+fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, ports: []const []const u8, lib: ?*np.Library, diag: *np.netlist.Diagnostic, lattice: bool) ![]const u8 {
     var nl = try np.netlist.parse(gpa, sources, diag);
     defer nl.deinit(gpa);
     if (lib) |draw_lib| try @import("regulator.zig").select(arena, &nl, ports, draw_lib);
@@ -382,6 +399,8 @@ fn prepareCell(gpa: Allocator, arena: Allocator, sources: []const []const u8, po
         if (roles[net.index()] != .internal) continue;
         try out.writer.print("*@ weak role {s} {s}\n", .{ port, if (driven[net.index()]) "output" else "input" });
     }
+    if (lattice and nl.hints.len == 0) if (lib) |draw_lib|
+        try @import("polyphase_caps.zig").write(&out.writer, &nl, ports, draw_lib);
     return out.written();
 }
 
@@ -510,6 +529,14 @@ fn parseArgs(argv: []const [:0]const u8) ?Options {
         if (std.mem.eql(u8, a, "-h") or std.mem.eql(u8, a, "--help")) {
             std.debug.print("{s}", .{usage});
             return null;
+        }
+        if (std.mem.eql(u8, a, "--bundles")) {
+            opts.bundles = true;
+            continue;
+        }
+        if (std.mem.eql(u8, a, "--allow-45")) {
+            opts.allow_45 = true;
+            continue;
         }
         const slot: ?*?[]const u8 = if (std.mem.eql(u8, a, "--config")) &opts.config else if (std.mem.eql(u8, a, "--symbols")) &opts.symbols else if (std.mem.eql(u8, a, "--target")) &opts.target else if (std.mem.eql(u8, a, "--svg")) &opts.svg else if (std.mem.eql(u8, a, "--report")) &opts.report else if (std.mem.eql(u8, a, "--decisions")) &opts.decisions else if (std.mem.eql(u8, a, "--from")) &opts.from else null;
         if (slot) |s| {

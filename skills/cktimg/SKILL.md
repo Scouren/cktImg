@@ -12,6 +12,8 @@ For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
 top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
 `--config` options to compare the two drawings.
 
+Use `--allow-45` with `cktimg-json` or `cktimg-tex` when the consuming editor or figure accepts oblique wires. In Schemify, pass `netlist.import --allow-45 n2s/deck.sp`. This enables a pair of 45-degree feedback segments in a verified reciprocal differential stage. A wire or label instruction on either output retains the caller's routing. The ordinary invocation uses Manhattan wires.
+
 ## Steps
 
 1. **Write the deck so its names carry its meaning** (Roles, below): matched
@@ -137,6 +139,14 @@ on a device overrides the relations on it.
   `unshown_bodies`. A custom symbol file can supply either class on its
   own, or register a visible D/G/S/B variant after its compact class with
   `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
+- **Polyphase RC cells.** A closed four-phase network with two resistor
+  banks and two certified cyclic capacitor banks can show oblique capacitor
+  plates and leads. Native stock text/SVG and the editor use an actual
+  two-contact `cap_oblique` symbol. With `*@ class C1 cap_oblique` a
+  caller can also request this glyph on a single ordinary capacitor. Its
+  leads are diagonal in its local frame. Inter-device wires use the
+  selected router. An explicit geometry request keeps the other parts on
+  ordinary placement.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:
@@ -191,3 +201,5 @@ on a device overrides the relations on it.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.
+
+For an editable scalar drawing with an optional grouped control-bus view, pass `--bundles` to `cktimg-json`. Its `port_bundles` lists each display contact and every original terminal slot, net and coordinate. The optional SVG uses that grouping. [Example and limits](../../docs/research/production-patterns/control-bus/README.md)
