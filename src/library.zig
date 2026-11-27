@@ -33,8 +33,9 @@
 //!   `className`
 //! - library.3 (choice) A block uses the caller's registered symbol first,
 //!   else a recognized glyph with a complete named-port contract,
-//!   else a generated box. Explicit side directives keep the box geometry.
-//!   `blockFor`
+//!   else a generated box. Side directives keep the glyph, turned or
+//!   mirrored, when one of its eight turns puts every directed port on its
+//!   side (the unturned first); else they draw the box. `blockFor`
 //! - library.4 (order: potential) A generated block's supply port
 //!   (`vdd…`, `vcc…`, `avdd…`, `dvdd…`, `vpp…`) stands on top, its ground
 //!   (`gnd…`, `vss…`, `vee…`, `agnd…`, `dgnd…`, `0`) at the bottom, where
@@ -74,9 +75,16 @@
 //!   1,535 of 1,670 gaps of the blocks of 5,263 hand-drawn schematics, the
 //!   two ports of a two-port side in 1,137 of 1,261 (two units, a row left
 //!   empty between them, in 13). `blockFor`
+//! - library.9 (invariant) A generated block's title clears the names of
+//!   its ports: it stands on the middle row, else a quarter unit above or
+//!   below it; with none clear, the box widens until the middle port's
+//!   name of an odd left or right side ends before the title
+//!   (`symbolTextRect`). `blockFor`
 //!
 //! Contents (geometry and class registration):
 //! - `pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool`
+//! - `pub fn portSide(def: *const netlist.Subckt, slots: ?[4]u8, k: usize) netlist.PortSide`
+//! - `pub fn symbolTextRect(at: Pt, s: []const u8, size: u8) Rect`
 //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
 //! - `pub const Rect = struct`, `Rect.intersects(a: Rect, b: Rect) bool`, `Rect.contains(r: Rect, p: Pt) bool`, `Rect.merge(a: Rect, b: Rect) Rect`, `Rect.point(p: Pt) Rect`, `Rect.fromCorners(a: Pt, b: Pt) Rect`, `Rect.translate(r: Rect, by: Pt) Rect`, `Rect.grow(r: Rect, d: i32) Rect`
 //! - `pub const Orient = packed struct(u8)`, `Orient.r0`, `Orient.left`, `Orient.apply(o: Orient, p: Pt) Pt`, `Orient.applyRect(o: Orient, r: Rect) Rect`, `Orient.flipped(base: Orient, flip_x: bool, flip_y: bool) Orient`
@@ -502,9 +510,11 @@ pub const Library = struct {
         const directed = for (def.sides) |side| {
             if (side != null) break true;
         } else false;
-        if (shape != .box and !directed) {
+        if (shape != .box) glyph: {
             const glyph = try block_symbols.draw(a, shape, def.ports, @min(1_000_000, @max(4, @divTrunc(self.unit, 2))));
-            return self.register(.{ .name = name, .terminals = glyph.terminals, .draw = glyph.ops });
+            if (!directed) return self.register(.{ .name = name, .terminals = glyph.terminals, .draw = glyph.ops });
+            const o = sidesTurn(glyph.terminals, def) orelse break :glyph;
+            return self.register(.{ .name = name, .terminals = try turnTerminals(a, glyph.terminals, o), .draw = try turnOps(a, glyph.ops, o) });
         }
         // Ports per side, in directive order.
         var per: [4]std.ArrayList(usize) = @splat(.empty);
@@ -515,8 +525,7 @@ pub const Library = struct {
         const slots = block_symbols.boxSlots(def.name, def.ports);
         block_symbols.orderBoxPorts(def, slots, order);
         for (order) |k| {
-            const side = def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) netlist.PortSide.left else .right) else defaultSide(def.ports[k]);
-            try per[@backingInt(side)].append(a, k);
+            try per[@backingInt(portSide(def, slots, k))].append(a, k);
         }
         // An amplifier's inverting input above the other, as people tend
         // to draw one (448 of 678 blocks with both inputs on one upright
@@ -535,8 +544,21 @@ pub const Library = struct {
         // The box reaches half a unit past the outer ports of its fullest
         // side.
         const hh: i32 = @as(i32, @intCast(@max(per[0].items.len, per[1].items.len, 1))) * half;
-        const hw: i32 = @max(@as(i32, @intCast(@max(per[2].items.len, per[3].items.len))) * half, @divTrunc(3 * u, 4));
+        var hw: i32 = @max(@as(i32, @intCast(@max(per[2].items.len, per[3].items.len))) * half, @divTrunc(3 * u, 4));
         const lead: i32 = @divTrunc(u, 4);
+        // The title stands on the middle row, else a quarter unit above or
+        // below it, clear of every port's name; with no such row the box
+        // widens until the middle row clears (library.9). The pins stay on
+        // the half-unit grid.
+        const title_y: i32 = titleRow(def, per, hw, hh, half) orelse row: {
+            const title = symbolTextRect(.zero, def.name, 7);
+            for (per[0..2]) |list| if (list.items.len % 2 == 1) {
+                const port = def.ports[list.items[list.items.len / 2]];
+                const need = symbolTextRect(labelAt(.left, 0, 0, hh, port), port, 5).max.x + 1 - title.min.x;
+                if (need > hw) hw = (@divTrunc(need + lead + half - 1, half)) * half - lead;
+            };
+            break :row 0;
+        };
         const terms = try a.alloc(Terminal, n);
         var ops: std.ArrayList(DrawOp) = .empty;
         try ops.append(a, .{ .polyline = try a.dupe(Pt, &.{ .{ .x = -hw, .y = -hh }, .{ .x = hw, .y = -hh }, .{ .x = hw, .y = hh }, .{ .x = -hw, .y = hh }, .{ .x = -hw, .y = -hh } }) });
@@ -548,12 +570,13 @@ pub const Library = struct {
                 // 1,535 of 1,670 gaps of 5,263 hand-drawn schematics, the
                 // two ports of a side in 1,137 of 1,261 (two units in 13).
                 const along: i32 = (2 * @as(i32, @intCast(j)) - @as(i32, @intCast(list.items.len - 1))) * half;
-                const pin: Pt, const edge: Pt, const label: Pt = switch (side) {
-                    .left => .{ .{ .x = -hw - lead, .y = along }, .{ .x = -hw, .y = along }, .{ .x = -hw + 6 + 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
-                    .right => .{ .{ .x = hw + lead, .y = along }, .{ .x = hw, .y = along }, .{ .x = hw - 6 - 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
-                    .top => .{ .{ .x = along, .y = -hh - lead }, .{ .x = along, .y = -hh }, .{ .x = along, .y = -hh + 7 } },
-                    .bottom => .{ .{ .x = along, .y = hh + lead }, .{ .x = along, .y = hh }, .{ .x = along, .y = hh - 7 } },
+                const pin: Pt, const edge: Pt = switch (side) {
+                    .left => .{ .{ .x = -hw - lead, .y = along }, .{ .x = -hw, .y = along } },
+                    .right => .{ .{ .x = hw + lead, .y = along }, .{ .x = hw, .y = along } },
+                    .top => .{ .{ .x = along, .y = -hh - lead }, .{ .x = along, .y = -hh } },
+                    .bottom => .{ .{ .x = along, .y = hh + lead }, .{ .x = along, .y = hh } },
                 };
+                const label = labelAt(side, along, hw, hh, def.ports[k]);
                 const faces: Side = switch (side) {
                     .left => .left,
                     .right => .right,
@@ -565,7 +588,7 @@ pub const Library = struct {
                 try ops.append(a, .{ .text = .{ .at = label, .s = def.ports[k], .size = 5 } });
             }
         }
-        try ops.append(a, .{ .text = .{ .at = .zero, .s = def.name, .size = 7 } });
+        try ops.append(a, .{ .text = .{ .at = .{ .x = 0, .y = title_y }, .s = def.name, .size = 7 } });
         return self.register(.{ .name = name, .terminals = terms, .draw = ops.items });
     }
 
@@ -615,6 +638,14 @@ pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
     for (a, b) |x, y| if (!x.at.eql(y.at) or x.hidden != y.hidden or x.ground_ref != y.ground_ref or
         x.side != y.side or !std.ascii.eqlIgnoreCase(x.name, y.name)) return false;
     return true;
+}
+
+/// The box a symbol's `text` op fills, centred on `at` as the renderers
+/// draw it: a character `(size + 4) * 3 / 5` wide, `size + 4` tall.
+pub fn symbolTextRect(at: Pt, s: []const u8, size: u8) Rect {
+    const em: i32 = @as(i32, size) + 4;
+    const w = @divTrunc(em * 3 * @as(i32, @intCast(s.len)), 5);
+    return .{ .min = .{ .x = at.x - @divTrunc(w, 2), .y = at.y - @divTrunc(em, 2) }, .max = .{ .x = at.x + w - @divTrunc(w, 2), .y = at.y + em - @divTrunc(em, 2) } };
 }
 
 /// A block port's role by name (`portRole`): a non-inverting, an inverting
@@ -678,6 +709,13 @@ const spellings = [_]struct { []const u8, Named, [3]Match }{
     .{ "y", .out, .{ .no, .no, .whole } },
     .{ "vop von vo+ vo-", .out, .{ .no, .whole, .no } },
 };
+
+/// The side of `def`'s generated box port `k` stands on: its directive's,
+/// else its recognized slot's (`block_symbols.boxSlots`, passed as
+/// `slots`), else `defaultSide`'s by its name.
+pub fn portSide(def: *const netlist.Subckt, slots: ?[4]u8, k: usize) netlist.PortSide {
+    return def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) .left else .right) else defaultSide(def.ports[k]);
+}
 
 /// What a block's port is by its name alone, among the definition's
 /// `ports`: an amplifier's inputs (`vin` is the inverting one beside a
@@ -775,6 +813,85 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
         .coupling => "coupling",
         .subckt => "subckt", // by definition: see `Library.blockFor`
     };
+}
+
+/// Where a generated box writes port `name` on `side`, `along` it, in a
+/// box reaching `hw` and `hh` from its middle.
+fn labelAt(side: netlist.PortSide, along: i32, hw: i32, hh: i32, name: []const u8) Pt {
+    const inset: i32 = 6 + 3 * @as(i32, @intCast(name.len));
+    return switch (side) {
+        .left => .{ .x = -hw + inset, .y = along },
+        .right => .{ .x = hw - inset, .y = along },
+        .top => .{ .x = along, .y = -hh + 7 },
+        .bottom => .{ .x = along, .y = hh - 7 },
+    };
+}
+
+/// The first row of the middle, a quarter unit above it and a quarter
+/// below, where a box's title lies clear of every port's name; null when
+/// none does.
+fn titleRow(def: *const netlist.Subckt, per: [4]std.ArrayList(usize), hw: i32, hh: i32, half: i32) ?i32 {
+    const q = @divTrunc(half, 2);
+    row: for ([_]i32{ 0, -q, q }) |y| {
+        const title = symbolTextRect(.{ .x = 0, .y = y }, def.name, 7).grow(-1);
+        if (title.min.y <= -hh or title.max.y >= hh) continue;
+        for (per, 0..) |list, si| for (list.items, 0..) |k, j| {
+            const along: i32 = (2 * @as(i32, @intCast(j)) - @as(i32, @intCast(list.items.len - 1))) * half;
+            const at = labelAt(@fromBackingInt(@intCast(si)), along, hw, hh, def.ports[k]);
+            if (title.intersects(symbolTextRect(at, def.ports[k], 5).grow(-1))) continue :row;
+        };
+        return y;
+    }
+    return null;
+}
+
+/// The first of the eight turns, the unturned first, that puts every port
+/// a directive places on its side, a side's ports in their directive order
+/// (down a left or right side, rightward along a top or bottom); null when
+/// none does.
+fn sidesTurn(terms: []const Terminal, def: *const netlist.Subckt) ?Orient {
+    std.debug.assert(terms.len == def.sides.len);
+    turn: for (0..8) |k| {
+        const o: Orient = .{ .rot = @intCast(k & 3), .mirror = k >= 4 };
+        for (terms, def.sides, 0..) |t, want, i| {
+            const side = want orelse continue;
+            const got = Side.of(o.apply(if (t.side) |f| f.unit() else t.at)) orelse continue :turn;
+            if (@backingInt(got) != @backingInt(side)) continue :turn;
+            for (terms, def.sides, 0..) |u, other, j| {
+                if ((other orelse continue) != side or def.order[j] <= def.order[i]) continue;
+                const a = o.apply(t.at);
+                const b = o.apply(u.at);
+                if (if (got.isHorizontal()) a.y >= b.y else a.x >= b.x) continue :turn;
+            }
+        }
+        return o;
+    }
+    return null;
+}
+
+fn turnTerminals(a: Allocator, terms: []const Terminal, o: Orient) Allocator.Error![]Terminal {
+    const out = try a.dupe(Terminal, terms);
+    for (out) |*t| {
+        t.at = o.apply(t.at);
+        if (t.side) |f| t.side = Side.of(o.apply(f.unit())).?;
+    }
+    return out;
+}
+
+/// `ops` turned `o`; text moves with its anchor and stays upright.
+fn turnOps(a: Allocator, ops: []const DrawOp, o: Orient) Allocator.Error![]DrawOp {
+    const out = try a.dupe(DrawOp, ops);
+    for (out) |*op| switch (op.*) {
+        .line => |*l| l.* = .{ .a = o.apply(l.a), .b = o.apply(l.b) },
+        .polyline => |ps| {
+            const q = try a.dupe(Pt, ps);
+            for (q) |*p| p.* = o.apply(p.*);
+            op.* = .{ .polyline = q };
+        },
+        .circle, .filled_circle => |*c| c.c = o.apply(c.c),
+        .text => |*t| t.at = o.apply(t.at),
+    };
+    return out;
 }
 
 fn copyOps(a: Allocator, ops: []const DrawOp) Allocator.Error![]DrawOp {

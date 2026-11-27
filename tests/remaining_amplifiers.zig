@@ -206,7 +206,8 @@ test "remaining amplifiers: explicit port sides and caller classes retain preced
         defer lib.deinit();
         const def = &nl.defs[0];
         const c = lib.at(try lib.blockFor(def));
-        try testing.expect(box(c));
+        // The triangle, mirrored to put INN on the right (library.3).
+        try testing.expect(!box(c));
         for (c.terminals, 0..) |p, i| if (std.mem.eql(u8, p.name, "inn")) {
             try testing.expectEqual(np.Side.right, c.side(i, .r0).?);
         };

@@ -49,6 +49,9 @@
 //! - placed.9 (habit) A sink named `vee…` is drawn with the supply's
 //!   glyph, below its pin, not the ground's. People: 470 of 477 `vee` rail
 //!   symbols in 5,263 hand-drawn schematics. `roleClass`
+//! - placed.10 (invariant) No net draws one piece of wire twice: a piece
+//!   that repeats one of its net's end for end is left out, its polyline
+//!   broken there; the ink and what it joins are unchanged. `Builder.once`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -402,6 +405,41 @@ const Builder = struct {
         return out.items;
     }
 
+    /// Leaves out every piece of wire that repeats an earlier one of its
+    /// net end for end, breaking its polyline there (placed.10).
+    // ponytail: each piece against every earlier one of its net, quadratic
+    // per net; fine at cell sizes.
+    fn once(b: *Builder) Allocator.Error!void {
+        for (b.polys) |*list| {
+            var kept: std.ArrayList([]const Pt) = .empty;
+            for (list.items) |pl| {
+                var start: usize = 0;
+                for (pl[0 .. pl.len - 1], pl[1..], 1..) |u, v, end| {
+                    if (!drawn(kept.items, pl[start..end], u, v)) continue;
+                    if (end - 1 > start) try kept.append(b.a(), pl[start..end]);
+                    start = end;
+                }
+                if (pl.len - 1 > start) try kept.append(b.a(), pl[start..]);
+            }
+            list.* = kept;
+        }
+    }
+
+    /// Whether piece `p`-`q` is in `polys` or earlier in `piece`, either way
+    /// round.
+    fn drawn(polys: []const []const Pt, piece: []const Pt, p: Pt, q: Pt) bool {
+        for (polys) |pl| if (has(pl, p, q)) return true;
+        return has(piece[0 .. piece.len - 1], p, q);
+    }
+
+    fn has(pl: []const Pt, p: Pt, q: Pt) bool {
+        if (pl.len < 2) return false;
+        for (pl[0 .. pl.len - 1], pl[1..]) |u, v| {
+            if ((u.eql(p) and v.eql(q)) or (u.eql(q) and v.eql(p))) return true;
+        }
+        return false;
+    }
+
     fn valueText(b: *Builder, d: u32) ![:0]const u8 {
         var w: std.Io.Writer.Allocating = .init(b.a());
         const toks = b.nl.params(EdgeId.from(d));
@@ -440,6 +478,7 @@ const Builder = struct {
 
     fn finish(b: *Builder) Allocator.Error!Placed {
         try b.splitAtJunctions();
+        try b.once();
         const al = b.a();
         var net_seg: std.ArrayList(u32) = .empty;
         var seg_pt: std.ArrayList(u32) = .empty;

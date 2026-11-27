@@ -57,7 +57,8 @@ pub fn apply(gpa: Allocator, arena: Allocator, nl: *const Netlist, drawn: []cons
             named[d] = true;
             break :code .ok;
         };
-        if (code != .ok) verdicts[i] = .of(code);
+        // A device not drawn in the circuit (a driver apart): its name.
+        if (code != .ok) verdicts[i] = if (code == .not_placeable) .at(code, 0) else .of(code);
     }
     // The line that fixed each device, and the cells taken.
     const fixed = try gpa.alloc(u32, n);

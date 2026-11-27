@@ -65,6 +65,18 @@ Work down this list. Stop at the first round whose picture meets the target.
    (`order m9 m1 iss m2 m10`), or the axis device is pushed aside. An
    `order` line reflows the columns it does not name: when you move one
    device, name the device after it too, or the rest close up around it.
+   For a group of devices, name it once and move it whole: `stage <name>
+   <devs>` makes a unit, and `row`, `order` and `repeat` lines take its
+   name (a device's name is a unit of one). A unit moves rigidly; a device
+   of no unit inside the box it lands on steps out to the nearest free
+   cell of its row, and nothing else moves. Each unit's grounded devices
+   share their own bottom row, not the drawing's. `row s1 s2` levels the
+   units' tops, `order s1 s2` puts s2 wholly right of s1, `repeat s0 s1 s2
+   s3` lays s1 to s3 as s0 is, level and left to right: list each stage's
+   devices in one order (member k of every stage the same part of its
+   cell). ag-1067, four pass-XNOR cells in series: 7 lines (four
+   `stage`, `repeat`, a `stage` for the output, `order b3 out`) draw the
+   four cells alike on one level, where 54 lines drew a staircase.
    `row` and `above` set no column: `row` keeps its devices level in no
    left-to-right order, `above` puts them in vertical order only.
    Two independent tail current sources can share a requested axis on
@@ -79,7 +91,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    wins over an `order` line that would part its devices.
 
 5. **`label <net> at <dev>.<pin>` for one far pin.** The pins named carry
-   the name; the rest stay one wire.
+   the name; the rest stay one wire unless it crosses too many (then
+   named as cktImg would; other nets keep their wires). **`wire <net> at <dev>.<pin> ...` for a
+   piece you want wired**: the pins listed are one wire with one name, the
+   rest drawn apart and named once. Two such lines split a net into two
+   named pieces (`wire vy at m15.d m12.d` keeps the facing drains wired).
+   A net drawn as names keeps pins facing each other with nothing between
+   wired, one name a piece.
 
 6. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
@@ -105,6 +123,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    parts over and under the block, and `above <block> <block>` stacks two.
    A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
+   Turn or mirror a block in the parent with `face <block> <port>
+   left|right|up|down` (`face x2 n1 right`), not `at ... MR0`; on a
+   `symmetric` pair of blocks the second is drawn mirrored. Child side
+   lines keep a recognised glyph (amplifier triangle, centre tap), turned
+   or mirrored, when one of its turns puts every named port on its side in
+   the line's order (`*@ left vip vin` puts vip above vin); else the block
+   is drawn as a box.
 
 10. **`rail <supply> each`** when a wire must pass over the top, or when the
    bar joins only two pins (its two end corners go).
@@ -125,7 +150,18 @@ Work down this list. Stop at the first round whose picture meets the target.
 13. **`wire <net> over|under`** for a wire round the top or the bottom of
     the drawing (a feedback wire); **`route <net> x,y ...`** for any other
     way the router does not take. `wire <net>` forces a wire,
-    not a good one: when crossings rise, take it out.
+    not a good one: when crossings rise, take it out. The patterns:
+    `ladder` joins pins facing each other in pairs along rows (a
+    mirror's gates), the pairs by a rung at their middles; `trunk` runs
+    one straight wire along a row (or down a column) and brings every pin
+    to it, on the row of its sideways pins when nothing stands in the
+    way, else half a unit off their tips: this is the gate bus of a bank;
+    `route` hands the net to the router, pin to pin. A bus through gates
+    that face both ways, or across columns joined top to bottom, must
+    cross each inner column's wire (no line runs through a symbol): on a
+    bank of five cascoded legs `trunk` draws both buses at that floor
+    (6 crossings), so turn the gates one way (`face`) before you blame
+    the pattern.
 
 Stop when every line is `honoured` and no crossing or unforced corner is
 left that you can name a line for; or after three rounds in a row that fixed
@@ -138,7 +174,7 @@ complaint open.
 
 | you want | reach for |
 |---|---|
-| A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
+| A part level with a gate, or hung from a pin between two rows; a bias chain off a coupling cap (`hang c3 m5.g`, then `hang r1 c3.b`); a part by a block's port | `hang <part> <dev>.<pin>` |
 | A mirror about a device that swaps two of its pins (other than a MOS's drain and source, which `symmetric` trades) | cells, mirrored by hand |
 
 A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.

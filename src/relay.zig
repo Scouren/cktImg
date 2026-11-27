@@ -24,6 +24,11 @@
 //! - relay.5 (invariant) A relaid drawing has no symbol on another: where
 //!   two would overlap, the stays are let go and the deck is laid afresh.
 //!   `place`
+//! - relay.6 (invariant) A strong `at` anchors its device's column and
+//!   row as a stay does, and still fixes the device: a strong `at` on the
+//!   place a device already holds changes nothing (ag-1350, a hinting
+//!   trial: one stay made strong moved four other devices and the report
+//!   called their stays `dropped guarantee`). `place`
 //!
 //! Contents:
 //! - `pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []const i32, ys: []const i32, ats: []?pinned.At, at: [][2]f32) Allocator.Error!bool`
@@ -43,8 +48,8 @@ const Skeleton = skeleton.Skeleton;
 
 /// Sets `at[d]`, each drawn device's point, from the lattice (`xs` per
 /// column, `ys` per row, as `sk` cells index them) anchored on the stays in
-/// `ats` (those `weak`), and takes those stays out of `ats`: the
-/// lines they anchor carry them. A device's turn is the skeleton's
+/// `ats` (a strong `at` anchors too), and takes the `weak` stays out of
+/// `ats`: the lines they anchor carry them. A device's turn is the skeleton's
 /// (`s.devices` orient and grid, settled), whatever its stay says: one the
 /// structure turns is turned where it stands. False, and `at` untouched,
 /// when two symbols would overlap: the caller lays the deck afresh. `gpa`
@@ -60,8 +65,9 @@ pub fn place(gpa: Allocator, s: *const Schematic, sk: *const Skeleton, xs: []con
         old[d] = null;
         old[n + d] = null;
         const a = ats[d] orelse continue;
-        if (!a.weak) continue;
-        ats[d] = null;
+        // A strong `at` keeps its line too: the device stands there anyway
+        // (relay.6), so the line it is on stays put with it.
+        if (a.weak) ats[d] = null;
         if (!sk.drawn[d]) continue;
         const p = a.origin.add(info.items(.grid)[d]);
         old[d] = p.x;

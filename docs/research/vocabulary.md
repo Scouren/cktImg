@@ -29,15 +29,17 @@ sources, `--from`'s stays).
 | 1 | `symmetric <a> <b>` (devices or nets), `axis <dev or net>`, `symmetry off` | the left-right mates; what maps to itself; `off` drops every mate, the blocks' too | an involution; mates of one kind and pin count (a MOS's drain and source may trade places when no symmetry keeps them, symmetry.8) | strong |
 | 1 | `driver <dev> apart\|inline` | a source drawn apart (R3) or in the circuit | a V source | strong |
 | 1 | `expand <instance>` | one instance flattened (the definition's `*@ expand` does all) | an `X` of a defined `.subckt` | strong |
-| 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A flat device (a bridge, an `X` block) has no row of its own: in `row` it takes the row of the line's anchor, in `above` it stands in the anchor's column, above or below its neighbour (`above r5 x1 r4`: feedback over the block, a part under it). The anchor is the first upright device named, else the first block, else the first device | no cycle with column links (I1) | strong |
+| 2 | `row <devs>`, `above <a> <b> [<c> ...]` | rows: level; each above the next. A flat device (a bridge, an `X` block) has no row of its own: in `row` it takes the row of the line's anchor, in `above` it stands in the anchor's column, above or below its neighbour (`above r5 x1 r4`: feedback over the block, a part under it). The anchor is the first upright device named, else the first block, else the first device. An `order` line that moves the anchor carries the line's flat devices; an upright device past them alone in its column moves past them. A `row` takes the lowest row any device in it needs, and a mate goes level with it | no cycle with column links (I1) | strong |
 | 2 | `column <devs>` | one column, each directly above the next, whatever their nets (parallel devices too); an `order` line that would part them gives way | no cycle with `row` and `above`; no device directly under, or over, two | strong |
 | 2 | `order <devs>` | columns left to right. The devices named stand in different columns, so a link the engine chose between them is dropped; a bridge named goes in the channel between its neighbours | no cycle | strong |
+| 2 | `stage <name> <devs>` | a unit: `row`, `order` and `repeat` lines name it and move its devices rigidly; a device of no unit within the box it lands on steps out to the nearest free cell of its row, nothing else moves; the unit's grounded transistors share its own bottom row (levels.11) | the name no device's, the members drawn and in no other stage (else `taken`) | strong |
+| 2 | `repeat <stages>` | each stage after the first laid as the first, member k on member k's cell, level and left to right (units.4); alike on the lattice, so in the drawing in rows and column order, the columns' widths each unit's own | stages of one size (else `bad_args`) | strong |
 | 2 | `group stack <devs>` | a column's chain, top to bottom (built) | each on a non-rail channel net of the next (else `unjoined`), no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form; a bridged MOS lies along its channel, its gate up or down (`face <mos> g up\|down`; else toward its gate's driver) | upright: a transistor, or a two-pin device on two nets; bridge: a two-pin device or a MOS on two nets | strong |
-| 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's (a flat MOS's up or down), the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
-| 2 | `hang <part> <dev>.<pin>` | a part by one pin of an upright device: under its lower end, over its upper end, or beside its gate (level when the part lies flat, its end on the net toward the gate; a row lower, hanging from the gate's wire, when it stands). A part pushed off that cell by another is `relaxed no_room` | the part touches the pin's net; the device stands | strong |
-| 2 | `label <net> [at <dev>.<pin> ...]`, `wire <net> [ladder\|trunk\|route\|over\|under]` | names or a wire, and which pattern or pin: `at` names only those pins and wires the rest; `wire` on an input draws one wire with one port; `over`, `under` run one wire along the top or the bottom of the drawing, past every symbol | the guarantees; a wire that cannot be drawn is reported, then labels | strong |
-| 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side | — | strong |
+| 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's (a flat MOS's up or down), the end that is up, a bridge's direction, a block port's (the block turned or mirrored) | an orientation of the class has it; a vertical device keeps an end up | strong |
+| 2 | `hang <part> <dev>.<pin>` | a part by one pin of any device: an upright device's lower end (under it), upper end (over it) or gate (beside it: level when the part lies flat, its end on the net toward the gate; a row lower, hanging from the gate's wire, when it stands: held when a pin of the part is within two units of the gate); a block's port, out on the side its box draws it; a flat part's end, out past that end (`hang r1 c3.b` after `hang c3 m5.g` is a chain: lines apply in deck order). A pin's cell taken, the part stands a row under, then over it (under or over a flat part's end), so several parts share one pin; pushed further it is `relaxed no_room` | the part touches the pin's net; the device stands | strong |
+| 2 | `label <net> [at <dev>.<pin> ...]`, `wire <net> [ladder\|trunk\|route\|over\|under]`, `wire <net> at <dev>.<pin> ...` | names or a wire, and which pattern or pin: `at` names only those pins and wires the rest; `wire ... at` wires only those pins (two or more), one name, and names the rest apart, a line a piece; `wire` on an input draws one wire with one port; `over`, `under` run one wire along the top or the bottom of the drawing, past every symbol | the guarantees; a wire that cannot be drawn is reported, then labels | strong |
+| 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side: the port at the net's end on that side or beyond it (no pin of the net past it). With no stub that fits there, the port stands where it would with no line, a symbol still, and the line is `relaxed no_room` | — | strong |
 | 2 | `rail <net> bar\|each\|plain` | a supply or ground as one bar, a symbol per pin, or one bar with no symbol | — | strong |
 | 2 | `first <nets>` | nets wired before the rest, in this order | — | strong |
 | 2 | `shelf <columns>\|off` | how many device columns a row of the drawing holds before it wraps into rows (8); `off`: one row | — | strong |
@@ -56,9 +58,12 @@ tentative decision, and an agent's line outranks it.
 
 `--decisions <rung>` prints every decision on rungs 1 to `<rung>`, so
 `--decisions 3` pins the placement and `--decisions 5` pins everything. A
-deck plus its own export draws the same picture with every line honoured,
-even under an engine whose heuristics changed, because the lines leave it
-nothing to decide.
+deck plus its own export is meant to draw the same picture with every
+line honoured, because the lines leave it nothing to decide. Measured on
+200 corpus decks (with `*@ grouping off`), a device still moves in 6 at
+rung 1, 35 at rung 2, 14 at rung 3 and 8 at rung 4: a line on a part of
+a recognised converter or stage turns that stage's own placement off,
+which the lines of rungs 2 and 3 do not restate.
 
 The decision kinds are one closed enum: role, kind, class, block, mate,
 axis, driver, expansion, row, column order, chain, form, pin side, net
@@ -104,6 +109,7 @@ whose result other lines state, after which nothing is searched.
 | K.form | `upright`, `bridge` |
 | K.ends | `face <dev> <pin> up` |
 | K.linkstack, K.linkscore | `group stack` and `column` join; `order` splits; `cell` |
+| K.unit (a group moved whole) | `stage`, then `row`, `order` or `repeat` on its name |
 | K.matesrc, K.pairmates, K.mirrorable | `symmetric`; relations that conflict displace the engine's mates (reported) |
 | K.rowedge, K.rowlevel, K.rowlong | `row`, `above`; `cell` |
 | K.rowground | tentative: yields to a strong `row` or `above` |

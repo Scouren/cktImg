@@ -160,6 +160,7 @@ const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
+const relations = @import("relations.zig");
 const opamp = @import("opamp.zig");
 const transmission = @import("transmission.zig");
 const antiparallel = @import("antiparallel.zig");
@@ -300,7 +301,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     const along = try opamp.place(sa, nl, s.roles, st, sk, s.lib, s.devices.items(.class));
     if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
-    orientAll(s, nl, sk, ats);
+    orientAll(s, nl, st, sk, ats);
     var bias_pairs = try bias_neighbors.collect(gpa, nl, s, sk, st, ats);
     defer bias_pairs.deinit(gpa);
     const len = Lengths.of(layout, s.lib.unit);
@@ -492,8 +493,10 @@ fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton
 
 /// Keeps each `at` whose symbol, at its place and turn, overlaps no other
 /// drawn device's (the preferred of two `at` devices stays), and turns the
-/// kept ones; drops the rest (`ats[d] = null`). The report says which.
-fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, at: []const [2]f32, ats: []?pinned.At) !void {
+/// kept ones; drops the rest (`ats[d] = null`). The report says which. A
+/// device no `at` places, standing where one puts another, steps right
+/// first (`at[e]`), a unit at a time, to the first place no symbol holds.
+fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, at: [][2]f32, ats: []?pinned.At) !void {
     const n = nl.graph.edgeCount();
     const info = s.devices.slice();
     const boxes = try gpa.alloc(Rect, n);
@@ -506,6 +509,30 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
             s.lib.at(info.items(.class)[d]).box(a.orient orelse info.items(.orient)[d], a.origin)
         else
             boxAt(s, d, toPt(at[d]));
+    }
+    // A line beats the engine: a device the lattice put on an `at`'s place
+    // moves off it (a Schemify round trip pinned every device but one, or
+    // added one; the lattice stood it on a pinned place, and that line
+    // was dropped). Past every box it overlaps nothing.
+    var right: i32 = std.math.minInt(i32);
+    for (0..n) |d| if (sk.drawn[d]) {
+        right = @max(right, boxes[d].max.x);
+    };
+    const step: f32 = @floatFromInt(s.lib.unit);
+    for (0..n) |e| {
+        if (!sk.drawn[e] or ats[e] != null) continue;
+        const pinned_on = for (0..n) |d| {
+            if (d != e and sk.drawn[d] and ats[d] != null and boxes[e].intersects(boxes[d])) break true;
+        } else false;
+        if (!pinned_on) continue;
+        while (for (0..n) |d| {
+            if (d != e and sk.drawn[d] and boxes[e].intersects(boxes[d])) break true;
+        } else false) {
+            assert(boxes[e].min.x <= right);
+            at[e][0] += step;
+            boxes[e] = boxAt(s, e, toPt(at[e]));
+        }
+        right = @max(right, boxes[e].max.x);
     }
     // The least preferred `at` gives way first, and stands where the
     // lattice has it: another `at` may be on that place, and gives way in
@@ -547,7 +574,7 @@ fn keepAts(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleto
 /// four that puts its upper end up and its gate on the skeleton's side (a
 /// vertical device), or its end toward the nearest device on its net (a
 /// bridge).
-fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []const ?pinned.At) void {
+fn orientAll(s: *Schematic, nl: *const Netlist, st: *const Structure, sk: *const Skeleton, ats: []const ?pinned.At) void {
     const c = &nl.graph;
     const info = s.devices.slice();
     assert(info.len == c.edgeCount());
@@ -575,6 +602,7 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []cons
             break;
         }
     }
+    turnBlocks(s, nl, st, sk);
     sch.settleDevices(s, c);
     // Only initial candidates participate. Later rejected ats must not
     // introduce a new turn after coordinates have already reserved room.
@@ -616,6 +644,58 @@ fn lineGateSide(nl: *const Netlist, sk: *const Skeleton, d: u32) ?Side {
         }
     }
     return null;
+}
+
+/// Turns each drawn block a `face <block> <port> <side>` line names
+/// (admitted by `relations.faces`) to the first of its turns, unrotated
+/// first, that puts the port on that side; the preferred line is applied
+/// last. Then each pair of blocks an admitted `symmetric` line mates is
+/// drawn as mirror images: the one a line turned, else the left one, leads.
+fn turnBlocks(s: *Schematic, nl: *const Netlist, st: *const Structure, sk: *const Skeleton) void {
+    const c = &nl.graph;
+    const info = s.devices.slice();
+    const kinds = c.edges.items(.kind);
+    assert(st.device_mate.len == c.edgeCount());
+    assert(sk.verdicts.len == nl.hints.len);
+    for (nl.hints, sk.verdicts) |h, v| {
+        if (h.verb != .face or h.args.len != 3 or v == null or v.?.state != .honoured) continue;
+        const d = nl.device(h.args[0]).?.index();
+        if (kinds[d] != .subckt or !sk.drawn[d]) continue;
+        const pin = relations.pinIndex(nl, @intCast(d), h.args[1]).?;
+        const side = h.verb.side(Side, h.args[2]).?;
+        const class = s.lib.at(info.items(.class)[d]);
+        turn: for ([_]sch.Orientation{ .horizontal, .vertical }) |form| for (flips) |f| {
+            if (class.side(pin, Orient.flipped(sch.form(form), f[0], f[1])) != side) continue;
+            info.items(.orientation)[d] = form;
+            info.items(.flip_x)[d] = f[0];
+            info.items(.flip_y)[d] = f[1];
+            break :turn;
+        };
+    }
+    for (nl.hints, st.verdicts) |h, v| {
+        if (h.verb != .symmetric or h.args.len != 2 or v == null or v.?.state != .honoured) continue;
+        const d = nl.device(h.args[0]).?.index();
+        const m = st.device_mate[d];
+        if (m != nl.device(h.args[1]).?.index() or kinds[d] != .subckt or kinds[m] != .subckt) continue;
+        if (!sk.drawn[d] or !sk.drawn[m] or sk.x[d] == sk.x[m]) continue;
+        const left, const right = if (sk.x[d] < sk.x[m]) .{ d, m } else .{ m, d };
+        const lead, const image = if (blockFaced(nl, sk, right) and !blockFaced(nl, sk, left)) .{ right, left } else .{ left, right };
+        if (blockFaced(nl, sk, image)) continue;
+        info.items(.orientation)[image] = info.items(.orientation)[lead];
+        info.items(.flip_x)[image] = !info.items(.flip_x)[lead];
+        info.items(.flip_y)[image] = info.items(.flip_y)[lead];
+    }
+}
+
+/// Whether an admitted `face` line names block `d`.
+// ponytail: a pass over the deck's lines per mated block; a bitset if a
+// deck ever holds many.
+fn blockFaced(nl: *const Netlist, sk: *const Skeleton, d: usize) bool {
+    for (nl.hints, sk.verdicts) |h, v| {
+        if (h.verb != .face or h.args.len != 3 or v == null or v.?.state != .honoured) continue;
+        if (nl.device(h.args[0]).?.index() == d) return true;
+    }
+    return false;
 }
 
 /// A flat MOS gate's side: a parallel pair's exterior first, a certified
