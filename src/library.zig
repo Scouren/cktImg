@@ -83,6 +83,7 @@
 //!
 //! Contents (geometry and class registration):
 //! - `pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool`
+//! - `pub fn portSide(def: *const netlist.Subckt, slots: ?[4]u8, k: usize) netlist.PortSide`
 //! - `pub fn symbolTextRect(at: Pt, s: []const u8, size: u8) Rect`
 //! - `pub const Pt = extern struct`, `Pt.zero`, `Pt.add(a: Pt, b: Pt) Pt`, `Pt.sub(a: Pt, b: Pt) Pt`, `Pt.eql(a: Pt, b: Pt) bool`, `Pt.above(a: Pt, b: Pt) bool`, `Pt.transposed(p: Pt) Pt`, `Pt.round(p: [2]f32) Pt`, `Pt.toF(p: Pt) [2]f32`
 //! - `pub const Rect = struct`, `Rect.intersects(a: Rect, b: Rect) bool`, `Rect.contains(r: Rect, p: Pt) bool`, `Rect.merge(a: Rect, b: Rect) Rect`, `Rect.point(p: Pt) Rect`, `Rect.fromCorners(a: Pt, b: Pt) Rect`, `Rect.translate(r: Rect, by: Pt) Rect`, `Rect.grow(r: Rect, d: i32) Rect`
@@ -524,8 +525,7 @@ pub const Library = struct {
         const slots = block_symbols.boxSlots(def.name, def.ports);
         block_symbols.orderBoxPorts(def, slots, order);
         for (order) |k| {
-            const side = def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) netlist.PortSide.left else .right) else defaultSide(def.ports[k]);
-            try per[@backingInt(side)].append(a, k);
+            try per[@backingInt(portSide(def, slots, k))].append(a, k);
         }
         // An amplifier's inverting input above the other, as people tend
         // to draw one (448 of 678 blocks with both inputs on one upright
@@ -709,6 +709,13 @@ const spellings = [_]struct { []const u8, Named, [3]Match }{
     .{ "y", .out, .{ .no, .no, .whole } },
     .{ "vop von vo+ vo-", .out, .{ .no, .whole, .no } },
 };
+
+/// The side of `def`'s generated box port `k` stands on: its directive's,
+/// else its recognized slot's (`block_symbols.boxSlots`, passed as
+/// `slots`), else `defaultSide`'s by its name.
+pub fn portSide(def: *const netlist.Subckt, slots: ?[4]u8, k: usize) netlist.PortSide {
+    return def.sides[k] orelse if (slots) |frame| (if (frame[k] < 2) .left else .right) else defaultSide(def.ports[k]);
+}
 
 /// What a block's port is by its name alone, among the definition's
 /// `ports`: an amplifier's inputs (`vin` is the inverting one beside a

@@ -169,6 +169,14 @@ the size cap below are the open follow-ups.
   25 -> 0, no new gate findings. 0 of 5,274 corpus drawings change; on the hinting-trial decks
   fable2's ag-1168.p2 gains its two dropped `at` lines and loses on metrics (crossings 7 -> 12).
   `netlist-import.wasm` 714,171 -> 714,699 bytes.
+- Anchors (`fix/anchors`): taken because three Fable agents wanted `hang` from any pin and found
+  parts an `order` line on a block stranded. `*@ hang <part> <dev>.<pin>` now takes a part's end, a
+  block's port and several parts per pin; a chain is two lines in deck order. An `order` on a block
+  now carries its `above` parts (ag-1094: x1 at 1010 with its feedback parts at 260 -> all at 990;
+  line 21 `relaxed not_drawn` -> honoured; lines 17-20 rejected -> honoured; crossings 7 -> 5,
+  labelled 8 -> 4, text_overlaps 5 -> 1). A `row` line no longer un-levels a matched pair (levels.12;
+  ag-2500 m3 and m6 level again, crossings 4 -> 3); a row takes the lowest row its members need,
+  now documented. 0 of 5,274 drawings change. `netlist-import.wasm` 714,699 -> 716,402 bytes.
 
 ### Changed
 
