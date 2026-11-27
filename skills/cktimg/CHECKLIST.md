@@ -6,7 +6,7 @@ its complaint is usually fixed.
 
 | item | read it in | rung |
 |---|---|---|
-| Clean: `gates` is empty. A finding is a cktImg bug: report it with the deck | `gates` | none |
+| Clean: `gates` is empty. A finding is a cktImg bug: report it with the deck. Its rules include `glyph_touch` (a wire on or beside another net's rail symbol), `dangling_end` (a wire end meeting nothing of its net) and `net_loop` (a net's wire closing a ring) | `gates` | none |
 | No name lies on a symbol, another name or another net's wire. A finding is a cktImg bug: report it with the deck | `text_overlaps` | none |
 | Each gate faces the net it is driven from, as the book draws it | the image; `decisions` (`face`) | 2 |
 | Supply on top, ground at the bottom, current flowing down each column | `grid`; the image | 0, then 2 |

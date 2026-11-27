@@ -15,7 +15,8 @@
 //!   book crosses supply stubs freely. `route`
 //! - maze.4 (invariant) A routed wire never runs inside a device's box,
 //!   along or within `clear` of another net's wire, within `clear` of
-//!   another net's point, across a wall (a rail's short stub, its bar), or
+//!   another net's point, across a wall (a rail's short stub, its bar),
+//!   into another net's kept box (a rail symbol's, canvas.9), or
 //!   through a point of its own net that is not where it ends. `route`
 //! - maze.5 (invariant) A routed wire crosses another net's wire straight,
 //!   never bends on it and never ends on it. `route`
@@ -59,6 +60,8 @@ pub const Wire = struct {
 };
 /// A point of one net: a pin, a wire's end or bend, a label, a terminal.
 pub const Mark = struct { at: Pt, net: u32 };
+/// A box of one net no other net's path enters: a rail symbol's.
+pub const Keep = struct { r: Rect, net: u32 };
 /// A pin and the side its wire leaves by.
 pub const Pin = struct { at: Pt, side: Side };
 
@@ -82,6 +85,8 @@ pub const Query = struct {
     /// Everything drawn so far, every net.
     wires: []const Wire,
     marks: []const Mark,
+    /// Boxes no other net's path enters, edges included.
+    keep_out: []const Keep = &.{},
     step: i32,
     /// At least 1: how near another net's wire or point a path may come.
     clear: i32,
@@ -298,7 +303,10 @@ fn nearby(a: Allocator, q: Query, win: ?Rect) Allocator.Error!Query {
     for (q.marks) |m| if (reach.contains(m.at)) try marks.append(a, m);
     var wires: std.ArrayList(Wire) = .empty;
     for (q.wires) |x| if (Rect.fromCorners(x.a, x.b).intersects(reach)) try wires.append(a, x);
+    var keep: std.ArrayList(Keep) = .empty;
+    for (q.keep_out) |k| if (k.r.intersects(reach)) try keep.append(a, k);
     var out = q;
+    out.keep_out = keep.items;
     out.boxes = boxes.items;
     out.marks = marks.items;
     out.wires = wires.items;
@@ -450,6 +458,13 @@ fn buildGrid(gpa: Allocator, q: Query, win: ?Rect) Allocator.Error!?Grid {
             if (!g.target[i]) g.closed[i] = true;
         }
     }
+    for (q.keep_out) |k| if (k.net != q.net) {
+        const cols = within(g.xs, k.r.min.x, k.r.max.x);
+        const rows = within(g.ys, k.r.min.y, k.r.max.y);
+        for (rows[0]..rows[1]) |j| for (cols[0]..cols[1]) |i| {
+            g.closed[j * g.width() + i] = true;
+        };
+    };
     // A pin is an end of its wire: no path ends on one but `to`.
     for (q.pins) |p| if (indexOf(g, p)) |i| {
         g.target[i] = false;

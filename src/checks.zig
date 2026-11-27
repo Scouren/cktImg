@@ -84,6 +84,15 @@ pub const Rule = enum {
     self_crossing,
     /// Two dots at `at`.
     dot_twice,
+    /// A wire of `net` on or beside rail `other`'s symbol, whose pin is
+    /// `at` (`wire_gates.glyphs`).
+    glyph_touch,
+    /// An end of a wire of `net` at `at` that meets nothing of its net
+    /// (`wire_gates.ends`).
+    dangling_end,
+    /// `net`'s wire closes a loop; `at` is its first point
+    /// (`wire_gates.loops`).
+    net_loop,
 };
 
 pub const Finding = struct {

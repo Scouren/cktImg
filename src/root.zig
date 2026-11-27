@@ -70,6 +70,8 @@ pub const lint = @import("lint.zig");
 /// The drawing's guarantees, checked on a finished `Placed`.
 pub const checks = @import("checks.zig");
 pub const text_overlaps = @import("text_overlaps.zig");
+pub const wire_gates = @import("wire_gates.zig");
+pub const wire_tree = @import("wire_tree.zig");
 pub const report = @import("report.zig");
 /// The TikZ emitter, only with `-Dlatex_renderer=true`; `void` otherwise, so
 /// a reference without the option is a compile error naming it.
