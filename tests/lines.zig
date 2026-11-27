@@ -132,6 +132,20 @@ fn fu(v: i32, unit: i32) f64 {
     return @as(f64, @floatFromInt(v)) / @as(f64, @floatFromInt(unit));
 }
 
+/// Part `part` has a pin on the net of pin `k` of `dev`, within two units
+/// of it.
+fn expectHung(r: *const Run, unit: i32, part: []const u8, dev: []const u8, k: u32) !void {
+    const at = r.pin(dev, k);
+    const net = r.p.pin_net[r.p.pinRange(r.device(dev))[0] + k];
+    const a, const b = r.p.pinRange(r.device(part));
+    const near = for (a..b) |q| {
+        const xy = r.p.pin_xy[q];
+        if (r.p.pin_net[q] == net and @abs(xy.x - at.x) <= 2 * unit and @abs(xy.y - at.y) <= 2 * unit) break true;
+    } else false;
+    errdefer std.debug.print("{s} not by {s}.{d}\n", .{ part, dev, k });
+    try std.testing.expect(near);
+}
+
 fn expectState(v: np.hints.Verdict, state: np.hints.State, code: np.hints.Code) !void {
     if (v.state != state or v.code != code) std.debug.print("got {t} {t}\n", .{ v.state, v.code });
     try std.testing.expectEqual(state, v.state);
@@ -595,6 +609,60 @@ test "lines: hang stands a part by a pin of an upright device" {
     try expectState(bad.verdict("*@ hang r1 m1.g"), .rejected, .bad_args);
     try expectState(bad.verdict("*@ hang c1 m1"), .rejected, .bad_args);
     try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
+}
+
+test "lines: hang stands a part by a flat part's end, a block's pin, and two parts by one pin" {
+    // Oracle: the finished drawing's pins. Each hung part has a pin on the
+    // named pin's net within two units of that pin. The second hinting
+    // trial wrote these and got `not_placeable` (a flat part's end, the
+    // chain of ag-1094's bias resistors), `unknown_name` (a block's port)
+    // and `relaxed no_room` (a second part on a gate).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const chain = "Hung chains\n.model nch nmos\nM1 d g s 0 nch\nR1 vdd d 1k\nI1 s 0 1m\nC1 lo g 1p\nR2 vb g 1k\nR3 vc g 1k\n";
+    const block = "Hung by a block\n.model nch nmos\n.subckt buf a y\n.ends buf\nM1 d g s 0 nch\nR1 vdd d 1k\nI1 s 0 1m\n" ++
+        "X1 d o buf\nR5 o out 1k\nR6 out 0 1k\n";
+    const Hung = struct { []const u8, []const u8, u32 };
+    const cases = [_]struct { []const u8, []const []const u8, []const Hung }{
+        .{ chain, &.{ "*@ hang c1 m1.g", "*@ hang r2 c1.b", "*@ hang r3 m1.g" }, &.{ .{ "c1", "m1", 1 }, .{ "r2", "c1", 1 }, .{ "r3", "m1", 1 } } },
+        .{ block, &.{"*@ hang r5 x1.y"}, &.{.{ "r5", "x1", 1 }} },
+    };
+    for (cases) |case| {
+        const r = try run(f.arena(), f.lib, case[0], try std.mem.concat(f.arena(), u8, &.{ try std.mem.join(f.arena(), "\n", case[1]), "\n" }));
+        for (case[1]) |line| try expectState(r.verdict(line), .honoured, .ok);
+        for (case[2]) |h| try expectHung(&r, f.lib.unit, h[0], h[1], h[2]);
+    }
+}
+
+test "lines: an order line that moves a block carries the parts an above line stands in its column" {
+    // Oracle: the finished drawing's device origins. `above r2 x1 r3`
+    // stands r2 over x1 and r3 under it, in x1's column; `order r4 x1`
+    // then moved x1 alone and left the two a column away, both lines
+    // reported honoured (fable3, x-1094-orderabove).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Feedback over a block\n.model nch nmos\n.subckt dda p1 n1 o1 o2\n.ends dda\n.subckt buf a y\n.ends buf\n" ++
+        "M1 n1 vin 0 0 nch\nR1 vdd n1 1k\nR2 n1 o1 1k\nR3 p1 o2 1k\nX1 p1 n1 o1 o2 dda\nX2 o1 y buf\nR4 y 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ order r4 x1\n*@ above r2 x1 r3\n");
+    for ([_][]const u8{ "*@ order r4 x1", "*@ above r2 x1 r3" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expect(r.at("r4").x < r.at("x1").x);
+    try std.testing.expectEqual(r.at("x1").x, r.at("r2").x);
+    try std.testing.expectEqual(r.at("x1").x, r.at("r3").x);
+}
+
+test "lines: a row line holding a part level with one mate keeps the mates level" {
+    // Oracle: the finished drawing's device origins. m3 and m4 are a
+    // matched pair; `row m3 c1` holds c1 level with m3, and c1's lower end
+    // is m4's drain. The row stood and m4 dropped a row below its mate
+    // (fable5, ag-2500 `row m3 cm2`).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Pair under a row\n.model nch nmos\n.model pch pmos\nM1 a a vdd vdd pch\nM2 b a vdd vdd pch\nM3 a vn t 0 nch\n" ++
+        "M4 b vn u 0 nch\nC1 b w 1p\nM5 w b 0 0 nch\nI1 t 0 1m\nI2 u 0 1m\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ row m3 c1\n*@ face c1 b up\n");
+    try expectState(r.verdict("*@ row m3 c1"), .honoured, .ok);
+    try std.testing.expectEqual(r.at("m3").y, r.at("c1").y);
+    try std.testing.expectEqual(r.at("m3").y, r.at("m4").y);
 }
 
 test "lines: wire over and under run a net past the top or the bottom of the drawing" {

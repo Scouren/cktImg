@@ -462,12 +462,13 @@ pub fn faces(arena: Allocator, nl: *const Netlist, drawn: []const bool, form: []
 }
 
 /// Pin `word` of device `d`: a terminal name of its kind (`d g s b`, `c b
-/// e`, `a b` for two pins, `p n` for a source, or the pin's number from 1),
-/// or a net it touches.
+/// e`, `a b` for two pins, `p n` for a source), a block's port name, the
+/// pin's number from 1, or a net it touches.
 pub fn pinIndex(nl: *const Netlist, d: u32, word: []const u8) ?u32 {
     const c = &nl.graph;
     const pins = c.members(EdgeId.from(d));
     for (device.of(c.edges.items(.kind)[d]).names, 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
+    if (nl.defOf(EdgeId.from(d))) |def| for (def.ports, 0..) |name, k| if (k < pins.len and std.mem.eql(u8, name, word)) return @intCast(k);
     if (hints.int(word)) |k| if (k >= 1 and k <= pins.len) return @intCast(k - 1);
     const net = nl.net(word) orelse return null;
     for (pins, 0..) |p, k| if (p == net) return @intCast(k);

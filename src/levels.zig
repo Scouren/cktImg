@@ -39,6 +39,12 @@
 //!   longest path alone. `rows`
 //!   Narrowing: a part with two pins on its card or a dependent source
 //!   (`isFoot`); a switch and a three-pin diode keep their row.
+//! - levels.11 (choice) A device standing on another (levels.1) through a
+//!   device a `row` line holds level with others yields to mates and
+//!   blocks standing level (levels.7, levels.8): the line moved a
+//!   neighbour, not the pair (ag-2500 `row m3 cm2` dropped m6 under m3's
+//!   row). A `row` takes the lowest row any of its devices needs; it never
+//!   raises one. `rows`
 //!
 //! Contents:
 //! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
@@ -145,6 +151,23 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         kept += 1;
     };
     edges.shrinkRetainingCapacity(kept);
+    // A device standing on another through a device a `row` line holds
+    // level with others yields to mates and blocks (levels.11): set aside.
+    var held: std.ArrayList([2]u32) = .empty;
+    defer held.deinit(gpa);
+    kept = 0;
+    for (edges.items) |e| {
+        const line = below[e[0]] == e[1] or for (rel.edges) |r| {
+            if (r[0] == e[0] and r[1] == e[1]) break true;
+        } else false;
+        if (!line and (shared(rel, e[0]) or shared(rel, e[1]))) {
+            try held.append(gpa, e);
+            continue;
+        }
+        edges.items[kept] = e;
+        kept += 1;
+    }
+    edges.shrinkRetainingCapacity(kept);
     // Equalities: mates first, then blocks, each kept if it closes no cycle.
     for (mate, 0..) |m, d| if (m != none and m != d) try level(gpa, class, edges.items, @intCast(d), m);
     for (st.block_kind, 0..) |k, b| {
@@ -152,6 +175,8 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
         const ms = st.members(b);
         for (ms[1..]) |d| if (drawn[d] and drawn[ms[0]] and form[d] == .vertical and form[ms[0]] == .vertical) try level(gpa, class, edges.items, ms[0], d);
     }
+    // The set-aside edges back, each that still closes no cycle.
+    for (held.items) |e| if (find(class, e[0]) != find(class, e[1]) and !try reaches(gpa, class, edges.items, e[1], e[0])) try edges.append(gpa, e);
 
     // Longest path over the classes, now free of loops.
     const rank = try gpa.alloc(u32, n);
@@ -289,6 +314,12 @@ fn level(gpa: Allocator, class: []u32, edges: []const [2]u32, a: u32, b: u32) !v
     if (ka == kb) return;
     if (try reaches(gpa, class, edges, ka, kb) or try reaches(gpa, class, edges, kb, ka)) return;
     class[ka] = kb;
+}
+
+/// Whether a `row` line holds `d` level with another device.
+fn shared(rel: *const Relations, d: u32) bool {
+    for (rel.class, 0..) |_, e| if (e != d and rel.find(@intCast(e)) == rel.find(d)) return true;
+    return false;
 }
 
 fn find(class: []u32, d: u32) u32 {
