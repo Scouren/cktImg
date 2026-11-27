@@ -59,6 +59,7 @@ const device = @import("device.zig");
 const library = @import("library.zig");
 const placed = @import("placed.zig");
 const netlist = @import("netlist.zig");
+const units = @import("units.zig");
 const hints = @import("hints.zig");
 const relations = @import("relations.zig");
 const pinned = @import("pinned.zig");
@@ -300,19 +301,8 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
         // The two orders: `order` runs along the columns (x), `row`,
         // `above` and `column` down the rows (y); a `row` stays level, the
         // others go on, and a `column` keeps its x.
-        .row, .above, .column, .order => {
-            var prev: ?Pt = null;
-            for (h.args) |name| {
-                const at = p.dev_pos[deviceIn(p, name) orelse return false];
-                if (prev) |q| {
-                    const here, const before = if (h.verb == .order) .{ at.x, q.x } else .{ at.y, q.y };
-                    if (if (h.verb == .row) here != before else here <= before) return false;
-                    if (h.verb == .column and at.x != q.x) return false;
-                }
-                prev = at;
-            }
-            return true;
-        },
+        .row, .order, .repeat => if (units.claims(nl, h)) return stagesAs(p, nl, h) else return relation(p, h),
+        .above, .column => return relation(p, h),
         .face => {
             if (h.args.len != 3) return null;
             const d = deviceIn(p, h.args[0]) orelse return false;
@@ -461,6 +451,64 @@ pub fn deviceIn(p: *const Placed, name: []const u8) ?usize {
 }
 
 // ---- private ----
+
+/// Whether `p` draws relation line `h` on devices: `row` one y, `above`
+/// and `column` y increasing (a `column` on one x), `order` x increasing.
+fn relation(p: *const Placed, h: hints.Hint) bool {
+    var prev: ?Pt = null;
+    for (h.args) |name| {
+        const at = p.dev_pos[deviceIn(p, name) orelse return false];
+        if (prev) |q| {
+            const here, const before = if (h.verb == .order) .{ at.x, q.x } else .{ at.y, q.y };
+            if (if (h.verb == .row) here != before else here <= before) return false;
+            if (h.verb == .column and at.x != q.x) return false;
+        }
+        prev = at;
+    }
+    return true;
+}
+
+/// Whether `p` draws a `row`, `order` or `repeat` line naming a stage:
+/// `row` each unit's top (its topmost device) on one y, `order` each unit
+/// wholly right of the one before, `repeat` both, and each unit's member
+/// k as far below its unit's top as the first unit's member k, and in the
+/// first unit's order along x (units.4). A device that is no stage is a
+/// unit of one.
+fn stagesAs(p: *const Placed, nl: *const Netlist, h: hints.Hint) bool {
+    // top y, leftmost x, rightmost x
+    var prev: ?[3]i32 = null;
+    var first: ?[3]i32 = null;
+    for (h.args) |name| {
+        const members = units.unit(nl, name) orelse &.{name};
+        var box: [3]i32 = .{ std.math.maxInt(i32), std.math.maxInt(i32), std.math.minInt(i32) };
+        for (members) |m| {
+            const at = p.dev_pos[deviceIn(p, m) orelse return false];
+            box = .{ @min(box[0], at.y), @min(box[1], at.x), @max(box[2], at.x) };
+        }
+        if (prev) |q| {
+            if (h.verb != .order and box[0] != q[0]) return false;
+            if (h.verb != .row and box[1] <= q[2]) return false;
+        }
+        if (h.verb == .repeat) {
+            const model = units.unit(nl, h.args[0]) orelse &.{h.args[0]};
+            if (model.len != members.len) return false;
+            const f = first orelse box;
+            for (model, members, 0..) |a, b, k| {
+                const pa = p.dev_pos[deviceIn(p, a) orelse return false];
+                const pb = p.dev_pos[deviceIn(p, b) orelse return false];
+                if (pa.y - f[0] != pb.y - box[0]) return false;
+                for (model[0..k], members[0..k]) |a2, b2| {
+                    const qa = p.dev_pos[deviceIn(p, a2) orelse return false];
+                    const qb = p.dev_pos[deviceIn(p, b2) orelse return false];
+                    if (std.math.order(qa.x, pa.x) != std.math.order(qb.x, pb.x)) return false;
+                }
+            }
+        }
+        first = first orelse box;
+        prev = box;
+    }
+    return true;
+}
 
 /// `x y` pairs of symbol units, in drawing units, into `buf`; null for a
 /// malformed or too long list.

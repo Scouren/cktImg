@@ -117,6 +117,15 @@ the size cap below are the open follow-ups.
   5/18). Auto-expanding passive-only subcircuits was measured on the 38 corpus decks that have
   one (crossings fall in 16, rise in 10) and not taken. Tests 604/604. Corpus numbers unmeasured.
   `netlist-import.wasm` 689,025 -> 693,741 bytes.
+- Stages (`feat/stages`): taken because three Fable agents and three round-2 agents stood in
+  for a stage with `order` lines of up to 24 names that reflow every column they omit. `*@ stage
+  <name> <devs>` makes a unit that `row` and `order` move whole, stepping only unnamed devices
+  inside its box aside; `*@ repeat <stages>` lays each like the first. ag-1067's four XNOR cells:
+  7 lines draw them alike on one level (the unhinted staircase spans 10 rows), 21 -> 21 crossings;
+  with face and label lines 10/37. A stage keeps no inner column order: ag-2500 with two stages
+  for a 19-name order went 3 -> 8 crossings. No gate-bus pattern was needed: `wire <net> trunk` is
+  one, and SKILL now explains trunk, ladder and route. All 5,274 decks are byte-identical without
+  the new lines. `netlist-import.wasm` 693,741 -> 701,214 bytes.
 
 ### Changed
 

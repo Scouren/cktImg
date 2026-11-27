@@ -65,6 +65,18 @@ Work down this list. Stop at the first round whose picture meets the target.
    (`order m9 m1 iss m2 m10`), or the axis device is pushed aside. An
    `order` line reflows the columns it does not name: when you move one
    device, name the device after it too, or the rest close up around it.
+   For a group of devices, name it once and move it whole: `stage <name>
+   <devs>` makes a unit, and `row`, `order` and `repeat` lines take its
+   name (a device's name is a unit of one). A unit moves rigidly; a device
+   of no unit inside the box it lands on steps out to the nearest free
+   cell of its row, and nothing else moves. Each unit's grounded devices
+   share their own bottom row, not the drawing's. `row s1 s2` levels the
+   units' tops, `order s1 s2` puts s2 wholly right of s1, `repeat s0 s1 s2
+   s3` lays s1 to s3 as s0 is, level and left to right: list each stage's
+   devices in one order (member k of every stage the same part of its
+   cell). ag-1067, four pass-XNOR cells in series: 7 lines (four
+   `stage`, `repeat`, a `stage` for the output, `order b3 out`) draw the
+   four cells alike on one level, where 54 lines drew a staircase.
    `row` and `above` set no column: `row` keeps its devices level in no
    left-to-right order, `above` puts them in vertical order only.
    Two independent tail current sources can share a requested axis on
@@ -130,7 +142,18 @@ Work down this list. Stop at the first round whose picture meets the target.
 13. **`wire <net> over|under`** for a wire round the top or the bottom of
     the drawing (a feedback wire); **`route <net> x,y ...`** for any other
     way the router does not take. `wire <net>` forces a wire,
-    not a good one: when crossings rise, take it out.
+    not a good one: when crossings rise, take it out. The patterns:
+    `ladder` joins pins facing each other in pairs along rows (a
+    mirror's gates), the pairs by a rung at their middles; `trunk` runs
+    one straight wire along a row (or down a column) and brings every pin
+    to it, on the row of its sideways pins when nothing stands in the
+    way, else half a unit off their tips: this is the gate bus of a bank;
+    `route` hands the net to the router, pin to pin. A bus through gates
+    that face both ways, or across columns joined top to bottom, must
+    cross each inner column's wire (no line runs through a symbol): on a
+    bank of five cascoded legs `trunk` draws both buses at that floor
+    (6 crossings), so turn the gates one way (`face`) before you blame
+    the pattern.
 
 Stop when every line is `honoured` and no crossing or unforced corner is
 left that you can name a line for; or after three rounds in a row that fixed
