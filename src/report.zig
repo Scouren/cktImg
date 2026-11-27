@@ -301,6 +301,7 @@ pub fn write(gpa: Allocator, w: *Writer, p: *const Placed, lib: *const Library, 
     const sk = try skeleton.place(a, a, nl, roles, &st, .{ .shelf = layout.shelf });
     var found: std.ArrayList(checks.Finding) = .empty;
     try checks.find(a, &found, p, lib);
+    try @import("wire_gates.zig").find(a, &found, p, lib);
 
     try w.writeAll("{\n  \"gates\": [");
     for (found.items, 0..) |f, i| {

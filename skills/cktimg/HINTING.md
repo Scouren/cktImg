@@ -146,7 +146,10 @@ Work down this list. Stop at the first round whose picture meets the target.
     `at` lines already.
 
 13. **`wire <net> over|under`** for a wire round the top or the bottom of
-    the drawing (a feedback wire); **`route <net> x,y ...`** for any other
+    the drawing (a feedback wire): each pin of the net is brought to the run
+    on its own way, and the run ends at its outermost tap; a pin with no way
+    joins the net's other wires, and with fewer than two taps the line is
+    `relaxed no_room`. **`route <net> x,y ...`** for any other
     way the router does not take. `wire <net>` forces a wire,
     not a good one: when crossings rise, take it out. The patterns:
     `ladder` joins pins facing each other in pairs along rows (a

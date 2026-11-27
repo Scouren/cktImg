@@ -39,6 +39,7 @@
 //! - `pub const Mirror = struct { axis2: i32, net_mate: []const u32 }`
 //! - `pub fn draw(c: *Canvas, waiting: []const u32, pins_of: []const std.ArrayList(u32), mirror: ?Mirror, anchors: []const u32) Allocator.Error!void`
 //! - `pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Error!void`
+//! - `pub fn attachRun(c: *Canvas, net: u32, pins: []const u32, run: u32) Allocator.Error!void`
 //! - `pub fn port(c: *Canvas, net: u32) !void`
 //! - `pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: []const u32, from: usize, axis2: i32) !bool`
 
@@ -120,6 +121,59 @@ pub fn attach(c: *Canvas, net: u32, pins: []const u32, anchor: u32) Allocator.Er
     defer failed.deinit(c.gpa);
     if (pins.len > 0) _ = try join(c, net, pins, null, true, &failed);
     try finish(c, net, anchor, failed.items);
+}
+
+/// Joins each of `pins`, left to right, to segment `run` of `net`'s wires
+/// by its own way (a `wire over|under` run, which every pin taps): the
+/// net's other wires are walls to it, so no two ways meet off the run. A
+/// pin with no such way is then joined to any wire of the net (`attach`).
+pub fn attachRun(c: *Canvas, net: u32, pins: []const u32, run: u32) Allocator.Error!void {
+    const gpa = c.gpa;
+    assert(pins.len >= 1);
+    assert(c.segs.items[run].net == net);
+    const order = try gpa.dupe(u32, pins);
+    defer gpa.free(order);
+    std.sort.pdq(u32, order, c.s, struct {
+        fn lt(s: *const Schematic, a: u32, b: u32) bool {
+            return pinAt(s, a).x < pinAt(s, b).x;
+        }
+    }.lt);
+    var failed: std.ArrayList(u32) = .empty;
+    defer failed.deinit(gpa);
+    var wires: std.ArrayList(maze.Wire) = .empty;
+    defer wires.deinit(gpa);
+    const ats = try gpa.alloc(Pt, pins.len);
+    defer gpa.free(ats);
+    for (ats, pins) |*at, p| at.* = pinAt(c.s, p);
+    for (order) |p| {
+        wires.clearRetainingCapacity();
+        for (c.segs.items, 0..) |g, k| {
+            const own = g.net == net and k != run;
+            try wires.append(gpa, if (own) .{ .a = g.a, .b = g.b, .net = none, .wall = true } else g);
+        }
+        const path = try maze.route(gpa, .{
+            .net = net,
+            .from = .{ .at = pinAt(c.s, p), .side = c.s.pins.items(.side)[p] },
+            .to = null,
+            .pins = ats,
+            .boxes = c.boxes,
+            .wires = wires.items,
+            .marks = c.points.items,
+            .keep_out = c.glyphs.items,
+            .rails = c.rails,
+            .step = @max(1, @divFloor(c.len.unit, 4)),
+            .clear = c.len.clearance,
+            .bend = c.len.bend_cost,
+            .cross = c.len.cross_cost,
+        }) orelse {
+            try failed.append(gpa, p);
+            continue;
+        };
+        defer gpa.free(path);
+        if (!try c.commit(net, path)) try failed.append(gpa, p);
+    }
+    // A pin with no way of its own to the run joins the net's wires.
+    try attach(c, net, failed.items, order[0]);
 }
 
 /// An output's port out from the topmost of its wires' outermost points,
@@ -286,6 +340,7 @@ fn join(c: *Canvas, net: u32, pins: []const u32, half: ?i32, onto: bool, failed:
             .boxes = c.boxes,
             .wires = c.segs.items,
             .marks = c.points.items,
+            .keep_out = c.glyphs.items,
             .rails = c.rails,
             // A quarter unit, and never 0: a symbol set may have a unit
             // under four.

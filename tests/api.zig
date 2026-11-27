@@ -520,6 +520,7 @@ test {
     _ = @import("trunk_taps.zig");
     _ = @import("thin_parts.zig");
     _ = @import("drawing_text.zig");
+    _ = @import("wire_gates.zig");
     _ = @import("trunk_row.zig");
     _ = @import("converter_branches.zig");
     _ = @import("wrap_above.zig");

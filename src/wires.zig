@@ -132,6 +132,12 @@
 //!   with one name, drawn before every other wire; where no trunk fits,
 //!   facing pins are joined and each piece named (`name_parts.atPins`).
 //!   The net's other pins are drawn without them, as wires.26's. `wire`
+//! - wires.28 (invariant) A `wire <net> over|under` run ends where its
+//!   outermost wire meets it: once the net's pins are joined, each end of
+//!   its wires that meets no pin, no symbol or name, and no other wire of
+//!   the net is taken back to the last point that does, and a piece that
+//!   meets nothing goes. A run past its taps reads as a wire to nowhere.
+//!   `trim`
 //!
 //! Contents:
 //! - `pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void`
@@ -289,10 +295,15 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
     for (lines.routes) |r| {
         if (try pinned(&c, r, pins_of[r.net].items)) routed[r.net] = true;
     }
+    // Each `over`/`under` net and the segment of its run.
+    var runs: std.ArrayList([2]u32) = .empty;
+    defer runs.deinit(gpa);
     for (lines.style, 0..) |style, net| {
         if ((style != .over and style != .under) or routed[net] or pins_of[net].items.len < 2) continue;
-        // The run past the symbols alone; the router joins the pins to it.
-        if (try c.commit(@intCast(net), &around(&c, pins_of[net].items, style == .over))) routed[net] = true;
+        // The run past the symbols alone; the router joins each pin to it.
+        const seg: u32 = @intCast(c.segs.items.len);
+        if (!try c.commit(@intCast(net), &around(&c, pins_of[net].items, style == .over))) continue;
+        try runs.append(gpa, .{ @intCast(net), seg });
     }
     // The `first` nets lead, in their order.
     var lead: usize = 0;
@@ -339,6 +350,12 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
         const style = lines.style[net];
         if (routed[net]) {
             // The router joins its other pins to the pinned wire.
+            if (s.roles[net] == .bias) try named.append(gpa, net);
+            continue;
+        }
+        if (for (runs.items) |r| {
+            if (r[0] == net) break true;
+        } else false) {
             if (s.roles[net] == .bias) try named.append(gpa, net);
             continue;
         }
@@ -396,6 +413,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
     try routes.draw(&c, waiting.items, pins_of, own_mirror, anchors);
     for (ported_late.items) |net| try routes.port(&c, net);
     try joinRouted(&c, routed, pins_of);
+    for (runs.items) |r| try routes.attachRun(&c, r[0], pins_of[r[0]].items, r[1]);
     // A net thinned past `cut` keeps its facing pins wired; one a `label
     // <net>` line names has no wire (netlines.1).
     for (names_late.items) |net| try name_parts.atPins(&c, net, pins_of[net].items, !labelLine(nl, net));
@@ -410,6 +428,7 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
         const net = s.pins.items(.net)[label];
         try routes.gatePort(&c, net, pins_of[net].items, label);
     }
+    for (runs.items) |r| trim(s, r[0]);
     assert(xy.items.len == s.nodes.len);
 }
 
@@ -521,6 +540,87 @@ fn around(c: *const Canvas, pins: []const u32, top: bool) [2]Pt {
     const y = if (top) edge - c.len.unit else edge + c.len.unit;
     // Pins in one column: a run one unit wide, still a segment.
     return .{ .{ .x = lo.x, .y = y }, .{ .x = @max(hi.x, lo.x + c.len.unit), .y = y } };
+}
+
+/// Takes back each end of `net`'s routes that meets no pin of the net (a
+/// symbol's and a name's included) and no other route of it, to the
+/// nearest point along its last piece that does, else drops that piece;
+/// a route left one point long goes (wires.28). Runs after every route is
+/// drawn: the canvas no longer reads `s.routes`.
+fn trim(s: *Schematic, net: u32) void {
+    var rounds: usize = 0;
+    while (true) : (rounds += 1) {
+        assert(rounds <= 6 * s.routes.items.len + 1);
+        var changed = false;
+        for (s.routes.items, 0..) |*r, i| {
+            if (r.net != net or r.len < 2) continue;
+            for ([_]bool{ false, true }) |tail| {
+                if (r.len < 2) break;
+                const end: usize = if (tail) r.len - 1 else 0;
+                const e = Pt.round(r.pts[end]);
+                if (meets(s, net, i, e)) continue;
+                changed = true;
+                const prev = Pt.round(r.pts[if (tail) r.len - 2 else 1]);
+                const t = nearestMeeting(s, net, i, prev, e) orelse prev;
+                r.pts[end] = t.toF();
+                if (!t.eql(prev)) continue;
+                // The piece is gone: its end is the next point.
+                if (!tail) std.mem.copyForwards([2]f32, r.pts[0 .. r.len - 1], r.pts[1..r.len]);
+                r.len -= 1;
+            }
+        }
+        if (!changed) break;
+    }
+    var k: usize = 0;
+    for (s.routes.items) |r| {
+        if (r.net == net and r.len < 2) continue;
+        s.routes.items[k] = r;
+        k += 1;
+    }
+    s.routes.shrinkRetainingCapacity(k);
+}
+
+/// Whether point `e` of route `self` of `net` meets a pin of the net or
+/// another of its routes.
+fn meets(s: *const Schematic, net: u32, self: usize, e: Pt) bool {
+    for (s.pins.items(.net), 0..) |n, p| if (n == net and pinAt(s, @intCast(p)).eql(e)) return true;
+    for (s.routes.items, 0..) |r, j| {
+        if (j == self or r.net != net or r.len < 2) continue;
+        for (r.pts[0 .. r.len - 1], r.pts[1..r.len]) |a, b| if (Rect.fromCorners(Pt.round(a), Pt.round(b)).contains(e)) return true;
+    }
+    return false;
+}
+
+/// The point of piece `from`..`e` of route `self` nearest `e`, `e` itself
+/// excluded, that meets a pin of `net` or one of its other routes: a pin
+/// or a route's point on the piece, or where a route crosses it.
+fn nearestMeeting(s: *const Schematic, net: u32, self: usize, from: Pt, e: Pt) ?Pt {
+    assert(from.x == e.x or from.y == e.y);
+    const piece = Rect.fromCorners(from, e);
+    var best: ?Pt = null;
+    const Near = struct {
+        fn take(b: *?Pt, end: Pt, q: Pt) void {
+            if (q.eql(end)) return;
+            if (b.* == null or @abs(q.x - end.x) + @abs(q.y - end.y) < @abs(b.*.?.x - end.x) + @abs(b.*.?.y - end.y)) b.* = q;
+        }
+    };
+    for (s.pins.items(.net), 0..) |n, p| if (n == net) {
+        const at = pinAt(s, @intCast(p));
+        if (piece.contains(at)) Near.take(&best, e, at);
+    };
+    for (s.routes.items, 0..) |r, j| {
+        if (j == self or r.net != net or r.len < 2) continue;
+        for (r.pts[0 .. r.len - 1], r.pts[1..r.len]) |fa, fb| {
+            const a = Pt.round(fa);
+            const b = Pt.round(fb);
+            if (piece.contains(a)) Near.take(&best, e, a);
+            if (piece.contains(b)) Near.take(&best, e, b);
+            // Across the piece: the one point they share.
+            const q: Pt = if (a.x == b.x) .{ .x = a.x, .y = from.y } else .{ .x = from.x, .y = a.y };
+            if (piece.contains(q) and Rect.fromCorners(a, b).contains(q)) Near.take(&best, e, q);
+        }
+    }
+    return best;
 }
 
 /// Commits polyline `pts` of `net`, each of its pins the polyline passes

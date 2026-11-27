@@ -87,6 +87,11 @@
 //!   aside): a track that would is not taken, and a part no track fits
 //!   ends in ports (wires.13). People: 3,926 of 4,080 wired bias nets
 //!   (5,263 hand-drawn schematics). `cost`
+//! - trunk.16 (invariant) A trunk's lines close no loop (wire_tree.1): a
+//!   track on which one pin's way runs through another's, or through the
+//!   trunk, and on to it is never taken. Before, 36 of the engine's
+//!   drawings of the 5,274 corpus decks held a net in a loop, AMS385's
+//!   input and AG2449's `vea` among them. `drawPreferred`
 //!
 //! - trunk.15 (choice, bounded) A complete complementary-mirror CT stage
 //!   may nominate one actual opposing gate interval (ct_mirror_controls.1).
@@ -105,6 +110,7 @@ const assert = std.debug.assert;
 const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const canvas = @import("canvas.zig");
+const wire_tree = @import("wire_tree.zig");
 
 const Pt = library.Pt;
 const Side = library.Side;
@@ -255,6 +261,7 @@ pub fn drawPreferred(c: *Canvas, net: u32, pins: []const u32, end: End, preferre
                 const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else if (preferred != null) fewest +| 1 else fewest);
                 if (lay != .rungs and !tap_row and (if (preferred != null) count > fewest else count >= fewest)) continue;
                 if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
+                if (try loops(c.gpa, tried.items)) continue;
                 // An upright trunk has no end to mark: its ends are not read.
                 const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
                 if (needs_end and t_free == null) continue;
@@ -370,6 +377,17 @@ fn cost(c: *const Canvas, net: u32, pins: []const u32, lines: []const Line, unde
         };
     }
     return total;
+}
+
+/// Whether `lines` close a loop (trunk.16).
+fn loops(gpa: Allocator, lines: []const Line) Allocator.Error!bool {
+    var segs: std.ArrayList([2]Pt) = .empty;
+    defer segs.deinit(gpa);
+    for (lines) |*l| {
+        const pts = l.slice();
+        for (pts[0 .. pts.len - 1], pts[1..]) |a, b| try segs.append(gpa, .{ a, b });
+    }
+    return wire_tree.cyclic(gpa, segs.items);
 }
 
 /// The corners of a net's lines as a reader counts them: the points its

@@ -39,6 +39,11 @@
 //!   crossed stub as a joint. Where it would, the name stands on its pin,
 //!   its text across: a wire leaves a pin only the way it faces. Over the
 //!   5,274 corpus decks, names on their own wire 476 -> 1. `Canvas.labelAt`
+//! - canvas.10 (invariant) No other net's wire touches a rail symbol's
+//!   strokes or runs on a line beside them, one target unit out: a reader
+//!   takes a wire that near a ground's bar for a short. Before, in 230 of
+//!   the engine's drawings of the 5,274 corpus decks a wire stood that
+//!   near a rail symbol (`wire_gates.glyphs`). `Canvas.leaf`
 //!
 //! Contents:
 //! - `pub const Lengths = struct`, `Lengths.of(layout: config.Layout, unit: i32) Lengths`
@@ -65,6 +70,7 @@ const library = @import("library.zig");
 const sch = @import("schematic.zig");
 const maze = @import("maze.zig");
 const config = @import("config.zig");
+const placed = @import("placed.zig");
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -148,6 +154,9 @@ pub const Canvas = struct {
     /// terminals.
     segs: std.ArrayList(maze.Wire) = .empty,
     points: std.ArrayList(maze.Mark) = .empty,
+    /// The rail symbols drawn so far, each the box no other net's wire
+    /// enters (canvas.10).
+    glyphs: std.ArrayList(maze.Keep) = .empty,
     /// Per net, the side a `*@ port` line puts its port on; empty for none.
     port_side: []const ?Side = &.{},
 
@@ -173,6 +182,7 @@ pub const Canvas = struct {
         c.gpa.free(c.rails);
         c.segs.deinit(c.gpa);
         c.points.deinit(c.gpa);
+        c.glyphs.deinit(c.gpa);
     }
 
     /// Draws the polyline `pts` (two points or more) for `net` when every
@@ -209,6 +219,7 @@ pub const Canvas = struct {
         assert(a.x == b.x or a.y == b.y);
         const r = Rect.fromCorners(a, b);
         for (c.points.items) |m| if (m.net != net and r.contains(m.at)) return false;
+        for (c.glyphs.items) |k| if (k.net != net and r.intersects(k.r)) return false;
         for (c.segs.items) |g| {
             if (g.net == net) continue;
             const q = Rect.fromCorners(g.a, g.b);
@@ -228,7 +239,8 @@ pub const Canvas = struct {
     }
 
     /// A terminal or label node at `at`, its one pin facing `faces` (the
-    /// wire it ends).
+    /// wire it ends); a rail's terminal also keeps other nets' wires off its
+    /// symbol (canvas.10).
     pub fn leaf(c: *Canvas, kind: sch.NodeKind, net: u32, at: Pt, faces: Side) Allocator.Error!void {
         const s = c.s;
         const node = try s.addNode(.{ .kind = kind, .ref = net, .group = none });
@@ -238,6 +250,7 @@ pub const Canvas = struct {
         assert(s.xy.len == s.nodes.len);
         _ = try s.addPin(.{ .home = node, .side = faces, .net = net, .device = none, .index = 0 });
         try c.points.append(c.gpa, .{ .at = at, .net = net });
+        if (kind == .terminal and c.rails[net]) if (glyphBox(s, net, at)) |r| try c.glyphs.append(c.gpa, .{ .r = r, .net = net });
     }
 
     /// Makes the wire piece drawn last a wall, which no other net's wire
@@ -451,6 +464,16 @@ pub fn ways(s: *const Schematic, pins: []const u32, lines: []const Line, at: Pt)
 }
 
 // ---- private ----
+
+/// The box rail `net`'s symbol at `at` keeps other nets' wires out of: its
+/// strokes as `placed` draws them (unturned, its terminal on `at`), one
+/// unit more each way. Null when the library has no symbol for the rail.
+fn glyphBox(s: *const Schematic, net: u32, at: Pt) ?Rect {
+    const id = placed.roleClass(s, net) orelse return null;
+    const class = s.lib.at(id);
+    assert(class.terminals.len >= 1);
+    return class.bbox().translate(at.sub(class.terminals[0].at)).grow(1);
+}
 
 /// An axis-aligned segment runs inside a rectangle somewhere.
 fn crossesInterior(r: Rect, a: Pt, b: Pt) bool {
