@@ -111,6 +111,7 @@ const Side = library.Side;
 const Schematic = sch.Schematic;
 const Canvas = canvas.Canvas;
 const Line = canvas.Line;
+const crosses = canvas.crosses;
 const linesFit = canvas.linesFit;
 const pinAt = canvas.pinAt;
 const stepPt = canvas.stepPt;
@@ -369,16 +370,6 @@ fn cost(c: *const Canvas, net: u32, pins: []const u32, lines: []const Line, unde
         };
     }
     return total;
-}
-
-/// Whether wire `a`..`b` and wire `p`..`q`, each along a row or a column,
-/// cross at a point inside both.
-fn crosses(a: Pt, b: Pt, p: Pt, q: Pt) bool {
-    if ((a.y == b.y) == (p.y == q.y)) return false;
-    const lv, const up = if (a.y == b.y) .{ [2]Pt{ a, b }, [2]Pt{ p, q } } else .{ [2]Pt{ p, q }, [2]Pt{ a, b } };
-    const x = up[0].x;
-    const y = lv[0].y;
-    return x > @min(lv[0].x, lv[1].x) and x < @max(lv[0].x, lv[1].x) and y > @min(up[0].y, up[1].y) and y < @max(up[0].y, up[1].y);
 }
 
 /// The corners of a net's lines as a reader counts them: the points its

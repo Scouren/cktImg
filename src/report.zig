@@ -439,7 +439,8 @@ fn slot(h: hints.Hint) ?struct { family: u8, target: []const u8 } {
         .driver => 4,
         // A `label ... at` names some pins and sets no style: none.
         .label => if (h.args.len == 1) 5 else return null,
-        .wire => 5,
+        // A `wire ... at` wires some pins and sets no style: none.
+        .wire => if (h.args.len >= 2 and std.mem.eql(u8, h.args[1], "at")) return null else 5,
         .port => 6,
         .rail => 7,
         .role => 8,

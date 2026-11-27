@@ -331,7 +331,20 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
         },
         .wire => {
             const net = netIn(p, h.args[0]) orelse return false;
-            if (!wired(p, net)) return false;
+            // `at`: the pins listed on one piece of the net's wire.
+            if (h.args.len >= 2 and std.mem.eql(u8, h.args[1], "at")) {
+                var pins: [64]usize = undefined;
+                if (h.args.len - 2 > pins.len) return null;
+                for (h.args[2..], pins[0 .. h.args.len - 2]) |word, *pin| {
+                    const dot = std.mem.lastIndexOfScalar(u8, word, '.') orelse return false;
+                    const d = deviceIn(p, word[0..dot]) orelse return false;
+                    const e = (nl.device(word[0..dot]) orelse return false).index();
+                    const k = relations.pinIndex(nl, e, word[dot + 1 ..]) orelse return false;
+                    pin.* = p.pinRange(d)[0] + k;
+                }
+                return wired(p, net, pins[0 .. h.args.len - 2]);
+            }
+            if (!wired(p, net, null)) return false;
             const top = h.args.len == 2 and std.mem.eql(u8, h.args[1], "over");
             if (!top and !(h.args.len == 2 and std.mem.eql(u8, h.args[1], "under"))) return true;
             // `over`, `under`: a point of the wire past every device's pins.
@@ -525,9 +538,10 @@ fn scaled(words: []const []const u8, unit: i32, buf: []Pt) ?[]const Pt {
     return buf[0..n];
 }
 
-/// Whether the named devices' pins on `net` are one piece by its wires
-/// alone (names aside). ponytail: a pin against every wire end, quadratic.
-fn wired(p: *const Placed, net: u32) bool {
+/// Whether the named devices' pins on `net`, or the pins `only` lists, are
+/// one piece by its wires alone (names aside). ponytail: a pin against
+/// every wire end, quadratic.
+fn wired(p: *const Placed, net: u32, only: ?[]const usize) bool {
     var buf: [256]Pt = undefined;
     var group: [256]u16 = undefined;
     var n: usize = 0;
@@ -557,6 +571,17 @@ fn wired(p: *const Placed, net: u32) bool {
             };
             changed = true;
         };
+    }
+    if (only) |pins| {
+        var piece: ?u16 = null;
+        for (pins) |pin| {
+            const g = for (0..n) |k| {
+                if (buf[k].eql(p.pin_xy[pin])) break group[k];
+            } else return false;
+            if (piece != null and piece.? != g) return false;
+            piece = g;
+        }
+        return true;
     }
     // One pin, or none, is joined already.
     var count: usize = 0;

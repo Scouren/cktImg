@@ -11,15 +11,15 @@
 //! Human Rules:
 //! - text_overlaps.1 (choice) A name lies clear of every symbol but its own
 //!   device's, of every other name, and of every wire of another net (a
-//!   device's name, of every wire): text on a symbol, a name or a wire
-//!   reads as part of it. Not yet a guarantee: the report lists the
-//!   findings apart from its `gates` (`tests/text_overlaps.zig` holds the
-//!   decks known to break it). `find`
+//!   device's name, of every wire; a label, of its own net's wire too):
+//!   text on a symbol, a name or a wire reads as part of it. Not yet a
+//!   guarantee: the report lists the findings apart from its `gates`
+//!   (`tests/text_overlaps.zig` holds the decks known to break it). `find`
 //!
 //! - text_overlaps.2 (choice) A label whose name lies on something turns
-//!   to the first side of right, left, above, below that is clear and that
-//!   no wire of its net leaves; with none clear it keeps its side.
-//!   `settleLabels`
+//!   (a wire of its own net too) to the first side of right, left, above,
+//!   below that is clear and that no wire of its net leaves; with none
+//!   clear it keeps its side. `settleLabels`
 //!
 //! - text_overlaps.3 (choice) Two texts of one symbol (a block's title
 //!   and a port's name) lie clear of each other. `find`
@@ -106,7 +106,8 @@ pub fn find(gpa: Allocator, out: *std.ArrayList(Overlap), p: *const Placed, lib:
         // Once per net it lies on.
         var last: u32 = placed.no_net;
         for (wires.items) |w| {
-            if (w.net == t.net or w.net == last or !box.intersects(w.box)) continue;
+            // A label on its own net's wire too: it reads as a second wire.
+            if ((w.net == t.net and t.of != .label) or w.net == last or !box.intersects(w.box)) continue;
             last = w.net;
             try out.append(gpa, t.over(.wire, p.net_name[w.net], p));
         }
@@ -116,8 +117,8 @@ pub fn find(gpa: Allocator, out: *std.ArrayList(Overlap), p: *const Placed, lib:
 }
 
 /// Turns each label of `p` whose name lies on a symbol, another net name
-/// or another net's wire to the first side of right, left, above, below
-/// that is clear and that no wire of its net leaves, label by label, each
+/// or a wire (its own net's too) to the first side of right, left, above,
+/// below that is clear and that no wire of its net leaves, label by label, each
 /// judged against the sides settled before it; a label with no clear side
 /// keeps its own. `labels` is `p.labels`, writable; `lib` the library `p`
 /// was drawn with. Device names are placed after, clear of these.
@@ -192,8 +193,8 @@ fn symbolName(p: *const Placed, d: usize) []const u8 {
     return if (net == placed.no_net) "" else p.net_name[net];
 }
 
-/// Whether net name `k` of `names` (`geom.netNames` of `p`) lies clear of
-/// every symbol but its own, every other name and every other net's wire.
+/// Whether label `k` of `names` (`geom.netNames` of `p`) lies clear of
+/// every symbol, every other name and every wire, its own net's too.
 fn clear(p: *const Placed, lib: *const Library, names: []const geom.NetName, k: usize) bool {
     const t = names[k];
     const box = t.box.grow(-1);
@@ -203,8 +204,8 @@ fn clear(p: *const Placed, lib: *const Library, names: []const geom.NetName, k: 
     for (names, 0..) |u, j| {
         if (j != k and box.intersects(u.box.grow(-1))) return false;
     }
+    // Its own net's wires too: a name along its wire reads as two wires.
     for (0..p.netCount()) |n| {
-        if (n == t.net) continue;
         var it = p.segments(n);
         while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
             if (box.intersects(.fromCorners(a, b))) return false;
