@@ -62,6 +62,10 @@ on a device overrides the relations on it.
 
 - **Reading a drawing.** `r.json` first:
   - `gates`: the checklist's first item.
+  - `text_overlaps`: each name (`of` device, port, rail or label) drawn
+    `over` a symbol, another name or another net's wire, with the `other`
+    thing's name and the text box's lower-left `at`. Not a gate yet; a
+    finding is a cktImg bug, and a `refdes` or `port` line can steer it.
   - `requests`: each of your lines' state (Lines, below).
   - `grid`: each lattice row, top down, each device `name@column`.
   - `decisions`: cktImg's choices as `*@` lines (below).

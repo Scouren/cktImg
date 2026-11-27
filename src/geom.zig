@@ -9,8 +9,8 @@
 //!   gate of an upright transistor, right of an upright two-pin part, above
 //!   one lying flat. Beside the symbol it is level with its origin, else a
 //!   line above or below that; over or under it, centred. The sides with
-//!   pins come after the others; the first spot clear of symbols, wires and
-//!   the names placed before it, or the first spot tried when none is
+//!   pins come after the others; the first spot clear of symbols, wires,
+//!   net names and the names placed before it, or the first spot tried when none is
 //!   clear. People: 40,958 of 45,982 named devices in 5,263 hand-drawn
 //!   schematics (89.1%); 25,038 of 27,139 upright transistors carry the
 //!   name on the side away from the gate. `refdesAnchors`
@@ -60,6 +60,13 @@ pub const label_gap: i32 = 3;
 /// Dot radii: a pin, a junction (larger, so a T reads as a connection).
 pub const pin_dot_r: i32 = 2;
 pub const junction_dot_r: i32 = 3;
+/// `nameRect`'s gap for a port's or a label's name, and for a rail's.
+pub const name_gap: i32 = 4;
+pub const rail_gap: i32 = 12;
+/// A net's name a renderer writes: `box` from `nameRect`, `dev` the rail
+/// or port symbol that carries it, `no_dev` for a label.
+pub const NetName = struct { box: Rect, dev: u32, net: u32 };
+pub const no_dev: u32 = std.math.maxInt(u32);
 
 /// A canonical symbol point, placed: orient, then move to `base`.
 pub fn placePoint(o: Orient, base: Pt, p: Pt) Pt {
@@ -80,13 +87,57 @@ pub fn refdesRect(anchor: Pt, name: []const u8) Rect {
     };
 }
 
+/// The box a net's name written at `at` toward `side` occupies: a port's
+/// or a label's (`gap` = `name_gap`), a rail's (`gap` = `rail_gap`, past
+/// the end of its bar). Beside the point the text starts `gap` out, its
+/// baseline 3 under it; over the point it is centred, baseline 4 above;
+/// under it, baseline 10 below (a rail's 14: under its symbol). The offsets are the tests' SVG
+/// renderer's (`tests/svg.zig`) at 1.6 px a unit; the width is
+/// `char_w` a character, as for a device's name.
+pub fn nameRect(at: Pt, side: Side, name: []const u8, gap: i32) Rect {
+    assert(gap > 0);
+    const w = char_w * @as(i32, @intCast(name.len));
+    const base: Pt = switch (side) {
+        .right => .{ .x = at.x + gap, .y = at.y + 3 },
+        .left => .{ .x = at.x - gap - w, .y = at.y + 3 },
+        .up => .{ .x = at.x - @divFloor(w, 2), .y = at.y - 4 },
+        .down => .{ .x = at.x - @divFloor(w, 2), .y = at.y + 10 + @divFloor(gap - name_gap, 2) },
+    };
+    const r: Rect = .{ .min = .{ .x = base.x, .y = base.y - text_h }, .max = .{ .x = base.x + w, .y = base.y + descent } };
+    assert(r.min.x <= r.max.x and r.min.y < r.max.y);
+    return r;
+}
+
+/// Appends every net name `p` writes: each port's, each power rail's, each
+/// ground rail's that `namesRail`, by device; then each label's.
+pub fn netNames(gpa: Allocator, out: *std.ArrayList(NetName), p: *const Placed, lib: *const Library) Allocator.Error!void {
+    const before = out.items.len;
+    for (0..p.deviceCount()) |d| {
+        const role = lib.at(p.dev_class[d]).role;
+        if (p.dev_name[d].len != 0 or role == .none) continue;
+        const lo, _ = p.pinRange(d);
+        const net = p.pin_net[lo];
+        if (net == placed_mod.no_net) continue;
+        const at = p.pin_xy[lo];
+        const box = switch (role) {
+            .none => unreachable,
+            .power_rail => nameRect(at, railSide(p, lib, lo), p.net_name[net], rail_gap),
+            .ground_rail => if (namesRail(p, lib, net)) nameRect(at, railSide(p, lib, lo), p.net_name[net], rail_gap) else continue,
+            .input_port, .output_port => nameRect(at, nameSide(p, lib, lo), p.net_name[net], name_gap),
+        };
+        try out.append(gpa, .{ .box = box, .dev = @intCast(d), .net = net });
+    }
+    for (p.labels) |l| try out.append(gpa, .{ .box = nameRect(l.at, l.side, p.net_name[l.net], name_gap), .dev = no_dev, .net = l.net });
+    assert(out.items.len >= before);
+}
+
 /// One anchor per device for its name: left end of the baseline. Tries the
 /// side a `*@ refdes` line asks (`Placed.dev_refdes`) first; then the sides
 /// of the symbol no pin of it stands on, right before left, above before
 /// below; then the sides with pins, in that order: beside the symbol level
 /// with its origin, then a line above and below that; over or under it,
-/// centred. Takes the first spot clear of symbols, wires and names placed
-/// so far, so the answer depends on order, and is computed for all devices
+/// centred. Takes the first spot clear of symbols, wires, net names
+/// (`netNames`) and device names placed so far, so the answer depends on order, and is computed for all devices
 /// at once; with no spot clear, the first one tried.
 /// Unnamed devices (the rails and ports the layout added) get their origin.
 ///
@@ -98,6 +149,12 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
     var obstacles: std.ArrayList(Rect) = .empty;
     defer obstacles.deinit(gpa);
     for (0..n) |d| try obstacles.append(gpa, p.deviceRect(lib, d));
+    var nets: std.ArrayList(NetName) = .empty;
+    defer nets.deinit(gpa);
+    try netNames(gpa, &nets, p, lib);
+    // Shrunk two units: a name within a unit of one is clear of it, as
+    // `text_overlaps` judges both shrunk a unit.
+    for (nets.items) |t| try obstacles.append(gpa, t.box.grow(-2));
     for (0..p.netCount()) |net| {
         var it = p.segments(net);
         while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| try obstacles.append(gpa, Rect.fromCorners(a, b));
@@ -169,38 +226,41 @@ pub fn refdesAnchors(gpa: Allocator, p: *const Placed, lib: *const Library) Allo
     return anchors;
 }
 
-/// The side a pin's name goes on: away from the wire that meets it (a port
-/// whose wire leaves to the right is named on its left). Right when no wire
-/// meets it.
+/// The side a port's name goes on: away from the wire that meets its pin
+/// `pin` (a port whose wire leaves to the right is named on its left),
+/// right when no wire meets it. When that side's name (`nameRect`) lies on
+/// another symbol or another net's wire, the first of right, left, above,
+/// below that is clear and that no wire of the net leaves, if any is.
 // People: 13,814 of 15,521 port symbols carry their name on the side away
 // from their wire (5,263 hand-drawn schematics).
-pub fn nameSide(p: *const Placed, pin: u32) library.Side {
+pub fn nameSide(p: *const Placed, lib: *const Library, pin: u32) library.Side {
     const at = p.pin_xy[pin];
     const net = p.pin_net[pin];
     if (net == placed_mod.no_net) return .right;
     var it = p.segments(net);
-    while (it.next()) |poly| {
+    const away: Side = find: while (it.next()) |poly| {
         const ends = [2][2]Pt{ .{ poly[0], poly[1] }, .{ poly[poly.len - 1], poly[poly.len - 2] } };
         for (ends) |e| {
-            if (e[0].eql(at)) return (Side.of(e[1].sub(at)) orelse continue).opposite();
+            if (e[0].eql(at)) break :find (Side.of(e[1].sub(at)) orelse continue).opposite();
         }
-    }
-    return .right;
+    } else .right;
+    return clearSide(p, lib, pin, away, name_gap);
 }
 
 /// The side a rail's net name goes on: the first of right, left, above,
-/// below that no wire of the rail's net leaves its pin `pin`. So beside the
-/// bar of a rail on the end of a wire, and above one standing on a bar's
-/// run. Asserts the pin is on a net.
+/// below that no wire of the rail's net leaves its pin `pin`, and that is
+/// clear of other symbols and other nets' wires (`nameRect`) if any is. So
+/// beside the bar of a rail on the end of a wire, and above one standing on
+/// a bar's run. Asserts the pin is on a net.
 // People: 4,531 of 6,169 supply names in 5,263 hand-drawn schematics stand
 // beside the symbol's bar (a tendency), 1,511 above it.
-pub fn railSide(p: *const Placed, pin: u32) Side {
+pub fn railSide(p: *const Placed, lib: *const Library, pin: u32) Side {
     assert(p.pin_net[pin] != placed_mod.no_net);
     const taken = checks.ways(p, p.pin_net[pin], p.pin_xy[pin]);
-    for ([_]Side{ .right, .left, .up, .down }) |s| {
-        if (taken & @as(u4, 1) << @backingInt(s) == 0) return s;
-    }
-    return .right;
+    const free: Side = for ([_]Side{ .right, .left, .up, .down }) |s| {
+        if (taken & @as(u4, 1) << @backingInt(s) == 0) break s;
+    } else .right;
+    return clearSide(p, lib, pin, free, rail_gap);
 }
 
 /// Whether a ground rail on `net` carries its name: only where the name
@@ -216,6 +276,42 @@ pub fn namesRail(p: *const Placed, lib: *const Library, net: u32) bool {
     if (std.mem.eql(u8, p.net_name[net], "0")) return false;
     for (p.dev_class, p.dev_pin0[0..p.deviceCount()]) |class, pin| {
         if (lib.at(class).role == .ground_rail and p.pin_net[pin] != net) return true;
+    }
+    return false;
+}
+
+// ---- private ----
+
+/// `first` when the name of pin `pin`'s net on that side (`nameRect` with
+/// `gap`) lies clear of every symbol but the pin's own and every other
+/// net's wire; else the first of right, left, above, below that does and
+/// that no wire of the net leaves; else `first`.
+fn clearSide(p: *const Placed, lib: *const Library, pin: u32, first: Side, gap: i32) Side {
+    const net = p.pin_net[pin];
+    assert(net != placed_mod.no_net);
+    const own = for (0..p.deviceCount()) |d| {
+        if (pin < p.dev_pin0[d + 1]) break d;
+    } else unreachable; // Every pin is a device's.
+    const taken = checks.ways(p, net, p.pin_xy[pin]);
+    for ([_]Side{ first, .right, .left, .up, .down }, 0..) |s, i| {
+        if (i > 0 and (s == first or taken & @as(u4, 1) << @backingInt(s) != 0)) continue;
+        const box = nameRect(p.pin_xy[pin], s, p.net_name[net], gap).grow(-1);
+        const on_symbol = for (0..p.deviceCount()) |d| {
+            if (d != own and box.intersects(p.deviceRect(lib, d).grow(-1))) break true;
+        } else false;
+        if (!on_symbol and !onWire(p, net, box)) return s;
+    }
+    return first;
+}
+
+/// Whether `box` meets a wire of a net other than `net`.
+fn onWire(p: *const Placed, net: u32, box: Rect) bool {
+    for (0..p.netCount()) |n| {
+        if (n == net) continue;
+        var it = p.segments(n);
+        while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+            if (box.intersects(.fromCorners(a, b))) return true;
+        };
     }
     return false;
 }

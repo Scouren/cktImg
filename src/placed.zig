@@ -58,6 +58,7 @@ const netlist_mod = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const dots = @import("dots.zig");
 const structure = @import("structure.zig");
+const text_overlaps = @import("text_overlaps.zig");
 
 const Pt = library.Pt;
 const Rect = library.Rect;
@@ -456,7 +457,7 @@ const Builder = struct {
         for (nets, b.s.net_name) |*d, n| d.* = try al.dupeSentinel(u8, n, 0);
         // Before the arena is copied into the result.
         const name_sides = try b.refdes();
-        return .{
+        const out: Placed = .{
             .arena = b.arena,
             .dev_name = b.names.items,
             .dev_class = b.classes.items,
@@ -475,6 +476,8 @@ const Builder = struct {
             .labels = b.labels.items,
             .no_connects = b.no_connects.items,
         };
+        try text_overlaps.settleLabels(b.arena.child_allocator, &out, b.labels.items, b.s.lib);
+        return out;
     }
 };
 

@@ -699,6 +699,15 @@ pub fn portRole(ports: []const []const u8, name: []const u8) PortRole {
 /// null: nothing. A net's name and a port's are lowercase
 /// (`netlist.parse`); only the `role` reader takes any case.
 pub fn named(name: []const u8, reader: Reader) ?Named {
+    // `+5v`, `+12v`, `+3.3v`: a supply by its voltage, to every reader.
+    // In the 5,274 decks, 33 nets so named, every one a constant rail.
+    if (name.len >= 3 and name[0] == '+' and name[name.len - 1] == 'v' and std.ascii.isDigit(name[1])) {
+        const volts = name[1 .. name.len - 1];
+        const digits = for (volts) |ch| {
+            if (!std.ascii.isDigit(ch) and ch != '.') break false;
+        } else true;
+        if (digits) return .supply;
+    }
     for (spellings) |row| {
         var words = std.mem.tokenizeScalar(u8, row[0], ' ');
         while (words.next()) |word| {

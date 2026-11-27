@@ -147,10 +147,10 @@ fn drawDevice(pen: *const Pen, p: *const np.Placed, lib: *const np.Library, d: u
         const net = if (pen.st.bundle != null and pen.st.bundle.?.ports[0] == d) pen.st.bundle.?.label else p.net_name[p.pin_net[lo]];
         const at = p.pin_xy[lo];
         switch (class.role) {
-            .power_rail => try railName(pen, at, np.geom.railSide(p, lo), net, 12, ink),
-            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try railName(pen, at, np.geom.railSide(p, lo), net, 11, name_ink),
-            .input_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
-            .output_port => try netName(pen, at, np.geom.nameSide(p, lo), net, false),
+            .power_rail => try railName(pen, at, np.geom.railSide(p, lib, lo), net, 12, ink),
+            .ground_rail => if (np.geom.namesRail(p, lib, p.pin_net[lo])) try railName(pen, at, np.geom.railSide(p, lib, lo), net, 11, name_ink),
+            .input_port => try netName(pen, at, np.geom.nameSide(p, lib, lo), net, false),
+            .output_port => try netName(pen, at, np.geom.nameSide(p, lib, lo), net, false),
             .none => {},
         }
     }

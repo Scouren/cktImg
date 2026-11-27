@@ -10,6 +10,9 @@
 //!   rail symbols and no port on 4,010 of the 4,157 nets so named in 5,263
 //!   hand-drawn schematics, a numbered one (`vdd1`, `vcc2`) in 22 of 22.
 //!   `roleFromName`
+//!   A net named `+<volts>v` (`+5v`, `+12v`, `+3.3v`) is a supply too:
+//!   33 nets so named in the 5,274 decks, each a constant rail.
+//!   `library.named`
 //! - schematic.2 (habit) Net 0, and a net named `gnd…`, `vss…`, `vee…`,
 //!   `agnd…`, `dgnd…` or `v-`, is a ground, drawn with a ground symbol
 //!   (R1). People: rail symbols and no port on 5,467 of the 5,535 nets so
@@ -96,6 +99,12 @@
 //!   between the visible perpendicular pins;
 //!   moving it past one would reverse its required reach. Hidden/reference
 //!   pins do not constrain the line or contribute reach. `alignPin`
+//! - schematic.17 (choice) A net named `vs` is a supply only where no
+//!   other net is named one and a p-type transistor's source, emitter or
+//!   body stands on it, no p-type drain or collector: of the 73 nets so
+//!   named in the 5,274 decks, most are a signal's source (`Vs` into a
+//!   gate, a base, a resistor) or a source node fed from `vdd`; this
+//!   reading takes one, AR6228's emitter supply. `guessRoles`
 //!
 //! Contents:
 //! - `pub const structure`, `pub const skeleton`, `pub const sketch`
@@ -334,6 +343,10 @@ pub fn guessRoles(gpa: Allocator, nl: *const netlist.Netlist) Allocator.Error![]
         const upper = device.of(k).path.?[0];
         const made = if (pins.len > upper) pins[upper].index() else 0; // net 0: the sink, never an input
         if (roles[made] == .input and library.named(names[made], .net) == .ref) roles[made] = .output;
+    }
+
+    if (nl.net("vs")) |vs| {
+        if (sourceSupply(nl, roles, vs.index())) roles[vs.index()] = .supply;
     }
 
     const order = try hints.applyOrder(gpa, nl.hints);
@@ -605,6 +618,29 @@ fn roleFromName(name: []const u8) Role {
         .ref, .inp, .inn, .in => .input,
         .out => .output,
     };
+}
+
+/// schematic.17: whether net `vs` (named `vs`) is a supply: no other net
+/// is (by `roles`, as named), a p-type transistor's source, emitter or
+/// body stands on it, and no p-type drain or collector does.
+fn sourceSupply(nl: *const netlist.Netlist, roles: []const Role, vs: u32) bool {
+    assert(vs < roles.len);
+    if (roles[vs] != .internal) return false;
+    for (roles) |r| if (r == .supply) return false;
+    const circuit = &nl.graph;
+    var feeds = false;
+    for (circuit.incident(netlist.VertexId.from(vs))) |e| {
+        const k = circuit.edges.items(.kind)[e.index()];
+        if (!device.isTransistor(k) or device.polarity(nl.modelType(e)) != .p) continue;
+        const pins = circuit.members(e);
+        const path = device.of(k).path.?;
+        for (pins, 0..) |net, i| {
+            if (net.index() != vs) continue;
+            if (i == path[0]) return false;
+            if (i == path[1] or i == 3) feeds = true;
+        }
+    }
+    return feeds;
 }
 
 /// R2, R3: the net a V source drives from the sink, its other end; null
