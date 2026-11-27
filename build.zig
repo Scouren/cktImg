@@ -263,6 +263,15 @@ pub fn build(b: *std.Build) void {
     _ = hint_reports.addOutputDirectoryArg("hint-reports");
     test_step.dependOn(&hint_reports.step);
 
+    // The Python package (python/cktimg) drives the cktimg-json just built.
+    const python_api = b.addSystemCommand(&.{ "python3", "-B" });
+    python_api.addFileArg(b.path("tests/python_api.py"));
+    python_api.addArtifactArg(json_exe);
+    _ = python_api.addOutputDirectoryArg("python-api");
+    python_api.addFileInput(b.path("python/cktimg/__init__.py"));
+    python_api.addFileInput(b.path("tests/symbols.zon"));
+    test_step.dependOn(&python_api.step);
+
     const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
     control_bus.addFileArg(b.path("tests/control_bus_native.py"));
     control_bus.addArtifactArg(json_exe);
