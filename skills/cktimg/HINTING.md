@@ -91,7 +91,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    wins over an `order` line that would part its devices.
 
 5. **`label <net> at <dev>.<pin>` for one far pin.** The pins named carry
-   the name; the rest stay one wire.
+   the name; the rest stay one wire unless it crosses too many (then
+   named as cktImg would; other nets keep their wires). **`wire <net> at <dev>.<pin> ...` for a
+   piece you want wired**: the pins listed are one wire with one name, the
+   rest drawn apart and named once. Two such lines split a net into two
+   named pieces (`wire vy at m15.d m12.d` keeps the facing drains wired).
+   A net drawn as names keeps pins facing each other with nothing between
+   wired, one name a piece.
 
 6. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
@@ -115,6 +121,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    parts over and under the block, and `above <block> <block>` stacks two.
    A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
+   Turn or mirror a block in the parent with `face <block> <port>
+   left|right|up|down` (`face x2 n1 right`), not `at ... MR0`; on a
+   `symmetric` pair of blocks the second is drawn mirrored. Child side
+   lines keep a recognised glyph (amplifier triangle, centre tap), turned
+   or mirrored, when one of its turns puts every named port on its side in
+   the line's order (`*@ left vip vin` puts vip above vin); else the block
+   is drawn as a box.
 
 10. **`rail <supply> each`** when a wire must pass over the top, or when the
    bar joins only two pins (its two end corners go).

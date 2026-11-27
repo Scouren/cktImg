@@ -261,7 +261,18 @@ pub fn build(b: *std.Build) void {
     hint_reports.addFileArg(b.path("tests/hint_reports.py"));
     hint_reports.addArtifactArg(json_exe);
     _ = hint_reports.addOutputDirectoryArg("hint-reports");
+    for ([_][]const u8{ "ag-1067", "ag-1108", "ag-1350", "ag-2500" }) |id|
+        hint_reports.addFileInput(b.path(b.fmt("external/examples/analoggenie/{s}.cir", .{id})));
     test_step.dependOn(&hint_reports.step);
+
+    // The Python package (python/cktimg) drives the cktimg-json just built.
+    const python_api = b.addSystemCommand(&.{ "python3", "-B" });
+    python_api.addFileArg(b.path("tests/python_api.py"));
+    python_api.addArtifactArg(json_exe);
+    _ = python_api.addOutputDirectoryArg("python-api");
+    python_api.addFileInput(b.path("python/cktimg/__init__.py"));
+    python_api.addFileInput(b.path("tests/symbols.zon"));
+    test_step.dependOn(&python_api.step);
 
     const control_bus = b.addSystemCommand(&.{ "python3", "-B" });
     control_bus.addFileArg(b.path("tests/control_bus_native.py"));

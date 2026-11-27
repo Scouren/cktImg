@@ -6,6 +6,7 @@
 //!     *@ label vb1
 //!     *@ label vx at m5.d m7.d
 //!     *@ wire vb1 [ladder|trunk|route|over|under]
+//!     *@ wire vy at m15.d m12.d
 //!     *@ port out right
 //!     *@ rail 0 bar|each|plain
 //!     *@ first n1 n2
@@ -17,10 +18,18 @@
 //!   and has no wire. `read`
 //! - netlines.13 (invariant) `label <net> at <dev>.<pin> ...`: the pins
 //!   named carry the net's name and no wire; the net's other pins are
-//!   wired as a `wire` line wires them, unless another line styles the
-//!   net, and their wire carries the name once. A pin is a terminal name,
+//!   drawn as the engine draws the net (an input's or a bias's wired as a
+//!   `wire` line wires them), unless another line styles the net, and
+//!   their wire carries the name once. The line does not take the rest
+//!   out of thinning: a net that crosses too much is still named, and the
+//!   nets it would have crossed keep their wires. A pin is a terminal name,
 //!   a number from 1 or a net the device touches (`relations.pinIndex`).
 //!   `read`
+//! - netlines.14 (invariant) `wire <net> at <dev>.<pin> ...` (two pins or
+//!   more): the pins listed are one wire of their own, named once; the
+//!   net's other pins are drawn without them, as `label ... at` leaves
+//!   them, and named once apart. Several lines on one net are several
+//!   wires, each one name: a net split where the deck says. `read`
 //! - netlines.2 (invariant) `wire`: the net is a wire, by the pattern
 //!   named or any that fits; one the canvas cannot draw falls back to
 //!   names, and the report says so. `over` and `under` run the wire
@@ -123,6 +132,9 @@ pub const NetLines = struct {
     /// `[device, pin]`: the pins `label ... at` lines name, in the
     /// netlist's numbering.
     named_at: []const [2]u32 = &.{},
+    /// Per `wire <net> at` line, the `[device, pin]`s it wires apart from
+    /// the rest of their net, in the netlist's numbering.
+    wired_at: []const []const [2]u32 = &.{},
 };
 
 /// Reads the lines; each valid one honoured (the report checks `label`,
@@ -140,6 +152,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
     @memset(rail, .auto);
     var first: std.ArrayList(u32) = .empty;
     var named_at: std.ArrayList([2]u32) = .empty;
+    var wired_at: std.ArrayList([]const [2]u32) = .empty;
     // What a line says of one net: its words counted, its net known, the
     // net one the verb draws (`admits`), then what it says of it. The
     // preferred line on a net applied last, so it wins.
@@ -151,7 +164,7 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             else => continue,
         };
         const code: hints.Code = blk: {
-            if (h.args.len < least or (h.args.len > 2 and h.verb != .label)) break :blk .bad_args;
+            if (h.args.len < least or (h.args.len > 2 and h.verb != .label and h.verb != .wire)) break :blk .bad_args;
             const net = (nl.net(h.args[0]) orelse break :blk .unknown_name).index();
             if (!admits(h.verb, roles[net])) break :blk .not_placeable;
             switch (h.verb) {
@@ -163,23 +176,26 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
                         break :blk .ok;
                     }
                     if (h.args.len < 3 or !std.mem.eql(u8, h.args[1], "at")) break :blk .bad_args;
-                    // Every pin valid, or none is taken.
-                    const from = named_at.items.len;
-                    const bad: ?hints.Code = for (h.args[2..]) |word| {
-                        const dot = std.mem.lastIndexOfScalar(u8, word, '.') orelse break .bad_args;
-                        const d = (nl.device(word[0..dot]) orelse break .unknown_name).index();
-                        const k = relations.pinIndex(nl, d, word[dot + 1 ..]) orelse break .unknown_name;
-                        if (nl.graph.members(netlist.EdgeId.from(d))[k].index() != net) break .bad_args;
-                        try named_at.append(arena, .{ d, k });
-                    } else null;
-                    if (bad) |code| {
-                        named_at.shrinkRetainingCapacity(from);
-                        break :blk code;
-                    }
-                    // The rest is wired.
-                    if (style[net] == .auto) style[net] = .wire;
+                    const pins = switch (try pinsAt(arena, nl, net, h.args[2..])) {
+                        .pins => |pins| pins,
+                        .code => |code| break :blk code,
+                    };
+                    try named_at.appendSlice(arena, pins);
+                    // The rest of an input or a bias is wired; of any other
+                    // net, drawn as the engine draws it, thinning too.
+                    if (style[net] == .auto and (roles[net] == .input or roles[net] == .bias)) style[net] = .wire;
                 },
-                .wire => {
+                // Two pins or more on a wire of their own, the rest drawn
+                // as the net is, wired where it is a wire.
+                .wire => if (h.args.len > 2 or (h.args.len == 2 and std.mem.eql(u8, h.args[1], "at"))) {
+                    if (h.args.len < 4 or !std.mem.eql(u8, h.args[1], "at")) break :blk .bad_args;
+                    const pins = switch (try pinsAt(arena, nl, net, h.args[2..])) {
+                        .pins => |pins| pins,
+                        .code => |code| break :blk code,
+                    };
+                    try wired_at.append(arena, pins);
+                    if (style[net] == .auto and (roles[net] == .input or roles[net] == .bias)) style[net] = .wire;
+                } else {
                     var s: Style = .wire;
                     if (h.args.len == 2) {
                         s = std.meta.stringToEnum(Style, h.args[1]) orelse break :blk .bad_args;
@@ -253,10 +269,28 @@ pub fn read(arena: Allocator, nl: *const Netlist, roles: []const Role, unit: i32
             .input, .bias, .internal, .output => continue,
         };
     }
-    return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items, .named_at = named_at.items };
+    return .{ .style = style, .port = port, .rail = rail, .first = first.items, .routes = routes.items, .named_at = named_at.items, .wired_at = wired_at.items };
 }
 
 // ---- private ----
+
+/// The `[device, pin]` of each `<dev>.<pin>` word, every one a distinct pin
+/// on net `net`; else the line's code: `bad_args` for a word of no dot,
+/// another net's pin or one written twice, `unknown_name` for no such
+/// device or pin.
+fn pinsAt(arena: Allocator, nl: *const Netlist, net: u32, words: []const []const u8) Allocator.Error!union(enum) { pins: []const [2]u32, code: hints.Code } {
+    assert(words.len >= 1);
+    const out = try arena.alloc([2]u32, words.len);
+    for (words, out, 0..) |word, *pin, i| {
+        const dot = std.mem.lastIndexOfScalar(u8, word, '.') orelse return .{ .code = .bad_args };
+        const d = (nl.device(word[0..dot]) orelse return .{ .code = .unknown_name }).index();
+        const k = relations.pinIndex(nl, d, word[dot + 1 ..]) orelse return .{ .code = .unknown_name };
+        if (nl.graph.members(netlist.EdgeId.from(d))[k].index() != net) return .{ .code = .bad_args };
+        for (out[0..i]) |q| if (q[0] == d and q[1] == k) return .{ .code = .bad_args };
+        pin.* = .{ d, k };
+    }
+    return .{ .pins = out };
+}
 
 /// Whether `verb` says something of a net of `role`: a rail is its symbols,
 /// never named or wired; an input is a port at its pins unless a `wire`

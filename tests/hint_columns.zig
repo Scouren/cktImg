@@ -1,5 +1,6 @@
 //! The column and partial-wiring lines (docs/research/vocabulary.md):
-//! `column`, `label <net> at <dev>.<pin>`, `wire` on an input, and the
+//! `column`, `label <net> at <dev>.<pin>`, `wire <net> at <pins>`, `wire`
+//! on an input, where names stand (names clear of their own wire), and the
 //! report's count of nets drawn as repeated ports. Oracles: the finished
 //! `Placed` read back (a device's place, a pin on or off its net's wire,
 //! the port symbols on a net), the verdicts' own contract (hints.3: a line
@@ -48,6 +49,53 @@ const spread =
     \\R4 vdd d 1k
     \\M5 e in 0 0 nch
     \\R5 d e 1k
+    \\
+;
+
+/// A diode-connected load and a mirror: net `x` on M1's drain, M2's drain
+/// and gate and M3's gate. The `label ... at` line names M3's gate; the
+/// rest is one wire, named once (fable5 bug-ownwire).
+const own_wire =
+    \\Name on its own wire
+    \\*@ label x at m3.g
+    \\*@ role in input
+    \\*@ role out output
+    \\.model nch nmos
+    \\.model pch pmos
+    \\M1 x in vdd vdd pch
+    \\M2 x x vss vss nch
+    \\M3 out x vss vss nch
+    \\M4 out in vdd vdd pch
+    \\
+;
+
+/// Two gates facing each other on one row, `x` drawn as names (fable5
+/// bug-facing): once two names on one point, each on the other's stub.
+const facing =
+    \\Facing gates as names
+    \\*@ label x
+    \\.model nch nmos
+    \\.model pch pmos
+    \\M1 a x vss vss nch
+    \\M2 b x vss vss nch
+    \\M3 x x vdd vdd pch
+    \\R1 x vss 1k
+    \\
+;
+
+/// An output `n` on M1's source and R1, its gate pin on M2 named apart
+/// (fable3 ag-2323 IBUF): its port already writes the rest's name.
+const ported_rest =
+    \\Label at on a ported net
+    \\*@ label n at m2.g
+    \\*@ role n output
+    \\.model nch nmos level=1
+    \\Vdd vdd 0 1.8
+    \\Vin a 0 1
+    \\M1 vdd a n 0 nch
+    \\R1 n 0 1k
+    \\M2 b n 0 0 nch
+    \\R2 vdd b 1k
     \\
 ;
 
@@ -121,6 +169,14 @@ const Run = struct {
         return false;
     }
 
+    /// The labels on net `name`.
+    fn names(r: *const Run, name: []const u8) usize {
+        const n = r.net(name);
+        var count: usize = 0;
+        for (r.p.labels) |l| count += @intFromBool(l.net == n);
+        return count;
+    }
+
     fn labelled(r: *const Run, name: []const u8) bool {
         const n = r.net(name);
         for (r.p.labels) |l| if (l.net == n) return true;
@@ -154,6 +210,27 @@ fn run(arena: std.mem.Allocator, lib: *np.Library, spice: []const u8, lines: []c
     try std.testing.expectEqual(0, try support.shorts(std.testing.allocator, &p, true));
     const v = try np.report.verdicts(arena, &nl, roles, &st, &sk, &p, lib);
     return .{ .nl = nl, .p = p, .v = v };
+}
+
+/// No label's text starts on a wire of its own net (a point six units
+/// into it, the way it runs), no two labels of a net share a point, and no
+/// net draws one piece of wire twice, end for end: read off the drawing.
+fn expectNamesClear(p: *const np.Placed) !void {
+    for (p.labels, 0..) |l, i| {
+        const into = l.at.add(.{ .x = 6 * l.side.unit().x, .y = 6 * l.side.unit().y });
+        var it = p.segments(l.net);
+        while (it.next()) |poly| try std.testing.expect(!on(poly, into));
+        for (p.labels[i + 1 ..]) |m| try std.testing.expect(m.net != l.net or !m.at.eql(l.at));
+    }
+    for (0..p.netCount()) |n| {
+        var pieces: std.ArrayList([2]np.Pt) = .empty;
+        defer pieces.deinit(std.testing.allocator);
+        var it = p.segments(n);
+        while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
+            for (pieces.items) |q| try std.testing.expect(!((q[0].eql(a) and q[1].eql(b)) or (q[0].eql(b) and q[1].eql(a))));
+            try pieces.append(std.testing.allocator, .{ a, b });
+        };
+    }
 }
 
 fn expectState(v: np.hints.Verdict, state: np.hints.State, code: np.hints.Code) !void {
@@ -259,9 +336,75 @@ test "report: a net drawn as two ports or more is listed as ported" {
     const s = try np.layout(arena, &nl, roles, lib, .{});
     const p = try np.Placed.init(arena, &s, &nl);
     var aw: std.Io.Writer.Allocating = .init(arena);
-    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{});
+    try np.report.write(gpa, &aw.writer, &p, lib, &nl, roles, .{}, null);
     const Doc = struct { metrics: struct { ported: []const []const u8 } };
     const doc = try std.json.parseFromSliceLeaky(Doc, arena, aw.written(), .{ .ignore_unknown_fields = true });
     try std.testing.expectEqual(1, doc.metrics.ported.len);
     try std.testing.expectEqualStrings("in", doc.metrics.ported[0]);
+}
+
+test "names: a name's text never runs along its own wire, and no wire is drawn twice" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const lib = try support.library(std.testing.allocator);
+    defer support.freeLibrary(std.testing.allocator, lib);
+    const r = try run(arena, lib, own_wire, "");
+    try expectState(r.verdict("*@ label x at m3.g"), .honoured, .ok);
+    try expectNamesClear(&r.p);
+    // M3's gate named apart; the rest one wire with one name.
+    try std.testing.expect(r.joined("x", r.pin("m1", 0), r.pin("m2", 1)));
+    try std.testing.expectEqual(2, r.names("x"));
+    const o = try run(arena, lib, ota, "*@ label f at m4.g\n");
+    try expectNamesClear(&o.p);
+}
+
+test "label: facing pins each carry a name, never two names on one point" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const lib = try support.library(std.testing.allocator);
+    defer support.freeLibrary(std.testing.allocator, lib);
+    const r = try run(arena, lib, facing, "");
+    try expectState(r.verdict("*@ label x"), .honoured, .ok);
+    try expectNamesClear(&r.p);
+    // A `label` line's net has no wire between its pins (netlines.1).
+    try std.testing.expect(!r.joined("x", r.pin("m1", 1), r.pin("m2", 1)));
+}
+
+test "wire at: the pins listed are one wire with one name, the rest drawn apart" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const lib = try support.library(std.testing.allocator);
+    defer support.freeLibrary(std.testing.allocator, lib);
+    // By default `f` is one wire: M1's drain on it with M4's gate.
+    const r = try run(arena, lib, ota, "*@ wire f at m1.d m3.d\n");
+    try expectState(r.verdict("*@ wire f at m1.d m3.d"), .honoured, .ok);
+    try std.testing.expect(r.joined("f", r.pin("m1", 0), r.pin("m3", 0)));
+    try std.testing.expect(r.joined("f", r.pin("m3", 1), r.pin("m4", 1)));
+    try std.testing.expect(!r.joined("f", r.pin("m1", 0), r.pin("m4", 1)));
+    // One name a piece.
+    try std.testing.expectEqual(2, r.names("f"));
+    try expectNamesClear(&r.p);
+    const bad = try run(arena, lib, ota, "*@ wire f at m1.d\n*@ wire f at m1.d m1.d\n*@ wire f at m9.d m1.d\n*@ wire f at m1.d m5.d\n*@ wire f m1.d m3.d\n");
+    try expectState(bad.verdict("*@ wire f at m1.d"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ wire f at m1.d m1.d"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ wire f at m9.d m1.d"), .rejected, .unknown_name);
+    try expectState(bad.verdict("*@ wire f at m1.d m5.d"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ wire f m1.d m3.d"), .rejected, .bad_args);
+}
+
+test "label at: a rest its port names carries no second name" {
+    var arena_state: std.heap.ArenaAllocator = .init(std.testing.allocator);
+    defer arena_state.deinit();
+    const arena = arena_state.allocator();
+    const lib = try support.library(std.testing.allocator);
+    defer support.freeLibrary(std.testing.allocator, lib);
+    const r = try run(arena, lib, ported_rest, "");
+    try expectState(r.verdict("*@ label n at m2.g"), .honoured, .ok);
+    try std.testing.expectEqual(1, r.ports("n"));
+    // The name at M2's gate only: the port names the rest.
+    try std.testing.expectEqual(1, r.names("n"));
+    try expectNamesClear(&r.p);
 }
