@@ -16,4 +16,5 @@ its complaint is usually fixed.
 | A circuit with a left-right symmetry is drawn as its mirror image, what maps to itself on the axis | mates' `pos` x summing to one value | 1 |
 | Signal enters on the left and leaves on the right (a differential output at both sides) | the ports' x | 0, then 2 |
 | A net is a wire unless the book would name it (a bias line, a supply) | `metrics.labelled` | 2 |
+| A named net carries one name a wired piece, beside its wire and never along it | the image; `text_overlaps` | 2 (`wire <net> at`) |
 | Nothing crowded or sprawling; few crossings and bends | `metrics`; the image | style |

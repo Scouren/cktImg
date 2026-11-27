@@ -79,7 +79,13 @@ Work down this list. Stop at the first round whose picture meets the target.
    wins over an `order` line that would part its devices.
 
 5. **`label <net> at <dev>.<pin>` for one far pin.** The pins named carry
-   the name; the rest stay one wire.
+   the name; the rest stay one wire unless it crosses too many (then
+   named as cktImg would; other nets keep their wires). **`wire <net> at <dev>.<pin> ...` for a
+   piece you want wired**: the pins listed are one wire with one name, the
+   rest drawn apart and named once. Two such lines split a net into two
+   named pieces (`wire vy at m15.d m12.d` keeps the facing drains wired).
+   A net drawn as names keeps pins facing each other with nothing between
+   wired, one name a piece.
 
 6. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs

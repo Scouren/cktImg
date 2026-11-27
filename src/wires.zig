@@ -126,7 +126,12 @@
 //!   path reaches carries the name. `wire`
 //! - wires.26 (invariant) A pin a `label ... at` line names carries the
 //!   net's name and joins no wire; the net's other pins are drawn without
-//!   it, and their wire, if they are one, carries the name once. `wire`
+//!   it, and their wire, if they are one, carries the name once, unless a
+//!   port of the net already writes it there. `wire`
+//! - wires.27 (invariant) The pins a `wire ... at` line lists are one trunk
+//!   with one name, drawn before every other wire; where no trunk fits,
+//!   facing pins are joined and each piece named (`name_parts.atPins`).
+//!   The net's other pins are drawn without them, as wires.26's. `wire`
 //!
 //! Contents:
 //! - `pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void`
@@ -245,13 +250,38 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
     // off the wire.
     var named: std.ArrayList(u32) = .empty;
     defer named.deinit(gpa);
+    var apart: std.ArrayList(u32) = .empty;
+    defer apart.deinit(gpa);
+    var names_late: std.ArrayList(u32) = .empty;
+    defer names_late.deinit(gpa);
     for (lines.named_at) |k| for (s.pins.items(.net), 0..) |net, p| {
         if (s.pins.items(.device)[p] != k[0] or s.pins.items(.index)[p] != k[1]) continue;
         _ = pins_of[net].swapRemove(std.mem.indexOfScalar(u32, pins_of[net].items, @intCast(p)) orelse break);
-        try c.labelAt(@intCast(p));
+        // Its name comes once every wire is drawn, off them (canvas.9): a
+        // wire of the rest drawn later never runs onto its stub.
+        try apart.append(gpa, @intCast(p));
         if (Drawn.of(s.roles[net]) == .wire and std.mem.indexOfScalar(u32, named.items, net) == null) try named.append(gpa, net);
         break;
     };
+    // Each `wire ... at` line's pins: one wire of their own, named once,
+    // the net's other pins drawn without them (netlines.14).
+    var group: std.ArrayList(u32) = .empty;
+    defer group.deinit(gpa);
+    for (lines.wired_at) |want| {
+        group.clearRetainingCapacity();
+        for (want) |k| for (s.pins.items(.device), s.pins.items(.index), s.pins.items(.net), 0..) |d, i, net, p| {
+            if (d != k[0] or i != k[1]) continue;
+            _ = pins_of[net].swapRemove(std.mem.indexOfScalar(u32, pins_of[net].items, @intCast(p)) orelse break);
+            try group.append(gpa, @intCast(p));
+            break;
+        };
+        if (group.items.len == 0) continue;
+        const net = s.pins.items(.net)[group.items[0]];
+        if (group.items.len < 2 or !try trunk.draw(&c, net, group.items, .name)) try name_parts.atPins(&c, net, group.items, true);
+        if (Drawn.of(s.roles[net]) == .wire and std.mem.indexOfScalar(u32, named.items, net) == null) try named.append(gpa, net);
+    }
+    // The rest of each net is drawn from here on.
+    const rest_from = c.segs.items.len;
     // Pinned routes and vias claim their room before anything else.
     const routed = try gpa.alloc(bool, n_nets);
     defer gpa.free(routed);
@@ -313,7 +343,9 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
             continue;
         }
         if (style == .label) {
-            for (pins) |p| try c.labelAt(p);
+            // Named once every wire is drawn: a facing pair it joins then
+            // crosses nothing drawn later.
+            try names_late.append(gpa, net);
             s.labeled[net] = true;
             continue;
         }
@@ -364,8 +396,13 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
     try routes.draw(&c, waiting.items, pins_of, own_mirror, anchors);
     for (ported_late.items) |net| try routes.port(&c, net);
     try joinRouted(&c, routed, pins_of);
-    // On its top-left pin, so card order changes nothing.
-    for (named.items) |net| if (!s.labeled[net]) {
+    // A net thinned past `cut` keeps its facing pins wired; one a `label
+    // <net>` line names has no wire (netlines.1).
+    for (names_late.items) |net| try name_parts.atPins(&c, net, pins_of[net].items, !labelLine(nl, net));
+    for (apart.items) |p| try c.labelAt(p);
+    // On its top-left pin, so card order changes nothing; a net whose port
+    // symbol already writes its name is not named again.
+    for (named.items) |net| if (!s.labeled[net] and pins_of[net].items.len != 0 and !hasPort(&c, net, pins_of[net].items, rest_from)) {
         const of = pins_of[net].items;
         try c.labelAt(of[topLeft(s, of)]);
     };
@@ -377,6 +414,35 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
 }
 
 // ---- private ----
+
+/// Whether a port of `net` stands on a stub from one of `pins` or from
+/// the net's wire drawn since segment `from`: the name that wire would
+/// carry is written.
+fn hasPort(c: *const Canvas, net: u32, pins: []const u32, from: usize) bool {
+    const s = c.s;
+    for (s.nodes.items(.kind), s.nodes.items(.ref), 0..) |kind, ref, node| {
+        if (kind != .terminal or ref != net) continue;
+        const at: Pt = .round(s.xy[node]);
+        for (c.segs.items) |g| {
+            if (g.net != net or !(g.a.eql(at) or g.b.eql(at))) continue;
+            const base = if (g.a.eql(at)) g.b else g.a;
+            for (pins) |p| if (pinAt(s, p).eql(base)) return true;
+            for (c.segs.items[from..]) |w| {
+                if (w.net == net and !(w.a.eql(g.a) and w.b.eql(g.b)) and Rect.fromCorners(w.a, w.b).contains(base)) return true;
+            }
+        }
+    }
+    return false;
+}
+
+/// Whether a `label <net>` line of the deck names `net` at every pin.
+fn labelLine(nl: *const Netlist, net: u32) bool {
+    for (nl.hints) |h| {
+        if (h.verb != .label or h.args.len != 1) continue;
+        if (nl.net(h.args[0])) |v| if (v.index() == net) return true;
+    }
+    return false;
+}
 
 /// When a net of `role` with `n_pins` pins is drawn (wires.1): a rail's
 /// symbols or bar, then a symbol alone (an input's or a bias's lone pin),

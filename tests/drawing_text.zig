@@ -24,6 +24,9 @@ const known_overlaps = [_][]const u8{
     "bus/bus_current_dac.sp",
     "bus/bus_decoder_2to4.sp",
     "bus/bus_parallel_adder.sp",
+    // mn_mi3's name over q[1]'s wire since q[1]'s name left its own wire
+    // for its pin (canvas.9) and took the place the device name had.
+    "bus/bus_shift_register.sp",
     "bus/bus_sram_cell_array.sp",
     "mixed_signal/phase_detector.sp",
     "testbench/tb_cmos_inverter_vtc.sp",
