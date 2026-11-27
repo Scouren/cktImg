@@ -4,6 +4,7 @@
 //!     *@ [weak] <verb> <arguments>
 //!     *@ group pair m1 m2        (also mirror, bank, stack, cross)
 //!     *@ above m9 iss m7         m9 above iss above m7
+//!     *@ column m5 m6           m5 directly over m6, one column
 //!     *@ face m3 g left          m3's gate on its left
 //!
 //! Each stage applies the lines it owns and says what became of each;
@@ -59,6 +60,7 @@ pub const Verb = enum(u8) {
     expand,
     row,
     above,
+    column,
     order,
     upright,
     bridge,
@@ -416,6 +418,8 @@ test "read: the forms, weak, and what is no verb" {
     try std.testing.expectEqual(Verb.off, read("*@ grouping off").?.verb);
     try std.testing.expectEqual(Verb.symmetry_off, read("*@ symmetry off").?.verb);
     try std.testing.expectEqual(Verb.above, read("*@ above m9 iss").?.verb);
+    try std.testing.expectEqual(Verb.column, read("*@ column m5 m6").?.verb);
+    try std.testing.expectEqual(@as(u8, 2), Verb.column.rung());
     const w = read("*@ weak cell m5 2 4").?;
     try std.testing.expectEqual(Verb.cell, w.verb);
     try std.testing.expect(w.weak);

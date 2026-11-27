@@ -71,7 +71,7 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, order: []c
             const state = verdict orelse continue;
             if (state.state != .honoured) continue;
             switch (h.verb) {
-                .row, .above, .order, .cell, .face => {},
+                .row, .above, .column, .order, .cell, .face => {},
                 else => continue,
             }
             for (h.args) |name| {

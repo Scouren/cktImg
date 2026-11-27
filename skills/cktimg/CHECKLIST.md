@@ -10,7 +10,7 @@ its complaint is usually fixed.
 | No name lies on a symbol, another name or another net's wire. A finding is a cktImg bug: report it with the deck | `text_overlaps` | none |
 | Each gate faces the net it is driven from, as the book draws it | the image; `decisions` (`face`) | 2 |
 | Supply on top, ground at the bottom, current flowing down each column | `grid`; the image | 0, then 2 |
-| Each net plays its role: inputs and outputs are ports, supply and ground are symbols, a bias line is named or carries a port at each gate | `metrics.labelled`, the ports in the image | 0 |
+| Each net plays its role: inputs and outputs are ports, supply and ground are symbols, a bias line is named or carries a port at each gate | `metrics.labelled`, `metrics.ported`, the ports in the image | 0 |
 | Matched devices (a differential pair, a current mirror, a cross-coupled pair) share a row | one `grid` row; `decisions` | 1, then 2 |
 | A stack stands in one column in series order | one `grid` column, rows down the chain | 1, then 2 |
 | A circuit with a left-right symmetry is drawn as its mirror image, what maps to itself on the axis | mates' `pos` x summing to one value | 1 |

@@ -48,7 +48,7 @@ Work down this list. Stop at the first round whose picture meets the target.
    of columns is often the better start, and every later line is judged
    against it.
 
-2. **Roles.** Three misreadings cost the most:
+2. **Roles.** Four misreadings cost the most:
    - In a deck of only `.subckt`s every port the names do not settle is an
      input when only gates hang on it, else an output. Say `role vi input`
      for an input a drain or a part also touches.
@@ -56,6 +56,8 @@ Work down this list. Stop at the first round whose picture meets the target.
      each pin. `role vb3 internal` wires it.
    - In a parts-only circuit the reference net is a ground and refuses
      `wire`. `role <net> internal` frees it.
+   - An input on pins far apart gets a port at each. `wire <net>` draws
+     one port wired to them all.
 
 3. **One `order` line along the signal.** The best-paying line: it turned
    the signal on 4 circuits and took 2 crossings to 0 on a fifth. An order
@@ -71,36 +73,44 @@ Work down this list. Stop at the first round whose picture meets the target.
    common axis. An honoured exact placement that breaks the reflection
    appears in the request's `blocked_by` entries.
 
-4. **`face` for gates and flat parts.** Turn a stack's gates to the side
+4. **`column` for devices that belong over each other.** `above a b` sets
+   only the rows: a and b may stand columns apart. `column a b` stands b
+   directly under a in one column, in parallel or not. A `column` line
+   wins over an `order` line that would part its devices.
+
+5. **`label <net> at <dev>.<pin>` for one far pin.** The pins named carry
+   the name; the rest stay one wire.
+
+6. **`face` for gates and flat parts.** Turn a stack's gates to the side
    their inputs come from. Turning a bias gate away from its mate needs
    `label <net>` with it, or one port is wired round. `face <part> <pin>
    left|right` turns a flat part end for end; its mate needs a line of its
    own.
 
-5. **`group stack <upper> <lower>`** names members from top to bottom. For
+7. **`group stack <upper> <lower>`** names members from top to bottom. For
    a pair in series, put their shared conduction terminals in the same
    column. A reversed request can select the intended branch while its
    final order is reported `relaxed/not_drawn`. The decision export uses
    the physical direction. Opaque blocks with their own port anchors can
    keep their horizontal positions while satisfying the vertical order.
 
-6. **`row` for devices.** Name transistors and upright parts. A flat part
+8. **`row` for devices.** Name transistors and upright parts. A flat part
    named in `row` lands on the gates' level; left out, it settles on the node
    between the rows, which is usually where a person draws it.
 
-7. **Blocks.** Set the port sides in the child `.subckt` before any line on
+9. **Blocks.** Set the port sides in the child `.subckt` before any line on
    the block's neighbours. A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
 
-8. **`rail <supply> each`** when a wire must pass over the top, or when the
+10. **`rail <supply> each`** when a wire must pass over the top, or when the
    bar joins only two pins (its two end corners go).
 
-9. **Cells, as a full set.** The cell frame shifts when relation lines
+11. **Cells, as a full set.** The cell frame shifts when relation lines
    change, so numbers from an earlier round land elsewhere. Paste every
    `weak cell` line of one `--decisions 3` report, make them strong, delete
    the relation lines on those devices, then edit the cells.
 
-10. **Places, as a full set.** `at` on some devices moves the others. Paste
+12. **Places, as a full set.** `at` on some devices moves the others. Paste
     every `at` of one `--decisions 4` report, then edit. Read pin offsets per
     class and turn from `d.json` (a two-pin part's ends are half a unit from
     its centre). Use this when you already know the arrangement and the
@@ -108,7 +118,7 @@ Work down this list. Stop at the first round whose picture meets the target.
     part between two rows. An op-amp circuit starts here: its decisions are
     `at` lines already.
 
-11. **`route <net> x,y ...`** for the one wire that must go a way the router
+13. **`route <net> x,y ...`** for the one wire that must go a way the router
     does not take (a feedback wire over the top). `wire <net>` forces a wire,
     not a good one: when crossings rise, take it out.
 
@@ -123,7 +133,6 @@ complaint open.
 
 | you want | reach for |
 |---|---|
-| One pin of a net named, the rest wired | `label <net>` names the whole net; else leave it |
 | A flat part level with a given pin | `at` on the full set |
 | An upright part between two rows | `at` |
 | "This net goes over the top" | `route`, in coordinates |

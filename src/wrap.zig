@@ -17,7 +17,7 @@
 //!   core stays whole on one shelf and keeps its x. `cutCost`
 //! - wrap.4 (unmeasured) Every shelf starts at the left edge of the core's
 //!   shelf, or of the first shelf when there is no core. `cut`
-//! - wrap.5 (choice) No cut parts an honoured `row` or `order` group,
+//! - wrap.5 (choice) No cut parts an honoured `row`, `order` or `column` group,
 //!   or puts an `above` line's upper device on a later shelf than its
 //!   lower device. Left shelves precede right shelves, so an upper-left
 //!   to lower-right pair may cross a cut. Rejected, dropped and unhandled
@@ -312,7 +312,7 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         if (lo < at and hi >= at) return null;
     }
     for (nl.hints, verdicts) |h, verdict| {
-        if (h.verb != .row and h.verb != .order and h.verb != .above) continue;
+        if (h.verb != .row and h.verb != .order and h.verb != .above and h.verb != .column) continue;
         const v = verdict orelse continue;
         if (v.state != .honoured) continue;
         if (h.verb == .above) {

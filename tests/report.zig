@@ -103,7 +103,7 @@ test "report: the five-transistor OTA's report has no finding, its four blocks, 
     const Doc = struct {
         gates: []const struct { rule: []const u8 },
         text_overlaps: []const struct { text: []const u8 },
-        metrics: struct { crossings: u32, bends: u32, labelled: []const []const u8 },
+        metrics: struct { crossings: u32, bends: u32, labelled: []const []const u8, ported: []const []const u8 },
         requests: []const struct { line: u32 },
         decisions: []const []const u8,
         grid: []const []const u8,

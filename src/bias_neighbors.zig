@@ -264,7 +264,7 @@ fn held(nl: *const Netlist, sk: *const Skeleton, a: u32, b: u32) bool {
     for (nl.hints, sk.verdicts) |hint, verdict| {
         if ((verdict orelse continue).state != .honoured) continue;
         switch (hint.verb) {
-            .row, .above, .order, .cell, .face, .upright, .bridge => {},
+            .row, .above, .column, .order, .cell, .face, .upright, .bridge => {},
             else => continue,
         }
         for (hint.args) |name| {
