@@ -88,6 +88,15 @@ the size cap below are the open follow-ups.
   `relaxed no_room`. The 15 trial drawings are byte-identical. `skills/cktimg/` gains the verdict
   and `lint.zon` tables. `netlist-import.wasm` 677,072 -> 678,692 bytes. Corpus numbers
   unmeasured.
+- Drawing text (`fix/drawing-text`): taken because all five hinting agents found names drawn on
+  symbols, names or wires while `gates` stayed empty. The report's new `text_overlaps` lists
+  every name whose box sits on another symbol, name or net's wire; on the 5,274 decks it flagged
+  1,497 decks (3,297 findings), and moving device, port, rail and label names to a clear side
+  takes that to 304 (554), measured on the branch before the merge; 3,771 of the 3,777 decks with
+  no overlap stay byte-identical. A named net's near pins are wired two at a time, nearest first,
+  not all named (208 decks change). `+<n>v` is a supply by name, and `vs` when it is the only
+  supply candidate and sits on a p-type source (31 decks change). Counts on the merged tree
+  unmeasured. `netlist-import.wasm` 678,692 -> 684,239 bytes.
 
 ### Changed
 
