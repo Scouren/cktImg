@@ -329,6 +329,21 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             return it.next() == null;
         },
         .wire => return wired(p, netIn(p, h.args[0]) orelse return false),
+        // A pin of the part on the named pin's net, within two units of it.
+        .hang => {
+            if (h.args.len != 2) return null;
+            const dot = std.mem.lastIndexOfScalar(u8, h.args[1], '.') orelse return false;
+            const d = deviceIn(p, h.args[1][0..dot]) orelse return false;
+            const e = (nl.device(h.args[1][0..dot]) orelse return false).index();
+            const k = relations.pinIndex(nl, e, h.args[1][dot + 1 ..]) orelse return false;
+            const lo, _ = p.pinRange(d);
+            const at = p.pin_xy[lo + k];
+            const part = deviceIn(p, h.args[0]) orelse return false;
+            const a, const b = p.pinRange(part);
+            for (a..b) |q| if (p.pin_net[q] == p.pin_net[lo + k] and
+                @abs(p.pin_xy[q].x - at.x) <= 2 * unit and @abs(p.pin_xy[q].y - at.y) <= 2 * unit) return true;
+            return false;
+        },
         .port => {
             if (h.args.len != 2) return null;
             const net = netIn(p, h.args[0]) orelse return false;

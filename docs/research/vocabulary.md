@@ -26,6 +26,7 @@ when two pins share a net (a diode-connected gate).
 | 2 | `group stack <devs>` | a column's chain, top to bottom (built) | shared nets, no loop | strong |
 | 2 | `upright <dev>`, `bridge <dev>` | the form | upright: a transistor, or a two-pin device on two nets | strong |
 | 2 | `face <dev> <pin> left\|right\|up\|down` | a pin's side: the gate's, the end that is up, a bridge's direction | an orientation of the class has it; a vertical device keeps an end up | strong |
+| 2 | `hang <part> <dev>.<pin>` | a part by one pin of an upright device: under its lower end, over its upper end, or beside its gate (level when the part lies flat, its end on the net toward the gate; a row lower, hanging from the gate's wire, when it stands). A part pushed off that cell by another is `relaxed no_room` | the part touches the pin's net; the device stands | strong |
 | 2 | `label <net> [at <dev>.<pin>]`, `wire <net> [ladder\|column\|trunk\|route]` | names or a wire, and which pattern or pin | the guarantees; a wire that cannot be drawn is reported, then labels | strong |
 | 2 | `port <net> left\|right\|top\|bottom` | an input's or output's port side | — | strong |
 | 2 | `rail <net> bar\|each\|plain` | a supply or ground as one bar, a symbol per pin, or one bar with no symbol | — | strong |

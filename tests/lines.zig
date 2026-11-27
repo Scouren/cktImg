@@ -578,6 +578,25 @@ test "lines: above and row stand blocks and flat parts by their anchor" {
     try expectState(level.verdict("*@ row x1 r2 x2"), .honoured, .ok);
 }
 
+test "lines: hang stands a part by a pin of an upright device" {
+    // Oracle: the finished drawing's pins. A hung part has its pin on the
+    // named pin's net within two units of that pin (`checks.drawnAs`), and
+    // a capacitor hung from a gate stands under the gate, its pin on the
+    // gate's net no higher than the gate. Three agents of the hinting trial
+    // wrote cells for this (ar-239, ag-1108, ag-1094); the verb was unknown.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Hung parts\n.model nch nmos\nM1 d g s 0 nch\nR1 vdd d 1k\nR2 vin g 1k\nI1 s 0 1m\nC1 g 0 1p\nR3 s 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ hang c1 m1.g\n*@ hang i1 m1.s\n");
+    for ([_][]const u8{ "*@ hang c1 m1.g", "*@ hang i1 m1.s" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expect(r.pin("c1", 0).y >= r.pin("m1", 1).y);
+    try std.testing.expect(r.pins("i1").min.y >= r.pin("m1", 2).y);
+    const bad = try run(f.arena(), f.lib, deck, "*@ hang r1 m1.g\n*@ hang c1 m1\n*@ hang c1 m9.g\n");
+    try expectState(bad.verdict("*@ hang r1 m1.g"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m1"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
+}
+
 test "lines: a row line and an above line on a loop of two devices are both held" {
     // Oracle: the lines themselves, read off the drawing. A transmission
     // gate explicitly drawn upright has its transistors above each other

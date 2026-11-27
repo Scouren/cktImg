@@ -97,8 +97,8 @@ Work down this list. Stop at the first round whose picture meets the target.
     every `at` of one `--decisions 4` report, then edit. Read pin offsets per
     class and turn from `d.json` (a two-pin part's ends are half a unit from
     its centre). Use this when you already know the arrangement and the
-    lattice has no cell for it: a flat part level with one pin, an upright
-    part between two rows. An op-amp circuit starts here: its decisions are
+    lattice has no cell for it (a part by one pin is `hang`, not this). An
+    op-amp circuit starts here: its decisions are
     `at` lines already.
 
 11. **`route <net> x,y ...`** for the one wire that must go a way the router
@@ -117,8 +117,7 @@ complaint open.
 | you want | reach for |
 |---|---|
 | One pin of a net named, the rest wired | `label <net>` names the whole net; else leave it |
-| A flat part level with a given pin | `at` on the full set |
-| An upright part between two rows | `at` |
+| A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
 | "This net goes over the top" | `route`, in coordinates |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 

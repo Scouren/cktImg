@@ -362,6 +362,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     cross_loads.place(nl, roles, st, mate, drawn, form, x, y, gate_right, verdicts);
     // A gate a line turns against its mate's ends the mirror.
     const mirrored = try relations.faces(arena, nl, drawn, form, mate, gate_right, left_end, verdicts);
+    try anchored.hang(gpa, nl, drawn, form, upper, lower, gate_right, left_end, x, y, verdicts);
     var protected = try loop_place.place(gpa, nl, roles, drawn, form, upper, mate, left_end, x, y, verdicts);
     defer protected.deinit(gpa);
     try input_place.place(gpa, nl, roles, devices_by_rank, st.device_rank, drawn, form, upper, mate, gate_right, left_end, x, y, verdicts, &protected);

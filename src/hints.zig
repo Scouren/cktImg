@@ -5,6 +5,7 @@
 //!     *@ group pair m1 m2        (also mirror, bank, stack, cross)
 //!     *@ above m9 iss m7         m9 above iss above m7
 //!     *@ face m3 g left          m3's gate on its left
+//!     *@ hang c1 m3.g            c1 hung from m3's gate
 //!
 //! Each stage applies the lines it owns and says what became of each;
 //! `report` gathers the verdicts. What each verb draws is the rule of the
@@ -63,6 +64,7 @@ pub const Verb = enum(u8) {
     upright,
     bridge,
     face,
+    hang,
     label,
     wire,
     port,
