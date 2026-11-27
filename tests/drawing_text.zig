@@ -27,11 +27,6 @@ const known_overlaps = [_][]const u8{
     "bus/bus_sram_cell_array.sp",
     "mixed_signal/phase_detector.sp",
     "testbench/tb_cmos_inverter_vtc.sp",
-    // The `outn` port stands on the block's bottom edge in both (it did
-    // before the box widened to clear its title, library.9); its name now
-    // falls on the wider box.
-    "testbench/tb_diff_pair_cmrr.sp",
-    "testbench/tb_diff_pair_offset.sp",
 };
 
 /// AG1003: m8's name on the `vb1` port beside it ("m8vb1").

@@ -76,9 +76,10 @@
 //!   two ports of a two-port side in 1,137 of 1,261 (two units, a row left
 //!   empty between them, in 13). `blockFor`
 //! - library.9 (invariant) A generated block's title clears the names of
-//!   its side ports: the box widens until the middle port's name of an
-//!   odd left or right side, which shares the title's row, ends before
-//!   the title (`symbolTextRect`). `blockFor`
+//!   its ports: it stands on the middle row, else a quarter unit above or
+//!   below it; with none clear, the box widens until the middle port's
+//!   name of an odd left or right side ends before the title
+//!   (`symbolTextRect`). `blockFor`
 //!
 //! Contents (geometry and class registration):
 //! - `pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool`
@@ -545,14 +546,18 @@ pub const Library = struct {
         const hh: i32 = @as(i32, @intCast(@max(per[0].items.len, per[1].items.len, 1))) * half;
         var hw: i32 = @max(@as(i32, @intCast(@max(per[2].items.len, per[3].items.len))) * half, @divTrunc(3 * u, 4));
         const lead: i32 = @divTrunc(u, 4);
-        // The title, on the middle row, clears the middle port's name of an
-        // odd side (library.9); the pins stay on the half-unit grid.
-        const title = symbolTextRect(.zero, def.name, 7);
-        for (per[0..2]) |list| if (list.items.len % 2 == 1) {
-            const port = def.ports[list.items[list.items.len / 2]];
-            const label = symbolTextRect(.{ .x = 6 + 3 * @as(i32, @intCast(port.len)), .y = 0 }, port, 5);
-            const need = label.max.x + 1 - title.min.x;
-            if (need > hw) hw = (@divTrunc(need + lead + half - 1, half)) * half - lead;
+        // The title stands on the middle row, else a quarter unit above or
+        // below it, clear of every port's name; with no such row the box
+        // widens until the middle row clears (library.9). The pins stay on
+        // the half-unit grid.
+        const title_y: i32 = titleRow(def, per, hw, hh, half) orelse row: {
+            const title = symbolTextRect(.zero, def.name, 7);
+            for (per[0..2]) |list| if (list.items.len % 2 == 1) {
+                const port = def.ports[list.items[list.items.len / 2]];
+                const need = symbolTextRect(labelAt(.left, 0, 0, hh, port), port, 5).max.x + 1 - title.min.x;
+                if (need > hw) hw = (@divTrunc(need + lead + half - 1, half)) * half - lead;
+            };
+            break :row 0;
         };
         const terms = try a.alloc(Terminal, n);
         var ops: std.ArrayList(DrawOp) = .empty;
@@ -565,12 +570,13 @@ pub const Library = struct {
                 // 1,535 of 1,670 gaps of 5,263 hand-drawn schematics, the
                 // two ports of a side in 1,137 of 1,261 (two units in 13).
                 const along: i32 = (2 * @as(i32, @intCast(j)) - @as(i32, @intCast(list.items.len - 1))) * half;
-                const pin: Pt, const edge: Pt, const label: Pt = switch (side) {
-                    .left => .{ .{ .x = -hw - lead, .y = along }, .{ .x = -hw, .y = along }, .{ .x = -hw + 6 + 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
-                    .right => .{ .{ .x = hw + lead, .y = along }, .{ .x = hw, .y = along }, .{ .x = hw - 6 - 3 * @as(i32, @intCast(def.ports[k].len)), .y = along } },
-                    .top => .{ .{ .x = along, .y = -hh - lead }, .{ .x = along, .y = -hh }, .{ .x = along, .y = -hh + 7 } },
-                    .bottom => .{ .{ .x = along, .y = hh + lead }, .{ .x = along, .y = hh }, .{ .x = along, .y = hh - 7 } },
+                const pin: Pt, const edge: Pt = switch (side) {
+                    .left => .{ .{ .x = -hw - lead, .y = along }, .{ .x = -hw, .y = along } },
+                    .right => .{ .{ .x = hw + lead, .y = along }, .{ .x = hw, .y = along } },
+                    .top => .{ .{ .x = along, .y = -hh - lead }, .{ .x = along, .y = -hh } },
+                    .bottom => .{ .{ .x = along, .y = hh + lead }, .{ .x = along, .y = hh } },
                 };
+                const label = labelAt(side, along, hw, hh, def.ports[k]);
                 const faces: Side = switch (side) {
                     .left => .left,
                     .right => .right,
@@ -582,7 +588,7 @@ pub const Library = struct {
                 try ops.append(a, .{ .text = .{ .at = label, .s = def.ports[k], .size = 5 } });
             }
         }
-        try ops.append(a, .{ .text = .{ .at = .zero, .s = def.name, .size = 7 } });
+        try ops.append(a, .{ .text = .{ .at = .{ .x = 0, .y = title_y }, .s = def.name, .size = 7 } });
         return self.register(.{ .name = name, .terminals = terms, .draw = ops.items });
     }
 
@@ -800,6 +806,36 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
         .coupling => "coupling",
         .subckt => "subckt", // by definition: see `Library.blockFor`
     };
+}
+
+/// Where a generated box writes port `name` on `side`, `along` it, in a
+/// box reaching `hw` and `hh` from its middle.
+fn labelAt(side: netlist.PortSide, along: i32, hw: i32, hh: i32, name: []const u8) Pt {
+    const inset: i32 = 6 + 3 * @as(i32, @intCast(name.len));
+    return switch (side) {
+        .left => .{ .x = -hw + inset, .y = along },
+        .right => .{ .x = hw - inset, .y = along },
+        .top => .{ .x = along, .y = -hh + 7 },
+        .bottom => .{ .x = along, .y = hh - 7 },
+    };
+}
+
+/// The first row of the middle, a quarter unit above it and a quarter
+/// below, where a box's title lies clear of every port's name; null when
+/// none does.
+fn titleRow(def: *const netlist.Subckt, per: [4]std.ArrayList(usize), hw: i32, hh: i32, half: i32) ?i32 {
+    const q = @divTrunc(half, 2);
+    row: for ([_]i32{ 0, -q, q }) |y| {
+        const title = symbolTextRect(.{ .x = 0, .y = y }, def.name, 7).grow(-1);
+        if (title.min.y <= -hh or title.max.y >= hh) continue;
+        for (per, 0..) |list, si| for (list.items, 0..) |k, j| {
+            const along: i32 = (2 * @as(i32, @intCast(j)) - @as(i32, @intCast(list.items.len - 1))) * half;
+            const at = labelAt(@fromBackingInt(@intCast(si)), along, hw, hh, def.ports[k]);
+            if (title.intersects(symbolTextRect(at, def.ports[k], 5).grow(-1))) continue :row;
+        };
+        return y;
+    }
+    return null;
 }
 
 /// The first of the eight turns, the unturned first, that puts every port
