@@ -259,6 +259,11 @@ pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayLis
     for (lines.routes) |r| {
         if (try pinned(&c, r, pins_of[r.net].items)) routed[r.net] = true;
     }
+    for (lines.style, 0..) |style, net| {
+        if ((style != .over and style != .under) or routed[net] or pins_of[net].items.len < 2) continue;
+        // The run past the symbols alone; the router joins the pins to it.
+        if (try c.commit(@intCast(net), &around(&c, pins_of[net].items, style == .over))) routed[net] = true;
+    }
     // The `first` nets lead, in their order.
     var lead: usize = 0;
     for (lines.first) |net| {
@@ -429,6 +434,29 @@ fn pinned(c: *Canvas, r: netlines.Route, pins: []const u32) !bool {
     return drew;
 }
 
+/// The run of a `wire <net> over|under` line with pins `pins`: from their
+/// leftmost x to their rightmost, one unit past every symbol and pin, above
+/// the drawing (`top`) or below it.
+fn around(c: *const Canvas, pins: []const u32, top: bool) [2]Pt {
+    assert(pins.len >= 2);
+    var lo = pinAt(c.s, pins[0]);
+    var hi = lo;
+    var edge = lo.y;
+    for (pins) |p| {
+        const at = pinAt(c.s, p);
+        lo.x = @min(lo.x, at.x);
+        hi.x = @max(hi.x, at.x);
+    }
+    for (c.boxes) |b| edge = if (top) @min(edge, b.min.y) else @max(edge, b.max.y);
+    for (c.s.pins.items(.net), 0..) |_, p| {
+        const y = pinAt(c.s, @intCast(p)).y;
+        edge = if (top) @min(edge, y) else @max(edge, y);
+    }
+    const y = if (top) edge - c.len.unit else edge + c.len.unit;
+    // Pins in one column: a run one unit wide, still a segment.
+    return .{ .{ .x = lo.x, .y = y }, .{ .x = @max(hi.x, lo.x + c.len.unit), .y = y } };
+}
+
 /// Commits polyline `pts` of `net`, each of its pins the polyline passes
 /// made a point of it (a pin joins a wire only at a point). False, with
 /// nothing drawn, when a piece does not fit.
@@ -472,7 +500,8 @@ fn joinRouted(c: *Canvas, routed: []const bool, pins_of: []const std.ArrayList(u
             } else try off.append(gpa, p);
         }
         // A route ends on a pin and a via starts at one: some pin is on it.
-        try routes.attach(c, @intCast(net), off.items, anchor.?);
+        // An `over` or `under` run touches none: its first pin stands in.
+        try routes.attach(c, @intCast(net), off.items, anchor orelse off.items[0]);
     }
 }
 
@@ -514,7 +543,7 @@ fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlin
         .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.drawPreferred(c, net, pins, .port, preferred),
         .ladder => try ladder(c, net, pins, axis2),
         .trunk => try trunk.draw(c, net, pins, .port),
-        .route => false,
+        .route, .over, .under => false,
         .label, .cut => unreachable,
     };
 }

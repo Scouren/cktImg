@@ -99,7 +99,9 @@ Work down this list. Stop at the first round whose picture meets the target.
    between the rows, which is usually where a person draws it.
 
 9. **Blocks.** Set the port sides in the child `.subckt` before any line on
-   the block's neighbours. A three-port part with two ends (a centre-tapped
+   the block's neighbours. Then `above <part> <block> <part>` puts feedback
+   parts over and under the block, and `above <block> <block>` stacks two.
+   A three-port part with two ends (a centre-tapped
    inductor) takes its ends left and right, the tap on top.
 
 10. **`rail <supply> each`** when a wire must pass over the top, or when the
@@ -114,12 +116,13 @@ Work down this list. Stop at the first round whose picture meets the target.
     every `at` of one `--decisions 4` report, then edit. Read pin offsets per
     class and turn from `d.json` (a two-pin part's ends are half a unit from
     its centre). Use this when you already know the arrangement and the
-    lattice has no cell for it: a flat part level with one pin, an upright
-    part between two rows. An op-amp circuit starts here: its decisions are
+    lattice has no cell for it (a part by one pin is `hang`, not this). An
+    op-amp circuit starts here: its decisions are
     `at` lines already.
 
-13. **`route <net> x,y ...`** for the one wire that must go a way the router
-    does not take (a feedback wire over the top). `wire <net>` forces a wire,
+13. **`wire <net> over|under`** for a wire round the top or the bottom of
+    the drawing (a feedback wire); **`route <net> x,y ...`** for any other
+    way the router does not take. `wire <net>` forces a wire,
     not a good one: when crossings rise, take it out.
 
 Stop when every line is `honoured` and no crossing or unforced corner is
@@ -133,9 +136,7 @@ complaint open.
 
 | you want | reach for |
 |---|---|
-| A flat part level with a given pin | `at` on the full set |
-| An upright part between two rows | `at` |
-| "This net goes over the top" | `route`, in coordinates |
+| A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
 A `group stack` reported `relaxed not_drawn` can reflect opposite series order. One whose devices share no channel net but a rail (two devices anchored to the same rail) is `rejected unjoined`, as is a `mirror` or `bank` whose gates are on two nets. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.

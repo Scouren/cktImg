@@ -399,7 +399,7 @@ pub fn roundEven(num: i64, den: i64) i32 {
 
 fn positional(h: @import("hints.zig").Hint) bool {
     return switch (h.verb) {
-        .upright, .bridge, .row, .above, .column, .order, .face, .cell => true,
+        .upright, .bridge, .row, .above, .column, .order, .face, .hang, .cell => true,
         .at => !h.weak,
         else => false,
     };

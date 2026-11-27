@@ -52,10 +52,10 @@ R5 in a 1k
 X1 a b amp
 R4 b 0 1k
 *@ upright r5 r4
-*@ above r5 x1 r4
+*@ column r5 x1 r4
 *@ order r5 nosuch
 """, [(8, "*@ upright r5 r4", "honoured", "ok", None),
-      (9, "*@ above r5 x1 r4", "rejected", "not_placeable", "x1"),
+      (9, "*@ column r5 x1 r4", "rejected", "not_placeable", "x1"),
       (10, "*@ order r5 nosuch", "rejected", "unknown_name", "nosuch")]),
     # A group its devices are not joined as: a bank's gates on two nets, a
     # stack's devices on no shared net but a rail. The joined ones stand.

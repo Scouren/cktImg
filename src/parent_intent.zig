@@ -24,7 +24,7 @@ pub fn touches(nl: *const netlist.Netlist, h: hints.Hint, verdict: hints.Verdict
     const args = switch (h.verb) {
         .off, .symmetry_off, .shelf => return true,
         .unknown, .refdes, .expand => return false,
-        .role, .port, .rail, .label, .wire, .via, .route, .kind, .class, .driver, .axis, .at, .cell, .face => first,
+        .role, .port, .rail, .label, .wire, .via, .route, .kind, .class, .driver, .axis, .at, .cell, .face, .hang => first,
         .first, .pair, .cross, .bank, .mirror, .stack, .nogroup, .symmetric, .row, .above, .column, .order, .upright, .bridge => h.args,
     };
     switch (h.verb) {

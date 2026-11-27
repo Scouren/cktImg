@@ -60,6 +60,14 @@ const Run = struct {
         return r.p.pin_xy[r.p.pinRange(r.device(name))[0] + k];
     }
 
+    /// The box around device `name`'s pins.
+    fn pins(r: *const Run, name: []const u8) np.Rect {
+        const a, const b = r.p.pinRange(r.device(name));
+        var box: np.Rect = .point(r.p.pin_xy[a]);
+        for (r.p.pin_xy[a..b]) |q| box = box.merge(.point(q));
+        return box;
+    }
+
     fn net(r: *const Run, name: []const u8) u32 {
         for (r.p.net_name, 0..) |n, k| if (std.mem.eql(u8, n, name)) return @intCast(k);
         unreachable;
@@ -545,6 +553,62 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
     const o = try run(f.arena(), f.lib, ota, on);
     try expectState(o.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
     try std.testing.expect(o.at("m4").eql(base.at("m4")));
+}
+
+test "lines: above and row stand blocks and flat parts by their anchor" {
+    // Oracle: the lines themselves, read off the finished drawing's pins:
+    // the feedback part over the block has every pin above the block's and
+    // spans the block's centre; the part under it, every pin below.
+    // Blocks and flat parts have no row among the columns', and the engine
+    // rejected every such line `not_placeable` (four decks of the hinting
+    // trials: ar-3201, ag-1094, ag-1067, ag-1168).
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Feedback over a block\n.model nch nmos\n.subckt dda p1 n1 o1 o2\n.ends dda\n.subckt buf a y\n.ends buf\n" ++
+        "M1 n1 vin 0 0 nch\nR1 vdd n1 1k\nR2 n1 o1 1k\nR3 p1 o2 1k\nX1 p1 n1 o1 o2 dda\nX2 o1 y buf\nR4 y 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ above r2 x1 r3\n*@ above x1 x2\n");
+    for ([_][]const u8{ "*@ above r2 x1 r3", "*@ above x1 x2" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    const r2 = r.pins("r2");
+    const x1 = r.pins("x1");
+    try std.testing.expect(r2.max.y < x1.min.y and r2.min.x <= r.at("x1").x and r.at("x1").x <= r2.max.x);
+    try std.testing.expect(r.pins("r3").min.y > x1.max.y);
+    try std.testing.expect(r.pins("x2").min.y > x1.max.y);
+    // A row of blocks and a flat part alone: level with its first block.
+    const level = try run(f.arena(), f.lib, deck, "*@ row x1 r2 x2\n");
+    try expectState(level.verdict("*@ row x1 r2 x2"), .honoured, .ok);
+}
+
+test "lines: hang stands a part by a pin of an upright device" {
+    // Oracle: the finished drawing's pins. A hung part has its pin on the
+    // named pin's net within two units of that pin (`checks.drawnAs`), and
+    // a capacitor hung from a gate stands under the gate, its pin on the
+    // gate's net no higher than the gate. Three agents of the hinting trial
+    // wrote cells for this (ar-239, ag-1108, ag-1094); the verb was unknown.
+    var f = try Fixture.init();
+    defer f.deinit();
+    const deck = "Hung parts\n.model nch nmos\nM1 d g s 0 nch\nR1 vdd d 1k\nR2 vin g 1k\nI1 s 0 1m\nC1 g 0 1p\nR3 s 0 1k\n";
+    const r = try run(f.arena(), f.lib, deck, "*@ hang c1 m1.g\n*@ hang i1 m1.s\n");
+    for ([_][]const u8{ "*@ hang c1 m1.g", "*@ hang i1 m1.s" }) |line| try expectState(r.verdict(line), .honoured, .ok);
+    try std.testing.expect(r.pin("c1", 0).y >= r.pin("m1", 1).y);
+    try std.testing.expect(r.pins("i1").min.y >= r.pin("m1", 2).y);
+    const bad = try run(f.arena(), f.lib, deck, "*@ hang r1 m1.g\n*@ hang c1 m1\n*@ hang c1 m9.g\n");
+    try expectState(bad.verdict("*@ hang r1 m1.g"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m1"), .rejected, .bad_args);
+    try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
+}
+
+test "lines: wire over and under run a net past the top or the bottom of the drawing" {
+    // Oracle: the finished drawing's wires (`checks.drawnAs`): the net is
+    // one wire, and some point of it lies above (below) every pin of every
+    // device. Two agents of the hinting trial wrote a `route` in hand-
+    // computed coordinates for this (ag-2323 `fb` under, ag-1168 over);
+    // the words were refused `bad_args`.
+    var f = try Fixture.init();
+    defer f.deinit();
+    for ([_][]const u8{ "*@ wire f over", "*@ wire f under" }) |line| {
+        const r = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ line, "\n" }));
+        try expectState(r.verdict(line), .honoured, .ok);
+    }
 }
 
 test "lines: a row line and an above line on a loop of two devices are both held" {

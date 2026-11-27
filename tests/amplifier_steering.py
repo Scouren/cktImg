@@ -22,7 +22,7 @@ def main(binary, fixture):
         drawing,decisions,_=draw('')
         assert decisions.count(b'*@ at ')==7
         for line,code in [('row absent m1','unknown_name'),('bridge absent','unknown_name'),('at absent 2 3','unknown_name'),
-                          ('at m1 nan 3','bad_args'),('row m1 m2','not_placeable')]:
+                          ('at m1 nan 3','bad_args'),('column m1 m2','not_placeable')]:
             actual,again,request=draw(line)
             assert request['state']=='rejected' and request['code']==code,(line,request)
             assert actual==drawing and again==decisions,(line,'rejection changed geometry or decisions')

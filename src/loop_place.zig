@@ -94,7 +94,7 @@ pub fn place(gpa: Allocator, nl: *const Netlist, roles: []const Role, drawn: []c
                 const v = verdict orelse continue;
                 if (v.state != .honoured) continue;
                 switch (h.verb) {
-                    .row, .above, .order, .cell, .face => {},
+                    .row, .above, .order, .cell, .face, .hang => {},
                     else => continue,
                 }
                 for (h.args) |name| {

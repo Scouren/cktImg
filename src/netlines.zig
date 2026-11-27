@@ -5,7 +5,7 @@
 //!
 //!     *@ label vb1
 //!     *@ label vx at m5.d m7.d
-//!     *@ wire vb1 [ladder|trunk|route]
+//!     *@ wire vb1 [ladder|trunk|route|over|under]
 //!     *@ port out right
 //!     *@ rail 0 bar|each|plain
 //!     *@ first n1 n2
@@ -23,7 +23,9 @@
 //!   `read`
 //! - netlines.2 (invariant) `wire`: the net is a wire, by the pattern
 //!   named or any that fits; one the canvas cannot draw falls back to
-//!   names, and the report says so. `read`
+//!   names, and the report says so. `over` and `under` run the wire
+//!   along the top or the bottom of the drawing, past every symbol, as a
+//!   feedback wire goes round a circuit. `read`
 //! - netlines.3 (invariant) `port`: an input's or an output's port leaves
 //!   on the side named, where its stub fits. `read`
 //! - netlines.4 (invariant) `rail`: the rail is one bar past its pins with
@@ -85,6 +87,11 @@ pub const Style = enum(u8) {
     ladder,
     trunk,
     route,
+    /// One wire run along the top of the drawing, past every symbol, its
+    /// pins joined to it by the router.
+    over,
+    /// The same along the bottom.
+    under,
 };
 
 pub const Rail = enum(u8) {
