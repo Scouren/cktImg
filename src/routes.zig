@@ -28,6 +28,11 @@
 //! - routes.5 (unmeasured) An output's port leaves from the topmost of
 //!   its wires' outermost points, on the drawing's nearer side: the right
 //!   when the wires' middle is at or right of the drawing's. `port`
+//! - routes.6 (choice) A `port` line's side is tried first; where no stub
+//!   fits there, the port stands where it would with no line, a symbol
+//!   still: a name for want of the side asked lost the symbol the line
+//!   was about (ag-1108, a hinting trial: `port rfoutp top` drew a bare
+//!   name). The report says `no_room`. `port`
 //!
 //! Contents:
 //! - `pub fn gatePort(c: *Canvas, net: u32, gates: []const u32, label: u32) !void`
@@ -174,23 +179,14 @@ pub fn attachRun(c: *Canvas, net: u32, pins: []const u32, run: u32) Allocator.Er
 /// An output's port out from the topmost of its wires' outermost points,
 /// on the side a `port` line asks, else the drawing's nearer side; for a
 /// line asking up or down, from the wires' topmost or bottommost point
-/// (the leftmost of them). An input's (with no `port` line) out from the
-/// leftmost point of its wires a stub fits at, left first, then up, down,
-/// right: one symbol, a name only when no point has room. Nothing for a
-/// net with no wire. Asserts the net is an input or an output.
+/// (the leftmost of them). Where a line's side has no stub that fits, the
+/// port stands where it would with no line: a symbol still, never a name
+/// for want of the side asked. An input's (with no `port` line) out from
+/// the leftmost point of its wires a stub fits at, left first, then up,
+/// down, right: one symbol, a name only when no point has room. Nothing
+/// for a net with no wire. Asserts the net is an input or an output.
 pub fn port(c: *Canvas, net: u32) !void {
     assert(c.s.roles[net] == .output or c.s.roles[net] == .input);
-    const asked: ?Side = if (c.port_side.len > 0) c.port_side[net] else null;
-    if (c.s.roles[net] == .output and asked != null and !asked.?.isHorizontal()) {
-        const up = asked.? == .up;
-        var from: ?Pt = null;
-        for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-            const f = from orelse e;
-            if (from == null or (if (up) e.y < f.y else e.y > f.y) or (e.y == f.y and e.x < f.x)) from = e;
-        };
-        if (from) |at| try c.port(net, at, asked.?);
-        return;
-    }
     var lo: i32 = std.math.maxInt(i32);
     var hi: i32 = std.math.minInt(i32);
     for (c.segs.items) |g| if (g.net == net) {
@@ -198,7 +194,9 @@ pub fn port(c: *Canvas, net: u32) !void {
         hi = @max(hi, @max(g.a.x, g.b.x));
     };
     if (lo > hi) return;
-    if (c.s.roles[net] == .input and asked == null) {
+    const line: ?Side = if (c.port_side.len > 0) c.port_side[net] else null;
+    if (line) |asked| if (try c.portStub(net, lineFrom(c, net, asked, lo, hi), &.{ asked, if (asked.isHorizontal() or c.s.roles[net] == .output) asked else .left, .up, .down })) return;
+    if (c.s.roles[net] == .input) {
         // Column by column from the left; a stub along the net's own wire
         // is no stub (`Canvas.port`).
         var x = lo;
@@ -215,13 +213,8 @@ pub fn port(c: *Canvas, net: u32) !void {
             x = next;
         }
     }
-    const right = if (asked) |a| a == .right else lo + hi >= c.middle2();
-    const edge = if (right) hi else lo;
-    var from: ?Pt = null;
-    for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
-        if (e.x == edge and (from == null or e.above(from.?))) from = e;
-    };
-    try c.port(net, from.?, if (right) .right else .left);
+    const right = lo + hi >= c.middle2();
+    try c.port(net, edgePoint(c, net, if (right) hi else lo), if (right) .right else .left);
 }
 
 /// Promotes a fallback label on the existing gate span only once the routes
@@ -277,6 +270,30 @@ pub fn mirrored(c: *Canvas, net: u32, mate: u32, pins: []const u32, mate_pins: [
 }
 
 // ---- private ----
+
+/// Where a `port` line asking `asked` puts the net's port: for an output
+/// asked up or down, the topmost or bottommost point of its wires (the
+/// leftmost of them); else the topmost point on the wires' left (`lo`) or
+/// right (`hi`) edge.
+fn lineFrom(c: *const Canvas, net: u32, asked: Side, lo: i32, hi: i32) Pt {
+    if (c.s.roles[net] != .output or asked.isHorizontal()) return edgePoint(c, net, if (asked == .right) hi else lo);
+    const up = asked == .up;
+    var from: ?Pt = null;
+    for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
+        const f = from orelse e;
+        if (from == null or (if (up) e.y < f.y else e.y > f.y) or (e.y == f.y and e.x < f.x)) from = e;
+    };
+    return from.?;
+}
+
+/// The topmost point of net `net`'s wires at x `edge`; asserts one is.
+fn edgePoint(c: *const Canvas, net: u32, edge: i32) Pt {
+    var from: ?Pt = null;
+    for (c.segs.items) |g| if (g.net == net) for ([_]Pt{ g.a, g.b }) |e| {
+        if (e.x == edge and (from == null or e.above(from.?))) from = e;
+    };
+    return from.?;
+}
 
 /// Joins `pins` by maze, the pin nearest a joined one next; returns the
 /// first pin's index (`topLeft`) and appends the pins no path reached to

@@ -6,7 +6,7 @@
 //!
 //! Human Rules:
 //! - wire_gates.1 (invariant) No wire touches another net's rail symbol or
-//!   runs on a line beside its strokes, one target unit out (canvas.9).
+//!   runs on a line beside its strokes, one target unit out (canvas.10).
 //!   `glyphs`
 //! - wire_gates.2 (invariant) Every end of a net's wire meets a pin of the
 //!   net (a symbol's too), a name of it or another of its wires; a named

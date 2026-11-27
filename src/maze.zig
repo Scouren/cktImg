@@ -16,7 +16,7 @@
 //! - maze.4 (invariant) A routed wire never runs inside a device's box,
 //!   along or within `clear` of another net's wire, within `clear` of
 //!   another net's point, across a wall (a rail's short stub, its bar),
-//!   into another net's kept box (a rail symbol's, canvas.9), or
+//!   into another net's kept box (a rail symbol's, canvas.10), or
 //!   through a point of its own net that is not where it ends. `route`
 //! - maze.5 (invariant) A routed wire crosses another net's wire straight,
 //!   never bends on it and never ends on it. `route`
