@@ -16,7 +16,7 @@ Hints are the deck's own `*@` lines (`skills/cktimg/SKILL.md`).
 | argument | given as | flag |
 |---|---|---|
 | `symbols` | a path, or `.zon` text | `--symbols` |
-| `target` | a path, JSON text, or a dict (`docs/TARGETS.md`) | `--target` |
+| `target` | a path, JSON text, or a dict (`docs/TARGETS.md`); `classes` keys are `<class>`, `<class>:<model>` (`"nmos:nfet_01v8"`, matched first) or a subcircuit name | `--target` |
 | `config` | a path, or `lint.zon` text | `--config` |
 | `start` | a path, JSON text, or a placement dict: an earlier placement whose devices stay put | `--from` |
 | `exe` | the `cktimg-json` to run; else `$CKTIMG_JSON`, else `PATH` | |
