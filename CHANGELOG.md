@@ -95,8 +95,8 @@ the size cap below are the open follow-ups.
   takes that to 304 (554), measured on the branch before the merge; 3,771 of the 3,777 decks with
   no overlap stay byte-identical. A named net's near pins are wired two at a time, nearest first,
   not all named (208 decks change). `+<n>v` is a supply by name, and `vs` when it is the only
-  supply candidate and sits on a p-type source (31 decks change). Counts on the merged tree
-  unmeasured. `netlist-import.wasm` 678,692 -> 684,239 bytes.
+  supply candidate and sits on a p-type source (31 decks change). On the merged tree: 301 decks,
+  535 findings. `netlist-import.wasm` 678,692 -> 684,239 bytes.
 
 ### Changed
 
