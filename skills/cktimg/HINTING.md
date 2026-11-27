@@ -101,8 +101,9 @@ Work down this list. Stop at the first round whose picture meets the target.
     op-amp circuit starts here: its decisions are
     `at` lines already.
 
-11. **`route <net> x,y ...`** for the one wire that must go a way the router
-    does not take (a feedback wire over the top). `wire <net>` forces a wire,
+11. **`wire <net> over|under`** for a wire round the top or the bottom of
+    the drawing (a feedback wire); **`route <net> x,y ...`** for any other
+    way the router does not take. `wire <net>` forces a wire,
     not a good one: when crossings rise, take it out.
 
 Stop when every line is `honoured` and no crossing or unforced corner is
@@ -118,7 +119,6 @@ complaint open.
 |---|---|
 | One pin of a net named, the rest wired | `label <net>` names the whole net; else leave it |
 | A part level with a gate, or hung from a pin between two rows | `hang <part> <dev>.<pin>` |
-| "This net goes over the top" | `route`, in coordinates |
 | A mirror about a device that swaps two of its pins | cells, mirrored by hand |
 
 A `group stack` reported `relaxed not_drawn` can reflect opposite series order or two devices anchored to the same rail at equal height. Compare the named device centers and shared conduction contacts. Other unexplained `not_drawn` verdicts belong in a bug report with the deck.

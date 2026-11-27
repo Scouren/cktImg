@@ -597,6 +597,20 @@ test "lines: hang stands a part by a pin of an upright device" {
     try expectState(bad.verdict("*@ hang c1 m9.g"), .rejected, .unknown_name);
 }
 
+test "lines: wire over and under run a net past the top or the bottom of the drawing" {
+    // Oracle: the finished drawing's wires (`checks.drawnAs`): the net is
+    // one wire, and some point of it lies above (below) every pin of every
+    // device. Two agents of the hinting trial wrote a `route` in hand-
+    // computed coordinates for this (ag-2323 `fb` under, ag-1168 over);
+    // the words were refused `bad_args`.
+    var f = try Fixture.init();
+    defer f.deinit();
+    for ([_][]const u8{ "*@ wire f over", "*@ wire f under" }) |line| {
+        const r = try run(f.arena(), f.lib, ota, try std.mem.concat(f.arena(), u8, &.{ line, "\n" }));
+        try expectState(r.verdict(line), .honoured, .ok);
+    }
+}
+
 test "lines: a row line and an above line on a loop of two devices are both held" {
     // Oracle: the lines themselves, read off the drawing. A transmission
     // gate explicitly drawn upright has its transistors above each other
