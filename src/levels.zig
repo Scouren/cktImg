@@ -39,7 +39,11 @@
 //!   longest path alone. `rows`
 //!   Narrowing: a part with two pins on its card or a dependent source
 //!   (`isFoot`); a switch and a three-pin diode keep their row.
-//! - levels.11 (choice) A device standing on another (levels.1) through a
+//! - levels.11 (choice) A transistor of a `stage` line's unit drops, by
+//!   levels.9, only to its type's lowest row among its own unit's: a unit
+//!   is laid as a drawing of its own, so a `row` line can level units
+//!   (units.2). The rest drop as before. `rows`
+//! - levels.12 (choice) A device standing on another (levels.1) through a
 //!   device a `row` line holds level with others yields to mates and
 //!   blocks standing level (levels.7, levels.8): the line moved a
 //!   neighbour, not the pair (ag-2500 `row m3 cm2` dropped m6 under m3's
@@ -47,7 +51,7 @@
 //!   raises one. `rows`
 //!
 //! Contents:
-//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
+//! - `pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, unit: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -59,6 +63,7 @@ const symmetry = @import("symmetry.zig");
 const skeleton = @import("skeleton.zig");
 const forms = @import("forms.zig");
 const relations = @import("relations.zig");
+const units = @import("units.zig");
 const sch = @import("schematic.zig");
 
 const Netlist = netlist.Netlist;
@@ -77,11 +82,12 @@ const isRail = Role.isRail;
 /// merging mates and blocks (where that closes no cycle); then each type's
 /// transistors on ground drop to that type's lowest level among them, and
 /// a part on ground with nothing over it hangs under the net it joins.
-/// `below` is each device's next in its column, or `none`.
-pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
+/// `below` is each device's next in its column, or `none`; `unit` each
+/// device's stage line, or `units.alone` (`units.read`).
+pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const Structure, rel: *const Relations, mate: []const u32, below: []const u32, unit: []const u32, drawn: []const bool, form: []const Form, upper: []const u32, lower: []const u32) ![]u32 {
     const c = &nl.graph;
     const n = c.edgeCount();
-    assert(mate.len == n and below.len == n);
+    assert(mate.len == n and below.len == n and unit.len == n);
     assert(roles.len == c.vertexCount());
     const kinds = c.edges.items(.kind);
     // Edges: u above l where u's lower end is l's upper end.
@@ -152,7 +158,7 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
     };
     edges.shrinkRetainingCapacity(kept);
     // A device standing on another through a device a `row` line holds
-    // level with others yields to mates and blocks (levels.11): set aside.
+    // level with others yields to mates and blocks (levels.12): set aside.
     var held: std.ArrayList([2]u32) = .empty;
     defer held.deinit(gpa);
     kept = 0;
@@ -216,7 +222,15 @@ pub fn rows(gpa: Allocator, nl: *const Netlist, roles: []const Role, st: *const 
             const all = for (0..n) |e| {
                 if (find(class, @intCast(e)) == k and !onGround(nl, roles, kinds, drawn, form, lower, e, pol)) break false;
             } else true;
-            if (all) rank[d] = low;
+            // A stage's own: its lowest among its members (levels.11).
+            var own = low;
+            if (unit[d] != units.alone) {
+                own = 0;
+                for (0..n) |e| if (unit[e] == unit[d] and onGround(nl, roles, kinds, drawn, form, lower, e, pol)) {
+                    own = @max(own, before[e]);
+                };
+            }
+            if (all) rank[d] = own;
         }
     }
     // A part on ground with nothing over it hangs under its net: a row

@@ -560,13 +560,20 @@ test "lines: at puts a symbol where it says and turns it; one on another symbol 
     try std.testing.expect(r.at("m5").eql(.{ .x = -10 * f.lib.unit, .y = 20 * f.lib.unit }));
     try std.testing.expectEqual(np.Orient{ .rot = 1 }, r.p.dev_orient[r.device("m5")]);
     try expectState(r.verdict("*@ refdes m1 left"), .honoured, .ok);
-    // M4 placed on M3's own spot.
+    // M4 placed on M3's own spot: the line beats the engine, and M3, which
+    // no line places, steps off (`run` checks no symbol is on another).
     const base = try run(f.arena(), f.lib, ota, "");
     const m3 = base.at("m3");
     const on = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit) });
     const o = try run(f.arena(), f.lib, ota, on);
-    try expectState(o.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
-    try std.testing.expect(o.at("m4").eql(base.at("m4")));
+    try expectState(o.verdict(on[0 .. on.len - 1]), .honoured, .ok);
+    try std.testing.expect(o.at("m4").eql(m3));
+    try std.testing.expect(!o.at("m3").eql(m3));
+    // On M3's spot with M3 placed there too, the earlier line gives way.
+    const both = try std.fmt.allocPrint(f.arena(), "{s}*@ at m3 {d:.4} {d:.4}\n", .{ on, fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit) });
+    const t = try run(f.arena(), f.lib, ota, both);
+    try expectState(t.verdict(on[0 .. on.len - 1]), .dropped, .guarantee);
+    try std.testing.expect(t.at("m4").eql(base.at("m4")));
 }
 
 test "lines: above and row stand blocks and flat parts by their anchor" {
@@ -734,17 +741,18 @@ test "lines: an order line admitted after another order line's mirror image stan
 
 test "lines: an at that gives way stands on its lattice place, and an at on that place gives way too" {
     // Oracle: the guarantee (no symbol on another), checked by `run`, and
-    // the drawing with no line. M4 is put on M3 and gives way; M1 is put
-    // where M4 then stands, and must give way as well. It was checked
-    // against the place M4 had left, kept, and drawn on M4.
+    // the drawing with no line. M4 is put on M3, which a later line keeps
+    // there, and gives way; M1 is put where M4 then stands, and must give
+    // way as well. It was checked against the place M4 had left, kept, and
+    // drawn on M4.
     var f = try Fixture.init();
     defer f.deinit();
     const base = try run(f.arena(), f.lib, ota, "");
     const m3 = base.at("m3");
     const m4 = base.at("m4");
-    const lines = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n*@ at m1 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m4.x, f.lib.unit), fu(m4.y, f.lib.unit) });
+    const lines = try std.fmt.allocPrint(f.arena(), "*@ at m4 {d:.4} {d:.4}\n*@ at m3 {d:.4} {d:.4}\n*@ at m1 {d:.4} {d:.4}\n", .{ fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m3.x, f.lib.unit), fu(m3.y, f.lib.unit), fu(m4.x, f.lib.unit), fu(m4.y, f.lib.unit) });
     const r = try run(f.arena(), f.lib, ota, lines);
-    for (r.nl.hints, r.v) |h, v| if (h.verb == .at) try expectState(v, .dropped, .guarantee);
+    for (r.nl.hints, r.v) |h, v| if (h.verb == .at) try expectState(v, if (std.mem.eql(u8, h.args[0], "m3")) .honoured else .dropped, if (std.mem.eql(u8, h.args[0], "m3")) .ok else .guarantee);
     try std.testing.expect(r.at("m4").eql(m4));
     try std.testing.expect(r.at("m1").eql(base.at("m1")));
 }

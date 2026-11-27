@@ -95,6 +95,7 @@ const sequence = @import("sequence.zig");
 const mates = @import("mates.zig");
 const wrap = @import("wrap.zig");
 const cells = @import("cells.zig");
+const units = @import("units.zig");
 const hints = @import("hints.zig");
 const forms = @import("forms.zig");
 const passive_filters = @import("passive_filters.zig");
@@ -261,6 +262,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     try relations.ends(arena, nl, drawn, form, upper, lower, verdicts);
     const rel = try relations.rows(gpa, arena, nl, st, drawn, form, verdicts);
     const seq = try sequence.read(gpa, arena, nl, st, drawn, form, rel.links, verdicts);
+    const unit = try units.read(arena, nl, drawn, verdicts);
     const net_rank = st.net_rank;
     const above = try gpa.alloc(u32, n);
     defer gpa.free(above);
@@ -293,7 +295,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
 
     const mate = try mates.find(gpa, nl, roles, st, drawn, form, column_of, chain.above, chain.below, start.items.len - 1);
     defer gpa.free(mate);
-    const rank = try levels.rows(gpa, nl, roles, st, &rel, mate, chain.below, drawn, form, upper, lower);
+    const rank = try levels.rows(gpa, nl, roles, st, &rel, mate, chain.below, unit, drawn, form, upper, lower);
     defer gpa.free(rank);
     const cols: columns.Columns = .{ .start = start.items, .devices = members.items };
     const partners = try gpa.alloc(u32, n);
@@ -359,6 +361,7 @@ fn lay(gpa: Allocator, arena: Allocator, nl: *const Netlist, roles: []const Role
     // an `above` line stands in its column.
     try sequence.bridges(gpa, &seq, rel.bridge_row, devices_by_rank, drawn, form, x, y, verdicts);
     try anchored.place(gpa, nl, drawn, form, x, y, verdicts);
+    try units.apply(gpa, arena, nl, drawn, form, x, y, verdicts);
     try cells.apply(gpa, arena, nl, drawn, mate, x, y, verdicts);
     mated = false;
     for (mate, 0..) |m, d| mated = mated or (m != none and drawn[d] and form[d] == .vertical);

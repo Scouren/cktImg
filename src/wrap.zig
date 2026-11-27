@@ -74,6 +74,7 @@ const netlist = @import("netlist.zig");
 const sch = @import("schematic.zig");
 const skeleton = @import("skeleton.zig");
 const hints = @import("hints.zig");
+const units = @import("units.zig");
 const power_paths = @import("power_paths.zig");
 const coil_tanks = @import("coil_tanks.zig");
 const ct_four_sides = @import("ct_four_sides.zig");
@@ -312,7 +313,7 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         if (lo < at and hi >= at) return null;
     }
     for (nl.hints, verdicts) |h, verdict| {
-        if (h.verb != .row and h.verb != .order and h.verb != .above and h.verb != .column) continue;
+        if (h.verb != .row and h.verb != .order and h.verb != .above and h.verb != .column and h.verb != .repeat) continue;
         const v = verdict orelse continue;
         if (v.state != .honoured) continue;
         if (h.verb == .above) {
@@ -327,12 +328,12 @@ fn cutCost(nl: *const Netlist, roles: []const Role, drawn: []const bool, form: [
         }
         var lo: i32 = std.math.maxInt(i32);
         var hi: i32 = std.math.minInt(i32);
-        for (h.args) |name| {
-            const d = nl.device(name).?.index();
+        for (h.args) |name| for (units.unit(nl, name) orelse &.{name}) |member| {
+            const d = nl.device(member).?.index();
             assert(drawn[d]);
             lo = @min(lo, x[d]);
             hi = @max(hi, x[d]);
-        }
+        };
         if (lo < at and hi >= at) return null;
     }
     var cost: u32 = 0;

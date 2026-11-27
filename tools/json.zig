@@ -13,7 +13,8 @@
 //! line's verdict, scores, the engine's decisions as `*@` lines and the
 //! lattice rows. `--decisions <rung>` prints the engine's decisions on rungs
 //! 1 to `<rung>` as `*@` lines, one per line, to stdout (the JSON then needs
-//! an output path): a deck plus them draws the same picture. `--from
+//! an output path): a deck plus them draws the same picture on most
+//! circuits (skills/cktimg/SKILL.md, Decisions, has the counts). `--from
 //! last.json` relays the deck from its last drawing (this tool's JSON, as
 //! written or as someone moved things in it): only what the deck's structure
 //! no longer puts where that drawing has it is laid again (`src/relay.zig`).
@@ -132,14 +133,14 @@ pub fn main(init: std.process.Init) !void {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
     };
-    if (opts.from) |path| {
+    const kept: ?[]const u8 = if (opts.from) |path| blk: {
         const last = cwd.readFileAlloc(io, path, arena, .limited(1 << 26)) catch |err| fatal("cannot read drawing '{s}': {t}", .{ path, err });
-        const lines = stays(arena, last, lib.unit) catch |err| switch (err) {
+        break :blk stays(arena, last, lib.unit) catch |err| switch (err) {
             error.OutOfMemory => return err,
             else => fatal("{s}: not a cktimg-json drawing", .{path}),
         };
-        srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
-    }
+    } else null;
+    if (kept) |lines| srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", lines });
     var placed = placeSelected(gpa, arena, &cfg, &lib, srcs, if (opts.from == null) raw else null, opts.symbols != null, &diag) catch |err| switch (err) {
         error.OutOfMemory => return err,
         else => fatal("{s}:{d}: {t} near '{s}'", .{ opts.netlist, diag.line, err, diag.token() }),
@@ -166,7 +167,11 @@ pub fn main(init: std.process.Init) !void {
             var rw: Writer.Allocating = .init(arena);
             var own = nl;
             own.hints = try fileLines(arena, nl.hints, raw);
-            try np.report.write(gpa, &rw.writer, &placed, &lib, &own, roles, cfg.layout);
+            const st = try np.schematic.structure.analyze(arena, arena, &own, roles);
+            const sk = try np.schematic.skeleton.place(arena, arena, &own, roles, &st, .{ .shelf = cfg.layout.shelf });
+            const deck: Deck = .{ .cfg = &cfg, .lib = &lib, .path = opts.netlist, .raw = raw, .kept = kept, .lattice = lattice, .custom_symbols = opts.symbols != null };
+            const proven = try deck.proveAlone(gpa, arena, own.hints, try np.report.verdicts(arena, &own, roles, &st, &sk, &placed, &lib));
+            try np.report.write(gpa, &rw.writer, &placed, &lib, &own, roles, cfg.layout, proven);
             cwd.writeFile(io, .{ .sub_path = path, .data = rw.written() }) catch |err| fatal("cannot write '{s}': {t}", .{ path, err });
         }
         if (rung) |r| {
@@ -235,6 +240,85 @@ pub fn deckSourcesFor(gpa: Allocator, arena: Allocator, lib: ?*np.Library, path:
     const roles = try prepareCell(gpa, arena, &.{ with_sources, rest }, top.ports, lib, diag, lattice and top.ports.len == 8 and @import("polyphase_caps.zig").plain(top.body));
     return try arena.dupe([]const u8, &.{ try std.mem.concat(arena, u8, &.{ with_sources, roles }), rest });
 }
+
+/// A deck as this tool draws it, to draw again with one line blanked.
+const Deck = struct {
+    cfg: *const np.Config,
+    lib: *np.Library,
+    path: []const u8,
+    raw: []const u8,
+    /// `--from`'s stays, appended to the deck as drawn.
+    kept: ?[]const u8,
+    lattice: bool,
+    custom_symbols: bool,
+
+    /// Redraws `proveAlone` spends at most, one per blocking line.
+    const trials_max = 32;
+
+    /// `vs` (the verdicts of `hints`, numbered as the file is) with each
+    /// `blocked_by` member's `alone` proven: the deck drawn again with that
+    /// line alone blanked honours the blocked line. A member this tool added
+    /// (line 0), or one past `trials_max` blocking lines, is not proven:
+    /// false.
+    fn proveAlone(d: Deck, gpa: Allocator, arena: Allocator, hints: []const np.hints.Hint, vs: []const np.hints.Verdict) ![]const np.hints.Verdict {
+        assert(hints.len == vs.len);
+        const out = try arena.dupe(np.hints.Verdict, vs);
+        // Per blocking line: what the deck without it honours, by line.
+        var trials: std.AutoArrayHashMapUnmanaged(u32, []const u32) = .empty;
+        for (out, hints) |*v, h| {
+            if (v.blocked_by.len == 0 or h.line == 0) continue;
+            const alone = try arena.alloc(bool, v.blocked_by.len);
+            for (v.blocked_by, alone) |b, *a| {
+                const line = hints[b].line;
+                a.* = false;
+                if (line == 0) continue;
+                const gop = try trials.getOrPut(arena, line);
+                if (!gop.found_existing) {
+                    gop.value_ptr.* = if (trials.count() <= trials_max) try d.honouredWithout(gpa, arena, line) else &.{};
+                }
+                a.* = std.mem.indexOfScalar(u32, gop.value_ptr.*, h.line) != null;
+            }
+            v.alone = alone;
+        }
+        return out;
+    }
+
+    /// The file lines of the `*@` lines the deck honours drawn with file
+    /// line `line` made a comment; none when that deck does not draw.
+    fn honouredWithout(d: Deck, gpa: Allocator, arena: Allocator, line: u32) ![]const u32 {
+        assert(line > 0);
+        var lines = std.mem.splitScalar(u8, d.raw, '\n');
+        var text: std.ArrayList(u8) = .empty;
+        var at: u32 = 0;
+        while (lines.next()) |l| {
+            at += 1;
+            if (at > 1) try text.append(arena, '\n');
+            try text.appendSlice(arena, if (at == line) "*" else l);
+        }
+        var diag: np.netlist.Diagnostic = .{};
+        const srcs = deckSourcesFor(gpa, arena, d.lib, d.path, text.items, &diag, d.lattice) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => return &.{},
+        };
+        if (d.kept) |k| srcs[0] = try std.mem.concat(arena, u8, &.{ srcs[0], "\n", k });
+        var placed = placeSelected(gpa, arena, d.cfg, d.lib, srcs, if (d.kept == null) text.items else null, d.custom_symbols, &diag) catch |err| switch (err) {
+            error.OutOfMemory => return err,
+            else => return &.{},
+        };
+        defer placed.deinit();
+        var nl = try np.netlist.parse(gpa, srcs, null);
+        defer nl.deinit(gpa);
+        const roles = try np.guessRoles(arena, &nl);
+        const st = try np.schematic.structure.analyze(arena, arena, &nl, roles);
+        const sk = try np.schematic.skeleton.place(arena, arena, &nl, roles, &st, .{ .shelf = d.cfg.layout.shelf });
+        const hints = try fileLines(arena, nl.hints, text.items);
+        var out: std.ArrayList(u32) = .empty;
+        for (hints, try np.report.verdicts(arena, &nl, roles, &st, &sk, &placed, d.lib)) |h, v| {
+            if (h.line != 0 and v.state == .honoured) try out.append(arena, h.line);
+        }
+        return out.items;
+    }
+};
 
 /// Whether deck `raw` has a title line: it does not start with `.subckt`.
 fn titled(raw: []const u8) bool {
