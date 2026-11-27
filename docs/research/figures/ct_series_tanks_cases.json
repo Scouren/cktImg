@@ -1,0 +1,1997 @@
+{
+  "corpus_counts": {
+    "amsnet": 734,
+    "analoggenie": 2202
+  },
+  "corpus_sha256": {
+    "amsnet": "4d9e2ff15cc8a8ea814cfe8a6762ef90f3631cd63ca7f64c4035c6a824033b6c",
+    "analoggenie": "b882223f01fef03f98ef636783c6ad0db5d4ea7086a917ad6d7647cb864a95bd"
+  },
+  "dependencies": {
+    "biased_amplifiers.py": "3893d6c882f516da8182ccf5392f8edd0bd3138e54038b284a88f8c186ca3409",
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "block_aliases_native.py": "4b46a908e9b093d7ad3d8b65335dab494c049a6378d1037d70426e375e4c760f",
+    "block_tanks.py": "1246d8c1b831df50a3ca2435df51ad445405af641716c398a22baeea6a377bdd",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "center_tap_tanks.py": "4a183a9511491b3bba4ac1e880e5b795398aa0a2c9b6466e7180d077097b860d",
+    "channel_bridges.py": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "ct_series_tanks.py": "5097de95c5cecb13b5e980d0abf857b459e244d693cdd9aefa52a3343c78c6e2",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "input_resistor_legs.py": "5660823e09293ed82ac57d5b9835dff0005c357d6ac55a09c13b4cb8bec40612",
+    "input_resistors.py": "46d3dfae5fae8fd7874519a84f5b9a36292c7b37a343583a0a847dd95233fea5",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "paired_amplifier_ports.py": "81209829b0f2c589af17f30aa2aa55f0644c09ca819a3de68a30720948ca734c",
+    "power_paths.py": "179c721073ac9b18b8cff2985075326706c71bffc661d291a170275e3d648528",
+    "remaining_amplifiers.py": "4b727e43ec6ffd7f1786385df86e8604fb353633982a7cbc458d77e2d2f4b9bb",
+    "sampling_cells.py": "cf705df907cc88ab5e644a1de6c1e0d3c5297f971703a6e7376946834bbf2325",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a",
+    "thin_connectivity.py": "bdf216eb76714d0d2f6f3a0ce870f2c976fc0e68efb9959a9c842821b44886db",
+    "trunk_rungs.py": "c1a0a572481fb87e5f03960f3285cb944d16ecbb84d6c3d2f6f1e10364422fae"
+  },
+  "limits": [
+    "Two correlated groups in one figure; no population frequency claim.",
+    "Relations use actual SVG leads and ink; distances are not prescribed.",
+    "Global relative order of the two groups is outside this certificate.",
+    "No native placement improvement or connectivity preservation is claimed."
+  ],
+  "names": [
+    "ag-1153:xl1:series_lcl",
+    "ag-1153:xl2:series_lcl"
+  ],
+  "observations": [
+    {
+      "name": "ag-1103:xl1",
+      "selected": false
+    },
+    {
+      "name": "ag-1114:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1131:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1146:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1147:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1149:xlp",
+      "selected": false
+    },
+    {
+      "name": "ag-1151:xl",
+      "selected": false
+    },
+    {
+      "name": "ag-1152:xl1",
+      "selected": false
+    },
+    {
+      "name": "ag-1152:xl2",
+      "selected": false
+    },
+    {
+      "name": "ag-1153:xl1",
+      "selected": true
+    },
+    {
+      "name": "ag-1153:xl2",
+      "selected": true
+    },
+    {
+      "name": "ag-1168:x1",
+      "selected": false
+    },
+    {
+      "name": "ag-1168:x2",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xle1",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xle2",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xlo1",
+      "selected": false
+    },
+    {
+      "name": "ag-1180:xlo2",
+      "selected": false
+    },
+    {
+      "name": "ag-1187:xtb",
+      "selected": false
+    },
+    {
+      "name": "ag-1190:x1",
+      "selected": false
+    }
+  ],
+  "rows": [
+    {
+      "actual_capacitor": [
+        [
+          280.0,
+          150.0
+        ],
+        [
+          320.0,
+          150.0
+        ]
+      ],
+      "actual_inductors": [
+        [
+          [
+            230.0,
+            200.0
+          ],
+          [
+            230.0,
+            160.0
+          ]
+        ],
+        [
+          [
+            370.0,
+            200.0
+          ],
+          [
+            370.0,
+            160.0
+          ]
+        ]
+      ],
+      "actual_winding": {
+        "n1": [
+          250.0,
+          210.0
+        ],
+        "n2": [
+          350.0,
+          210.0
+        ],
+        "n3": [
+          300.0,
+          230.0
+        ]
+      },
+      "geometry": {
+        "actual_end_order": true,
+        "capacitor_beyond_series_inductors_opposite_tap": true,
+        "capacitor_midpoint_on_winding_midpoint_axis": true,
+        "capacitor_parallel_to_winding": true,
+        "centered_cardinal_tap": true,
+        "paired_near_and_far_rows": true,
+        "two_inductors_perpendicular_to_winding": true
+      },
+      "method_checks": [
+        "complete_unique_lcl",
+        "card_permutation",
+        "shared_owner_before_tap_eligibility_rejected",
+        "second_inductor_at_outer_end_rejected",
+        "shorted_extra_inductor_at_outer_end_rejected",
+        "second_capacitor_rejected",
+        "second_winding_rejected",
+        "open_series_path_rejected",
+        "shorted_far_nets_rejected",
+        "tap_is_outer_net_rejected",
+        "literal_actual_lead_order",
+        "eight_rigid_poses_and_translation",
+        "tap_toward_capacitor_rejected",
+        "skewed_inductor_rejected",
+        "inductor_inside_winding_rejected",
+        "reversed_capacitor_binding_rejected",
+        "shifted_capacitor_midpoint_rejected",
+        "cap_before_far_inductor_rejected",
+        "inductor_polarity_rejected",
+        "staggered_inductor_rows_rejected"
+      ],
+      "name": "ag-1153:xl1:series_lcl",
+      "paths": [
+        {
+          "actual_targets": [
+            [
+              250.0,
+              210.0
+            ],
+            [
+              230.0,
+              200.0
+            ]
+          ],
+          "bindings": [
+            [
+              "xl1",
+              0
+            ],
+            [
+              "ls1",
+              1
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-f31e48a5-ebbb-4791-9f87-c095fc658077-to-junction",
+                "xy": [
+                  230.0,
+                  210.0
+                ]
+              },
+              {
+                "object": "wire-15ef6ef6-fe20-4ab8-8878-ecdc8b766290-to-junction",
+                "xy": [
+                  190.0,
+                  210.0
+                ]
+              },
+              {
+                "object": "wire-df30986a-494c-476a-8e88-b8ae833db676-to-junction",
+                "xy": [
+                  210.0,
+                  210.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  230.0,
+                  200.0
+                ],
+                [
+                  230,
+                  210
+                ]
+              ],
+              [
+                [
+                  230,
+                  210
+                ],
+                [
+                  250.0,
+                  210.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                250.0,
+                210.0
+              ],
+              [
+                230.0,
+                200.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "p4",
+          "verified_segments": [
+            [
+              [
+                230,
+                200
+              ],
+              [
+                230,
+                210
+              ]
+            ],
+            [
+              [
+                230,
+                210
+              ],
+              [
+                250,
+                210
+              ]
+            ],
+            [
+              [
+                120,
+                250
+              ],
+              [
+                130,
+                250
+              ]
+            ],
+            [
+              [
+                130,
+                250
+              ],
+              [
+                170,
+                210
+              ]
+            ],
+            [
+              [
+                170,
+                210
+              ],
+              [
+                190,
+                210
+              ]
+            ],
+            [
+              [
+                190,
+                210
+              ],
+              [
+                210,
+                210
+              ]
+            ],
+            [
+              [
+                210,
+                210
+              ],
+              [
+                230,
+                210
+              ]
+            ],
+            [
+              [
+                210,
+                230
+              ],
+              [
+                210,
+                210
+              ]
+            ],
+            [
+              [
+                170,
+                190
+              ],
+              [
+                190,
+                190
+              ]
+            ],
+            [
+              [
+                190,
+                190
+              ],
+              [
+                190,
+                210
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              230.0,
+              160.0
+            ],
+            [
+              280.0,
+              150.0
+            ]
+          ],
+          "bindings": [
+            [
+              "ls1",
+              0
+            ],
+            [
+              "c1",
+              1
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-ee835547-5495-425e-be7f-b9b09f8ebae7-to-junction",
+                "xy": [
+                  180.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-bd7d5cbd-9e47-423a-8e3b-e7ac595b1b88-to-junction",
+                "xy": [
+                  210.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-14634dca-4a42-4fd5-b366-761e51e7c3b2-to-junction",
+                "xy": [
+                  230.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-24f78fc8-1c11-42af-9c7f-7b7c15612a3f-to-junction",
+                "xy": [
+                  230.0,
+                  150.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  230,
+                  150
+                ],
+                [
+                  230.0,
+                  160.0
+                ]
+              ],
+              [
+                [
+                  230,
+                  150
+                ],
+                [
+                  280.0,
+                  150.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                230.0,
+                160.0
+              ],
+              [
+                280.0,
+                150.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "p2",
+          "verified_segments": [
+            [
+              [
+                140,
+                120
+              ],
+              [
+                180,
+                120
+              ]
+            ],
+            [
+              [
+                180,
+                120
+              ],
+              [
+                210,
+                120
+              ]
+            ],
+            [
+              [
+                210,
+                120
+              ],
+              [
+                230,
+                120
+              ]
+            ],
+            [
+              [
+                230,
+                120
+              ],
+              [
+                230,
+                150
+              ]
+            ],
+            [
+              [
+                230,
+                150
+              ],
+              [
+                230,
+                160
+              ]
+            ],
+            [
+              [
+                280,
+                150
+              ],
+              [
+                230,
+                150
+              ]
+            ],
+            [
+              [
+                360,
+                80
+              ],
+              [
+                320,
+                80
+              ]
+            ],
+            [
+              [
+                320,
+                80
+              ],
+              [
+                280,
+                120
+              ]
+            ],
+            [
+              [
+                280,
+                120
+              ],
+              [
+                230,
+                120
+              ]
+            ],
+            [
+              [
+                180,
+                100
+              ],
+              [
+                180,
+                120
+              ]
+            ],
+            [
+              [
+                210,
+                100
+              ],
+              [
+                210,
+                120
+              ]
+            ],
+            [
+              [
+                450,
+                80
+              ],
+              [
+                470,
+                80
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              350.0,
+              210.0
+            ],
+            [
+              370.0,
+              200.0
+            ]
+          ],
+          "bindings": [
+            [
+              "xl1",
+              1
+            ],
+            [
+              "ls2",
+              1
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-2f1be8b8-5510-4fcc-9405-9b1127ce2b3b-to-junction",
+                "xy": [
+                  370.0,
+                  210.0
+                ]
+              },
+              {
+                "object": "wire-b7504a44-0e0b-4660-9272-8060e87eb7f3-to-junction",
+                "xy": [
+                  410.0,
+                  210.0
+                ]
+              },
+              {
+                "object": "wire-5d6611a9-fa28-4690-8622-87eecc87f4c5-to-junction",
+                "xy": [
+                  390.0,
+                  210.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  350.0,
+                  210.0
+                ],
+                [
+                  370,
+                  210
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  200.0
+                ],
+                [
+                  370,
+                  210
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                350.0,
+                210.0
+              ],
+              [
+                370.0,
+                200.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "m4",
+          "verified_segments": [
+            [
+              [
+                370,
+                200
+              ],
+              [
+                370,
+                210
+              ]
+            ],
+            [
+              [
+                370,
+                210
+              ],
+              [
+                350,
+                210
+              ]
+            ],
+            [
+              [
+                480,
+                250
+              ],
+              [
+                470,
+                250
+              ]
+            ],
+            [
+              [
+                470,
+                250
+              ],
+              [
+                430,
+                210
+              ]
+            ],
+            [
+              [
+                430,
+                210
+              ],
+              [
+                410,
+                210
+              ]
+            ],
+            [
+              [
+                410,
+                210
+              ],
+              [
+                390,
+                210
+              ]
+            ],
+            [
+              [
+                390,
+                210
+              ],
+              [
+                370,
+                210
+              ]
+            ],
+            [
+              [
+                390,
+                230
+              ],
+              [
+                390,
+                210
+              ]
+            ],
+            [
+              [
+                430,
+                190
+              ],
+              [
+                410,
+                190
+              ]
+            ],
+            [
+              [
+                410,
+                190
+              ],
+              [
+                410,
+                210
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              370.0,
+              160.0
+            ],
+            [
+              320.0,
+              150.0
+            ]
+          ],
+          "bindings": [
+            [
+              "ls2",
+              0
+            ],
+            [
+              "c1",
+              0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-b8970373-c374-44c2-9866-33dd922c960a-to-junction",
+                "xy": [
+                  420.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-10f81eea-4a64-41a1-8706-31810ee1a70c-to-junction",
+                "xy": [
+                  390.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-26be5cba-6ac4-46d6-a1e4-85e6ad50f9f0-to-junction",
+                "xy": [
+                  370.0,
+                  120.0
+                ]
+              },
+              {
+                "object": "wire-7508a90d-fa80-486f-a2f7-b887cfde5f5b-to-junction",
+                "xy": [
+                  370.0,
+                  150.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  320.0,
+                  150.0
+                ],
+                [
+                  370,
+                  150
+                ]
+              ],
+              [
+                [
+                  370,
+                  150
+                ],
+                [
+                  370.0,
+                  160.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                370.0,
+                160.0
+              ],
+              [
+                320.0,
+                150.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "m2",
+          "verified_segments": [
+            [
+              [
+                460,
+                120
+              ],
+              [
+                420,
+                120
+              ]
+            ],
+            [
+              [
+                420,
+                120
+              ],
+              [
+                390,
+                120
+              ]
+            ],
+            [
+              [
+                390,
+                120
+              ],
+              [
+                370,
+                120
+              ]
+            ],
+            [
+              [
+                370,
+                120
+              ],
+              [
+                370,
+                150
+              ]
+            ],
+            [
+              [
+                370,
+                150
+              ],
+              [
+                370,
+                160
+              ]
+            ],
+            [
+              [
+                320,
+                150
+              ],
+              [
+                370,
+                150
+              ]
+            ],
+            [
+              [
+                240,
+                80
+              ],
+              [
+                280,
+                80
+              ]
+            ],
+            [
+              [
+                280,
+                80
+              ],
+              [
+                320,
+                120
+              ]
+            ],
+            [
+              [
+                320,
+                120
+              ],
+              [
+                370,
+                120
+              ]
+            ],
+            [
+              [
+                420,
+                100
+              ],
+              [
+                420,
+                120
+              ]
+            ],
+            [
+              [
+                390,
+                100
+              ],
+              [
+                390,
+                120
+              ]
+            ],
+            [
+              [
+                150,
+                80
+              ],
+              [
+                130,
+                80
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_glyphs": {
+        "c1": {
+          "object": "instance-d707dd0f-d870-494f-890b-c1f22e1296a6",
+          "terminals": {
+            "P1": [
+              320.0,
+              150.0
+            ],
+            "P2": [
+              280.0,
+              150.0
+            ]
+          }
+        },
+        "ls1": {
+          "actual_path_endpoints": [
+            [
+              230.0,
+              160.0
+            ],
+            [
+              230.0,
+              200.0
+            ]
+          ],
+          "object": "instance-fbc79fcc-2a84-4a1e-8ba9-aaa7fa3351af",
+          "terminals": {
+            "1": [
+              230.0,
+              160.0
+            ],
+            "2": [
+              230.0,
+              200.0
+            ]
+          }
+        },
+        "ls2": {
+          "actual_path_endpoints": [
+            [
+              370.0,
+              160.0
+            ],
+            [
+              370.0,
+              200.0
+            ]
+          ],
+          "object": "instance-91987aec-f75c-4345-b452-f951a2d84262",
+          "terminals": {
+            "1": [
+              370.0,
+              160.0
+            ],
+            "2": [
+              370.0,
+              200.0
+            ]
+          }
+        }
+      },
+      "source_sha256": {
+        ".cir": "c0ef1fcd7dfc6d1db97e1380deb870f7fa40a83c4bc2e14127cb988fd1d3bff7",
+        ".human.json": "0358dbc24414844049b8452ca8e1005f8690925ac412bf152125aa796f0d7376",
+        ".svg": "c4ea091005f33af75013fcdc9af5b0979ac2e6d0c755e706240cbbc6f8f0769b"
+      },
+      "topology": {
+        "cap_first": 1,
+        "capacitor": "c1",
+        "coil": "xl1",
+        "far": [
+          "p2",
+          "m2"
+        ],
+        "inductors": [
+          "ls1",
+          "ls2"
+        ],
+        "near_indices": [
+          1,
+          1
+        ],
+        "outer": [
+          "p4",
+          "m4"
+        ],
+        "tap": "vdd"
+      }
+    },
+    {
+      "actual_capacitor": [
+        [
+          280.0,
+          350.0
+        ],
+        [
+          320.0,
+          350.0
+        ]
+      ],
+      "actual_inductors": [
+        [
+          [
+            230.0,
+            300.0
+          ],
+          [
+            230.0,
+            340.0
+          ]
+        ],
+        [
+          [
+            370.0,
+            300.0
+          ],
+          [
+            370.0,
+            340.0
+          ]
+        ]
+      ],
+      "actual_winding": {
+        "n1": [
+          250.0,
+          290.0
+        ],
+        "n2": [
+          350.0,
+          290.0
+        ],
+        "n3": [
+          300.0,
+          270.0
+        ]
+      },
+      "geometry": {
+        "actual_end_order": true,
+        "capacitor_beyond_series_inductors_opposite_tap": true,
+        "capacitor_midpoint_on_winding_midpoint_axis": true,
+        "capacitor_parallel_to_winding": true,
+        "centered_cardinal_tap": true,
+        "paired_near_and_far_rows": true,
+        "two_inductors_perpendicular_to_winding": true
+      },
+      "method_checks": [
+        "complete_unique_lcl",
+        "card_permutation",
+        "shared_owner_before_tap_eligibility_rejected",
+        "second_inductor_at_outer_end_rejected",
+        "shorted_extra_inductor_at_outer_end_rejected",
+        "second_capacitor_rejected",
+        "second_winding_rejected",
+        "open_series_path_rejected",
+        "shorted_far_nets_rejected",
+        "tap_is_outer_net_rejected",
+        "literal_actual_lead_order",
+        "eight_rigid_poses_and_translation",
+        "tap_toward_capacitor_rejected",
+        "skewed_inductor_rejected",
+        "inductor_inside_winding_rejected",
+        "reversed_capacitor_binding_rejected",
+        "shifted_capacitor_midpoint_rejected",
+        "cap_before_far_inductor_rejected",
+        "inductor_polarity_rejected",
+        "staggered_inductor_rows_rejected"
+      ],
+      "name": "ag-1153:xl2:series_lcl",
+      "paths": [
+        {
+          "actual_targets": [
+            [
+              250.0,
+              290.0
+            ],
+            [
+              230.0,
+              300.0
+            ]
+          ],
+          "bindings": [
+            [
+              "xl2",
+              0
+            ],
+            [
+              "ls3",
+              0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-ae996716-b81f-4034-b50a-b19566e4f756-to-junction",
+                "xy": [
+                  110.0,
+                  210.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  230,
+                  290
+                ],
+                [
+                  230.0,
+                  300.0
+                ]
+              ],
+              [
+                [
+                  230,
+                  290
+                ],
+                [
+                  250.0,
+                  290.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                250.0,
+                290.0
+              ],
+              [
+                230.0,
+                300.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "p3",
+          "verified_segments": [
+            [
+              [
+                250,
+                290
+              ],
+              [
+                230,
+                290
+              ]
+            ],
+            [
+              [
+                230,
+                290
+              ],
+              [
+                230,
+                300
+              ]
+            ],
+            [
+              [
+                180,
+                250
+              ],
+              [
+                170,
+                250
+              ]
+            ],
+            [
+              [
+                170,
+                250
+              ],
+              [
+                130,
+                210
+              ]
+            ],
+            [
+              [
+                130,
+                210
+              ],
+              [
+                110,
+                210
+              ]
+            ],
+            [
+              [
+                110,
+                210
+              ],
+              [
+                90,
+                210
+              ]
+            ],
+            [
+              [
+                90,
+                210
+              ],
+              [
+                90,
+                230
+              ]
+            ],
+            [
+              [
+                130,
+                190
+              ],
+              [
+                110,
+                190
+              ]
+            ],
+            [
+              [
+                110,
+                190
+              ],
+              [
+                110,
+                210
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              230.0,
+              340.0
+            ],
+            [
+              280.0,
+              350.0
+            ]
+          ],
+          "bindings": [
+            [
+              "ls3",
+              1
+            ],
+            [
+              "c2",
+              1
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-90f526a2-f40e-4335-95fd-1a3ea90ba5f6-to-junction",
+                "xy": [
+                  180.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-fd086192-4769-406a-a95c-bafb5f8c7844-to-junction",
+                "xy": [
+                  210.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-e93da40e-30c2-4c9a-bb2f-35e0c9952966-to-junction",
+                "xy": [
+                  230.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-5f5601c7-4bdb-4ca1-abd5-7bbd4c31b5be-to-junction",
+                "xy": [
+                  230.0,
+                  350.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  230.0,
+                  340.0
+                ],
+                [
+                  230,
+                  350
+                ]
+              ],
+              [
+                [
+                  230,
+                  350
+                ],
+                [
+                  280.0,
+                  350.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                230.0,
+                340.0
+              ],
+              [
+                280.0,
+                350.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "p1",
+          "verified_segments": [
+            [
+              [
+                140,
+                380
+              ],
+              [
+                180,
+                380
+              ]
+            ],
+            [
+              [
+                180,
+                380
+              ],
+              [
+                210,
+                380
+              ]
+            ],
+            [
+              [
+                210,
+                380
+              ],
+              [
+                230,
+                380
+              ]
+            ],
+            [
+              [
+                230,
+                380
+              ],
+              [
+                230,
+                350
+              ]
+            ],
+            [
+              [
+                230,
+                350
+              ],
+              [
+                230,
+                340
+              ]
+            ],
+            [
+              [
+                280,
+                350
+              ],
+              [
+                230,
+                350
+              ]
+            ],
+            [
+              [
+                360,
+                420
+              ],
+              [
+                320,
+                420
+              ]
+            ],
+            [
+              [
+                320,
+                420
+              ],
+              [
+                280,
+                380
+              ]
+            ],
+            [
+              [
+                280,
+                380
+              ],
+              [
+                230,
+                380
+              ]
+            ],
+            [
+              [
+                180,
+                400
+              ],
+              [
+                180,
+                380
+              ]
+            ],
+            [
+              [
+                210,
+                400
+              ],
+              [
+                210,
+                380
+              ]
+            ],
+            [
+              [
+                450,
+                420
+              ],
+              [
+                470,
+                420
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              350.0,
+              290.0
+            ],
+            [
+              370.0,
+              300.0
+            ]
+          ],
+          "bindings": [
+            [
+              "xl2",
+              1
+            ],
+            [
+              "ls4",
+              0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-b8af6823-35b1-44f2-a3cd-dc4c557babc5-to-junction",
+                "xy": [
+                  490.0,
+                  210.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  350.0,
+                  290.0
+                ],
+                [
+                  370,
+                  290
+                ]
+              ],
+              [
+                [
+                  370,
+                  290
+                ],
+                [
+                  370.0,
+                  300.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                350.0,
+                290.0
+              ],
+              [
+                370.0,
+                300.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "m3",
+          "verified_segments": [
+            [
+              [
+                350,
+                290
+              ],
+              [
+                370,
+                290
+              ]
+            ],
+            [
+              [
+                370,
+                290
+              ],
+              [
+                370,
+                300
+              ]
+            ],
+            [
+              [
+                420,
+                250
+              ],
+              [
+                430,
+                250
+              ]
+            ],
+            [
+              [
+                430,
+                250
+              ],
+              [
+                470,
+                210
+              ]
+            ],
+            [
+              [
+                470,
+                210
+              ],
+              [
+                490,
+                210
+              ]
+            ],
+            [
+              [
+                490,
+                210
+              ],
+              [
+                510,
+                210
+              ]
+            ],
+            [
+              [
+                510,
+                210
+              ],
+              [
+                510,
+                230
+              ]
+            ],
+            [
+              [
+                470,
+                190
+              ],
+              [
+                490,
+                190
+              ]
+            ],
+            [
+              [
+                490,
+                190
+              ],
+              [
+                490,
+                210
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              370.0,
+              340.0
+            ],
+            [
+              320.0,
+              350.0
+            ]
+          ],
+          "bindings": [
+            [
+              "ls4",
+              1
+            ],
+            [
+              "c2",
+              0
+            ]
+          ],
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-cc7f7c39-e923-47cc-a632-f05d364e35aa-to-junction",
+                "xy": [
+                  420.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-db7e5b14-2744-48da-87be-eb29168e1e1c-to-junction",
+                "xy": [
+                  390.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-46af283f-ab45-49f9-8701-8b3f259b2a70-to-junction",
+                "xy": [
+                  370.0,
+                  380.0
+                ]
+              },
+              {
+                "object": "wire-b48100da-d6f6-4903-9394-aef98056e39c-to-junction",
+                "xy": [
+                  370.0,
+                  350.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  320.0,
+                  350.0
+                ],
+                [
+                  370,
+                  350
+                ]
+              ],
+              [
+                [
+                  370.0,
+                  340.0
+                ],
+                [
+                  370,
+                  350
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                370.0,
+                340.0
+              ],
+              [
+                320.0,
+                350.0
+              ]
+            ]
+          },
+          "missing_cache_segments": [],
+          "net": "m1",
+          "verified_segments": [
+            [
+              [
+                460,
+                380
+              ],
+              [
+                420,
+                380
+              ]
+            ],
+            [
+              [
+                420,
+                380
+              ],
+              [
+                390,
+                380
+              ]
+            ],
+            [
+              [
+                390,
+                380
+              ],
+              [
+                370,
+                380
+              ]
+            ],
+            [
+              [
+                370,
+                380
+              ],
+              [
+                370,
+                350
+              ]
+            ],
+            [
+              [
+                370,
+                350
+              ],
+              [
+                370,
+                340
+              ]
+            ],
+            [
+              [
+                320,
+                350
+              ],
+              [
+                370,
+                350
+              ]
+            ],
+            [
+              [
+                240,
+                420
+              ],
+              [
+                280,
+                420
+              ]
+            ],
+            [
+              [
+                280,
+                420
+              ],
+              [
+                320,
+                380
+              ]
+            ],
+            [
+              [
+                320,
+                380
+              ],
+              [
+                370,
+                380
+              ]
+            ],
+            [
+              [
+                420,
+                400
+              ],
+              [
+                420,
+                380
+              ]
+            ],
+            [
+              [
+                390,
+                400
+              ],
+              [
+                390,
+                380
+              ]
+            ],
+            [
+              [
+                150,
+                420
+              ],
+              [
+                130,
+                420
+              ]
+            ]
+          ]
+        }
+      ],
+      "source_glyphs": {
+        "c2": {
+          "object": "instance-290e473d-ebbb-40c3-b840-b85da3960a42",
+          "terminals": {
+            "P1": [
+              320.0,
+              350.0
+            ],
+            "P2": [
+              280.0,
+              350.0
+            ]
+          }
+        },
+        "ls3": {
+          "actual_path_endpoints": [
+            [
+              230.0,
+              300.0
+            ],
+            [
+              230.0,
+              340.0
+            ]
+          ],
+          "object": "instance-1656a89c-db03-4c77-9ebd-832d83bffeb2",
+          "terminals": {
+            "1": [
+              230.0,
+              300.0
+            ],
+            "2": [
+              230.0,
+              340.0
+            ]
+          }
+        },
+        "ls4": {
+          "actual_path_endpoints": [
+            [
+              370.0,
+              300.0
+            ],
+            [
+              370.0,
+              340.0
+            ]
+          ],
+          "object": "instance-65f260dd-f3f6-44a5-9bf0-d5ac3d7b880f",
+          "terminals": {
+            "1": [
+              370.0,
+              300.0
+            ],
+            "2": [
+              370.0,
+              340.0
+            ]
+          }
+        }
+      },
+      "source_sha256": {
+        ".cir": "c0ef1fcd7dfc6d1db97e1380deb870f7fa40a83c4bc2e14127cb988fd1d3bff7",
+        ".human.json": "0358dbc24414844049b8452ca8e1005f8690925ac412bf152125aa796f0d7376",
+        ".svg": "c4ea091005f33af75013fcdc9af5b0979ac2e6d0c755e706240cbbc6f8f0769b"
+      },
+      "topology": {
+        "cap_first": 1,
+        "capacitor": "c2",
+        "coil": "xl2",
+        "far": [
+          "p1",
+          "m1"
+        ],
+        "inductors": [
+          "ls3",
+          "ls4"
+        ],
+        "near_indices": [
+          0,
+          0
+        ],
+        "outer": [
+          "p3",
+          "m3"
+        ],
+        "tap": "vdd"
+      }
+    }
+  ]
+}

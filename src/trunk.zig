@@ -88,9 +88,16 @@
 //!   ends in ports (wires.13). People: 3,926 of 4,080 wired bias nets
 //!   (5,263 hand-drawn schematics). `cost`
 //!
+//! - trunk.15 (choice, bounded) A complete complementary-mirror CT stage
+//!   may nominate one actual opposing gate interval (ct_mirror_controls.1).
+//!   Only an exact tie after full length, corner, crossing, obstacle and
+//!   free-end checks prefers candidate ink covering that interval. Every
+//!   cheaper legal candidate wins; null preserves the original tie order.
+//!
 //! Contents:
 //! - `pub const End = enum { port, name }`
-//! - `pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool`
+//! - `pub inline fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool`
+//! - `pub fn drawPreferred(c: *Canvas, net: u32, pins: []const u32, end: End, preferred: ?[2]Pt) Allocator.Error!bool`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -156,7 +163,15 @@ const Lay = enum {
 /// more) the wire carries the net's name on a stub from a free end. False,
 /// with nothing drawn, when the lines would touch another net's point or
 /// run through a device.
-pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool {
+pub inline fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!bool {
+    return drawPreferred(c, net, pins, end, null);
+}
+
+/// Draws the least-cost legal trunk, preferring the nominated actual
+/// horizontal interval only on an exact full-cost tie. Null keeps the
+/// ordinary first-on-tie policy. The caller owns and validates the pair;
+/// no candidate may bypass the normal obstacle or free-end checks.
+pub fn drawPreferred(c: *Canvas, net: u32, pins: []const u32, end: End, preferred: ?[2]Pt) Allocator.Error!bool {
     const s = c.s;
     assert(pins.len >= 1);
     assert(end == .port or pins.len >= 2);
@@ -203,6 +218,7 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
     var y_t = tap;
     var free: ?Side = null;
     var fewest: i64 = std.math.maxInt(i64);
+    var best_straight = false;
     // A column has one way to be drawn. Else facing gates joined by a gate
     // line first (a mirror's, as the book draws it), then every pin on its
     // own way to the trunk; then an upright trunk, where it costs less
@@ -235,14 +251,16 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
                 }
                 // Rungs need full corner checks even when too costly:
                 // cost pruning alone must not replace a legal midpoint.
-                const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else fewest);
-                if (lay != .rungs and !tap_row and count >= fewest) continue;
+                const count = cost(c, net, pins, tried.items, if (tap_row or lay == .rungs) std.math.maxInt(i64) else if (preferred != null) fewest +| 1 else fewest);
+                if (lay != .rungs and !tap_row and (if (preferred != null) count > fewest else count >= fewest)) continue;
                 if (count == std.math.maxInt(i64) or !linesFit(c, net, tried.items)) continue;
                 // An upright trunk has no end to mark: its ends are not read.
                 const t_free = if (ended) freeEnd(c, net, pins, t_lo, t_hi, track, reach) else null;
                 if (needs_end and t_free == null) continue;
                 tapped = tapped or (tap_row and tap_dx == 0);
-                if (count < fewest) {
+                const straight = count <= fewest and (if (preferred) |pair| straightInterval(pair, tried.items) else false);
+                if (count < fewest or (count == fewest and straight and !best_straight)) {
+                    best_straight = straight;
                     std.mem.swap(std.ArrayList(Line), &lines, &tried);
                     lo = t_lo;
                     hi = t_hi;
@@ -278,6 +296,27 @@ pub fn draw(c: *Canvas, net: u32, pins: []const u32, end: End) Allocator.Error!b
 }
 
 // ---- private ----
+
+// Cover exactly the nominated interval by candidate ink, never labels.
+fn straightInterval(pair: [2]Pt, lines: []const Line) bool {
+    const a, const b = .{ pair[0], pair[1] };
+    assert(a.y == b.y and a.x < b.x);
+    var reached = a.x;
+    for (0..lines.len * 5 + 1) |_| {
+        const before = reached;
+        for (lines) |*line| {
+            const pts = line.slice();
+            for (pts[0 .. pts.len - 1], pts[1..]) |u, v| {
+                if (u.y != a.y or v.y != a.y) continue;
+                if (@min(u.x, v.x) <= reached and @max(u.x, v.x) > reached)
+                    reached = @max(u.x, v.x);
+            }
+        }
+        if (reached >= b.x) return true;
+        if (reached == before) break;
+    }
+    return false;
+}
 
 /// The part's name at its top-left pin, by place, so card order changes
 /// nothing: the wire has no free end to carry it.
@@ -678,4 +717,5 @@ test "trunk: opposed pins keep their straight rung when the trunk needs a later 
 
 test {
     _ = @import("trunk_taps_test.zig");
+    _ = @import("trunk_tie_test.zig");
 }

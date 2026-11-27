@@ -1,0 +1,3621 @@
+{
+  "basis": "Frozen 104 source declarations and bindings; current netlist-import diagnostic spelling. Every declared cell and real top bench is compared.",
+  "decks": [
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/power/bandgap_reference.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "5ab9f8b432ef5b1c721ad4c739abb8662975caed893a210b7e7868e6a55a4573",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bjt/bjt_current_mirror.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "3b8d1a15bf9fa0728e9118ba49ef28f8eda22fd7e62afd965e520c1bcfa3fb47",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bjt/bjt_diff_pair.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "2efd016552856dabf3a421ab71aa8b744855c8bbc58f4cb0dbdd1650a90d67ff",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/power/buck_converter.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "1861c72d227cbc8ec0ccfdc9968dae534dc6862c9419c4f36e3a1aee47969c4b",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_4bit_flash_adc.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "a65ebfcf130ff16b7a1b01a46f29319be3d531c2b3c1e11be7d6dfc3a8c13e7a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_8bit_dac.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "2a43540341a8f56ef8e0922fa4997e90b4e866769542f6e2fb6337dbda2e9af1",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_current_dac.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "f698b533ec39d7e498124290bcf8bdf52d3c54be039f0ae80d01c12fdb8e9b83",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_data_bus_driver.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "aba189ca892c8657c04e7c22be5d1fb5b574c5e3decea70361134b8dbc958a80",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_decoder_2to4.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "94526b4b258f235aed70157eeab2b1dde47e01924f22fdb800d3e6068e0d83cb",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_mux_4to1.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "7ea547419f874e1b4ecc0d0c982bae361251326f91078864eb801df3f5f06914",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_parallel_adder.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "030c06b0ec74046d51a8172ac1c77226c5c68c9d6e8456448ed38503dd166343",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_shift_register.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "1e24c3531fc13bb9eebfffab1234b66e5ade776126200e91ae770ff46dd728b2",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bus/bus_sram_cell_array.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "bcbb95fe641a105313fef9fb60a181250c7d98c37017dc213d8329b6fa00dbfb",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bjt/cascode_amplifier.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "387146be65af9dedbe6ac0748c6a07583f17a99cbd1790c7b790ef15ca63f25d",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/cascode_current_mirror.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "62791b82d63320355809222e295bb8f2c1cbcb367a401a9993f391ad5c70888c",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/power/charge_pump.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "454134d041fed79455fdba349a611eba533dc1b484eefc484683c66582b1f42c",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/charge_pump_pll.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "eca2993a31bf16f76442f87274aec2611e2e19ef5c25f436573071e44697e4cc",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/cmos_inverter.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "8c14446fffcf009f88d652d7f8418ce3a068a59f429a79cdd739064fa35d18ae",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bjt/common_emitter.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "a36d747d464a47ef2a395fe760fa34b0fa6ccac510390801912bffc5f4482b5e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/common_source.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "89569a4f71069a7d47cf01f90da3df3b5494cfeeeea15fcf3d08284f6a801c30",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/common_source_active_load.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "6edff400e9d9c4014d398b6fb8c94365979fa3485d4f3915f55932fc691dfbc1",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/comparator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "8d48e1002282278e8152b8efc6204d3875cea3d656183ad99ec56416e9830e5a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top",
+        "dv"
+      ],
+      "literal_declared_names": [
+        "dv"
+      ],
+      "name": "tests/fixtures/hand/default_after_override.sp",
+      "ordered_subcircuits": [
+        "dv"
+      ],
+      "refusal": null,
+      "sha256": "70f2d34581d8cdcfb5ae63fe794ba71b072ba3c88df4685f561a8f43711ad87c",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/differentiator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "aaeb69bb4a1123ada9f0ef7b8a336cf2bda17487bdeb0e9adec0718cda572c14",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/bjt/emitter_follower.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "2e5cd2efe2a866bc9de9d8310f7b846c3470bdc530499809d6c6982d7fcc8904",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/folded_cascode_ota.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "1eb6379c412265e462905fb965523fc6f280555a342b4d31cffbd7c1e2db6c7d",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/instrumentation_amp.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "5da2665705becc841116e1abfbf419220fd35f95974fec7230598ff1a74aad97",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/integrator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "fb85d2b582a3ec01890e9c16264d398a973210e3ce104fc575b29235632ba4b3",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/inverting_amplifier.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "83e5b7b773f7598d4931aa5e6f22fcd907437131a8e3565728af42bc8249c102",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/power/ldo_regulator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "d639d0324dc497856cf540dfcb88a4f9167011868e0b710d2104ee6c24e45b0d",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "rc_filter",
+        "diff_amp",
+        "unused_port"
+      ],
+      "literal_declared_names": [
+        "rc_filter",
+        "diff_amp",
+        "unused_port"
+      ],
+      "name": "tests/fixtures/hand/library_only.sp",
+      "ordered_subcircuits": [
+        "rc_filter",
+        "diff_amp",
+        "unused_port"
+      ],
+      "refusal": null,
+      "sha256": "34e9824b5b5817859be10fca8b59e1a0496eb12ec07be9b7733327ac19accb42",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "dut"
+      ],
+      "literal_declared_names": [
+        "dut"
+      ],
+      "name": "tests/fixtures/hand/model_only_top.sp",
+      "ordered_subcircuits": [
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "9e36696b01d7d6d31e3d71d551171cb8f9c6c5f7cba92afb505f7f8cd6378f1b",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/mosfet_current_mirror.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "5126c089a7b639e5769be5e545b174a88086f5bbe3447ea1aa5f5f10cb27109e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/mosfet_diff_pair.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "d2fb8c48f1c42edd5a0adc110929574acd7dc3796f25fdfc4b3c0e28abdf14c8",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/digital/nand_gate.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "0c9a5dffa998bd03b8fa09654db41b7c747703b11d44c7822351c7fb67117b6e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/noninverting_amplifier.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "1924054f90b3022e9e03e4ca52d2b44a511158eb9e14084101d9274cd1bbcff9",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/digital/nor_gate.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "919114168a8b0b8adf81204a6b95bb01edd25fea0be858e3aa882098d4f9e8a6",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top",
+        "inv",
+        "buf"
+      ],
+      "literal_declared_names": [
+        "inv",
+        "buf"
+      ],
+      "name": "tests/fixtures/hand/params_hierarchy.sp",
+      "ordered_subcircuits": [
+        "inv",
+        "buf"
+      ],
+      "refusal": null,
+      "sha256": "ad778715e614b950d08e9d5954ce3a915ce8994c91f05c2cb9a87e4714750a27",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/phase_detector.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "e4264845bf030814a8f0faf663dbd82716449bb256ca47b6f326c45ed73e2546",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/r2r_dac.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "62352746567615c9dc1418df572d90d92414263ca2553c46195eff51e6461509",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/hand/raw_cards.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "760805583e9beb036081b25e2106a3ec96753e4e6d688491bb1d2880821a5bdc",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/rc_integrator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "c73d767ad3801f70ef14582321063f858c8609a99c35c9b5a4c7f838561bae29",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/rc_lowpass.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "c84ed85e87f407e60bf9447b249bd529589e70907c81f2b0a2839714689b67c4",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/digital/ring_oscillator.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "614ac04a2a2636efd3c276bba4f7036e2c8549a143ac55a90a941785fcf14a8f",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/rl_highpass.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "caca1afbf48f672f01bbdb18f7cba3b6e8f30c4237c7c4fb8c8a176667bc58b9",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/rlc_bandpass.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "eb5fabebc745a0bfea1c96c917a5365975131d6a60e52a3949da0328c9edfef5",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/sample_and_hold.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "95db7b8b4da87736775c4220b1ca45b8a648b6525e58c0ee2a54abbb5ab601fe",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/source_follower.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "e48f29b57570ea81e05527df75a049d6ee082cf023025271dec0980ce0a2156a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/digital/sr_latch.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "63f34c7a3ba70454f21a4c3a0af5ac04279545ec804ba1b3cca8885ad5ac4589",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/opamp/summing_amplifier.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "ef77368f8f089715518c9fe5fd71d5125f93a2fef081a409ff246c63af038bfc",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_bandgap_temp.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "32c6942638d32a925f3508b0b08a0baf7bc67ddd090496b43d1899e56cb8566a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_buck_converter_waveform.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "832ff1e31cfa0e7bf206784a876c8dc8327556b96d5a7dedaf6212881db9de35",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_charge_pump_waveform.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "ddb07300c7b3829006023f95b3914ed14715a195cf16743f2e4166bd0f099d83",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_cmos_inverter_transient.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "2b937dc53592346aa03181a9805ca93e24224c7560b085f68f6aa52a070d2bf9",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_cmos_inverter_vtc.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "6d85f17885f6752135b4e7c4d0491f07958ab8289ea8182da96e00b8f25ee5db",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_common_source_ac.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "76266557668692787158d0a068dea03317f6edccbe3b972449f5c3d47bd522d3",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_common_source_dc.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "5b8ed7ed1c18b4a986d0faa75b097978e82a0cda02ac2209848df232c3bfa89a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_comparator_speed.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "8d33d655eecd13387454c966726a590d120c8e3dd14d45f3926bb814113b2466",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_current_mirror_compliance.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "fd682cf15b89108fc1fb095ea67d78632c7100ccdc0877accf6a325c80c0cb08",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_diff_pair_cmrr.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "f85143196f8ac82fc67f95bd6f6a4c1822a2ff2bda58ee198d8dea2e217d16d1",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_diff_pair_offset.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "b5177e1159e049ce30093da7cb523f38e53bc459cab2673e95b0fe7b5ca8f431",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_diff_pair_transient.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "c13c124779f8ad2c3f44f7cb85473491575c2dc9308efe45949fe5a0bcc1c4e0",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_ldo_load_regulation.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "363f4e5ff016b3a92de5a0effdb72e86307b57e5c2ba3358a8819b9d8ab469a0",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_ldo_psrr.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "85ef87d8e0e26fe26b83a44230a1a751ddc32253a0ad339bd8e51fb1c269550d",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_rc_lowpass_ac.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "e42c0134ff11c5a272fa7defed73601b49f2aade5c60402711c7ae7ee0365b7e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_rc_lowpass_bode.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "8037713b478edb4180b23a99dff85a2b5b3ce6a1b189e0cd27f9479e7786717a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_rc_lowpass_step.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "7a77b0ba48f6607d9428c725bbb2bb1c6641961e09ade0df10320fc56500c49c",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_ring_osc_waveform.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "6c54952f716d36800a06e9d43ce213b00f93a7e683b6b0472f4bb9aa0bd888ac",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_ring_oscillator_freq.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "4c7608db02a5369bbbe5ea798db5dd725fae0fef4132c201d9d585f213de9c54",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_telescopic_ota_full.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "de558a009b1e3d4d69979e2540346d20a989208ae05f16afd9712b04882e4ce3",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_two_stage_opamp_cl.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "6f6757a8ac9db18077acbefae0428c38251772a7a043cc3489a45df4a30da92e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_two_stage_opamp_ol.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "22d427f3e2db0f364eaefecddc7ee8d929ca786508e10cd02fa0c38aed476dc8",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_vco_kvco.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "f6eb64b458b50458968e32df8be14c60fa4d9d82f57250b6a48307400a9d1cce",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/testbench/tb_voltage_divider.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "724088431be24eae865f4270caee8b0b304ccb988c4bce4a41e0aa1a2687cc4c",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/telescopic_ota.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "8d78908e7c549bb32b944ed1bafc3c4466f95e9e16a4a41fbb5442156a996419",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/digital/transmission_gate.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "9b3292f79f625cc682f0292a84b9c41fa392071691c47dfb70e595fe217e0e16",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/two_stage_opamp.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "376201cac66a35253942bb17ca9043c13454d45454fa3706ced4ad0ac4e08e4e",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mixed_signal/vco.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "d7982073566c4d20b25980fdb53f869cac83f5a0f79f8b992a6d3563a3d9c878",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/voltage_divider.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "03463943093c1b759283eefd0381e26e437e661778756f34b843efe01743cc94",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/basic/wheatstone_bridge.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "a6c01b9c51d87277ab3f7990cc7fe09dec1dd87616f508c7153106fb2800d10a",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top"
+      ],
+      "literal_declared_names": [],
+      "name": "tests/fixtures/mosfet/wilson_mirror.sp",
+      "ordered_subcircuits": [],
+      "refusal": null,
+      "sha256": "28851db9f79f6e957a54348e05e8a0d520d60d85579943f4462c7d8bc2dcb2b4",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "$top",
+        "digital",
+        "xsp",
+        "lines",
+        "blk",
+        "on_globals"
+      ],
+      "literal_declared_names": [
+        "digital",
+        "xsp",
+        "lines",
+        "blk",
+        "on_globals"
+      ],
+      "name": "tests/fixtures/hand/xspice_cards.sp",
+      "ordered_subcircuits": [
+        "digital",
+        "xsp",
+        "lines",
+        "blk",
+        "on_globals"
+      ],
+      "refusal": null,
+      "sha256": "e238336e532a99183c61eb2d6693713f8227aa89d5aa42120dfbe12b207e24b3",
+      "top_devices": true
+    },
+    {
+      "expected_comparisons": [
+        "rst_delay",
+        "settle_delay",
+        "tq_chain",
+        "muller_c",
+        "async_ctrl"
+      ],
+      "literal_declared_names": [
+        "rst_delay",
+        "settle_delay",
+        "tq_chain",
+        "muller_c",
+        "async_ctrl"
+      ],
+      "name": "tests/fixtures/analogioc/async_ctrl.spice",
+      "ordered_subcircuits": [
+        "rst_delay",
+        "settle_delay",
+        "tq_chain",
+        "muller_c",
+        "async_ctrl"
+      ],
+      "refusal": null,
+      "sha256": "5b590bee5676e231c63d2106f4088aceae735ccf8a4ace36f40895cc0c71eefb",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "cmos_switch"
+      ],
+      "literal_declared_names": [
+        "cmos_switch"
+      ],
+      "name": "tests/fixtures/analogioc/cmos_switch.spice",
+      "ordered_subcircuits": [
+        "cmos_switch"
+      ],
+      "refusal": null,
+      "sha256": "682cd763684be77d19c1c4e75f0e044f0906f32e207ba451b7171530be2dd0b5",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "gain_cell_array_cell",
+        "gain_cell_array"
+      ],
+      "literal_declared_names": [
+        "gain_cell_array_cell",
+        "gain_cell_array"
+      ],
+      "name": "tests/fixtures/analogioc/gain_cell_array.spice",
+      "ordered_subcircuits": [
+        "gain_cell_array_cell",
+        "gain_cell_array"
+      ],
+      "refusal": null,
+      "sha256": "ee8da757bb0c1854f215f87cd7e9636ba33c1cfd79e703170da1e5c66ba471f9",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ota"
+      ],
+      "literal_declared_names": [
+        "ota"
+      ],
+      "name": "tests/fixtures/analogioc/ota.spice",
+      "ordered_subcircuits": [
+        "ota"
+      ],
+      "refusal": null,
+      "sha256": "6f3de60a70f1a18ce79f86022a16ba6430de6b115de5ad49f32037b164332647",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "pwm_driver"
+      ],
+      "literal_declared_names": [
+        "pwm_driver"
+      ],
+      "name": "tests/fixtures/analogioc/pwm_driver.spice",
+      "ordered_subcircuits": [
+        "pwm_driver"
+      ],
+      "refusal": null,
+      "sha256": "71d6c5817eb5ec5948ca59e37038e03a3640830872528a4ad7f5f95964b597a6",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [],
+      "literal_declared_names": [
+        "rstring_ladder_sw",
+        "rstring_ladder"
+      ],
+      "name": "tests/fixtures/analogioc/rstring_ladder.spice",
+      "ordered_subcircuits": [
+        "rstring_ladder_sw",
+        "rstring_ladder"
+      ],
+      "refusal": {
+        "basis": "Frozen plugin format/card cap plus frozen host prefix/exit semantics; actual diagnostic must be observed in this audit.",
+        "cards": 279,
+        "exit_code": 1,
+        "generated_files": [],
+        "kind": "plugin_element_card_capacity",
+        "limit": 200,
+        "source_cards": [
+          {
+            "line": 2,
+            "name": "Xrstring_ladder_sw_n"
+          },
+          {
+            "line": 3,
+            "name": "Xrstring_ladder_sw_p"
+          },
+          {
+            "line": 7,
+            "name": "Xtg0"
+          },
+          {
+            "line": 8,
+            "name": "Xtg1"
+          },
+          {
+            "line": 9,
+            "name": "Xtg2"
+          },
+          {
+            "line": 10,
+            "name": "Xtg3"
+          },
+          {
+            "line": 11,
+            "name": "Xtg4"
+          },
+          {
+            "line": 12,
+            "name": "Xtg5"
+          },
+          {
+            "line": 13,
+            "name": "Xtg6"
+          },
+          {
+            "line": 14,
+            "name": "Xtg7"
+          },
+          {
+            "line": 15,
+            "name": "Xtg8"
+          },
+          {
+            "line": 16,
+            "name": "Xtg9"
+          },
+          {
+            "line": 17,
+            "name": "Xtg10"
+          },
+          {
+            "line": 18,
+            "name": "Xtg11"
+          },
+          {
+            "line": 19,
+            "name": "Xtg12"
+          },
+          {
+            "line": 20,
+            "name": "Xtg13"
+          },
+          {
+            "line": 21,
+            "name": "Xtg14"
+          },
+          {
+            "line": 22,
+            "name": "Xtg15"
+          },
+          {
+            "line": 23,
+            "name": "Xseg1"
+          },
+          {
+            "line": 24,
+            "name": "Xseg2"
+          },
+          {
+            "line": 25,
+            "name": "Xseg3"
+          },
+          {
+            "line": 26,
+            "name": "Xseg4"
+          },
+          {
+            "line": 27,
+            "name": "Xseg5"
+          },
+          {
+            "line": 28,
+            "name": "Xseg6"
+          },
+          {
+            "line": 29,
+            "name": "Xseg7"
+          },
+          {
+            "line": 30,
+            "name": "Xseg8"
+          },
+          {
+            "line": 31,
+            "name": "Xseg9"
+          },
+          {
+            "line": 32,
+            "name": "Xseg10"
+          },
+          {
+            "line": 33,
+            "name": "Xseg11"
+          },
+          {
+            "line": 34,
+            "name": "Xseg12"
+          },
+          {
+            "line": 35,
+            "name": "Xseg13"
+          },
+          {
+            "line": 36,
+            "name": "Xseg14"
+          },
+          {
+            "line": 37,
+            "name": "Xseg15"
+          },
+          {
+            "line": 38,
+            "name": "Xtap1"
+          },
+          {
+            "line": 39,
+            "name": "Xtap2"
+          },
+          {
+            "line": 40,
+            "name": "Xtap3"
+          },
+          {
+            "line": 41,
+            "name": "Xtap4"
+          },
+          {
+            "line": 42,
+            "name": "Xtap5"
+          },
+          {
+            "line": 43,
+            "name": "Xtap6"
+          },
+          {
+            "line": 44,
+            "name": "Xtap7"
+          },
+          {
+            "line": 45,
+            "name": "Xtap8"
+          },
+          {
+            "line": 46,
+            "name": "Xtap9"
+          },
+          {
+            "line": 47,
+            "name": "Xtap10"
+          },
+          {
+            "line": 48,
+            "name": "Xtap11"
+          },
+          {
+            "line": 49,
+            "name": "Xtap12"
+          },
+          {
+            "line": 50,
+            "name": "Xtap13"
+          },
+          {
+            "line": 51,
+            "name": "Xtap14"
+          },
+          {
+            "line": 52,
+            "name": "Xinvb0_n"
+          },
+          {
+            "line": 53,
+            "name": "Xinvb0_p"
+          },
+          {
+            "line": 54,
+            "name": "Xinvb1_n"
+          },
+          {
+            "line": 55,
+            "name": "Xinvb1_p"
+          },
+          {
+            "line": 56,
+            "name": "Xinvb2_n"
+          },
+          {
+            "line": 57,
+            "name": "Xinvb2_p"
+          },
+          {
+            "line": 58,
+            "name": "Xinvb3_n"
+          },
+          {
+            "line": 59,
+            "name": "Xinvb3_p"
+          },
+          {
+            "line": 60,
+            "name": "Xdh0_p1"
+          },
+          {
+            "line": 61,
+            "name": "Xdh0_p2"
+          },
+          {
+            "line": 62,
+            "name": "Xdh0_n1"
+          },
+          {
+            "line": 63,
+            "name": "Xdh0_n2"
+          },
+          {
+            "line": 64,
+            "name": "Xdl0_p1"
+          },
+          {
+            "line": 65,
+            "name": "Xdl0_p2"
+          },
+          {
+            "line": 66,
+            "name": "Xdl0_n1"
+          },
+          {
+            "line": 67,
+            "name": "Xdl0_n2"
+          },
+          {
+            "line": 68,
+            "name": "Xdg0_p1"
+          },
+          {
+            "line": 69,
+            "name": "Xdg0_p2"
+          },
+          {
+            "line": 70,
+            "name": "Xdg0_n1"
+          },
+          {
+            "line": 71,
+            "name": "Xdg0_n2"
+          },
+          {
+            "line": 72,
+            "name": "Xdinv0_n"
+          },
+          {
+            "line": 73,
+            "name": "Xdinv0_p"
+          },
+          {
+            "line": 74,
+            "name": "Xdh1_p1"
+          },
+          {
+            "line": 75,
+            "name": "Xdh1_p2"
+          },
+          {
+            "line": 76,
+            "name": "Xdh1_n1"
+          },
+          {
+            "line": 77,
+            "name": "Xdh1_n2"
+          },
+          {
+            "line": 78,
+            "name": "Xdl1_p1"
+          },
+          {
+            "line": 79,
+            "name": "Xdl1_p2"
+          },
+          {
+            "line": 80,
+            "name": "Xdl1_n1"
+          },
+          {
+            "line": 81,
+            "name": "Xdl1_n2"
+          },
+          {
+            "line": 82,
+            "name": "Xdg1_p1"
+          },
+          {
+            "line": 83,
+            "name": "Xdg1_p2"
+          },
+          {
+            "line": 84,
+            "name": "Xdg1_n1"
+          },
+          {
+            "line": 85,
+            "name": "Xdg1_n2"
+          },
+          {
+            "line": 86,
+            "name": "Xdinv1_n"
+          },
+          {
+            "line": 87,
+            "name": "Xdinv1_p"
+          },
+          {
+            "line": 88,
+            "name": "Xdh2_p1"
+          },
+          {
+            "line": 89,
+            "name": "Xdh2_p2"
+          },
+          {
+            "line": 90,
+            "name": "Xdh2_n1"
+          },
+          {
+            "line": 91,
+            "name": "Xdh2_n2"
+          },
+          {
+            "line": 92,
+            "name": "Xdl2_p1"
+          },
+          {
+            "line": 93,
+            "name": "Xdl2_p2"
+          },
+          {
+            "line": 94,
+            "name": "Xdl2_n1"
+          },
+          {
+            "line": 95,
+            "name": "Xdl2_n2"
+          },
+          {
+            "line": 96,
+            "name": "Xdg2_p1"
+          },
+          {
+            "line": 97,
+            "name": "Xdg2_p2"
+          },
+          {
+            "line": 98,
+            "name": "Xdg2_n1"
+          },
+          {
+            "line": 99,
+            "name": "Xdg2_n2"
+          },
+          {
+            "line": 100,
+            "name": "Xdinv2_n"
+          },
+          {
+            "line": 101,
+            "name": "Xdinv2_p"
+          },
+          {
+            "line": 102,
+            "name": "Xdh3_p1"
+          },
+          {
+            "line": 103,
+            "name": "Xdh3_p2"
+          },
+          {
+            "line": 104,
+            "name": "Xdh3_n1"
+          },
+          {
+            "line": 105,
+            "name": "Xdh3_n2"
+          },
+          {
+            "line": 106,
+            "name": "Xdl3_p1"
+          },
+          {
+            "line": 107,
+            "name": "Xdl3_p2"
+          },
+          {
+            "line": 108,
+            "name": "Xdl3_n1"
+          },
+          {
+            "line": 109,
+            "name": "Xdl3_n2"
+          },
+          {
+            "line": 110,
+            "name": "Xdg3_p1"
+          },
+          {
+            "line": 111,
+            "name": "Xdg3_p2"
+          },
+          {
+            "line": 112,
+            "name": "Xdg3_n1"
+          },
+          {
+            "line": 113,
+            "name": "Xdg3_n2"
+          },
+          {
+            "line": 114,
+            "name": "Xdinv3_n"
+          },
+          {
+            "line": 115,
+            "name": "Xdinv3_p"
+          },
+          {
+            "line": 116,
+            "name": "Xdh4_p1"
+          },
+          {
+            "line": 117,
+            "name": "Xdh4_p2"
+          },
+          {
+            "line": 118,
+            "name": "Xdh4_n1"
+          },
+          {
+            "line": 119,
+            "name": "Xdh4_n2"
+          },
+          {
+            "line": 120,
+            "name": "Xdl4_p1"
+          },
+          {
+            "line": 121,
+            "name": "Xdl4_p2"
+          },
+          {
+            "line": 122,
+            "name": "Xdl4_n1"
+          },
+          {
+            "line": 123,
+            "name": "Xdl4_n2"
+          },
+          {
+            "line": 124,
+            "name": "Xdg4_p1"
+          },
+          {
+            "line": 125,
+            "name": "Xdg4_p2"
+          },
+          {
+            "line": 126,
+            "name": "Xdg4_n1"
+          },
+          {
+            "line": 127,
+            "name": "Xdg4_n2"
+          },
+          {
+            "line": 128,
+            "name": "Xdinv4_n"
+          },
+          {
+            "line": 129,
+            "name": "Xdinv4_p"
+          },
+          {
+            "line": 130,
+            "name": "Xdh5_p1"
+          },
+          {
+            "line": 131,
+            "name": "Xdh5_p2"
+          },
+          {
+            "line": 132,
+            "name": "Xdh5_n1"
+          },
+          {
+            "line": 133,
+            "name": "Xdh5_n2"
+          },
+          {
+            "line": 134,
+            "name": "Xdl5_p1"
+          },
+          {
+            "line": 135,
+            "name": "Xdl5_p2"
+          },
+          {
+            "line": 136,
+            "name": "Xdl5_n1"
+          },
+          {
+            "line": 137,
+            "name": "Xdl5_n2"
+          },
+          {
+            "line": 138,
+            "name": "Xdg5_p1"
+          },
+          {
+            "line": 139,
+            "name": "Xdg5_p2"
+          },
+          {
+            "line": 140,
+            "name": "Xdg5_n1"
+          },
+          {
+            "line": 141,
+            "name": "Xdg5_n2"
+          },
+          {
+            "line": 142,
+            "name": "Xdinv5_n"
+          },
+          {
+            "line": 143,
+            "name": "Xdinv5_p"
+          },
+          {
+            "line": 144,
+            "name": "Xdh6_p1"
+          },
+          {
+            "line": 145,
+            "name": "Xdh6_p2"
+          },
+          {
+            "line": 146,
+            "name": "Xdh6_n1"
+          },
+          {
+            "line": 147,
+            "name": "Xdh6_n2"
+          },
+          {
+            "line": 148,
+            "name": "Xdl6_p1"
+          },
+          {
+            "line": 149,
+            "name": "Xdl6_p2"
+          },
+          {
+            "line": 150,
+            "name": "Xdl6_n1"
+          },
+          {
+            "line": 151,
+            "name": "Xdl6_n2"
+          },
+          {
+            "line": 152,
+            "name": "Xdg6_p1"
+          },
+          {
+            "line": 153,
+            "name": "Xdg6_p2"
+          },
+          {
+            "line": 154,
+            "name": "Xdg6_n1"
+          },
+          {
+            "line": 155,
+            "name": "Xdg6_n2"
+          },
+          {
+            "line": 156,
+            "name": "Xdinv6_n"
+          },
+          {
+            "line": 157,
+            "name": "Xdinv6_p"
+          },
+          {
+            "line": 158,
+            "name": "Xdh7_p1"
+          },
+          {
+            "line": 159,
+            "name": "Xdh7_p2"
+          },
+          {
+            "line": 160,
+            "name": "Xdh7_n1"
+          },
+          {
+            "line": 161,
+            "name": "Xdh7_n2"
+          },
+          {
+            "line": 162,
+            "name": "Xdl7_p1"
+          },
+          {
+            "line": 163,
+            "name": "Xdl7_p2"
+          },
+          {
+            "line": 164,
+            "name": "Xdl7_n1"
+          },
+          {
+            "line": 165,
+            "name": "Xdl7_n2"
+          },
+          {
+            "line": 166,
+            "name": "Xdg7_p1"
+          },
+          {
+            "line": 167,
+            "name": "Xdg7_p2"
+          },
+          {
+            "line": 168,
+            "name": "Xdg7_n1"
+          },
+          {
+            "line": 169,
+            "name": "Xdg7_n2"
+          },
+          {
+            "line": 170,
+            "name": "Xdinv7_n"
+          },
+          {
+            "line": 171,
+            "name": "Xdinv7_p"
+          },
+          {
+            "line": 172,
+            "name": "Xdh8_p1"
+          },
+          {
+            "line": 173,
+            "name": "Xdh8_p2"
+          },
+          {
+            "line": 174,
+            "name": "Xdh8_n1"
+          },
+          {
+            "line": 175,
+            "name": "Xdh8_n2"
+          },
+          {
+            "line": 176,
+            "name": "Xdl8_p1"
+          },
+          {
+            "line": 177,
+            "name": "Xdl8_p2"
+          },
+          {
+            "line": 178,
+            "name": "Xdl8_n1"
+          },
+          {
+            "line": 179,
+            "name": "Xdl8_n2"
+          },
+          {
+            "line": 180,
+            "name": "Xdg8_p1"
+          },
+          {
+            "line": 181,
+            "name": "Xdg8_p2"
+          },
+          {
+            "line": 182,
+            "name": "Xdg8_n1"
+          },
+          {
+            "line": 183,
+            "name": "Xdg8_n2"
+          },
+          {
+            "line": 184,
+            "name": "Xdinv8_n"
+          },
+          {
+            "line": 185,
+            "name": "Xdinv8_p"
+          },
+          {
+            "line": 186,
+            "name": "Xdh9_p1"
+          },
+          {
+            "line": 187,
+            "name": "Xdh9_p2"
+          },
+          {
+            "line": 188,
+            "name": "Xdh9_n1"
+          },
+          {
+            "line": 189,
+            "name": "Xdh9_n2"
+          },
+          {
+            "line": 190,
+            "name": "Xdl9_p1"
+          },
+          {
+            "line": 191,
+            "name": "Xdl9_p2"
+          },
+          {
+            "line": 192,
+            "name": "Xdl9_n1"
+          },
+          {
+            "line": 193,
+            "name": "Xdl9_n2"
+          },
+          {
+            "line": 194,
+            "name": "Xdg9_p1"
+          },
+          {
+            "line": 195,
+            "name": "Xdg9_p2"
+          },
+          {
+            "line": 196,
+            "name": "Xdg9_n1"
+          },
+          {
+            "line": 197,
+            "name": "Xdg9_n2"
+          },
+          {
+            "line": 198,
+            "name": "Xdinv9_n"
+          },
+          {
+            "line": 199,
+            "name": "Xdinv9_p"
+          },
+          {
+            "line": 200,
+            "name": "Xdh10_p1"
+          },
+          {
+            "line": 201,
+            "name": "Xdh10_p2"
+          },
+          {
+            "line": 202,
+            "name": "Xdh10_n1"
+          },
+          {
+            "line": 203,
+            "name": "Xdh10_n2"
+          },
+          {
+            "line": 204,
+            "name": "Xdl10_p1"
+          },
+          {
+            "line": 205,
+            "name": "Xdl10_p2"
+          },
+          {
+            "line": 206,
+            "name": "Xdl10_n1"
+          },
+          {
+            "line": 207,
+            "name": "Xdl10_n2"
+          },
+          {
+            "line": 208,
+            "name": "Xdg10_p1"
+          },
+          {
+            "line": 209,
+            "name": "Xdg10_p2"
+          },
+          {
+            "line": 210,
+            "name": "Xdg10_n1"
+          },
+          {
+            "line": 211,
+            "name": "Xdg10_n2"
+          },
+          {
+            "line": 212,
+            "name": "Xdinv10_n"
+          },
+          {
+            "line": 213,
+            "name": "Xdinv10_p"
+          },
+          {
+            "line": 214,
+            "name": "Xdh11_p1"
+          },
+          {
+            "line": 215,
+            "name": "Xdh11_p2"
+          },
+          {
+            "line": 216,
+            "name": "Xdh11_n1"
+          },
+          {
+            "line": 217,
+            "name": "Xdh11_n2"
+          },
+          {
+            "line": 218,
+            "name": "Xdl11_p1"
+          },
+          {
+            "line": 219,
+            "name": "Xdl11_p2"
+          },
+          {
+            "line": 220,
+            "name": "Xdl11_n1"
+          },
+          {
+            "line": 221,
+            "name": "Xdl11_n2"
+          },
+          {
+            "line": 222,
+            "name": "Xdg11_p1"
+          },
+          {
+            "line": 223,
+            "name": "Xdg11_p2"
+          },
+          {
+            "line": 224,
+            "name": "Xdg11_n1"
+          },
+          {
+            "line": 225,
+            "name": "Xdg11_n2"
+          },
+          {
+            "line": 226,
+            "name": "Xdinv11_n"
+          },
+          {
+            "line": 227,
+            "name": "Xdinv11_p"
+          },
+          {
+            "line": 228,
+            "name": "Xdh12_p1"
+          },
+          {
+            "line": 229,
+            "name": "Xdh12_p2"
+          },
+          {
+            "line": 230,
+            "name": "Xdh12_n1"
+          },
+          {
+            "line": 231,
+            "name": "Xdh12_n2"
+          },
+          {
+            "line": 232,
+            "name": "Xdl12_p1"
+          },
+          {
+            "line": 233,
+            "name": "Xdl12_p2"
+          },
+          {
+            "line": 234,
+            "name": "Xdl12_n1"
+          },
+          {
+            "line": 235,
+            "name": "Xdl12_n2"
+          },
+          {
+            "line": 236,
+            "name": "Xdg12_p1"
+          },
+          {
+            "line": 237,
+            "name": "Xdg12_p2"
+          },
+          {
+            "line": 238,
+            "name": "Xdg12_n1"
+          },
+          {
+            "line": 239,
+            "name": "Xdg12_n2"
+          },
+          {
+            "line": 240,
+            "name": "Xdinv12_n"
+          },
+          {
+            "line": 241,
+            "name": "Xdinv12_p"
+          },
+          {
+            "line": 242,
+            "name": "Xdh13_p1"
+          },
+          {
+            "line": 243,
+            "name": "Xdh13_p2"
+          },
+          {
+            "line": 244,
+            "name": "Xdh13_n1"
+          },
+          {
+            "line": 245,
+            "name": "Xdh13_n2"
+          },
+          {
+            "line": 246,
+            "name": "Xdl13_p1"
+          },
+          {
+            "line": 247,
+            "name": "Xdl13_p2"
+          },
+          {
+            "line": 248,
+            "name": "Xdl13_n1"
+          },
+          {
+            "line": 249,
+            "name": "Xdl13_n2"
+          },
+          {
+            "line": 250,
+            "name": "Xdg13_p1"
+          },
+          {
+            "line": 251,
+            "name": "Xdg13_p2"
+          },
+          {
+            "line": 252,
+            "name": "Xdg13_n1"
+          },
+          {
+            "line": 253,
+            "name": "Xdg13_n2"
+          },
+          {
+            "line": 254,
+            "name": "Xdinv13_n"
+          },
+          {
+            "line": 255,
+            "name": "Xdinv13_p"
+          },
+          {
+            "line": 256,
+            "name": "Xdh14_p1"
+          },
+          {
+            "line": 257,
+            "name": "Xdh14_p2"
+          },
+          {
+            "line": 258,
+            "name": "Xdh14_n1"
+          },
+          {
+            "line": 259,
+            "name": "Xdh14_n2"
+          },
+          {
+            "line": 260,
+            "name": "Xdl14_p1"
+          },
+          {
+            "line": 261,
+            "name": "Xdl14_p2"
+          },
+          {
+            "line": 262,
+            "name": "Xdl14_n1"
+          },
+          {
+            "line": 263,
+            "name": "Xdl14_n2"
+          },
+          {
+            "line": 264,
+            "name": "Xdg14_p1"
+          },
+          {
+            "line": 265,
+            "name": "Xdg14_p2"
+          },
+          {
+            "line": 266,
+            "name": "Xdg14_n1"
+          },
+          {
+            "line": 267,
+            "name": "Xdg14_n2"
+          },
+          {
+            "line": 268,
+            "name": "Xdinv14_n"
+          },
+          {
+            "line": 269,
+            "name": "Xdinv14_p"
+          },
+          {
+            "line": 270,
+            "name": "Xdh15_p1"
+          },
+          {
+            "line": 271,
+            "name": "Xdh15_p2"
+          },
+          {
+            "line": 272,
+            "name": "Xdh15_n1"
+          },
+          {
+            "line": 273,
+            "name": "Xdh15_n2"
+          },
+          {
+            "line": 274,
+            "name": "Xdl15_p1"
+          },
+          {
+            "line": 275,
+            "name": "Xdl15_p2"
+          },
+          {
+            "line": 276,
+            "name": "Xdl15_n1"
+          },
+          {
+            "line": 277,
+            "name": "Xdl15_n2"
+          },
+          {
+            "line": 278,
+            "name": "Xdg15_p1"
+          },
+          {
+            "line": 279,
+            "name": "Xdg15_p2"
+          },
+          {
+            "line": 280,
+            "name": "Xdg15_n1"
+          },
+          {
+            "line": 281,
+            "name": "Xdg15_n2"
+          },
+          {
+            "line": 282,
+            "name": "Xdinv15_n"
+          },
+          {
+            "line": 283,
+            "name": "Xdinv15_p"
+          }
+        ],
+        "stderr": "",
+        "stdout": "netlist-import: netlist-import: n2s/rstring_ladder.spice: 279 element cards; the plugin converts at most 200 (split the netlist)\n"
+      },
+      "sha256": "2a8df6d0a5dc02f3f41ddf12446077337d2e8c6f462ddc2b8de4e5b946a08462",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "strongarm"
+      ],
+      "literal_declared_names": [
+        "strongarm"
+      ],
+      "name": "tests/fixtures/analogioc/strongarm.spice",
+      "ordered_subcircuits": [
+        "strongarm"
+      ],
+      "refusal": null,
+      "sha256": "82d961afd94ef39d5f5084fb048885c23fa5c220482fe6a05fe0f1218f9785d9",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "pwm_driver",
+        "weight_tile_tg",
+        "weight_tile"
+      ],
+      "literal_declared_names": [
+        "pwm_driver",
+        "weight_tile_tg",
+        "weight_tile"
+      ],
+      "name": "tests/fixtures/analogioc/weight_tile.spice",
+      "ordered_subcircuits": [
+        "pwm_driver",
+        "weight_tile_tg",
+        "weight_tile"
+      ],
+      "refusal": null,
+      "sha256": "abb3d4ed3c747b94c4ea905eeb7732231a0cddac953da3c1271eeadc305cb3f4",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [],
+      "literal_declared_names": [
+        "write_dac_sw",
+        "write_dac"
+      ],
+      "name": "tests/fixtures/analogioc/write_dac.spice",
+      "ordered_subcircuits": [
+        "write_dac_sw",
+        "write_dac"
+      ],
+      "refusal": {
+        "basis": "Frozen plugin format/card cap plus frozen host prefix/exit semantics; actual diagnostic must be observed in this audit.",
+        "cards": 280,
+        "exit_code": 1,
+        "generated_files": [],
+        "kind": "plugin_element_card_capacity",
+        "limit": 200,
+        "source_cards": [
+          {
+            "line": 2,
+            "name": "Xwrite_dac_sw_n"
+          },
+          {
+            "line": 3,
+            "name": "Xwrite_dac_sw_p"
+          },
+          {
+            "line": 7,
+            "name": "Xtg0"
+          },
+          {
+            "line": 8,
+            "name": "Xtg1"
+          },
+          {
+            "line": 9,
+            "name": "Xtg2"
+          },
+          {
+            "line": 10,
+            "name": "Xtg3"
+          },
+          {
+            "line": 11,
+            "name": "Xtg4"
+          },
+          {
+            "line": 12,
+            "name": "Xtg5"
+          },
+          {
+            "line": 13,
+            "name": "Xtg6"
+          },
+          {
+            "line": 14,
+            "name": "Xtg7"
+          },
+          {
+            "line": 15,
+            "name": "Xtg8"
+          },
+          {
+            "line": 16,
+            "name": "Xtg9"
+          },
+          {
+            "line": 17,
+            "name": "Xtg10"
+          },
+          {
+            "line": 18,
+            "name": "Xtg11"
+          },
+          {
+            "line": 19,
+            "name": "Xtg12"
+          },
+          {
+            "line": 20,
+            "name": "Xtg13"
+          },
+          {
+            "line": 21,
+            "name": "Xtg14"
+          },
+          {
+            "line": 22,
+            "name": "Xtg15"
+          },
+          {
+            "line": 23,
+            "name": "Xseg1_0"
+          },
+          {
+            "line": 24,
+            "name": "Xseg1_1"
+          },
+          {
+            "line": 25,
+            "name": "Xseg2_0"
+          },
+          {
+            "line": 26,
+            "name": "Xseg2_1"
+          },
+          {
+            "line": 27,
+            "name": "Xseg3_0"
+          },
+          {
+            "line": 28,
+            "name": "Xseg3_1"
+          },
+          {
+            "line": 29,
+            "name": "Xseg4_0"
+          },
+          {
+            "line": 30,
+            "name": "Xseg4_1"
+          },
+          {
+            "line": 31,
+            "name": "Xseg5_0"
+          },
+          {
+            "line": 32,
+            "name": "Xseg5_1"
+          },
+          {
+            "line": 33,
+            "name": "Xseg6_0"
+          },
+          {
+            "line": 34,
+            "name": "Xseg6_1"
+          },
+          {
+            "line": 35,
+            "name": "Xseg7_0"
+          },
+          {
+            "line": 36,
+            "name": "Xseg7_1"
+          },
+          {
+            "line": 37,
+            "name": "Xseg8_0"
+          },
+          {
+            "line": 38,
+            "name": "Xseg8_1"
+          },
+          {
+            "line": 39,
+            "name": "Xseg9_0"
+          },
+          {
+            "line": 40,
+            "name": "Xseg9_1"
+          },
+          {
+            "line": 41,
+            "name": "Xseg10_0"
+          },
+          {
+            "line": 42,
+            "name": "Xseg10_1"
+          },
+          {
+            "line": 43,
+            "name": "Xseg11_0"
+          },
+          {
+            "line": 44,
+            "name": "Xseg11_1"
+          },
+          {
+            "line": 45,
+            "name": "Xseg12_0"
+          },
+          {
+            "line": 46,
+            "name": "Xseg12_1"
+          },
+          {
+            "line": 47,
+            "name": "Xseg13_0"
+          },
+          {
+            "line": 48,
+            "name": "Xseg13_1"
+          },
+          {
+            "line": 49,
+            "name": "Xseg14_0"
+          },
+          {
+            "line": 50,
+            "name": "Xseg14_1"
+          },
+          {
+            "line": 51,
+            "name": "Xseg15_0"
+          },
+          {
+            "line": 52,
+            "name": "Xseg15_1"
+          },
+          {
+            "line": 53,
+            "name": "Xinvb0_n"
+          },
+          {
+            "line": 54,
+            "name": "Xinvb0_p"
+          },
+          {
+            "line": 55,
+            "name": "Xinvb1_n"
+          },
+          {
+            "line": 56,
+            "name": "Xinvb1_p"
+          },
+          {
+            "line": 57,
+            "name": "Xinvb2_n"
+          },
+          {
+            "line": 58,
+            "name": "Xinvb2_p"
+          },
+          {
+            "line": 59,
+            "name": "Xinvb3_n"
+          },
+          {
+            "line": 60,
+            "name": "Xinvb3_p"
+          },
+          {
+            "line": 61,
+            "name": "Xdh0_p1"
+          },
+          {
+            "line": 62,
+            "name": "Xdh0_p2"
+          },
+          {
+            "line": 63,
+            "name": "Xdh0_n1"
+          },
+          {
+            "line": 64,
+            "name": "Xdh0_n2"
+          },
+          {
+            "line": 65,
+            "name": "Xdl0_p1"
+          },
+          {
+            "line": 66,
+            "name": "Xdl0_p2"
+          },
+          {
+            "line": 67,
+            "name": "Xdl0_n1"
+          },
+          {
+            "line": 68,
+            "name": "Xdl0_n2"
+          },
+          {
+            "line": 69,
+            "name": "Xdg0_p1"
+          },
+          {
+            "line": 70,
+            "name": "Xdg0_p2"
+          },
+          {
+            "line": 71,
+            "name": "Xdg0_n1"
+          },
+          {
+            "line": 72,
+            "name": "Xdg0_n2"
+          },
+          {
+            "line": 73,
+            "name": "Xdinv0_n"
+          },
+          {
+            "line": 74,
+            "name": "Xdinv0_p"
+          },
+          {
+            "line": 75,
+            "name": "Xdh1_p1"
+          },
+          {
+            "line": 76,
+            "name": "Xdh1_p2"
+          },
+          {
+            "line": 77,
+            "name": "Xdh1_n1"
+          },
+          {
+            "line": 78,
+            "name": "Xdh1_n2"
+          },
+          {
+            "line": 79,
+            "name": "Xdl1_p1"
+          },
+          {
+            "line": 80,
+            "name": "Xdl1_p2"
+          },
+          {
+            "line": 81,
+            "name": "Xdl1_n1"
+          },
+          {
+            "line": 82,
+            "name": "Xdl1_n2"
+          },
+          {
+            "line": 83,
+            "name": "Xdg1_p1"
+          },
+          {
+            "line": 84,
+            "name": "Xdg1_p2"
+          },
+          {
+            "line": 85,
+            "name": "Xdg1_n1"
+          },
+          {
+            "line": 86,
+            "name": "Xdg1_n2"
+          },
+          {
+            "line": 87,
+            "name": "Xdinv1_n"
+          },
+          {
+            "line": 88,
+            "name": "Xdinv1_p"
+          },
+          {
+            "line": 89,
+            "name": "Xdh2_p1"
+          },
+          {
+            "line": 90,
+            "name": "Xdh2_p2"
+          },
+          {
+            "line": 91,
+            "name": "Xdh2_n1"
+          },
+          {
+            "line": 92,
+            "name": "Xdh2_n2"
+          },
+          {
+            "line": 93,
+            "name": "Xdl2_p1"
+          },
+          {
+            "line": 94,
+            "name": "Xdl2_p2"
+          },
+          {
+            "line": 95,
+            "name": "Xdl2_n1"
+          },
+          {
+            "line": 96,
+            "name": "Xdl2_n2"
+          },
+          {
+            "line": 97,
+            "name": "Xdg2_p1"
+          },
+          {
+            "line": 98,
+            "name": "Xdg2_p2"
+          },
+          {
+            "line": 99,
+            "name": "Xdg2_n1"
+          },
+          {
+            "line": 100,
+            "name": "Xdg2_n2"
+          },
+          {
+            "line": 101,
+            "name": "Xdinv2_n"
+          },
+          {
+            "line": 102,
+            "name": "Xdinv2_p"
+          },
+          {
+            "line": 103,
+            "name": "Xdh3_p1"
+          },
+          {
+            "line": 104,
+            "name": "Xdh3_p2"
+          },
+          {
+            "line": 105,
+            "name": "Xdh3_n1"
+          },
+          {
+            "line": 106,
+            "name": "Xdh3_n2"
+          },
+          {
+            "line": 107,
+            "name": "Xdl3_p1"
+          },
+          {
+            "line": 108,
+            "name": "Xdl3_p2"
+          },
+          {
+            "line": 109,
+            "name": "Xdl3_n1"
+          },
+          {
+            "line": 110,
+            "name": "Xdl3_n2"
+          },
+          {
+            "line": 111,
+            "name": "Xdg3_p1"
+          },
+          {
+            "line": 112,
+            "name": "Xdg3_p2"
+          },
+          {
+            "line": 113,
+            "name": "Xdg3_n1"
+          },
+          {
+            "line": 114,
+            "name": "Xdg3_n2"
+          },
+          {
+            "line": 115,
+            "name": "Xdinv3_n"
+          },
+          {
+            "line": 116,
+            "name": "Xdinv3_p"
+          },
+          {
+            "line": 117,
+            "name": "Xdh4_p1"
+          },
+          {
+            "line": 118,
+            "name": "Xdh4_p2"
+          },
+          {
+            "line": 119,
+            "name": "Xdh4_n1"
+          },
+          {
+            "line": 120,
+            "name": "Xdh4_n2"
+          },
+          {
+            "line": 121,
+            "name": "Xdl4_p1"
+          },
+          {
+            "line": 122,
+            "name": "Xdl4_p2"
+          },
+          {
+            "line": 123,
+            "name": "Xdl4_n1"
+          },
+          {
+            "line": 124,
+            "name": "Xdl4_n2"
+          },
+          {
+            "line": 125,
+            "name": "Xdg4_p1"
+          },
+          {
+            "line": 126,
+            "name": "Xdg4_p2"
+          },
+          {
+            "line": 127,
+            "name": "Xdg4_n1"
+          },
+          {
+            "line": 128,
+            "name": "Xdg4_n2"
+          },
+          {
+            "line": 129,
+            "name": "Xdinv4_n"
+          },
+          {
+            "line": 130,
+            "name": "Xdinv4_p"
+          },
+          {
+            "line": 131,
+            "name": "Xdh5_p1"
+          },
+          {
+            "line": 132,
+            "name": "Xdh5_p2"
+          },
+          {
+            "line": 133,
+            "name": "Xdh5_n1"
+          },
+          {
+            "line": 134,
+            "name": "Xdh5_n2"
+          },
+          {
+            "line": 135,
+            "name": "Xdl5_p1"
+          },
+          {
+            "line": 136,
+            "name": "Xdl5_p2"
+          },
+          {
+            "line": 137,
+            "name": "Xdl5_n1"
+          },
+          {
+            "line": 138,
+            "name": "Xdl5_n2"
+          },
+          {
+            "line": 139,
+            "name": "Xdg5_p1"
+          },
+          {
+            "line": 140,
+            "name": "Xdg5_p2"
+          },
+          {
+            "line": 141,
+            "name": "Xdg5_n1"
+          },
+          {
+            "line": 142,
+            "name": "Xdg5_n2"
+          },
+          {
+            "line": 143,
+            "name": "Xdinv5_n"
+          },
+          {
+            "line": 144,
+            "name": "Xdinv5_p"
+          },
+          {
+            "line": 145,
+            "name": "Xdh6_p1"
+          },
+          {
+            "line": 146,
+            "name": "Xdh6_p2"
+          },
+          {
+            "line": 147,
+            "name": "Xdh6_n1"
+          },
+          {
+            "line": 148,
+            "name": "Xdh6_n2"
+          },
+          {
+            "line": 149,
+            "name": "Xdl6_p1"
+          },
+          {
+            "line": 150,
+            "name": "Xdl6_p2"
+          },
+          {
+            "line": 151,
+            "name": "Xdl6_n1"
+          },
+          {
+            "line": 152,
+            "name": "Xdl6_n2"
+          },
+          {
+            "line": 153,
+            "name": "Xdg6_p1"
+          },
+          {
+            "line": 154,
+            "name": "Xdg6_p2"
+          },
+          {
+            "line": 155,
+            "name": "Xdg6_n1"
+          },
+          {
+            "line": 156,
+            "name": "Xdg6_n2"
+          },
+          {
+            "line": 157,
+            "name": "Xdinv6_n"
+          },
+          {
+            "line": 158,
+            "name": "Xdinv6_p"
+          },
+          {
+            "line": 159,
+            "name": "Xdh7_p1"
+          },
+          {
+            "line": 160,
+            "name": "Xdh7_p2"
+          },
+          {
+            "line": 161,
+            "name": "Xdh7_n1"
+          },
+          {
+            "line": 162,
+            "name": "Xdh7_n2"
+          },
+          {
+            "line": 163,
+            "name": "Xdl7_p1"
+          },
+          {
+            "line": 164,
+            "name": "Xdl7_p2"
+          },
+          {
+            "line": 165,
+            "name": "Xdl7_n1"
+          },
+          {
+            "line": 166,
+            "name": "Xdl7_n2"
+          },
+          {
+            "line": 167,
+            "name": "Xdg7_p1"
+          },
+          {
+            "line": 168,
+            "name": "Xdg7_p2"
+          },
+          {
+            "line": 169,
+            "name": "Xdg7_n1"
+          },
+          {
+            "line": 170,
+            "name": "Xdg7_n2"
+          },
+          {
+            "line": 171,
+            "name": "Xdinv7_n"
+          },
+          {
+            "line": 172,
+            "name": "Xdinv7_p"
+          },
+          {
+            "line": 173,
+            "name": "Xdh8_p1"
+          },
+          {
+            "line": 174,
+            "name": "Xdh8_p2"
+          },
+          {
+            "line": 175,
+            "name": "Xdh8_n1"
+          },
+          {
+            "line": 176,
+            "name": "Xdh8_n2"
+          },
+          {
+            "line": 177,
+            "name": "Xdl8_p1"
+          },
+          {
+            "line": 178,
+            "name": "Xdl8_p2"
+          },
+          {
+            "line": 179,
+            "name": "Xdl8_n1"
+          },
+          {
+            "line": 180,
+            "name": "Xdl8_n2"
+          },
+          {
+            "line": 181,
+            "name": "Xdg8_p1"
+          },
+          {
+            "line": 182,
+            "name": "Xdg8_p2"
+          },
+          {
+            "line": 183,
+            "name": "Xdg8_n1"
+          },
+          {
+            "line": 184,
+            "name": "Xdg8_n2"
+          },
+          {
+            "line": 185,
+            "name": "Xdinv8_n"
+          },
+          {
+            "line": 186,
+            "name": "Xdinv8_p"
+          },
+          {
+            "line": 187,
+            "name": "Xdh9_p1"
+          },
+          {
+            "line": 188,
+            "name": "Xdh9_p2"
+          },
+          {
+            "line": 189,
+            "name": "Xdh9_n1"
+          },
+          {
+            "line": 190,
+            "name": "Xdh9_n2"
+          },
+          {
+            "line": 191,
+            "name": "Xdl9_p1"
+          },
+          {
+            "line": 192,
+            "name": "Xdl9_p2"
+          },
+          {
+            "line": 193,
+            "name": "Xdl9_n1"
+          },
+          {
+            "line": 194,
+            "name": "Xdl9_n2"
+          },
+          {
+            "line": 195,
+            "name": "Xdg9_p1"
+          },
+          {
+            "line": 196,
+            "name": "Xdg9_p2"
+          },
+          {
+            "line": 197,
+            "name": "Xdg9_n1"
+          },
+          {
+            "line": 198,
+            "name": "Xdg9_n2"
+          },
+          {
+            "line": 199,
+            "name": "Xdinv9_n"
+          },
+          {
+            "line": 200,
+            "name": "Xdinv9_p"
+          },
+          {
+            "line": 201,
+            "name": "Xdh10_p1"
+          },
+          {
+            "line": 202,
+            "name": "Xdh10_p2"
+          },
+          {
+            "line": 203,
+            "name": "Xdh10_n1"
+          },
+          {
+            "line": 204,
+            "name": "Xdh10_n2"
+          },
+          {
+            "line": 205,
+            "name": "Xdl10_p1"
+          },
+          {
+            "line": 206,
+            "name": "Xdl10_p2"
+          },
+          {
+            "line": 207,
+            "name": "Xdl10_n1"
+          },
+          {
+            "line": 208,
+            "name": "Xdl10_n2"
+          },
+          {
+            "line": 209,
+            "name": "Xdg10_p1"
+          },
+          {
+            "line": 210,
+            "name": "Xdg10_p2"
+          },
+          {
+            "line": 211,
+            "name": "Xdg10_n1"
+          },
+          {
+            "line": 212,
+            "name": "Xdg10_n2"
+          },
+          {
+            "line": 213,
+            "name": "Xdinv10_n"
+          },
+          {
+            "line": 214,
+            "name": "Xdinv10_p"
+          },
+          {
+            "line": 215,
+            "name": "Xdh11_p1"
+          },
+          {
+            "line": 216,
+            "name": "Xdh11_p2"
+          },
+          {
+            "line": 217,
+            "name": "Xdh11_n1"
+          },
+          {
+            "line": 218,
+            "name": "Xdh11_n2"
+          },
+          {
+            "line": 219,
+            "name": "Xdl11_p1"
+          },
+          {
+            "line": 220,
+            "name": "Xdl11_p2"
+          },
+          {
+            "line": 221,
+            "name": "Xdl11_n1"
+          },
+          {
+            "line": 222,
+            "name": "Xdl11_n2"
+          },
+          {
+            "line": 223,
+            "name": "Xdg11_p1"
+          },
+          {
+            "line": 224,
+            "name": "Xdg11_p2"
+          },
+          {
+            "line": 225,
+            "name": "Xdg11_n1"
+          },
+          {
+            "line": 226,
+            "name": "Xdg11_n2"
+          },
+          {
+            "line": 227,
+            "name": "Xdinv11_n"
+          },
+          {
+            "line": 228,
+            "name": "Xdinv11_p"
+          },
+          {
+            "line": 229,
+            "name": "Xdh12_p1"
+          },
+          {
+            "line": 230,
+            "name": "Xdh12_p2"
+          },
+          {
+            "line": 231,
+            "name": "Xdh12_n1"
+          },
+          {
+            "line": 232,
+            "name": "Xdh12_n2"
+          },
+          {
+            "line": 233,
+            "name": "Xdl12_p1"
+          },
+          {
+            "line": 234,
+            "name": "Xdl12_p2"
+          },
+          {
+            "line": 235,
+            "name": "Xdl12_n1"
+          },
+          {
+            "line": 236,
+            "name": "Xdl12_n2"
+          },
+          {
+            "line": 237,
+            "name": "Xdg12_p1"
+          },
+          {
+            "line": 238,
+            "name": "Xdg12_p2"
+          },
+          {
+            "line": 239,
+            "name": "Xdg12_n1"
+          },
+          {
+            "line": 240,
+            "name": "Xdg12_n2"
+          },
+          {
+            "line": 241,
+            "name": "Xdinv12_n"
+          },
+          {
+            "line": 242,
+            "name": "Xdinv12_p"
+          },
+          {
+            "line": 243,
+            "name": "Xdh13_p1"
+          },
+          {
+            "line": 244,
+            "name": "Xdh13_p2"
+          },
+          {
+            "line": 245,
+            "name": "Xdh13_n1"
+          },
+          {
+            "line": 246,
+            "name": "Xdh13_n2"
+          },
+          {
+            "line": 247,
+            "name": "Xdl13_p1"
+          },
+          {
+            "line": 248,
+            "name": "Xdl13_p2"
+          },
+          {
+            "line": 249,
+            "name": "Xdl13_n1"
+          },
+          {
+            "line": 250,
+            "name": "Xdl13_n2"
+          },
+          {
+            "line": 251,
+            "name": "Xdg13_p1"
+          },
+          {
+            "line": 252,
+            "name": "Xdg13_p2"
+          },
+          {
+            "line": 253,
+            "name": "Xdg13_n1"
+          },
+          {
+            "line": 254,
+            "name": "Xdg13_n2"
+          },
+          {
+            "line": 255,
+            "name": "Xdinv13_n"
+          },
+          {
+            "line": 256,
+            "name": "Xdinv13_p"
+          },
+          {
+            "line": 257,
+            "name": "Xdh14_p1"
+          },
+          {
+            "line": 258,
+            "name": "Xdh14_p2"
+          },
+          {
+            "line": 259,
+            "name": "Xdh14_n1"
+          },
+          {
+            "line": 260,
+            "name": "Xdh14_n2"
+          },
+          {
+            "line": 261,
+            "name": "Xdl14_p1"
+          },
+          {
+            "line": 262,
+            "name": "Xdl14_p2"
+          },
+          {
+            "line": 263,
+            "name": "Xdl14_n1"
+          },
+          {
+            "line": 264,
+            "name": "Xdl14_n2"
+          },
+          {
+            "line": 265,
+            "name": "Xdg14_p1"
+          },
+          {
+            "line": 266,
+            "name": "Xdg14_p2"
+          },
+          {
+            "line": 267,
+            "name": "Xdg14_n1"
+          },
+          {
+            "line": 268,
+            "name": "Xdg14_n2"
+          },
+          {
+            "line": 269,
+            "name": "Xdinv14_n"
+          },
+          {
+            "line": 270,
+            "name": "Xdinv14_p"
+          },
+          {
+            "line": 271,
+            "name": "Xdh15_p1"
+          },
+          {
+            "line": 272,
+            "name": "Xdh15_p2"
+          },
+          {
+            "line": 273,
+            "name": "Xdh15_n1"
+          },
+          {
+            "line": 274,
+            "name": "Xdh15_n2"
+          },
+          {
+            "line": 275,
+            "name": "Xdl15_p1"
+          },
+          {
+            "line": 276,
+            "name": "Xdl15_p2"
+          },
+          {
+            "line": 277,
+            "name": "Xdl15_n1"
+          },
+          {
+            "line": 278,
+            "name": "Xdl15_n2"
+          },
+          {
+            "line": 279,
+            "name": "Xdg15_p1"
+          },
+          {
+            "line": 280,
+            "name": "Xdg15_p2"
+          },
+          {
+            "line": 281,
+            "name": "Xdg15_n1"
+          },
+          {
+            "line": 282,
+            "name": "Xdg15_n2"
+          },
+          {
+            "line": 283,
+            "name": "Xdinv15_n"
+          },
+          {
+            "line": 284,
+            "name": "Xdinv15_p"
+          }
+        ],
+        "stderr": "",
+        "stdout": "netlist-import: netlist-import: n2s/write_dac.spice: 280 element cards; the plugin converts at most 200 (split the netlist)\n"
+      },
+      "sha256": "6239cfe93c87559b4f8a27947ef74053b0557d38b0e927ebd469f3c70d8ccaa1",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "pa",
+        "da",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "PA",
+        "DA",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1103.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "pa",
+        "da",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1114.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "0fdc8b26f9d2ad198499cab5b7f19e66344066658a9f661abdf5357c0841b241",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1131.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "c9651d2253ef579e4149f767337539f01608090abd2fde9a6c555fbbaca0a6cb",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "varactor_switched_caps",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "Varactor_Switched_caps",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1146.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "varactor_switched_caps",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "c682970153ab1063e8c227c5c24dcc2a0d0eac5846485f70feff459e78901d51",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1147.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "71e468c52c252e89040f9af5292fb905507a177facc676d4e99b82f1d1134964",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1149.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "4870479195588a489ecc9c9470f89663583f34b851487435e8a450c5552f363b",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1151.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "cef732ca33bb98ca5c5d4b411071f22777beb351c95c2221d9360408ffa10151",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1152.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "c3cc987599240d99b8c1ffde3e0b8266cd50a87b4d01b330fb22ac044f66c3a4",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1153.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "c0ef1fcd7dfc6d1db97e1380deb870f7fa40a83c4bc2e14127cb988fd1d3bff7",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1168.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "10b074ad399319d3ed72531190484f02672ec41b5f101ca403c4810925984524",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1180.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "59a52a976e83e797bd8989939169b2ef5163b996e6d7fbca6ee17bc1fcf030bc",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1187.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "0641ba592629ca2a4227ffd9c07dc1bad0bb93e342dc0841f2f3f0e12102f2f8",
+      "top_devices": false
+    },
+    {
+      "expected_comparisons": [
+        "ct_inductor",
+        "dut"
+      ],
+      "literal_declared_names": [
+        "ct_inductor",
+        "dut"
+      ],
+      "name": "external/examples/analoggenie/ag-1190.cir",
+      "ordered_subcircuits": [
+        "ct_inductor",
+        "dut"
+      ],
+      "refusal": null,
+      "sha256": "41ba357188280f2e3084496e9f99371c0babe0cf67159eee957461141ffdb3cc",
+      "top_devices": false
+    }
+  ],
+  "focused_names": [
+    "tests/fixtures/basic/rc_lowpass.sp",
+    "tests/fixtures/hand/params_hierarchy.sp",
+    "tests/fixtures/hand/xspice_cards.sp",
+    "tests/fixtures/mixed_signal/comparator.sp",
+    "tests/fixtures/digital/nand_gate.sp",
+    "external/examples/analoggenie/ag-1103.cir",
+    "external/examples/analoggenie/ag-1114.cir",
+    "tests/fixtures/analogioc/rstring_ladder.spice",
+    "tests/fixtures/analogioc/write_dac.spice"
+  ],
+  "original_plan_sha256": "55469ed9d0fdd1a5d680d6fcca908d84295f8f3767bec97c6c65c74bb93160cc",
+  "schema": 1
+}

@@ -99,9 +99,30 @@
 //!   the retained routing handle is not its boundary. Distant pins retain
 //!   ports. This native proximity choice does not infer source block layout.
 //!   Explicit styles and first-net requests abstain. `power_loop_wires.seed`
+//! - wires.21 (habit, bounded) A complete CT-linked common-base bias stage
+//!   keeps its two actual opposing B leads in one cut part when the direct
+//!   interval fits. The five-member source observation and exclusions are
+//!   ct_controls.1; this changes neither ordinary near grouping nor the
+//!   whole-part fallback and later crossing cuts. `parts`
+//!
+//! - wires.22 (bounded observation) Successful complete resistor-load
+//!   stages put their load bar through the actual resistor tips. The cold
+//!   owner consumer runs after rails, uses ordinary contact checks, and
+//!   declines caller styles, sequencing or later cut/label rounds. No net
+//!   gets an exemption from automatic thinning. `resistor_load_wires.seed`
+//! - wires.23 (bounded observation) A successfully placed complete four-side
+//!   CT scene retains its source-separated components and one shared tap
+//!   supply. The cold owner checks actual pins, names and same-net contacts
+//!   atomically; normal trunk costs and later thinning remain. `ct_four_wires`
+//!
+//! - wires.24 (bounded observation) One qualified linked-load owner keeps
+//!   its two downstream local resistor/drain pieces separate from remote
+//!   input gates. Original caller intent and complete raw supply/body
+//!   contracts select; ordinary names, contacts and thinning remain.
+//!   `resistor_downstream`
 //!
 //! Contents:
-//! - `pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void`
+//! - `pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
@@ -116,8 +137,17 @@ const trunk = @import("trunk.zig");
 const name_parts = @import("name_parts.zig");
 const power_loops = @import("power_loops.zig");
 const power_loop_wires = @import("power_loop_wires.zig");
+const resistor_loads = @import("resistor_loads.zig");
+const resistor_load_wires = @import("resistor_load_wires.zig");
+const resistor_downstream = @import("resistor_downstream.zig");
+const ct_four_sides = @import("ct_four_sides.zig");
+const ct_four_wires = @import("ct_four_wires.zig");
+const ct_controls = @import("ct_controls.zig");
+const ct_mirror_controls = @import("ct_mirror_controls.zig");
+const Netlist = @import("netlist.zig").Netlist;
 const NetLines = netlines.NetLines;
 const parent_parts = @import("parent_parts.zig");
+const Requests = @import("wire_requests.zig").Requests;
 
 const Side = library.Side;
 const Pt = library.Pt;
@@ -169,7 +199,13 @@ const Drawn = enum(u8) {
 /// `netlines.read`'s of these nets: an entry a net, every rail's bar or
 /// symbols chosen, no input styled as a wire. `loops` holds requests
 /// collected before automatic thinning, after explicit net instructions.
-pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool) Allocator.Error!void {
+/// `nl` is the complete netlist that owns `s`'s borrowed device/net tables;
+/// a cut-net stage certificate counts its hidden and undrawn incidences too.
+/// requests borrows original admitted routes and poses, including those
+/// deferred during scaffolding; only lines.routes are actually drawn here.
+/// load_singles/load_pairs borrow successfully placed full stage owners;
+/// their automatic internal load trees retain ordinary thinning policies.
+pub fn wire(gpa: Allocator, s: *Schematic, nl: *const Netlist, xy: *std.ArrayList([2]f32), len: Lengths, boxes: []const Rect, hidden: []const maze.Mark, mirror: ?routes.Mirror, net_rank: []const u32, lines: *const NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, bridged_t: bool, final_routes: bool, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group) Allocator.Error!void {
     assert(net_rank.len == s.net_name.len);
     assert(lines.style.len == s.net_name.len);
     assert(lines.port.len == s.net_name.len and lines.rail.len == s.net_name.len);
@@ -224,17 +260,21 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
     const drawn = try gpa.alloc(bool, n_nets);
     defer gpa.free(drawn);
     @memset(drawn, false);
+    try ct_four_wires.rail(&c, nl, four_groups, lines, requests, pins_of, routed, drawn);
     const mates: []u32 = if (loops.len != 0 and mirror != null) try gpa.dupe(u32, mirror.?.net_mate) else &.{};
     defer gpa.free(mates);
     const own_mirror: ?routes.Mirror = if (mates.len != 0) .{ .axis2 = mirror.?.axis2, .net_mate = mates } else mirror;
     const anchors: []u32 = if (loops.len != 0) try gpa.alloc(u32, n_nets) else &.{};
     defer gpa.free(anchors);
     @memset(anchors, sch.none);
-    var seeded = loops.len == 0 and trial.pairs.len == 0;
+    var seeded = loops.len == 0 and trial.pairs.len == 0 and load_singles.len == 0 and load_pairs.len == 0 and four_groups.len == 0;
     for (order, 0..) |net, position| {
         if (!seeded and position >= lead and !s.roles[net].isRail()) {
             if (loops.len != 0) try power_loop_wires.seed(&c, loops, pins_of, mates, anchors);
             try trial.draw(&c, lines, pins_of, routed, drawn);
+            try resistor_load_wires.seed(&c, nl, load_singles, load_pairs, lines, pins_of, routed, drawn);
+            try resistor_downstream.parts(&c, nl, downstream, lines, requests, pins_of, routed, drawn);
+            try ct_four_wires.parts(&c, nl, four_groups, lines, requests, pins_of, routed, drawn);
             seeded = true;
         }
         const pins = pins_of[net].items;
@@ -254,13 +294,14 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             continue;
         }
         if (style == .cut) {
-            try name_parts.draw(&c, net, pins);
+            try name_parts.draw(&c, nl, net, pins, lines, requests);
             s.labeled[net] = true;
             continue;
         }
         if (bridged_t and style == .auto and lines.port[net] == null and s.roles[net].isPort()) {
             if (try @import("passive_filters.zig").port(&c, net, pins)) continue;
         }
+        const preferred = ct_mirror_controls.interval(&c, nl, net, pins, lines, requests);
         switch (Drawn.of(s.roles[net])) {
             // A rail's pins face out along the rows, a supply's up and a
             // ground's down: a symbol at each, or one bar past them all.
@@ -273,14 +314,14 @@ pub fn wire(gpa: Allocator, s: *Schematic, xy: *std.ArrayList([2]f32), len: Leng
             // other, named once.
             .port => if (style == .auto) try ported(&c, net, pins, anchor, if (final_routes) &gate_labels else null) else {
                 assert(s.roles[net] == .bias);
-                if (!try patterned(&c, net, pins, axis2, style)) try waiting.append(gpa, net);
+                if (!try patterned(&c, net, pins, axis2, style, preferred)) try waiting.append(gpa, net);
                 try named.append(gpa, net);
             },
             .wire => {
                 if (s.roles[net] == .output and try power_loop_wires.port(&c, net, pins, anchor)) continue;
                 const from = c.segs.items.len;
                 const pin_from = s.pins.len;
-                if (!try patterned(&c, net, pins, axis2, style)) {
+                if (!try patterned(&c, net, pins, axis2, style, preferred)) {
                     try waiting.append(gpa, net);
                     continue;
                 }
@@ -444,10 +485,10 @@ fn nearTree(box: Rect, net: u32, segments: []const maze.Wire, limit: i32) bool {
 /// A wire by the pattern `style` asks (`auto` and `wire`: a ladder, else a
 /// trunk); false, with nothing drawn, when it does not fit (or for `route`):
 /// the router takes the net.
-fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style) !bool {
+fn patterned(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32, style: netlines.Style, preferred: ?[2]Pt) !bool {
     // One pin: nothing to route; its port, if any, as by default.
     return switch (if (pins.len < 2) .auto else style) {
-        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.draw(c, net, pins, .port),
+        .auto, .wire => try ladder(c, net, pins, axis2) or try trunk.drawPreferred(c, net, pins, .port, preferred),
         .ladder => try ladder(c, net, pins, axis2),
         .trunk => try trunk.draw(c, net, pins, .port),
         .route => false,
@@ -510,9 +551,13 @@ fn bar(c: *Canvas, pins: []const u32, out: Side, plain: bool) !void {
     if (plain and pieces > 0) s.labeled[net] = true;
     if (ups.items.len < 2) return;
     const y_bar = if (out == .up) top - c.len.rail else top + c.len.rail;
-    std.mem.sort(u32, ups.items, s, struct {
+    // pins_of is filled in ascending pin-id order; filtering keeps it.
+    // Pin ids therefore preserve the prior stable order at equal columns.
+    for (ups.items[0 .. ups.items.len - 1], ups.items[1..]) |a, b| assert(a < b);
+    std.sort.heap(u32, ups.items, s, struct {
         fn lt(sc: *Schematic, x: u32, y: u32) bool {
-            return pinAt(sc, x).x < pinAt(sc, y).x;
+            const a, const b = .{ pinAt(sc, x).x, pinAt(sc, y).x };
+            return if (a == b) x < y else a < b;
         }
     }.lt);
     // A pin whose stub would touch something gets a symbol of its own.
@@ -650,7 +695,8 @@ fn ladder(c: *Canvas, net: u32, pins: []const u32, axis2: ?i32) !bool {
         hi = @min(hi, end.?);
     }
     if (2 * rungs.items.len != pins.len or hi - lo < 2) return false;
-    std.mem.sort([3]i32, rungs.items, {}, struct {
+    // Equal rows are rejected below, before any route is emitted.
+    std.sort.heap([3]i32, rungs.items, {}, struct {
         fn lt(_: void, a: [3]i32, b: [3]i32) bool {
             return a[0] < b[0];
         }

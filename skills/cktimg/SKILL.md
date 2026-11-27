@@ -1,6 +1,6 @@
 ---
 name: cktimg
-description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), fix a cktImg drawing, or hint one to hand-drawn quality.
+description: Draw a SPICE netlist as a schematic with cktImg (SVG, TikZ, JSON, Schemify cells), or steer a drawing you dislike with `*@` hint lines and `lint.zon`, up to hand-drawn quality.
 ---
 
 cktImg lays a netlist out the way a textbook draws it and keeps the drawing
@@ -11,6 +11,8 @@ one rung only for a **complaint** the rung above cannot fix.
 For a TikZ figure, `cktimg-tex deck.cir figure.tex` uses the same selected
 top cell and symbol library as `cktimg-json`. Pass the same `--symbols` and
 `--config` options to compare the two drawings.
+
+Use `--allow-45` with `cktimg-json` or `cktimg-tex` when the consuming editor or figure accepts oblique wires. In Schemify, pass `netlist.import --allow-45 n2s/deck.sp`. This enables a pair of 45-degree feedback segments in a verified reciprocal differential stage. A wire or label instruction on either output retains the caller's routing. The ordinary invocation uses Manhattan wires.
 
 ## Steps
 
@@ -47,10 +49,10 @@ person would not draw) goes on from step 5 with
 |---|---|---|---|
 | 0 names | net and device names | Roles, below | a net in the wrong role: a label where a port belongs, a bias line wired as a signal |
 | 1 meaning | what the circuit is | `*@ group pair\|mirror\|bank\|stack\|cross <devs>`, `nogroup <devs>`, `grouping off`; `symmetric <a> <b>`, `axis <dev>`, `symmetry off`; `role <net> supply\|ground\|input\|output\|bias\|internal`; `driver <src> apart\|inline`; `class <dev> <symbol>`; `kind <dev> nmos\|pmos\|npn\|pnp\|res\|cap\|block`; `expand <instance>` | matched devices not side by side; the wrong mirror image; a net or device misread |
-| 2 relations | where things stand to each other | `*@ above <devs>` (top down), `row <devs>` (level; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
+| 2 relations | where things stand to each other | `*@ above <devs>` (top down: the vertical order only, not one column), `row <devs>` (level, in no left-to-right order: add `order` for that; a bridge takes the row), `order <devs>` (left to right; a bridge goes between its neighbours, bridges named in a row in that order); `face <dev> g left\|right`, `face <dev> <pin> up`, `face <flat part> <pin> left\|right` (which end is left); `upright\|bridge <dev>`; `label <net>`, `wire <net> [ladder\|trunk\|route]`, `port <net> left\|right\|top\|bottom`, `rail <net> bar\|each\|plain` (`plain`: one bar, no symbol), `first <nets>`; `shelf <columns>\|off` (how many device columns a row holds before the drawing wraps into rows, 8; `off`: one row) | the parts are right, their arrangement is not; a drawing too wide or wrapped too soon |
 | 3 cells | a device's lattice cell | `*@ cell <dev> <col> <row>` (the frame `--decisions 3` prints) | one device must stand on a given row and column |
-| 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
-| 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
+| 4 geometry | exact place, turn, name side | `*@ at <dev> <x> <y> [R0..MR270]` (symbol units: `d.json`'s `pos` over 40 with the built-in symbols, over the file's `.unit` with `--symbols`), `refdes <dev> left\|right\|above\|below` | the lattice cannot say it |
+| 5 wires | a net's exact path | `*@ route <net> x,y x,y ...` (symbol units, as `at`; one end on a pin of the net), `via <net> x,y ...` | the router's path for one net is wrong |
 | style | lengths for every drawing of the project | a `lint.zon` with `.{ .layout = .{ .stack = 1.5, .terminal = 2 } }`, passed as `--config lint.zon` | crowded or sprawling |
 
 Descend to rungs 3 to 5 for one device or net at a time: a cell or place
@@ -85,15 +87,38 @@ on a device overrides the relations on it.
   device itself.
 - **Lines** (`*@ [weak] <verb> <args>`) sit at the deck's top level. A
   line beats the engine; a later line beats an earlier one, a strong one a
-  `weak` one (a stay). `requests` gives each line a state: `honoured`;
-  `relaxed` (a `wire` or `port` with no room, drawn as names); `dropped`
-  `guarantee` (an `at`, `route` or `via` that would break the drawing);
-  `dropped`,
-  `blocked_by` the lines it cannot hold with (`alone`: deleting that one
-  admits it), so delete or change a blocker; `rejected` (malformed, or a
-  name the deck lacks). `relaxed not_drawn` is a cktImg bug: report it.
-  Inside a `.subckt`, lines are that cell's for the Schemify import, which
-  logs every line it does not honour.
+  `weak` one (a stay). Arguments split at blanks and commas. In a deck of
+  only `.subckt`s, which draws its last `.subckt` (the top cell), a line
+  before that `.subckt`, in its body or after its `.ends` is the top
+  cell's; a line in another `.subckt`'s body is that block's (Blocks,
+  below), and `requests` does not list it, so check those by eye. The
+  Schemify import reads every `.subckt` as a cell of its own and a line as
+  the cell's it is written in, so a deck both draw alike keeps the top
+  cell's lines inside its body; it logs every line it does not honour.
+  Each entry in `requests` has the line's 1-based `line` in the file, its
+  `text`, a `state`, a `code`, `name` when one argument of several is at
+  fault (`*@ above r5 x1 r4` rejected `not_placeable` names `x1`), and
+  `blocked_by` (the stronger lines it cannot hold with, each with `alone`:
+  deleting that one alone admits it). Lines `cktimg-json` adds itself (a
+  top cell's port roles and sources, `--from`'s stays) are not listed; a
+  `blocked_by` line 0 is one of them. Act on the code:
+
+  | code | state | what it means | your move |
+  |---|---|---|---|
+  | `ok` | honoured | drawn as written | none |
+  | `unknown_verb`, `bad_args` | rejected | misspelt verb, too few or malformed arguments, a name twice | fix the spelling against the ladder |
+  | `unknown_name` | rejected, or relaxed when only some names are known | a device, net or pin the deck lacks | use names exactly as the deck has them (read lowercased) |
+  | `not_placeable` | rejected | a driver, a card with no pins, a bridge where only a column device stands; an `X` block in `above` or `row` (a block is no column device); a net line its net's role refuses (`wire`, `route` or `via` on an input or a rail, `label` on a rail, `port` on no input or output, `rail` on no rail) or on a net no drawn device touches | name another device or net (`role <net> internal` frees a net); `expand <instance>` to draw a block's devices, or place it with `order`, `cell` or `at`; `driver <src> inline` first |
+  | `unjoined` | rejected | a group its devices are not joined as: a `mirror` or `bank` whose gates are on two nets, a `stack` member that shares no non-rail channel net with the next | name devices that are so joined, or use relations (`above`, `row`) |
+  | `cycle` | dropped | closes an above/left cycle with `blocked_by` | delete or reverse one of the order lines |
+  | `conflict` | dropped or relaxed | cannot hold with `blocked_by` | delete the blocker marked `alone: true`, or this line |
+  | `taken` | dropped or relaxed | its devices already sit in a stronger line's group | `nogroup` them first, or edit that group |
+  | `asymmetric` | dropped | no symmetry of the circuit swaps those two | the circuit is not symmetric there: use relations |
+  | `no_room` | relaxed | a `wire` or `port` had no room and was drawn as names; a `face` turned a port's pin where only a name fits; an `order` bridge found no free cell; a `refdes` side had no room | free room (`shelf`, lengths), turn the pin back, or accept the names |
+  | `guarantee` | dropped | an `at`, `route` or `via` would put a symbol on another, a wire on another net's point, or a route off its pins | move the coordinates; read pins from `d.json` |
+  | `not_drawn` | relaxed | taken by the engine, missing from the drawing | a cktImg bug: report it with the deck |
+  | `not_built` | rejected | a verb the engine does not take yet | use the rung below |
+
   Shelves preserve accepted `row`, `order` and `above` relations. An
   `above` chain may cross shelves when their top-to-bottom order agrees;
   a cut that would reverse it is forbidden. Rejected or dropped relation
@@ -118,6 +143,14 @@ on a device overrides the relations on it.
   `unshown_bodies`. A custom symbol file can supply either class on its
   own, or register a visible D/G/S/B variant after its compact class with
   `.body_for = "nmos"` or `"pmos"`. Its first three contacts must match.
+- **Polyphase RC cells.** A closed four-phase network with two resistor
+  banks and two certified cyclic capacitor banks can show oblique capacitor
+  plates and leads. Native stock text/SVG and the editor use an actual
+  two-contact `cap_oblique` symbol. With `*@ class C1 cap_oblique` a
+  caller can also request this glyph on a single ordinary capacitor. Its
+  leads are diagonal in its local frame. Inter-device wires use the
+  selected router. An explicit geometry request keeps the other parts on
+  ordinary placement.
 - **Blocks.** An `X` instance of a `.subckt` is one block. In the body,
   `*@ left|right|top|bottom <ports>` puts ports on a side of the generated
   box, and `*@ expand` draws the devices instead. With no such line:
@@ -133,24 +166,44 @@ on a device overrides the relations on it.
   `at`) turns that placement off for the whole deck, so fix such a drawing
   from `--decisions 4`: it gives every device as a strong `*@ at` line,
   paste all and edit the ones to move. `--from` places such a deck afresh.
-- **Lengths** (`.layout`, in units of the symbol set's two-pin length) space
-  the drawing and keep every row and column; `src/config.zig` lists each
-  with its default: a person's pitch, half a unit between stacked
-  devices and from a pin to its trunk or a transistor's rail symbol (a
-  two-pin part's rail symbol stands on its pin; `.stack = 1, .tap = 1,
-  .rail = 1, .terminal = 1` for a roomier drawing). The drawing is closed up
-  to those lengths
-  (`.compact = true`, the default); `.compact = false` keeps the roomier
-  lattice, every row and column a full pitch apart. `.cross_max` (3) is the
-  most other wires one internal net's wire may cross before the net is
-  joined by name (its near pins stay wired, one name a group): lower it (2) for a drawing with too many crossings, raise
-  it (6) for one with too many names; `*@ wire <net>` keeps one net wired.
-  `.rail_past` (true) draws a supply bar as a named rail, no symbol on it,
-  running on past its outer pins, its name at the right end; `false` draws
-  the bar with its supply symbol, ended on its outer pins.
-  `.shelf` (8) is how many device columns a row holds before the drawing
-  wraps into rows of columns: raise it for a wider page, `0` for one row;
-  `*@ shelf <columns>|off` says so in one deck.
+- **Style** (`lint.zon`, passed as `--config`, or the `zon` text of the
+  library call). `.layout` keys, lengths in units of the symbol set's
+  two-pin length. They space the drawing and move nothing to another row
+  or column:
+
+  | key | default | what it sets | turn it when |
+  |---|---|---|---|
+  | `stack` | 0.5 | between neighbouring rows | stacked devices crowd: 1 |
+  | `series` | 1.0 | between neighbouring columns | columns crowd or sprawl |
+  | `rail` | 0.5 | a pin to its supply or ground symbol, the supply bar over its pins | 1 for a roomier drawing |
+  | `terminal` | 0.5 | a pin to its input or output port | ports crowd: 1 |
+  | `label` | 0.5 | a pin to its net label | labels crowd |
+  | `tap` | 0.5 | pins facing one way to the trunk joining them | 1 for a roomier drawing |
+  | `clearance` | 0.25 | the router's room between a wire and another net's | wires hug each other |
+  | `bend_cost` | 1.0 | what the router pays for a corner, in wire | too many corners: raise it |
+  | `cross_cost` | 2.0 | what the router pays to cross a wire, in wire | wires cross that could detour: raise it |
+  | `compact` | true | close the drawing up to these lengths | `false` keeps every row and column a full pitch apart |
+  | `cross_max` | 3 | the most wires one internal net may cross before it is joined by name (near pins stay wired) | too many crossings: 2; too many names: 6; one net: `*@ wire <net>` |
+  | `rail_past` | true | a supply bar is a named rail past its outer pins, no symbol | `false`: the bar carries its symbol, ending on its outer pins |
+  | `shelf` | 8 | device columns per row before the drawing wraps | wider page: raise; one row: 0; one deck: `*@ shelf` |
+
+  `.render` (TikZ only): `wire` (hex colour, `"1565c0"`), `sym_w` (1.2 pt),
+  `wire_w` (1.5 pt). `.rules`, each `.off`, `.warn` or `.err`:
+  `floating_pin`, `single_pin_net`, `duplicate_refdes`, `unmapped_master`,
+  `no_ground`, `symbol_geometry`, `label_fallback`. These rules report
+  problems and never move anything.
+- **Front ends.** `cktimg-json` and `cktimg-tex` read the same lines from
+  the deck text, so a hinted deck draws the same in both (the Schemify
+  import too, but for the subckt-only case under Lines). Iterate with
+  `cktimg-json`: it is the only front end whose `--report` and
+  `--decisions` show what became of your lines. `cktimg-tex [--standalone]
+  [--config lint.zon] deck.sp out.tex` gives the TikZ figure. In C, the
+  hinted deck is the `src` of `cktimg_parse_place(lib, src, zon, &report)`,
+  where `report` holds only the settings' complaints. From Zig,
+  `place(gpa, &cfg, &lib, &.{deck}, null)`, then `report.write` (with the
+  parsed netlist and its roles) gives the `r.json` above.
 - **Schemify:** `schemify cmd --trust <project> netlist.import n2s/deck.sp`
   imports a deck as editable cells, laid out the same way. `cktimg.import`
   is still accepted but no longer declared, so the palette never lists it.
+
+For an editable scalar drawing with an optional grouped control-bus view, pass `--bundles` to `cktimg-json`. Its `port_bundles` lists each display contact and every original terminal slot, net and coordinate. The optional SVG uses that grouping. [Example and limits](../../docs/research/production-patterns/control-bus/README.md)

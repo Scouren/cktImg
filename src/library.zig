@@ -32,7 +32,7 @@
 //!   `pmos` or `nmos`, `pnp` or `npn`, `pjfet` or `njfet` (device.8).
 //!   `className`
 //! - library.3 (choice) A block uses the caller's registered symbol first,
-//!   else a recognized amplifier/gate glyph with a complete port contract,
+//!   else a recognized glyph with a complete named-port contract,
 //!   else a generated box. Explicit side directives keep the box geometry.
 //!   `blockFor`
 //! - library.4 (order: potential) A generated block's supply port
@@ -291,18 +291,23 @@ pub const Terminal = struct {
     side: ?Side = null,
 };
 
-/// One stroke of a symbol body, in the canonical frame.
-pub const DrawOp = union(enum) {
+/// One stroke of a symbol body, in the canonical frame. Tags 0–4 are the C ABI.
+pub const DrawOp = union(enum(u8)) {
     line: struct { a: Pt, b: Pt },
     /// Open; a closed shape repeats its first point.
     polyline: []const Pt,
-    circle: struct { c: Pt, r: i32 },
+    /// Hollow outline; native SVG and TikZ use an opaque white interior.
+    circle: Circle,
     /// Upright text centred on `at`: orientation moves it, never turns it.
     text: struct { at: Pt, s: []const u8, size: u8 },
+    /// Solid ink disk. Radius is geometric; a renderer may retain its outline.
+    filled_circle: Circle,
 
+    /// A straight stroke between two canonical points.
     pub fn ln(x1: i32, y1: i32, x2: i32, y2: i32) DrawOp {
         return .{ .line = .{ .a = .{ .x = x1, .y = y1 }, .b = .{ .x = x2, .y = y2 } } };
     }
+    /// A hollow circle in the canonical frame.
     pub fn circ(x: i32, y: i32, r: i32) DrawOp {
         return .{ .circle = .{ .c = .{ .x = x, .y = y }, .r = r } };
     }
@@ -348,7 +353,7 @@ pub const Class = struct {
         for (c.draw) |op| switch (op) {
             .line => |l| add(&r, .fromCorners(l.a, l.b)),
             .polyline => |ps| for (ps) |p| add(&r, .point(p)),
-            .circle => |k| add(&r, .fromCorners(.{ .x = k.c.x - k.r, .y = k.c.y - k.r }, .{ .x = k.c.x + k.r, .y = k.c.y + k.r })),
+            .circle, .filled_circle => |k| add(&r, .fromCorners(.{ .x = k.c.x - k.r, .y = k.c.y - k.r }, .{ .x = k.c.x + k.r, .y = k.c.y + k.r })),
             .text => |t| add(&r, .point(t.at)),
         };
         return r orelse .point(.zero);
@@ -616,6 +621,8 @@ pub fn sameTerminals(a: []const Terminal, b: []const Terminal) bool {
 /// or a single input, an output, a rail, anything else.
 pub const PortRole = enum(u8) { rail, inp, inn, in, out, other };
 
+const Circle = struct { c: Pt, r: i32 };
+
 /// What a name says a net is: a rail, a bias line, a reference, an
 /// amplifier's non-inverting, inverting or single input, an output.
 const Named = enum(u8) { supply, ground, bias, ref, inp, inn, in, out };
@@ -773,7 +780,7 @@ pub fn className(kind: DeviceKind, model_type: ?[]const u8) []const u8 {
 fn copyOps(a: Allocator, ops: []const DrawOp) Allocator.Error![]DrawOp {
     const out = try a.alloc(DrawOp, ops.len);
     for (ops, out) |s, *d| d.* = switch (s) {
-        .line, .circle => s,
+        .line, .circle, .filled_circle => s,
         .polyline => |ps| .{ .polyline = try a.dupe(Pt, ps) },
         .text => |t| .{ .text = .{ .at = t.at, .s = try a.dupeSentinel(u8, t.s, 0), .size = t.size } },
     };

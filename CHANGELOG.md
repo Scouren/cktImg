@@ -11,6 +11,84 @@ The engine work since 2.1.0: 143 commits from 2026-11-06 to 2026-11-13, mostly p
 wiring rules measured against 5,263 hand-drawn reference circuits, and a pattern study on the
 AnalogGenie corpus (#8).
 
+### Merged
+
+Each merge into `main` since 2026-11-26, why it was taken, and what it measured on the merged
+tree. Corpus numbers are `corpus_score.py` against the cached hand drawings (AnalogGenie 2,202,
+AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> after.
+
+- Human layout patterns, 33 commits (#22): taken because it moves the drawings toward the hand
+  layouts with no new gate findings. Decks matching every scored relation: AnalogGenie 290 -> 293,
+  AMS-Net 243 -> 246; gate directions, gates, orientations and x/y positions each gain, none
+  lose. 196 of 5,274 drawings change, 0 -> 0 with gate findings. AnalogGenie crossings 4,987 ->
+  4,982 and written names 3,964 -> 3,917 (people 2,691 and 1,397); the cost is corners 20,658 ->
+  20,731 (people 20,590). Tests 468/468 without LaTeX and 469/469 with; `netlist-import.wasm`
+  rebuilt byte-identical at 540,819 bytes (was 558,406). Its parts:
+  - Reciprocal MOS loads stand on their input branches; a bias gate line keeps a visible port
+    when its middle is taken; passive ladders and bridged Ts sit around their tapped path;
+    sampling diodes in two polarity columns beside the hold capacitor; a parallel LC across drive
+    and output; the regulator reference above its feedback lead.
+  - Bias taps are added after routing, so existing ports and wire partitions survive (57 of
+    5,274 decks gain one).
+  - Comparators: drain pairs joined and remote gates named in both renderers; preamplifier rows
+    above the latch (AG1079, AG1080); four-bias amplifiers and clocked comparators with every
+    ordered terminal.
+  - Common-control input stages on two branches around the tail; paired source-degeneration
+    arms joined at a T over the tail.
+  - Caller geometry: requested tail sources stay on the mirror axis, series stacks report their
+    real order, admitted caller geometry is kept, rejected directives no longer move a drawing.
+  - Hidden electrical peers replace misleading no-connect crosses at pins; rounded-gate supply
+    leads end exactly on the outline; PFD and DAC box contacts on their observed sides.
+  - MOS bodies as distinct native and editor contacts, and a C query for a physical pin.
+  - A signed amplifier frame per native use, shared by qualifying editor symbols.
+  - Guest size: full LTO, pinned Binaryen, and deterministic heap ordering (-26,904 bytes).
+- A nested switch bank stands as its source does: the input pair left of all four switches, the
+  inner source columns between the outer ones (AG517, the staged checkpoint of #22): taken because
+  its one changed deck moves to its hand drawing, x 52 -> 96 of 100, y 74 -> 82 of 82, gates
+  2 -> 6 of 6, corners 3 -> 11 (people 14), crossings 5 -> 3 (people 5); 1 of 5,274 drawings
+  changes, 0 -> 0 with gate findings. Tests 468/468 and 469/469; `netlist-import.wasm` 545,677
+  bytes.
+- A folded switch bank is drawn as two dimensions of its source, rows by control and columns by
+  input (AG1093, recovery patch of #22): taken because its one changed deck improves on every
+  measure, crossings 12 -> 9, corners 30 -> 27, written names 2 -> 1, and corpus gates +6, gate
+  directions +6, x +58, y +70, symbols +2; AG1016 and AG364 unchanged. Tests 468/468 and
+  469/469; `netlist-import.wasm` 550,891 bytes.
+
+Merged on 2026-11-26 at the owner's request to bring every branch and worktree into `main`
+without per-change scoring: taken to stop the work living in uncommitted trees and recovery
+patches. None of these lines is measured against the hand drawings yet; the corpus scores and
+the size cap below are the open follow-ups.
+
+- Interleaved control groups in a switch bank, after the folded bank (AG1093; recovery patch of
+  #22).
+- A rejected caller row request keeps the ordinary drawing; an accepted strong position is still
+  honoured (AG762, P24; recovery patch of #22).
+- Eight oblique two-terminal capacitor symbols for four-phase RC networks (AG493; recovery patch
+  of #22).
+- Grouped varactor controls as one bus contact in the editor, and the same grouping for native
+  `--bundles` (AG1146; recovery patches of #22).
+- `--allow-45`: optional 45-degree feedback crossovers (P21/P23; the in-progress recovery patch
+  of #22, merged onto `source_layout` and `--bundles`).
+- A switch bank is admitted only when its switches stand alone among the source's channel
+  rectangles; a quad-slot census for AG80, AG82, AG517 and AG1093 (rest-groups work in
+  progress).
+- A solid `filled_circle` symbol op through the Zig API, the C ABI (`CKTIMG_OP_FILLED_CIRCLE`),
+  SVG, TikZ and Schemify (`fill true`); host audit tests (human-layout-release work in progress).
+- Center-tap symbols, tanks, chains and four-sided stages; coil banks, chains, bridges and
+  tanks; resistor loads and their downstream parts; block input RC and block tanks; antiparallel
+  clamps and their anchors; pin escapes; with their research notes and figures (the main
+  checkout's uncommitted work since 4f69956). The 117 MB `docs/research/image-rules` study is
+  kept on the `snapshot/main-checkout` branch, not in the tree.
+- Hint reports (`fix/hint-reports`): taken because five agents hinting 15 hard corpus decks
+  lost rounds to what `requests` said. Top-level `*@` lines in a deck of only `.subckt`s apply to
+  the top cell (they were dropped silently); `requests[].line` is the file's own line (139 of 139
+  trial lines match, 0 before); the engine's own lines leave `requests` (170 -> 139 entries);
+  `not_placeable` and `unknown_name` name the failing argument (`name`); a mirror, bank or stack
+  with no joining net is `rejected unjoined`; a `face` that leaves a name on the port is
+  `relaxed no_room`. The 15 trial drawings are byte-identical. `skills/cktimg/` gains the verdict
+  and `lint.zon` tables. `netlist-import.wasm` 677,072 -> 678,692 bytes. Corpus numbers
+  unmeasured.
+
 ### Changed
 
 Schemify plugin (what users see never names the engine):

@@ -28,7 +28,7 @@ The three branch glyphs per drawing are already included in the existing
 and requires their actual terminal coordinates to match the studied devices.
 It does not duplicate the loop selector or substitute cached orientation for
 ink. No AMS circuit qualifies under the existing loop certificate. The source
-variants are correlated; 145 drawings are not 145 independent design choices.
+variants all reference one upstream image. Fig. 8 illustrates R–CO–CG once. The four orders above measure the variation in the gallery redraws. [Original-figure comparison](human-layout-patterns.md#how-much-independent-drawing-evidence-is-there)
 
 ## Tested explanations and their limits
 

@@ -33,6 +33,7 @@ jobs:
 
       - name: Site
         run: |
+          python3 -I -B tests/site_metrics.py
           python3 -I tools/site/build.py external/examples zig-out/bin site
           du -sm --apparent-size site | awk '{print "site: " $1 " MB"; if ($1 >= 800) exit 1}'
 

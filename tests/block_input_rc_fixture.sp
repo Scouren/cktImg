@@ -1,0 +1,87 @@
+* official Analog Canvas netlist; PDK X cards rewritten by convert.py
+.model nch nmos
+
+.subckt ct_inductor n1 n2 n3 params: l1=1n l2=1n k=0
+L1 n1 n3 {l1}
+L2 n3 n2 {l2}
+K12 L1 L2 {k}
+.ends ct_inductor
+
+.subckt PA VDD VSS VB inp inn outp outn src
+Cf1 outp net3 1p
+Cf2 outn net1 1p
+LBWa VDD outp 1n
+LBWb VDD outn 1n
+LBWc VB net5 1n
+LBWg src VSS 1n
+MP1A net0 inp src VSS nch l=0.15 w=1 nf=1 m=1
+MP1B net2 inn src VSS nch l=0.15 w=1 nf=1 m=1
+MP2A outp net4 net0 VSS nch l=0.15 w=1 nf=1 m=1
+MP2B outn net4 net2 VSS nch l=0.15 w=1 nf=1 m=1
+Rc net5 net4 1k
+Rf1 net3 inp 1k
+Rf2 net1 inn 1k
+.ends PA
+
+.subckt DA VSS VB inp inn outp outn src
+Cf1 outp net0 1p
+Cf2 outn net4 1p
+LBWc VB net1 1n
+LBWg src VSS 1n
+MD1A net2 inp src VSS nch l=0.15 w=1 nf=1 m=1
+MD1B net5 inn src VSS nch l=0.15 w=1 nf=1 m=1
+MD2A outp net3 net2 VSS nch l=0.15 w=1 nf=1 m=1
+MD2B outn net3 net5 VSS nch l=0.15 w=1 nf=1 m=1
+Rc net1 net3 1k
+Rf1 net0 inp 1k
+Rf2 net4 inn 1k
+.ends DA
+
+C1 net9 net8 1p
+Cblk1 net13 net10 1p
+Cblk2 net24 net22 1p
+Cblk3 net9 net14 1p
+Cblk4 net8 net19 1p
+Cblk5 net6 net9 1p
+Cblk6 net0 net8 1p
+Cbyp1 net11 net21 1p
+Cbyp2 net7 net18 1p
+CIN1 net16 net23 1p
+CIN2 net13 net24 1p
+Cout1a net20 net25 1p
+Cout1b net4 net2 1p
+Cout2 net3 net12 1p
+Lb1 net16 net5 1n
+Lb2 net5 net23 1n
+Lb3 net13 VSS 1n
+Lb4 VSS net24 1n
+LBW1 RFIN net16 1n
+LBW2 VSS net23 1n
+LBW3 net1 V_bias 1n
+LBW4 net21 VDD 1n
+LBW5 V_bias net15 1n
+LBW6 net17 V_bias 1n
+LBW7 net12 RFOUT 1n
+LBW8 net3 VSS 1n
+Lp1a net20 net18 1n
+Lp1b net18 net25 1n
+Lp2 net4 net2 1n
+Ls net12 net3 1n
+R1 net1 net10 1k
+R2 net1 net22 1k
+R3 net14 net15 1k
+R4 net19 net15 1k
+R5 net6 net17 1k
+R6 net0 net17 1k
+X1 VSS VB_DA net10 net22 net9 net8 net11 DA
+X2 VDD VSS VB_PA net14 net19 net20 net25 net7 PA
+X3 VDD VSS VB_PA2 net6 net0 net4 net2 NC0001 PA
+XL1 net9 net8 net21 ct_inductor l1=1n l2=1n k=0
+KTF1 Lb1 Lb3 1
+KTF2 Lb2 Lb4 1
+KTF3 Lp1a Ls 1
+KTF4 Lp1b Ls 1
+KTF5 Lp2 Ls 1
+*@ weak role rfin output
+*@ weak role rfout output
+*@ weak role v_bias output

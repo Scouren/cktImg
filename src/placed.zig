@@ -108,8 +108,8 @@ pub const Placed = struct {
     // --- nets ---
     net_name: []const [:0]const u8,
     /// Wires: net n owns segments `net_seg[n] .. net_seg[n + 1]`; segment k
-    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]`, Manhattan,
-    /// at least two points.
+    /// is the polyline `wire_pts[seg_pt[k] .. seg_pt[k + 1]]` with at least two
+    /// points. The default is Manhattan. Opt-in geometry also admits 45-degree segments.
     net_seg: []const u32,
     seg_pt: []const u32,
     wire_pts: []const Pt,
@@ -337,7 +337,8 @@ const Builder = struct {
         var drivers: std.ArrayList(u32) = .empty;
         for (s.devices.items(.driver), 0..) |dr, d| if (dr) try drivers.append(b.a(), @intCast(d));
         if (drivers.items.len == 0) return;
-        std.mem.sort(u32, drivers.items, b.nl, struct {
+        // Parsed device names are unique; nameLess breaks numeric ties bytewise.
+        std.sort.heap(u32, drivers.items, b.nl, struct {
             fn lt(nl: *const netlist_mod.Netlist, x: u32, y: u32) bool {
                 const names = nl.graph.edges.items(.name);
                 return structure.nameLess(names[x], names[y]);

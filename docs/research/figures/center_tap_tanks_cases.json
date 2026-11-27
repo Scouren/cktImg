@@ -1,0 +1,4435 @@
+{
+  "dependency_sha256": {
+    "biased_amplifiers.py": "3893d6c882f516da8182ccf5392f8edd0bd3138e54038b284a88f8c186ca3409",
+    "block_aliases.py": "4f330141b5b4cb947c9df7eb695ab9ee1957b1c5e3535c32d59e91a5d7f1108f",
+    "block_aliases_native.py": "4b46a908e9b093d7ad3d8b65335dab494c049a6378d1037d70426e375e4c760f",
+    "center_tap_symbols.py": "1afcf81324969ace79e49a8e1d57af73e9f77e759000018cc4ed2e6aea10554c",
+    "center_tap_symbols_cases.json": "c829d1acde40d4bb8c69497974f11655e6bb74d881b6f3ca974ebe88d780f43f",
+    "center_tap_tanks.py": "4a183a9511491b3bba4ac1e880e5b795398aa0a2c9b6466e7180d077097b860d",
+    "channel_bridges.py": "166dbeb02a8be35611c251af00bfac330d635f44e62a066480aa1e1f87bcb96f",
+    "controller_glyphs.py": "c4e477565d22fa7351593e434b62badf4f7f5e5045c57ef8ecc9fb7724f190e7",
+    "converter_loops.py": "144abf6a298dd4733b63ccf19163b0ca12c4b165ef0d1cffd365600a3d663375",
+    "converter_terminals.py": "98e446409aa23aab58e4c22f36045541b3b7811d7b15572d937ea9309bd7bb0d",
+    "cross_caps.py": "9d471897e53b5853c52b05ea099f9346f650fb3071cb93083c0250f885bdfddf",
+    "digital_symbols.py": "7976c2fb694a7dbf00fecf2eec787afe587aadfbe71ae32305b67222e9a3137c",
+    "input_resistor_legs.py": "5660823e09293ed82ac57d5b9835dff0005c357d6ac55a09c13b4cb8bec40612",
+    "input_resistors.py": "46d3dfae5fae8fd7874519a84f5b9a36292c7b37a343583a0a847dd95233fea5",
+    "mos_forms.py": "60850eed2d6a61f9de1b6d532c4f0340f33ab46eb977395a8240cf06e408c5d5",
+    "power_paths.py": "179c721073ac9b18b8cff2985075326706c71bffc661d291a170275e3d648528",
+    "sampling_cells.py": "cf705df907cc88ab5e644a1de6c1e0d3c5297f971703a6e7376946834bbf2325",
+    "single_input_amplifiers.py": "a6478e3d966bb513d5ef95fde60fe84d533945b1651089a3d2f7e9dd57b3b57a",
+    "thin_connectivity.py": "bdf216eb76714d0d2f6f3a0ce870f2c976fc0e68efb9959a9c842821b44886db",
+    "trunk_rungs.py": "c1a0a572481fb87e5f03960f3285cb944d16ecbb84d6c3d2f6f1e10364422fae"
+  },
+  "limits": "Nine source relations, not a universal LC layout theorem. Four shared-owner observations are excluded from the unique rule. Actual source wire ink excludes cache-only strokes; world coil pose and absolute spacing are separate questions.",
+  "methods": [
+    "literal_parallel_tank",
+    "same_tap_half_plane_rejected",
+    "crossed_outer_bindings_rejected",
+    "shifted_midpoint_rejected",
+    "skew_capacitor_rejected",
+    "skew_tap_rejected",
+    "collapsed_coil_rejected",
+    "all_eight_poses_and_translation",
+    "wire_bent",
+    "wire_gap",
+    "wire_T",
+    "wire_overlap",
+    "wire_proper_X_without_dot",
+    "wire_proper_X_with_dot",
+    "wire_direction_and_order",
+    "wire_other_net_excluded",
+    "source_literal_resistor_path_leads",
+    "source_unrelated_cache_only_spur_keeps_verified_path",
+    "source_whole_ink_rejects_unassigned_source_negative",
+    "source_labels_do_not_join_source_pieces",
+    "source_wrong_source_binding_rejected",
+    "source_detached_resistor_lead_rejected",
+    "source_literal_inductor_path_ends",
+    "source_detached_inductor_endpoint_rejected",
+    "source_source_proper_crossing_requires_actual_contact_dot"
+  ],
+  "names": [
+    "ag-1103:xl1--c1",
+    "ag-1147:x1--c",
+    "ag-1151:xl--c",
+    "ag-1152:xl1--c1",
+    "ag-1152:xl2--c2",
+    "ag-1180:xle1--ct1",
+    "ag-1180:xle2--ct2",
+    "ag-1180:xlo1--ct1",
+    "ag-1180:xlo2--ct2"
+  ],
+  "rows": [
+    {
+      "actual_capacitor": {
+        "object": "instance-3aebda67-8b95-4f3a-a7e6-647f73d41cfc",
+        "terminals": {
+          "P1": [
+            480.0,
+            30.0
+          ],
+          "P2": [
+            480.0,
+            70.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          520.0,
+          0.0
+        ],
+        "n2": [
+          520.0,
+          100.0
+        ],
+        "n3": [
+          540.0,
+          50.0
+        ]
+      },
+      "capacitor": "c1",
+      "capacitor_bindings": [
+        "net9",
+        "net8"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "c1"
+      ],
+      "coil": "xl1",
+      "coil_bindings": [
+        "net9",
+        "net8",
+        "net21"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xl1"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              520.0,
+              0.0
+            ],
+            [
+              480.0,
+              30.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-8feb614d2e4ab71f",
+                "xy": [
+                  480.0,
+                  30.0
+                ]
+              },
+              {
+                "object": "wire-78ab3a30-cb66-4943-9572-3d433cea6f8e-to-junction",
+                "xy": [
+                  520.0,
+                  -10.0
+                ]
+              },
+              {
+                "object": "wire-11991c9c-0bbd-4d03-a8fb-b548ad6cac52-to-junction",
+                "xy": [
+                  650.0,
+                  160.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  480,
+                  -10
+                ],
+                [
+                  480.0,
+                  30.0
+                ]
+              ],
+              [
+                [
+                  480,
+                  -10
+                ],
+                [
+                  520,
+                  -10
+                ]
+              ],
+              [
+                [
+                  520,
+                  -10
+                ],
+                [
+                  520.0,
+                  0.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                520.0,
+                0.0
+              ],
+              [
+                480.0,
+                30.0
+              ]
+            ]
+          },
+          "net": "net9",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                460,
+                30
+              ],
+              [
+                480,
+                30
+              ]
+            ],
+            [
+              [
+                480,
+                30
+              ],
+              [
+                480,
+                -10
+              ]
+            ],
+            [
+              [
+                480,
+                -10
+              ],
+              [
+                520,
+                -10
+              ]
+            ],
+            [
+              [
+                520,
+                -10
+              ],
+              [
+                520,
+                0
+              ]
+            ],
+            [
+              [
+                0,
+                270
+              ],
+              [
+                -30,
+                270
+              ]
+            ],
+            [
+              [
+                -30,
+                270
+              ],
+              [
+                -30,
+                160
+              ]
+            ],
+            [
+              [
+                -30,
+                160
+              ],
+              [
+                650,
+                160
+              ]
+            ],
+            [
+              [
+                650,
+                160
+              ],
+              [
+                650,
+                -10
+              ]
+            ],
+            [
+              [
+                650,
+                -10
+              ],
+              [
+                520,
+                -10
+              ]
+            ],
+            [
+              [
+                670,
+                270
+              ],
+              [
+                710,
+                270
+              ]
+            ],
+            [
+              [
+                710,
+                270
+              ],
+              [
+                710,
+                160
+              ]
+            ],
+            [
+              [
+                710,
+                160
+              ],
+              [
+                650,
+                160
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              520.0,
+              100.0
+            ],
+            [
+              480.0,
+              70.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-8fc0b9c72ad12554",
+                "xy": [
+                  480.0,
+                  70.0
+                ]
+              },
+              {
+                "object": "wire-f9b93890-5916-495d-87a4-c2372ddb4241-to-junction",
+                "xy": [
+                  520.0,
+                  110.0
+                ]
+              },
+              {
+                "object": "wire-2bb1f973-2e72-4ce4-946e-fa30278b8060-to-junction",
+                "xy": [
+                  670.0,
+                  180.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  480.0,
+                  70.0
+                ],
+                [
+                  480,
+                  110
+                ]
+              ],
+              [
+                [
+                  480,
+                  110
+                ],
+                [
+                  520,
+                  110
+                ]
+              ],
+              [
+                [
+                  520.0,
+                  100.0
+                ],
+                [
+                  520,
+                  110
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                520.0,
+                100.0
+              ],
+              [
+                480.0,
+                70.0
+              ]
+            ]
+          },
+          "net": "net8",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                460,
+                70
+              ],
+              [
+                480,
+                70
+              ]
+            ],
+            [
+              [
+                480,
+                70
+              ],
+              [
+                480,
+                110
+              ]
+            ],
+            [
+              [
+                480,
+                110
+              ],
+              [
+                520,
+                110
+              ]
+            ],
+            [
+              [
+                520,
+                110
+              ],
+              [
+                520,
+                100
+              ]
+            ],
+            [
+              [
+                0,
+                310
+              ],
+              [
+                -10,
+                310
+              ]
+            ],
+            [
+              [
+                -10,
+                310
+              ],
+              [
+                -10,
+                180
+              ]
+            ],
+            [
+              [
+                -10,
+                180
+              ],
+              [
+                670,
+                180
+              ]
+            ],
+            [
+              [
+                670,
+                180
+              ],
+              [
+                670,
+                110
+              ]
+            ],
+            [
+              [
+                670,
+                110
+              ],
+              [
+                520,
+                110
+              ]
+            ],
+            [
+              [
+                670,
+                310
+              ],
+              [
+                690,
+                310
+              ]
+            ],
+            [
+              [
+                690,
+                310
+              ],
+              [
+                690,
+                180
+              ]
+            ],
+            [
+              [
+                690,
+                180
+              ],
+              [
+                670,
+                180
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "vertical",
+        "coil_axis": "vertical",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1103",
+      "name": "ag-1103:xl1--c1",
+      "net_pair": [
+        "net8",
+        "net9"
+      ],
+      "source_sha256": {
+        ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+        ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+        ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+      },
+      "unique_owner": true
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-e794ed82-2d00-45c1-9aa9-08f6ee890d85",
+        "terminals": {
+          "1": [
+            -20.0,
+            -130.0
+          ],
+          "2": [
+            20.0,
+            -130.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          -50.0,
+          -160.0
+        ],
+        "n2": [
+          50.0,
+          -160.0
+        ],
+        "n3": [
+          0.0,
+          -180.0
+        ]
+      },
+      "capacitor": "c",
+      "capacitor_bindings": [
+        "vop",
+        "von"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "c"
+      ],
+      "coil": "x1",
+      "coil_bindings": [
+        "vop",
+        "von",
+        "vdd"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "x1"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              -50.0,
+              -160.0
+            ],
+            [
+              -20.0,
+              -130.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-94effc11-9628-4769-b3c7-1b17d7b3c5f2-to-junction",
+                "xy": [
+                  -60.0,
+                  -100.0
+                ]
+              },
+              {
+                "object": "wire-cd36def7-7a3b-4cb2-b73a-8368fb8af5ff-to-junction",
+                "xy": [
+                  -60.0,
+                  -80.0
+                ]
+              },
+              {
+                "object": "wire-eae28b5b-b190-490a-8ec1-2086eb3eb10f-to-junction",
+                "xy": [
+                  -60.0,
+                  -30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  -60,
+                  -160
+                ],
+                [
+                  -60,
+                  -130
+                ]
+              ],
+              [
+                [
+                  -60,
+                  -160
+                ],
+                [
+                  -50.0,
+                  -160.0
+                ]
+              ],
+              [
+                [
+                  -60,
+                  -130
+                ],
+                [
+                  -20.0,
+                  -130.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                -50.0,
+                -160.0
+              ],
+              [
+                -20.0,
+                -130.0
+              ]
+            ]
+          },
+          "net": "vop",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                -110,
+                10
+              ],
+              [
+                -110,
+                -100
+              ]
+            ],
+            [
+              [
+                -110,
+                -100
+              ],
+              [
+                -60,
+                -100
+              ]
+            ],
+            [
+              [
+                -20,
+                -130
+              ],
+              [
+                -60,
+                -130
+              ]
+            ],
+            [
+              [
+                -50,
+                -160
+              ],
+              [
+                -60,
+                -160
+              ]
+            ],
+            [
+              [
+                -60,
+                -160
+              ],
+              [
+                -60,
+                -130
+              ]
+            ],
+            [
+              [
+                -50,
+                -80
+              ],
+              [
+                -60,
+                -80
+              ]
+            ],
+            [
+              [
+                -60,
+                -10
+              ],
+              [
+                -60,
+                -30
+              ]
+            ],
+            [
+              [
+                -60,
+                -100
+              ],
+              [
+                -60,
+                -130
+              ]
+            ],
+            [
+              [
+                -60,
+                -100
+              ],
+              [
+                -60,
+                -80
+              ]
+            ],
+            [
+              [
+                -60,
+                -30
+              ],
+              [
+                -60,
+                -80
+              ]
+            ],
+            [
+              [
+                -60,
+                -30
+              ],
+              [
+                -20,
+                -30
+              ]
+            ],
+            [
+              [
+                -20,
+                -30
+              ],
+              [
+                20,
+                10
+              ]
+            ],
+            [
+              [
+                20,
+                10
+              ],
+              [
+                30,
+                10
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              50.0,
+              -160.0
+            ],
+            [
+              20.0,
+              -130.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-9e0f231e-6a0c-4c54-822a-6fa731fd4c41-to-junction",
+                "xy": [
+                  60.0,
+                  -30.0
+                ]
+              },
+              {
+                "object": "wire-ea030fdc-8244-45c4-a265-2a44e0b4e1df-to-junction",
+                "xy": [
+                  60.0,
+                  -100.0
+                ]
+              },
+              {
+                "object": "wire-428a75a9-926d-4315-8be4-56b65f2f3d52-to-junction",
+                "xy": [
+                  60.0,
+                  -80.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  20.0,
+                  -130.0
+                ],
+                [
+                  60,
+                  -130
+                ]
+              ],
+              [
+                [
+                  50.0,
+                  -160.0
+                ],
+                [
+                  60,
+                  -160
+                ]
+              ],
+              [
+                [
+                  60,
+                  -160
+                ],
+                [
+                  60,
+                  -130
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                50.0,
+                -160.0
+              ],
+              [
+                20.0,
+                -130.0
+              ]
+            ]
+          },
+          "net": "von",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                -30,
+                10
+              ],
+              [
+                -20,
+                10
+              ]
+            ],
+            [
+              [
+                -20,
+                10
+              ],
+              [
+                20,
+                -30
+              ]
+            ],
+            [
+              [
+                20,
+                -30
+              ],
+              [
+                60,
+                -30
+              ]
+            ],
+            [
+              [
+                110,
+                10
+              ],
+              [
+                110,
+                -100
+              ]
+            ],
+            [
+              [
+                110,
+                -100
+              ],
+              [
+                60,
+                -100
+              ]
+            ],
+            [
+              [
+                20,
+                -130
+              ],
+              [
+                60,
+                -130
+              ]
+            ],
+            [
+              [
+                50,
+                -160
+              ],
+              [
+                60,
+                -160
+              ]
+            ],
+            [
+              [
+                60,
+                -160
+              ],
+              [
+                60,
+                -130
+              ]
+            ],
+            [
+              [
+                50,
+                -80
+              ],
+              [
+                60,
+                -80
+              ]
+            ],
+            [
+              [
+                60,
+                -10
+              ],
+              [
+                60,
+                -30
+              ]
+            ],
+            [
+              [
+                60,
+                -100
+              ],
+              [
+                60,
+                -130
+              ]
+            ],
+            [
+              [
+                60,
+                -100
+              ],
+              [
+                60,
+                -80
+              ]
+            ],
+            [
+              [
+                60,
+                -30
+              ],
+              [
+                60,
+                -80
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "horizontal",
+        "coil_axis": "horizontal",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1147",
+      "name": "ag-1147:x1--c",
+      "net_pair": [
+        "von",
+        "vop"
+      ],
+      "source_sha256": {
+        ".cir": "71e468c52c252e89040f9af5292fb905507a177facc676d4e99b82f1d1134964",
+        ".human.json": "fc609398fbe10e7c0d1f9e3a13da74789033120edd5797de4db45655901f1024",
+        ".svg": "44283c8d2505b24806828d8447d1172308f72a70c51fc3da54555bcd955d3ac1"
+      },
+      "unique_owner": true
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-f606377a-b778-4eac-8cc1-5cc88c74cf1c",
+        "terminals": {
+          "P1": [
+            220.0,
+            110.0
+          ],
+          "P2": [
+            180.0,
+            110.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          150.0,
+          60.0
+        ],
+        "n2": [
+          250.0,
+          60.0
+        ],
+        "n3": [
+          200.0,
+          40.0
+        ]
+      },
+      "capacitor": "c",
+      "capacitor_bindings": [
+        "net7",
+        "net6"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "c"
+      ],
+      "coil": "xl",
+      "coil_bindings": [
+        "net6",
+        "net7",
+        "net0"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xl"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              150.0,
+              60.0
+            ],
+            [
+              180.0,
+              110.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-9f60dfe995b4ba2b",
+                "xy": [
+                  140.0,
+                  80.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  140,
+                  60
+                ],
+                [
+                  140,
+                  80
+                ]
+              ],
+              [
+                [
+                  140,
+                  60
+                ],
+                [
+                  150.0,
+                  60.0
+                ]
+              ],
+              [
+                [
+                  140,
+                  80
+                ],
+                [
+                  140,
+                  110
+                ]
+              ],
+              [
+                [
+                  140,
+                  110
+                ],
+                [
+                  180.0,
+                  110.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                150.0,
+                60.0
+              ],
+              [
+                180.0,
+                110.0
+              ]
+            ]
+          },
+          "net": "net6",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                150,
+                60
+              ],
+              [
+                140,
+                60
+              ]
+            ],
+            [
+              [
+                140,
+                60
+              ],
+              [
+                140,
+                80
+              ]
+            ],
+            [
+              [
+                140,
+                80
+              ],
+              [
+                140,
+                110
+              ]
+            ],
+            [
+              [
+                140,
+                110
+              ],
+              [
+                180,
+                110
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              250.0,
+              60.0
+            ],
+            [
+              220.0,
+              110.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-fb1872d90617f298",
+                "xy": [
+                  260.0,
+                  80.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  220.0,
+                  110.0
+                ],
+                [
+                  260,
+                  110
+                ]
+              ],
+              [
+                [
+                  250.0,
+                  60.0
+                ],
+                [
+                  260,
+                  60
+                ]
+              ],
+              [
+                [
+                  260,
+                  60
+                ],
+                [
+                  260,
+                  80
+                ]
+              ],
+              [
+                [
+                  260,
+                  80
+                ],
+                [
+                  260,
+                  110
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                250.0,
+                60.0
+              ],
+              [
+                220.0,
+                110.0
+              ]
+            ]
+          },
+          "net": "net7",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                250,
+                60
+              ],
+              [
+                260,
+                60
+              ]
+            ],
+            [
+              [
+                260,
+                60
+              ],
+              [
+                260,
+                80
+              ]
+            ],
+            [
+              [
+                260,
+                80
+              ],
+              [
+                260,
+                110
+              ]
+            ],
+            [
+              [
+                260,
+                110
+              ],
+              [
+                220,
+                110
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "horizontal",
+        "coil_axis": "horizontal",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1151",
+      "name": "ag-1151:xl--c",
+      "net_pair": [
+        "net6",
+        "net7"
+      ],
+      "source_sha256": {
+        ".cir": "cef732ca33bb98ca5c5d4b411071f22777beb351c95c2221d9360408ffa10151",
+        ".human.json": "25bb2da9925a2647a95af14ef609e6cfcfec46d5a045659f876aa43fff72a41e",
+        ".svg": "0dd52de5af2e9816abef94f5b9f76b5d9d760ba096dbaf55bcc14cff587e501e"
+      },
+      "unique_owner": true
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-e70d078c-3ddc-4bac-9534-4f4e42ba99dd",
+        "terminals": {
+          "P1": [
+            220.0,
+            110.0
+          ],
+          "P2": [
+            180.0,
+            110.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          150.0,
+          60.0
+        ],
+        "n2": [
+          250.0,
+          60.0
+        ],
+        "n3": [
+          200.0,
+          40.0
+        ]
+      },
+      "capacitor": "c1",
+      "capacitor_bindings": [
+        "net5",
+        "net21"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "c1"
+      ],
+      "coil": "xl1",
+      "coil_bindings": [
+        "net21",
+        "net5",
+        "net0"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xl1"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              150.0,
+              60.0
+            ],
+            [
+              180.0,
+              110.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-1e160fb94b85bc91",
+                "xy": [
+                  140.0,
+                  80.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  140,
+                  60
+                ],
+                [
+                  140,
+                  80
+                ]
+              ],
+              [
+                [
+                  140,
+                  60
+                ],
+                [
+                  150.0,
+                  60.0
+                ]
+              ],
+              [
+                [
+                  140,
+                  80
+                ],
+                [
+                  140,
+                  110
+                ]
+              ],
+              [
+                [
+                  140,
+                  110
+                ],
+                [
+                  180.0,
+                  110.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                150.0,
+                60.0
+              ],
+              [
+                180.0,
+                110.0
+              ]
+            ]
+          },
+          "net": "net21",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                150,
+                60
+              ],
+              [
+                140,
+                60
+              ]
+            ],
+            [
+              [
+                140,
+                60
+              ],
+              [
+                140,
+                80
+              ]
+            ],
+            [
+              [
+                140,
+                80
+              ],
+              [
+                140,
+                110
+              ]
+            ],
+            [
+              [
+                140,
+                110
+              ],
+              [
+                180,
+                110
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              250.0,
+              60.0
+            ],
+            [
+              220.0,
+              110.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-01e670451dc6d322",
+                "xy": [
+                  260.0,
+                  80.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  220.0,
+                  110.0
+                ],
+                [
+                  260,
+                  110
+                ]
+              ],
+              [
+                [
+                  250.0,
+                  60.0
+                ],
+                [
+                  260,
+                  60
+                ]
+              ],
+              [
+                [
+                  260,
+                  60
+                ],
+                [
+                  260,
+                  80
+                ]
+              ],
+              [
+                [
+                  260,
+                  80
+                ],
+                [
+                  260,
+                  110
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                250.0,
+                60.0
+              ],
+              [
+                220.0,
+                110.0
+              ]
+            ]
+          },
+          "net": "net5",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                250,
+                60
+              ],
+              [
+                260,
+                60
+              ]
+            ],
+            [
+              [
+                260,
+                60
+              ],
+              [
+                260,
+                80
+              ]
+            ],
+            [
+              [
+                260,
+                80
+              ],
+              [
+                260,
+                110
+              ]
+            ],
+            [
+              [
+                260,
+                110
+              ],
+              [
+                220,
+                110
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "horizontal",
+        "coil_axis": "horizontal",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1152",
+      "name": "ag-1152:xl1--c1",
+      "net_pair": [
+        "net21",
+        "net5"
+      ],
+      "source_sha256": {
+        ".cir": "c3cc987599240d99b8c1ffde3e0b8266cd50a87b4d01b330fb22ac044f66c3a4",
+        ".human.json": "b4b358b4142a458c4aaa18bd441f9c53d2d853927aa2b6581dad7e917d46c702",
+        ".svg": "e61133862d65dd785a68f4a61a426db00e0e44da6d5363724c9edbaec5d3985e"
+      },
+      "unique_owner": true
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-49e84b3d-d4e7-4a17-bb7e-44e83397ecb1",
+        "terminals": {
+          "P1": [
+            220.0,
+            470.0
+          ],
+          "P2": [
+            180.0,
+            470.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          150.0,
+          420.0
+        ],
+        "n2": [
+          250.0,
+          420.0
+        ],
+        "n3": [
+          200.0,
+          400.0
+        ]
+      },
+      "capacitor": "c2",
+      "capacitor_bindings": [
+        "net12",
+        "net22"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "c2"
+      ],
+      "coil": "xl2",
+      "coil_bindings": [
+        "net22",
+        "net12",
+        "net1"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xl2"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              150.0,
+              420.0
+            ],
+            [
+              180.0,
+              470.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-661b0f25de7184de",
+                "xy": [
+                  140.0,
+                  440.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  140,
+                  420
+                ],
+                [
+                  140,
+                  440
+                ]
+              ],
+              [
+                [
+                  140,
+                  420
+                ],
+                [
+                  150.0,
+                  420.0
+                ]
+              ],
+              [
+                [
+                  140,
+                  440
+                ],
+                [
+                  140,
+                  470
+                ]
+              ],
+              [
+                [
+                  140,
+                  470
+                ],
+                [
+                  180.0,
+                  470.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                150.0,
+                420.0
+              ],
+              [
+                180.0,
+                470.0
+              ]
+            ]
+          },
+          "net": "net22",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                150,
+                420
+              ],
+              [
+                140,
+                420
+              ]
+            ],
+            [
+              [
+                140,
+                420
+              ],
+              [
+                140,
+                440
+              ]
+            ],
+            [
+              [
+                140,
+                440
+              ],
+              [
+                140,
+                470
+              ]
+            ],
+            [
+              [
+                140,
+                470
+              ],
+              [
+                180,
+                470
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              250.0,
+              420.0
+            ],
+            [
+              220.0,
+              470.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "P1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "contact-f018ddf4baaa2e36",
+                "xy": [
+                  260.0,
+                  440.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  220.0,
+                  470.0
+                ],
+                [
+                  260,
+                  470
+                ]
+              ],
+              [
+                [
+                  250.0,
+                  420.0
+                ],
+                [
+                  260,
+                  420
+                ]
+              ],
+              [
+                [
+                  260,
+                  420
+                ],
+                [
+                  260,
+                  440
+                ]
+              ],
+              [
+                [
+                  260,
+                  440
+                ],
+                [
+                  260,
+                  470
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                250.0,
+                420.0
+              ],
+              [
+                220.0,
+                470.0
+              ]
+            ]
+          },
+          "net": "net12",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                250,
+                420
+              ],
+              [
+                260,
+                420
+              ]
+            ],
+            [
+              [
+                260,
+                420
+              ],
+              [
+                260,
+                440
+              ]
+            ],
+            [
+              [
+                260,
+                440
+              ],
+              [
+                260,
+                470
+              ]
+            ],
+            [
+              [
+                260,
+                470
+              ],
+              [
+                220,
+                470
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "horizontal",
+        "coil_axis": "horizontal",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1152",
+      "name": "ag-1152:xl2--c2",
+      "net_pair": [
+        "net12",
+        "net22"
+      ],
+      "source_sha256": {
+        ".cir": "c3cc987599240d99b8c1ffde3e0b8266cd50a87b4d01b330fb22ac044f66c3a4",
+        ".human.json": "b4b358b4142a458c4aaa18bd441f9c53d2d853927aa2b6581dad7e917d46c702",
+        ".svg": "e61133862d65dd785a68f4a61a426db00e0e44da6d5363724c9edbaec5d3985e"
+      },
+      "unique_owner": true
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-9edfbffe-eec6-4287-a86e-8fe3565295bb",
+        "terminals": {
+          "1": [
+            60.0,
+            -20.0
+          ],
+          "2": [
+            60.0,
+            20.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          180.0,
+          -50.0
+        ],
+        "n2": [
+          180.0,
+          50.0
+        ],
+        "n3": [
+          200.0,
+          0.0
+        ]
+      },
+      "capacitor": "ct1",
+      "capacitor_bindings": [
+        "net4",
+        "net5"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "ct1"
+      ],
+      "coil": "xle1",
+      "coil_bindings": [
+        "net4",
+        "net5",
+        "vdd"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xle1",
+        "xlo1"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              180.0,
+              -50.0
+            ],
+            [
+              60.0,
+              -20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-bec63e62-5090-4285-903b-72b7e3fe00c1-to-junction",
+                "xy": [
+                  60.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-aa023d70-b44e-42b8-bb95-4a71be658d50-to-junction",
+                "xy": [
+                  110.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-81c07004-f23f-4325-a0c8-2e3bd5bf54f2-to-junction",
+                "xy": [
+                  160.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-4acf2118-37d9-447b-8ffd-6aa765685b2f-to-junction",
+                "xy": [
+                  180.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "contact-aa37608182f23439",
+                "xy": [
+                  240.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-37f3faeb-eb6d-4945-bb0e-dce708789a32-to-junction",
+                "xy": [
+                  60.0,
+                  -30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  60,
+                  -60
+                ],
+                [
+                  60,
+                  -30
+                ]
+              ],
+              [
+                [
+                  60,
+                  -60
+                ],
+                [
+                  110,
+                  -60
+                ]
+              ],
+              [
+                [
+                  60,
+                  -30
+                ],
+                [
+                  60.0,
+                  -20.0
+                ]
+              ],
+              [
+                [
+                  110,
+                  -60
+                ],
+                [
+                  160,
+                  -60
+                ]
+              ],
+              [
+                [
+                  160,
+                  -60
+                ],
+                [
+                  180,
+                  -60
+                ]
+              ],
+              [
+                [
+                  180,
+                  -60
+                ],
+                [
+                  180.0,
+                  -50.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                180.0,
+                -50.0
+              ],
+              [
+                60.0,
+                -20.0
+              ]
+            ]
+          },
+          "net": "net4",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                20,
+                -60
+              ],
+              [
+                60,
+                -60
+              ]
+            ],
+            [
+              [
+                60,
+                -60
+              ],
+              [
+                110,
+                -60
+              ]
+            ],
+            [
+              [
+                110,
+                -60
+              ],
+              [
+                160,
+                -60
+              ]
+            ],
+            [
+              [
+                160,
+                -60
+              ],
+              [
+                180,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -60
+              ],
+              [
+                240,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -50
+              ],
+              [
+                180,
+                -60
+              ]
+            ],
+            [
+              [
+                110,
+                -50
+              ],
+              [
+                110,
+                -60
+              ]
+            ],
+            [
+              [
+                60,
+                -20
+              ],
+              [
+                60,
+                -30
+              ]
+            ],
+            [
+              [
+                60,
+                -30
+              ],
+              [
+                60,
+                -60
+              ]
+            ],
+            [
+              [
+                240,
+                -60
+              ],
+              [
+                260,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -100
+              ],
+              [
+                160,
+                -100
+              ]
+            ],
+            [
+              [
+                160,
+                -100
+              ],
+              [
+                160,
+                -60
+              ]
+            ],
+            [
+              [
+                0,
+                30
+              ],
+              [
+                60,
+                -30
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              180.0,
+              50.0
+            ],
+            [
+              60.0,
+              20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-46bdb5e5-e219-4541-a5fa-134d5eb0606e-to-junction",
+                "xy": [
+                  60.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-53a652e9-17d8-4862-a1ac-44aa8840c6bc-to-junction",
+                "xy": [
+                  110.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-29fd951c-ed10-4d26-8415-7327245d4350-to-junction",
+                "xy": [
+                  160.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-274daae6-5c35-4124-a852-09e57f0cc74f-to-junction",
+                "xy": [
+                  180.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-54408bdc-bb21-4205-b29d-f853b94e5506-to-junction",
+                "xy": [
+                  240.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-f357f1b1-4475-47f4-a953-2d693a54d14c-to-junction",
+                "xy": [
+                  60.0,
+                  30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  60.0,
+                  20.0
+                ],
+                [
+                  60,
+                  30
+                ]
+              ],
+              [
+                [
+                  60,
+                  30
+                ],
+                [
+                  60,
+                  60
+                ]
+              ],
+              [
+                [
+                  60,
+                  60
+                ],
+                [
+                  110,
+                  60
+                ]
+              ],
+              [
+                [
+                  110,
+                  60
+                ],
+                [
+                  160,
+                  60
+                ]
+              ],
+              [
+                [
+                  160,
+                  60
+                ],
+                [
+                  180,
+                  60
+                ]
+              ],
+              [
+                [
+                  180.0,
+                  50.0
+                ],
+                [
+                  180,
+                  60
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                180.0,
+                50.0
+              ],
+              [
+                60.0,
+                20.0
+              ]
+            ]
+          },
+          "net": "net5",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                20,
+                60
+              ],
+              [
+                60,
+                60
+              ]
+            ],
+            [
+              [
+                60,
+                60
+              ],
+              [
+                110,
+                60
+              ]
+            ],
+            [
+              [
+                110,
+                60
+              ],
+              [
+                160,
+                60
+              ]
+            ],
+            [
+              [
+                160,
+                60
+              ],
+              [
+                180,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                60
+              ],
+              [
+                240,
+                60
+              ]
+            ],
+            [
+              [
+                240,
+                60
+              ],
+              [
+                260,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                50
+              ],
+              [
+                180,
+                60
+              ]
+            ],
+            [
+              [
+                110,
+                50
+              ],
+              [
+                110,
+                60
+              ]
+            ],
+            [
+              [
+                60,
+                20
+              ],
+              [
+                60,
+                30
+              ]
+            ],
+            [
+              [
+                60,
+                30
+              ],
+              [
+                60,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                100
+              ],
+              [
+                160,
+                100
+              ]
+            ],
+            [
+              [
+                160,
+                100
+              ],
+              [
+                160,
+                60
+              ]
+            ],
+            [
+              [
+                0,
+                -30
+              ],
+              [
+                60,
+                30
+              ]
+            ],
+            [
+              [
+                320,
+                -20
+              ],
+              [
+                240,
+                60
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "vertical",
+        "coil_axis": "vertical",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1180",
+      "name": "ag-1180:xle1--ct1",
+      "net_pair": [
+        "net4",
+        "net5"
+      ],
+      "source_sha256": {
+        ".cir": "59a52a976e83e797bd8989939169b2ef5163b996e6d7fbca6ee17bc1fcf030bc",
+        ".human.json": "b95726b678efc16de16ac8981e12d8bfc7ff722eba7ff9d02c96d2d65ed4669b",
+        ".svg": "a571d2370d8bb7d998ca4a0f6f5ed67ee32c615639b7032db6412fe3ba3155c7"
+      },
+      "unique_owner": false
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-27ed2ad4-d9a9-47ca-94e0-81f2f2092c57",
+        "terminals": {
+          "1": [
+            500.0,
+            -20.0
+          ],
+          "2": [
+            500.0,
+            20.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          380.0,
+          -50.0
+        ],
+        "n2": [
+          380.0,
+          50.0
+        ],
+        "n3": [
+          360.0,
+          0.0
+        ]
+      },
+      "capacitor": "ct2",
+      "capacitor_bindings": [
+        "net2",
+        "net7"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "ct2"
+      ],
+      "coil": "xle2",
+      "coil_bindings": [
+        "net2",
+        "net7",
+        "vdd"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xle2",
+        "xlo2"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              380.0,
+              -50.0
+            ],
+            [
+              500.0,
+              -20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-4e8182a0-026e-4ef2-9bf3-14684601f7ab-to-junction",
+                "xy": [
+                  500.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-e97329cc-4fe7-4bf5-a75a-33edeb25d55d-to-junction",
+                "xy": [
+                  450.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-15f09e36-5ab0-41dd-a129-9325c37a466d-to-junction",
+                "xy": [
+                  400.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-885d6270-00c5-478b-9192-898dbdcce4d0-to-junction",
+                "xy": [
+                  380.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "contact-0d90ada1f5a4a9a6",
+                "xy": [
+                  320.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-86cc2518-1edd-440a-a1e2-9fb9447a6fb3-to-junction",
+                "xy": [
+                  500.0,
+                  -30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  380,
+                  -60
+                ],
+                [
+                  380.0,
+                  -50.0
+                ]
+              ],
+              [
+                [
+                  380,
+                  -60
+                ],
+                [
+                  400,
+                  -60
+                ]
+              ],
+              [
+                [
+                  400,
+                  -60
+                ],
+                [
+                  450,
+                  -60
+                ]
+              ],
+              [
+                [
+                  450,
+                  -60
+                ],
+                [
+                  500,
+                  -60
+                ]
+              ],
+              [
+                [
+                  500,
+                  -60
+                ],
+                [
+                  500,
+                  -30
+                ]
+              ],
+              [
+                [
+                  500,
+                  -30
+                ],
+                [
+                  500.0,
+                  -20.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                380.0,
+                -50.0
+              ],
+              [
+                500.0,
+                -20.0
+              ]
+            ]
+          },
+          "net": "net2",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                540,
+                -60
+              ],
+              [
+                500,
+                -60
+              ]
+            ],
+            [
+              [
+                500,
+                -60
+              ],
+              [
+                450,
+                -60
+              ]
+            ],
+            [
+              [
+                450,
+                -60
+              ],
+              [
+                400,
+                -60
+              ]
+            ],
+            [
+              [
+                400,
+                -60
+              ],
+              [
+                380,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -60
+              ],
+              [
+                320,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -50
+              ],
+              [
+                380,
+                -60
+              ]
+            ],
+            [
+              [
+                450,
+                -50
+              ],
+              [
+                450,
+                -60
+              ]
+            ],
+            [
+              [
+                500,
+                -20
+              ],
+              [
+                500,
+                -30
+              ]
+            ],
+            [
+              [
+                500,
+                -30
+              ],
+              [
+                500,
+                -60
+              ]
+            ],
+            [
+              [
+                320,
+                -60
+              ],
+              [
+                300,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -100
+              ],
+              [
+                400,
+                -100
+              ]
+            ],
+            [
+              [
+                400,
+                -100
+              ],
+              [
+                400,
+                -60
+              ]
+            ],
+            [
+              [
+                560,
+                30
+              ],
+              [
+                500,
+                -30
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              380.0,
+              50.0
+            ],
+            [
+              500.0,
+              20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-5a598f59-fd7c-4abb-8e5f-39a051baa530-to-junction",
+                "xy": [
+                  500.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-61bcb41c-0a5e-4475-a6ad-7e83a9e9eee3-to-junction",
+                "xy": [
+                  450.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-afa94234-0f15-40c1-a8b5-e84b3fd522b4-to-junction",
+                "xy": [
+                  400.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-75a3b544-3ca9-44c6-9bce-26f871a56bdd-to-junction",
+                "xy": [
+                  380.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-dc434f3d-1115-4f61-971a-78e8ef78ef74-to-junction",
+                "xy": [
+                  320.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-7fce0f6f-068a-42d4-85d4-df81f058cc35-to-junction",
+                "xy": [
+                  500.0,
+                  30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  380.0,
+                  50.0
+                ],
+                [
+                  380,
+                  60
+                ]
+              ],
+              [
+                [
+                  380,
+                  60
+                ],
+                [
+                  400,
+                  60
+                ]
+              ],
+              [
+                [
+                  400,
+                  60
+                ],
+                [
+                  450,
+                  60
+                ]
+              ],
+              [
+                [
+                  450,
+                  60
+                ],
+                [
+                  500,
+                  60
+                ]
+              ],
+              [
+                [
+                  500.0,
+                  20.0
+                ],
+                [
+                  500,
+                  30
+                ]
+              ],
+              [
+                [
+                  500,
+                  30
+                ],
+                [
+                  500,
+                  60
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                380.0,
+                50.0
+              ],
+              [
+                500.0,
+                20.0
+              ]
+            ]
+          },
+          "net": "net7",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                540,
+                60
+              ],
+              [
+                500,
+                60
+              ]
+            ],
+            [
+              [
+                500,
+                60
+              ],
+              [
+                450,
+                60
+              ]
+            ],
+            [
+              [
+                450,
+                60
+              ],
+              [
+                400,
+                60
+              ]
+            ],
+            [
+              [
+                400,
+                60
+              ],
+              [
+                380,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                60
+              ],
+              [
+                320,
+                60
+              ]
+            ],
+            [
+              [
+                320,
+                60
+              ],
+              [
+                300,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                50
+              ],
+              [
+                380,
+                60
+              ]
+            ],
+            [
+              [
+                450,
+                50
+              ],
+              [
+                450,
+                60
+              ]
+            ],
+            [
+              [
+                500,
+                20
+              ],
+              [
+                500,
+                30
+              ]
+            ],
+            [
+              [
+                500,
+                30
+              ],
+              [
+                500,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                100
+              ],
+              [
+                400,
+                100
+              ]
+            ],
+            [
+              [
+                400,
+                100
+              ],
+              [
+                400,
+                60
+              ]
+            ],
+            [
+              [
+                560,
+                -30
+              ],
+              [
+                500,
+                30
+              ]
+            ],
+            [
+              [
+                240,
+                -20
+              ],
+              [
+                320,
+                60
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "vertical",
+        "coil_axis": "vertical",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1180",
+      "name": "ag-1180:xle2--ct2",
+      "net_pair": [
+        "net2",
+        "net7"
+      ],
+      "source_sha256": {
+        ".cir": "59a52a976e83e797bd8989939169b2ef5163b996e6d7fbca6ee17bc1fcf030bc",
+        ".human.json": "b95726b678efc16de16ac8981e12d8bfc7ff722eba7ff9d02c96d2d65ed4669b",
+        ".svg": "a571d2370d8bb7d998ca4a0f6f5ed67ee32c615639b7032db6412fe3ba3155c7"
+      },
+      "unique_owner": false
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-9edfbffe-eec6-4287-a86e-8fe3565295bb",
+        "terminals": {
+          "1": [
+            60.0,
+            -20.0
+          ],
+          "2": [
+            60.0,
+            20.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          110.0,
+          -50.0
+        ],
+        "n2": [
+          110.0,
+          50.0
+        ],
+        "n3": [
+          130.0,
+          0.0
+        ]
+      },
+      "capacitor": "ct1",
+      "capacitor_bindings": [
+        "net4",
+        "net5"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "ct1"
+      ],
+      "coil": "xlo1",
+      "coil_bindings": [
+        "net4",
+        "net5",
+        "vdd"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xle1",
+        "xlo1"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              110.0,
+              -50.0
+            ],
+            [
+              60.0,
+              -20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-bec63e62-5090-4285-903b-72b7e3fe00c1-to-junction",
+                "xy": [
+                  60.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-aa023d70-b44e-42b8-bb95-4a71be658d50-to-junction",
+                "xy": [
+                  110.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-81c07004-f23f-4325-a0c8-2e3bd5bf54f2-to-junction",
+                "xy": [
+                  160.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-4acf2118-37d9-447b-8ffd-6aa765685b2f-to-junction",
+                "xy": [
+                  180.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "contact-aa37608182f23439",
+                "xy": [
+                  240.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-37f3faeb-eb6d-4945-bb0e-dce708789a32-to-junction",
+                "xy": [
+                  60.0,
+                  -30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  60,
+                  -60
+                ],
+                [
+                  60,
+                  -30
+                ]
+              ],
+              [
+                [
+                  60,
+                  -60
+                ],
+                [
+                  110,
+                  -60
+                ]
+              ],
+              [
+                [
+                  60,
+                  -30
+                ],
+                [
+                  60.0,
+                  -20.0
+                ]
+              ],
+              [
+                [
+                  110,
+                  -60
+                ],
+                [
+                  110.0,
+                  -50.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                110.0,
+                -50.0
+              ],
+              [
+                60.0,
+                -20.0
+              ]
+            ]
+          },
+          "net": "net4",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                20,
+                -60
+              ],
+              [
+                60,
+                -60
+              ]
+            ],
+            [
+              [
+                60,
+                -60
+              ],
+              [
+                110,
+                -60
+              ]
+            ],
+            [
+              [
+                110,
+                -60
+              ],
+              [
+                160,
+                -60
+              ]
+            ],
+            [
+              [
+                160,
+                -60
+              ],
+              [
+                180,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -60
+              ],
+              [
+                240,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -50
+              ],
+              [
+                180,
+                -60
+              ]
+            ],
+            [
+              [
+                110,
+                -50
+              ],
+              [
+                110,
+                -60
+              ]
+            ],
+            [
+              [
+                60,
+                -20
+              ],
+              [
+                60,
+                -30
+              ]
+            ],
+            [
+              [
+                60,
+                -30
+              ],
+              [
+                60,
+                -60
+              ]
+            ],
+            [
+              [
+                240,
+                -60
+              ],
+              [
+                260,
+                -60
+              ]
+            ],
+            [
+              [
+                180,
+                -100
+              ],
+              [
+                160,
+                -100
+              ]
+            ],
+            [
+              [
+                160,
+                -100
+              ],
+              [
+                160,
+                -60
+              ]
+            ],
+            [
+              [
+                0,
+                30
+              ],
+              [
+                60,
+                -30
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              110.0,
+              50.0
+            ],
+            [
+              60.0,
+              20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-46bdb5e5-e219-4541-a5fa-134d5eb0606e-to-junction",
+                "xy": [
+                  60.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-53a652e9-17d8-4862-a1ac-44aa8840c6bc-to-junction",
+                "xy": [
+                  110.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-29fd951c-ed10-4d26-8415-7327245d4350-to-junction",
+                "xy": [
+                  160.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-274daae6-5c35-4124-a852-09e57f0cc74f-to-junction",
+                "xy": [
+                  180.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-54408bdc-bb21-4205-b29d-f853b94e5506-to-junction",
+                "xy": [
+                  240.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-f357f1b1-4475-47f4-a953-2d693a54d14c-to-junction",
+                "xy": [
+                  60.0,
+                  30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  60.0,
+                  20.0
+                ],
+                [
+                  60,
+                  30
+                ]
+              ],
+              [
+                [
+                  60,
+                  30
+                ],
+                [
+                  60,
+                  60
+                ]
+              ],
+              [
+                [
+                  60,
+                  60
+                ],
+                [
+                  110,
+                  60
+                ]
+              ],
+              [
+                [
+                  110.0,
+                  50.0
+                ],
+                [
+                  110,
+                  60
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                110.0,
+                50.0
+              ],
+              [
+                60.0,
+                20.0
+              ]
+            ]
+          },
+          "net": "net5",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                20,
+                60
+              ],
+              [
+                60,
+                60
+              ]
+            ],
+            [
+              [
+                60,
+                60
+              ],
+              [
+                110,
+                60
+              ]
+            ],
+            [
+              [
+                110,
+                60
+              ],
+              [
+                160,
+                60
+              ]
+            ],
+            [
+              [
+                160,
+                60
+              ],
+              [
+                180,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                60
+              ],
+              [
+                240,
+                60
+              ]
+            ],
+            [
+              [
+                240,
+                60
+              ],
+              [
+                260,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                50
+              ],
+              [
+                180,
+                60
+              ]
+            ],
+            [
+              [
+                110,
+                50
+              ],
+              [
+                110,
+                60
+              ]
+            ],
+            [
+              [
+                60,
+                20
+              ],
+              [
+                60,
+                30
+              ]
+            ],
+            [
+              [
+                60,
+                30
+              ],
+              [
+                60,
+                60
+              ]
+            ],
+            [
+              [
+                180,
+                100
+              ],
+              [
+                160,
+                100
+              ]
+            ],
+            [
+              [
+                160,
+                100
+              ],
+              [
+                160,
+                60
+              ]
+            ],
+            [
+              [
+                0,
+                -30
+              ],
+              [
+                60,
+                30
+              ]
+            ],
+            [
+              [
+                320,
+                -20
+              ],
+              [
+                240,
+                60
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "vertical",
+        "coil_axis": "vertical",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1180",
+      "name": "ag-1180:xlo1--ct1",
+      "net_pair": [
+        "net4",
+        "net5"
+      ],
+      "source_sha256": {
+        ".cir": "59a52a976e83e797bd8989939169b2ef5163b996e6d7fbca6ee17bc1fcf030bc",
+        ".human.json": "b95726b678efc16de16ac8981e12d8bfc7ff722eba7ff9d02c96d2d65ed4669b",
+        ".svg": "a571d2370d8bb7d998ca4a0f6f5ed67ee32c615639b7032db6412fe3ba3155c7"
+      },
+      "unique_owner": false
+    },
+    {
+      "actual_capacitor": {
+        "object": "instance-27ed2ad4-d9a9-47ca-94e0-81f2f2092c57",
+        "terminals": {
+          "1": [
+            500.0,
+            -20.0
+          ],
+          "2": [
+            500.0,
+            20.0
+          ]
+        }
+      },
+      "actual_coil": {
+        "n1": [
+          450.0,
+          -50.0
+        ],
+        "n2": [
+          450.0,
+          50.0
+        ],
+        "n3": [
+          430.0,
+          0.0
+        ]
+      },
+      "capacitor": "ct2",
+      "capacitor_bindings": [
+        "net2",
+        "net7"
+      ],
+      "capacitors_on_same_outer_pair": [
+        "ct2"
+      ],
+      "coil": "xlo2",
+      "coil_bindings": [
+        "net2",
+        "net7",
+        "vdd"
+      ],
+      "coil_ports": [
+        "n1",
+        "n2",
+        "n3"
+      ],
+      "coils_on_same_outer_pair": [
+        "xle2",
+        "xlo2"
+      ],
+      "connections": [
+        {
+          "actual_targets": [
+            [
+              450.0,
+              -50.0
+            ],
+            [
+              500.0,
+              -20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "1",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-4e8182a0-026e-4ef2-9bf3-14684601f7ab-to-junction",
+                "xy": [
+                  500.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-e97329cc-4fe7-4bf5-a75a-33edeb25d55d-to-junction",
+                "xy": [
+                  450.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-15f09e36-5ab0-41dd-a129-9325c37a466d-to-junction",
+                "xy": [
+                  400.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-885d6270-00c5-478b-9192-898dbdcce4d0-to-junction",
+                "xy": [
+                  380.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "contact-0d90ada1f5a4a9a6",
+                "xy": [
+                  320.0,
+                  -60.0
+                ]
+              },
+              {
+                "object": "wire-86cc2518-1edd-440a-a1e2-9fb9447a6fb3-to-junction",
+                "xy": [
+                  500.0,
+                  -30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  450,
+                  -60
+                ],
+                [
+                  450.0,
+                  -50.0
+                ]
+              ],
+              [
+                [
+                  450,
+                  -60
+                ],
+                [
+                  500,
+                  -60
+                ]
+              ],
+              [
+                [
+                  500,
+                  -60
+                ],
+                [
+                  500,
+                  -30
+                ]
+              ],
+              [
+                [
+                  500,
+                  -30
+                ],
+                [
+                  500.0,
+                  -20.0
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                450.0,
+                -50.0
+              ],
+              [
+                500.0,
+                -20.0
+              ]
+            ]
+          },
+          "net": "net2",
+          "port": "n1",
+          "verified_segments": [
+            [
+              [
+                540,
+                -60
+              ],
+              [
+                500,
+                -60
+              ]
+            ],
+            [
+              [
+                500,
+                -60
+              ],
+              [
+                450,
+                -60
+              ]
+            ],
+            [
+              [
+                450,
+                -60
+              ],
+              [
+                400,
+                -60
+              ]
+            ],
+            [
+              [
+                400,
+                -60
+              ],
+              [
+                380,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -60
+              ],
+              [
+                320,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -50
+              ],
+              [
+                380,
+                -60
+              ]
+            ],
+            [
+              [
+                450,
+                -50
+              ],
+              [
+                450,
+                -60
+              ]
+            ],
+            [
+              [
+                500,
+                -20
+              ],
+              [
+                500,
+                -30
+              ]
+            ],
+            [
+              [
+                500,
+                -30
+              ],
+              [
+                500,
+                -60
+              ]
+            ],
+            [
+              [
+                320,
+                -60
+              ],
+              [
+                300,
+                -60
+              ]
+            ],
+            [
+              [
+                380,
+                -100
+              ],
+              [
+                400,
+                -100
+              ]
+            ],
+            [
+              [
+                400,
+                -100
+              ],
+              [
+                400,
+                -60
+              ]
+            ],
+            [
+              [
+                560,
+                30
+              ],
+              [
+                500,
+                -30
+              ]
+            ]
+          ]
+        },
+        {
+          "actual_targets": [
+            [
+              450.0,
+              50.0
+            ],
+            [
+              500.0,
+              20.0
+            ]
+          ],
+          "cache_segments_without_ink": [],
+          "capacitor_pin": "2",
+          "connection": {
+            "actual_junctions": [
+              {
+                "object": "wire-5a598f59-fd7c-4abb-8e5f-39a051baa530-to-junction",
+                "xy": [
+                  500.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-61bcb41c-0a5e-4475-a6ad-7e83a9e9eee3-to-junction",
+                "xy": [
+                  450.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-afa94234-0f15-40c1-a8b5-e84b3fd522b4-to-junction",
+                "xy": [
+                  400.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-75a3b544-3ca9-44c6-9bce-26f871a56bdd-to-junction",
+                "xy": [
+                  380.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-dc434f3d-1115-4f61-971a-78e8ef78ef74-to-junction",
+                "xy": [
+                  320.0,
+                  60.0
+                ]
+              },
+              {
+                "object": "wire-7fce0f6f-068a-42d4-85d4-df81f058cc35-to-junction",
+                "xy": [
+                  500.0,
+                  30.0
+                ]
+              }
+            ],
+            "continuous": true,
+            "spanning_ink_segments": [
+              [
+                [
+                  450.0,
+                  50.0
+                ],
+                [
+                  450,
+                  60
+                ]
+              ],
+              [
+                [
+                  450,
+                  60
+                ],
+                [
+                  500,
+                  60
+                ]
+              ],
+              [
+                [
+                  500.0,
+                  20.0
+                ],
+                [
+                  500,
+                  30
+                ]
+              ],
+              [
+                [
+                  500,
+                  30
+                ],
+                [
+                  500,
+                  60
+                ]
+              ]
+            ],
+            "targets": [
+              [
+                450.0,
+                50.0
+              ],
+              [
+                500.0,
+                20.0
+              ]
+            ]
+          },
+          "net": "net7",
+          "port": "n2",
+          "verified_segments": [
+            [
+              [
+                540,
+                60
+              ],
+              [
+                500,
+                60
+              ]
+            ],
+            [
+              [
+                500,
+                60
+              ],
+              [
+                450,
+                60
+              ]
+            ],
+            [
+              [
+                450,
+                60
+              ],
+              [
+                400,
+                60
+              ]
+            ],
+            [
+              [
+                400,
+                60
+              ],
+              [
+                380,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                60
+              ],
+              [
+                320,
+                60
+              ]
+            ],
+            [
+              [
+                320,
+                60
+              ],
+              [
+                300,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                50
+              ],
+              [
+                380,
+                60
+              ]
+            ],
+            [
+              [
+                450,
+                50
+              ],
+              [
+                450,
+                60
+              ]
+            ],
+            [
+              [
+                500,
+                20
+              ],
+              [
+                500,
+                30
+              ]
+            ],
+            [
+              [
+                500,
+                30
+              ],
+              [
+                500,
+                60
+              ]
+            ],
+            [
+              [
+                380,
+                100
+              ],
+              [
+                400,
+                100
+              ]
+            ],
+            [
+              [
+                400,
+                100
+              ],
+              [
+                400,
+                60
+              ]
+            ],
+            [
+              [
+                560,
+                -30
+              ],
+              [
+                500,
+                30
+              ]
+            ],
+            [
+              [
+                240,
+                -20
+              ],
+              [
+                320,
+                60
+              ]
+            ]
+          ]
+        }
+      ],
+      "corpus": "analoggenie",
+      "geometry": {
+        "cap_opposes_tap": true,
+        "capacitor_axis": "vertical",
+        "coil_axis": "vertical",
+        "matched_net_order": true,
+        "parallel": true,
+        "same_axial_center": true,
+        "tap_on_transverse_axis": true
+      },
+      "id": "ag-1180",
+      "name": "ag-1180:xlo2--ct2",
+      "net_pair": [
+        "net2",
+        "net7"
+      ],
+      "source_sha256": {
+        ".cir": "59a52a976e83e797bd8989939169b2ef5163b996e6d7fbca6ee17bc1fcf030bc",
+        ".human.json": "b95726b678efc16de16ac8981e12d8bfc7ff722eba7ff9d02c96d2d65ed4669b",
+        ".svg": "a571d2370d8bb7d998ca4a0f6f5ed67ee32c615639b7032db6412fe3ba3155c7"
+      },
+      "unique_owner": false
+    }
+  ],
+  "shared_names": [
+    "ag-1180:xle1--ct1",
+    "ag-1180:xle2--ct2",
+    "ag-1180:xlo1--ct1",
+    "ag-1180:xlo2--ct2"
+  ],
+  "summary": {
+    "capacitors": 7,
+    "circuits": 5,
+    "physical_legs": 18,
+    "relations": 9
+  },
+  "unique_names": [
+    "ag-1103:xl1--c1",
+    "ag-1147:x1--c",
+    "ag-1151:xl--c",
+    "ag-1152:xl1--c1",
+    "ag-1152:xl2--c2"
+  ]
+}

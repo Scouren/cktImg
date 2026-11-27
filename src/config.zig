@@ -154,6 +154,8 @@ pub const Render = struct {
 };
 
 pub const Config = struct {
+    /// Wire directions this caller can consume. Netlist text and ZON cannot opt a caller in.
+    geometry: @import("wire_geometry.zig").Mode = .manhattan,
     layout: Layout = .{},
     rules: lint.Rules = .{},
     render: Render = .{},
@@ -192,6 +194,7 @@ pub const Config = struct {
             const key = name.get(zoir);
             const node = tables.vals.at(@intCast(i));
             inline for (@typeInfo(Config).@"struct".field_names, @typeInfo(Config).@"struct".field_types) |table, T| {
+                if (comptime std.mem.eql(u8, table, "geometry")) continue;
                 if (std.mem.eql(u8, key, table)) {
                     try patch(T, arena, ast, zoir, node, &@field(cfg, table), &sink);
                     continue :outer;

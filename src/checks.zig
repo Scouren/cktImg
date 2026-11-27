@@ -45,6 +45,7 @@
 //! - `pub const Rule = enum`, `pub const Finding = struct`
 //! - `pub fn find(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed, lib: *const Library) Allocator.Error!void`
 //! - `pub fn connected(…)`, `pub fn shorts(…)`, `pub fn dots(…)`: each rule group alone
+//! - `pub fn wireRays`
 //! - `pub fn ways(p: *const Placed, n: usize, at: Pt) u4`, `pub fn crossing(a: Pt, b: Pt, c: Pt, d: Pt) ?Pt`
 //! - `pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?bool`
 //! - `pub fn stackStep(p: *const Placed, nl: *const Netlist, upper: []const u8, lower: []const u8) bool`
@@ -62,7 +63,7 @@ const relations = @import("relations.zig");
 const pinned = @import("pinned.zig");
 
 const Pt = library.Pt;
-const Rect = library.Rect;
+const wire_geometry = @import("wire_geometry.zig");
 const Side = library.Side;
 const Library = library.Library;
 const Placed = placed.Placed;
@@ -151,7 +152,7 @@ pub fn connected(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed,
             // A name written on a wire names the wire.
             var on = p.segments(n);
             while (on.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-                if (Rect.fromCorners(a, b).contains(l.at)) uf.join(parent.items, at, index.get(.{ a.x, a.y }).?);
+                if (wire_geometry.contains(a, b, l.at)) uf.join(parent.items, at, index.get(.{ a.x, a.y }).?);
             };
         };
         var pins: u32 = 0;
@@ -197,9 +198,8 @@ pub fn shorts(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Al
     for (0..p.netCount()) |n| {
         var it = p.segments(n);
         while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-            const r = Rect.fromCorners(a, b);
             for (pts.items) |q| {
-                if (q.net == n or !r.contains(q.at)) continue;
+                if (q.net == n or !wire_geometry.contains(a, b, q.at)) continue;
                 try out.append(gpa, .{ .rule = .short, .net = @intCast(n), .at = q.at, .other = q.net });
             }
         };
@@ -223,12 +223,12 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
             } else false;
             if (seen) continue;
             // A pin's lead is one more way: the side its device lies on.
-            var arms = ways(p, n, at);
+            var arms = wireRays(p, n, at);
             for (0..p.deviceCount()) |d| {
                 const lo, const hi = p.pinRange(d);
                 for (lo..hi) |pin| {
                     if (p.pin_net[pin] != n or !p.pin_xy[pin].eql(at)) continue;
-                    if (Side.of(p.dev_pos[d].sub(at))) |s| arms |= @as(u4, 1) << @backingInt(s);
+                    if (Side.of(p.dev_pos[d].sub(at))) |s| arms |= @as(u8, 1) << @backingInt(s);
                 }
             }
             const dot = for (p.junctions) |j| {
@@ -239,10 +239,15 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
         }
         var outer = p.segments(n);
         while (outer.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-            if (a.y != b.y) continue;
+            const dir = wire_geometry.direction(a, b) orelse continue;
             var inner = p.segments(n);
             while (inner.next()) |q| for (q[0 .. q.len - 1], q[1..]) |c, d| {
-                if (crossing(a, b, c, d)) |at| try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = at, .other = 0 });
+                const other = wire_geometry.direction(c, d) orelse continue;
+                if (@backingInt(dir) >= @backingInt(other)) continue;
+                if (wire_geometry.properCross(a, b, c, d)) |hit| {
+                    // A half-grid short has no representable contact. Identify the offending run.
+                    try out.append(gpa, .{ .rule = .self_crossing, .net = @intCast(n), .at = hit.lattice() orelse a, .other = 0 });
+                }
             };
         };
     }
@@ -255,13 +260,15 @@ pub fn dots(gpa: Allocator, out: *std.ArrayList(Finding), p: *const Placed) Allo
 /// `Side`: a wire ending there is one way, a wire through it two. Zero for
 /// a point off its wires; a pin's lead is not counted.
 pub fn ways(p: *const Placed, n: usize, at: Pt) u4 {
-    var out: u4 = 0;
+    return @truncate(wireRays(p, n, at));
+}
+
+/// Eight exact wire directions at a point. The low four retain the cardinal Side bits.
+pub fn wireRays(p: *const Placed, n: usize, at: Pt) u8 {
+    var out: u8 = 0;
     var it = p.segments(n);
     while (it.next()) |poly| for (poly[0 .. poly.len - 1], poly[1..]) |a, b| {
-        const r = Rect.fromCorners(a, b);
-        if (!r.contains(at)) continue;
-        out |= @as(u4, @intFromBool(r.min.x < at.x)) | @as(u4, @intFromBool(r.max.x > at.x)) << 1 |
-            @as(u4, @intFromBool(r.min.y < at.y)) << 2 | @as(u4, @intFromBool(r.max.y > at.y)) << 3;
+        out |= wire_geometry.rays(a, b, at);
     };
     return out;
 }
@@ -372,13 +379,13 @@ pub fn drawnAs(p: *const Placed, nl: *const Netlist, h: hints.Hint, unit: i32) ?
             var buf: [64]Pt = undefined;
             const pts = scaled(h.args[1..], unit, &buf) orelse return false;
             for (pts, 0..) |at, k| {
-                if (ways(p, net, at) == 0) return false;
+                if (wireRays(p, net, at) == 0) return false;
                 if (h.verb == .via or k == 0) continue;
                 // Every point of the segment from the last one on the net.
                 const prev = pts[k - 1];
                 const step: Pt = .{ .x = std.math.sign(at.x - prev.x), .y = std.math.sign(at.y - prev.y) };
                 var q = prev;
-                while (!q.eql(at)) : (q = q.add(step)) if (ways(p, net, q) == 0) return false;
+                while (!q.eql(at)) : (q = q.add(step)) if (wireRays(p, net, q) == 0) return false;
             }
             return true;
         },

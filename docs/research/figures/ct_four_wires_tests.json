@@ -1,0 +1,58 @@
+{
+  "allowed_source_transformations": [
+    "function/type/member visibility for sibling callers",
+    "imports and aliases",
+    "run/qualify embedFile access replaced with exact-byte literal.deck/literal.symbols",
+    "componentSymbols realNet expression inlined unchanged",
+    "comments and whitespace"
+  ],
+  "data_tokens_sha256": {
+    "nets": "ba5f6e5594c431c144196c1b00fbb571fbc7129554e1df46e1fb30a5f65755db",
+    "pairs": "23a0bffc60ccee00b54bcd06cb1d9337fed6d71642ec76790faeb80ea13a6e15",
+    "parts": "93a33f5d5e4a37b871ffd0a04f26b28f53a2891ba834a7cc4a4bc57b4159be0c",
+    "pins_off": "591aa9a1bdee3659bce24ac7b2733d3126dbb7f84c19c8a8be466dfaf9a53e33",
+    "pins_on": "5afc57a04043d5634bd204d3b24ca778d5b04828baf534dadd9dcce93cb831b1",
+    "poses_off": "65c63028b58e62f5e3028cf8839096510d4051935fca40f00bf2ad7229184b50",
+    "poses_on": "def0ebaf3ffd6fd82b8041751c8795b6798ba6e4765caf8c36e65cb04a4bd4ef",
+    "rail": "28b80f7405aca3028666265d02214c8c1c1fdc7220b4c53b7dd1df5af9dd4f98",
+    "wires_off": "167eae52c4098c7025edcde169afcd9caeeb8fd4f14745a62ba302d43929582b",
+    "wires_on": "551cb740c160cd85d533ebf144dcb2881f0f42172f0af65b846d426d1da1d16e"
+  },
+  "literal_bytes": {
+    "deck": "db8807d50910e3d1f1beb22492336457853986aaa34c64a1abec36732cb6c9c9",
+    "symbols": "8d036df1547103ae92fd83f3e5b60a14bb7d70f343aaaedab3ce60442abff459"
+  },
+  "native_frames": {
+    "off": "50f1efb681e078a12ac19a69638cfde5f1580fca8c4512dbd44b5bb2a39a5171",
+    "on": "56013019f9b2aed1120e24c74f9591003fdc17bc9c8d5141aa8bc27d317fd212"
+  },
+  "original": {
+    "series-wire-consumer-red7-manifest.json": "f08fce5aeb13e70f0b5fec491b55389b106628e8021f6c03033c63643871b02a",
+    "series-wire-consumer-red7/src/ct_four_wire_consumer_test.zig": "6a807b4e27aab3f5b4894bda01915737a66625459762dfa73f4981f7b19fb965",
+    "series-wire-consumer-red7/src/fixture.sp": "db8807d50910e3d1f1beb22492336457853986aaa34c64a1abec36732cb6c9c9",
+    "series-wire-consumer-red7/src/partition_literal.zig": "81ba533b61eb3f97936ffee9669b71b22c3e3a7077045393a06292f2808db840",
+    "series-wire-consumer-red7/src/symbols.zon": "8d036df1547103ae92fd83f3e5b60a14bb7d70f343aaaedab3ce60442abff459",
+    "series-wire-first-manifest.json": "8fbf0e65463b59d3d552afbe6a0260a6f676a816e5d58ae46bad1a947b0acba4"
+  },
+  "prepared_files": {
+    "src/ct_four_wire_data.zig": "31bd7f385fe0fb404a884fbc2244c3c622ed7c3591223aca7bcf2eebf248dd12",
+    "src/ct_four_wire_fixture.zig": "e40c3da01fcef1009da2419589c13a49c9105a41ded58e358d8bc4a107e91298",
+    "src/ct_four_wire_frames.zig": "7ffb8135d16b33dc054f80f3c41f38039549640a9b97f611539c53a3e8ff2f65",
+    "src/ct_four_wire_oracle.zig": "04d51a1e0ed6057e5a4ae462cc0dfcdf325e23b11bbca5c92429d58eb61ec5eb",
+    "src/ct_four_wires_test.zig": "b1d5a22cbda0ac57dac1915507f398087ca560b98ed4354ed2551632a71a2499"
+  },
+  "schema": 1,
+  "scope": "Promoted test-only split of frozen RED7. All eight test bodies are exact; all ten literal declarations preserve every token. Only namespace/visibility, exact embedded-byte access, comments and whitespace changed. Actual test execution/physical gates are documented in ct-four-sides.md.",
+  "source_inventory_sha256": "a593c5e838fd1e141939a5fcd5775b82594837885d393ac674ac977dbf9c4dbe",
+  "test_block_sha256": "2f94d450c8abd462c54fcdef55dd49e6cd7333d94db60bd7355ba3491a5ba0f3",
+  "tests": [
+    "whole26 consumer: exact source148 components and one shared supply in both frames",
+    "whole26 consumer: real pin mapping and original deferred requests abstain atomically",
+    "whole26 consumer: late second-component failure restores first tree and generated label",
+    "whole26 consumer: opposed supply exact mapping and original request boundaries",
+    "whole26 consumer: normalized rail choices use admitted verdicts, never raw text",
+    "whole26 consumer: default, invalid and unrelated rail requests retain automatic owner",
+    "whole26 consumer: complete net rollback through every allocation failure",
+    "whole26 consumer: source separation oracle rejects endpoint T overlap and proper X mutations"
+  ]
+}

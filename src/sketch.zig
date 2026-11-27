@@ -104,6 +104,46 @@
 //!   actual class frame after lattice coordinates, before scaffold wiring.
 //!   Only its whole orientation and grid anchor change; admitted cells,
 //!   stays and other caller geometry keep precedence. `bias_neighbors`
+//! - sketch.24 (habit, bounded) A unique parallel tank capacitor uses its
+//!   actual centered frame beside its fixed coil, opposite the actual tap.
+//!   Caller geometry and occupied local room take precedence. `coil_tanks`
+//! - sketch.25 (habit, bounded) A unique antiparallel clamp pair's controls
+//!   face outward and matching nets occupy the same spatial channel end.
+//!   All eight actual source devices agree. Couple the turns only while
+//!   both actual frames support the joint rows, without either member's
+//!   admitted origin/relation override. `antiparallel.placedMate`, `fits`
+//!
+//! - sketch.26 (habit, bounded) A complete mirrored pair of shared CT
+//!   banks owns its ten actual frames atomically. Caller requests and
+//!   unsupported geometry abstain as a whole. `coil_banks`, `coil_bank_place`
+//! - sketch.27 (habit, bounded) A unique MOS clamp with four complementary
+//!   channel-ended anchors uses one clear actual-frame position strictly
+//!   between their drain tips. No lattice row or anchor moves. `clamp_anchors`
+//! - sketch.28 (habit, bounded) Two private C-S-C paths use the surviving
+//!   mirrored banks as fixed anchors. Place only their six devices, with
+//!   caller precedence, actual path frames and rollback. `coil_chains`
+//! - sketch.29 (habit, bounded) The paired banks' four direct/cross
+//!   switches use drain rows and the observed upper-half crossing pose.
+//!   Keep full caller frames and exact mates; abstain atomically on a
+//!   collision or request. No wire policy changes. `coil_bridges`
+//! - sketch.30 (habit, bounded) One unique CT/capacitor tank follows a
+//!   verified pair of actual block output leads. The block stays fixed;
+//!   a successful two-row transaction supersedes generic tank placement.
+//!   Explicit requests and occupied room retain precedence. `block_tanks`
+//! - sketch.31 (bounded observation) One complete CT/NPN feedback stage
+//!   uses the observed tap-up, emitter-down frame above the foreign body
+//!   band. All nine members move atomically; actual frames, admitted
+//!   requests, mates and collisions retain precedence. `ct_feedback_stage`
+//!
+//! - sketch.32 (bounded observation) A closed resistor-loaded differential
+//!   stage owns its six actual frames; two feed-forward stages sharing a
+//!   complete tail bank own twelve. Separate local axes refine automatic
+//!   bank arrangement while preserving caller requests and mate identities.
+//!   `resistor_loads`, `resistor_load_place`
+//! - sketch.33 (bounded observation) Two complete downstream RC input
+//!   branches and bias chokes follow their actual block input frame. Five passive rows
+//!   share a fresh-lattice room transaction with output tanks; rejected
+//!   work restores the prior output-only path. `block_input_rc`, `block_rooms`
 //!
 //! Contents:
 //! - `pub const parent_parts`, `pub fn layPanels`
@@ -122,6 +162,8 @@ const structure = @import("structure.zig");
 const skeleton = @import("skeleton.zig");
 const opamp = @import("opamp.zig");
 const transmission = @import("transmission.zig");
+const antiparallel = @import("antiparallel.zig");
+const clamp_anchors = @import("clamp_anchors.zig");
 const power_paths = @import("power_paths.zig");
 const power_loops = @import("power_loops.zig");
 const power_loop_wires = @import("power_loop_wires.zig");
@@ -130,10 +172,29 @@ const netlines = @import("netlines.zig");
 const pinned = @import("pinned.zig");
 const hints = @import("hints.zig");
 const routes = @import("routes.zig");
+const Requests = @import("wire_requests.zig").Requests;
 const maze = @import("maze.zig");
 const canvas = @import("canvas.zig");
 const power_compact = @import("power_compact.zig");
 const bias_neighbors = @import("bias_neighbors.zig");
+const coil_tanks = @import("coil_tanks.zig");
+const block_tanks = @import("block_tanks.zig");
+const block_input_rc = @import("block_input_rc.zig");
+const block_input_place = @import("block_input_place.zig");
+const block_rooms = @import("block_rooms.zig");
+const ct_feedback_stage = @import("ct_feedback_stage.zig");
+const ct_four_sides = @import("ct_four_sides.zig");
+const ct_four_place = @import("ct_four_place.zig");
+const ct_four_wires = @import("ct_four_wires.zig");
+const resistor_loads = @import("resistor_loads.zig");
+const resistor_load_place = @import("resistor_load_place.zig");
+const resistor_downstream = @import("resistor_downstream.zig");
+const coil_banks = @import("coil_banks.zig");
+const coil_bank_place = @import("coil_bank_place.zig");
+const coil_chains = @import("coil_chains.zig");
+const coil_chain_place = @import("coil_chain_place.zig");
+const coil_bridges = @import("coil_bridges.zig");
+const lattice_geometry = @import("lattice_geometry.zig");
 const thin = @import("thin.zig");
 const relay = @import("relay.zig");
 const config = @import("config.zig");
@@ -188,11 +249,11 @@ pub fn layOrganized(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib
 
 /// Draws source-qualified geometry and reports its physical acceptance.
 pub fn layQualified(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, accepted: *bool) !Schematic {
-    return layPanels(gpa, nl, roles, lib, layout, pairs, stages, bridge, false, accepted);
+    return layPanels(gpa, nl, roles, lib, layout, pairs, stages, if (bridge) |r| .{ .bridge = r } else null, false, accepted);
 }
 
 /// Runs a complete panel trial when requested and reports the final route admission.
-pub fn layPanels(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !Schematic {
+pub fn layPanels(gpa: Allocator, nl: *const Netlist, roles: []const Role, lib: *Library, layout: config.Layout, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?@import("source_layout.zig").Owner, panels: bool, accepted: *bool) !Schematic {
     var s = try sch.initDevices(gpa, nl, roles, lib);
     errdefer s.arena.deinit();
     const a = s.arena.allocator();
@@ -223,7 +284,7 @@ pub fn drawWithParents(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout
 
 // ---- private ----
 
-fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?source_bridge.Request, panels: bool, accepted: *bool) !void {
+fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.Layout, st: *const Structure, sk: *const Skeleton, pairs: []const parent_parts.Pair, stages: []const parent_stages.Stage, bridge: ?@import("source_layout.zig").Owner, panels: bool, accepted: *bool) !void {
     // The deck's drawing lines; their verdicts are the report's to give.
     const sa = s.arena.allocator();
     const scratch = try sa.alloc(?hints.Verdict, nl.hints.len);
@@ -236,7 +297,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(requested_places);
     // A circuit of amplifier blocks and parts is placed along its signal
     // (`opamp.zig`), every device, unless a line of the deck places one.
-    const along = try opamp.place(sa, nl, s.roles, sk.drawn, s.lib, s.devices.items(.class));
+    const along = try opamp.place(sa, nl, s.roles, st, sk, s.lib, s.devices.items(.class));
     if (along) |own| ats = own;
     s.refdes = try pinned.sides(sa, nl, scratch);
     orientAll(s, nl, sk, ats);
@@ -252,6 +313,26 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(states);
     for (pairs, states) |p, *state| state.* = parent_parts.initial(nl, p, &lines, parent_verdicts);
     const trial: parent_parts.Trial = .{ .states = states, .pairs = pairs, .nl = nl };
+    var tanks = try coil_tanks.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer tanks.deinit(gpa);
+    var block_loads = try block_tanks.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer block_loads.deinit(gpa);
+    var block_inputs = try block_input_rc.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer block_inputs.deinit(gpa);
+    var banks = try coil_banks.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer banks.deinit(gpa);
+    var chains = try coil_chains.collect(gpa, nl, s, sk, st, ats, &lines, banks.pairs.items);
+    defer chains.deinit(gpa);
+    var bridges = try coil_bridges.collect(gpa, nl, s, sk, st, ats, banks.pairs.items);
+    defer bridges.deinit(gpa);
+    var clamps = try clamp_anchors.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer clamps.deinit(gpa);
+    var feedback = try ct_feedback_stage.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer feedback.deinit(gpa);
+    var four_sides = try ct_four_sides.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer four_sides.deinit(gpa);
+    var resistor_stages = try resistor_loads.collect(gpa, nl, s, sk, st, ats, &lines);
+    defer resistor_stages.deinit(gpa);
     const loops = try power_loop_wires.collect(gpa, nl, s.roles, sk.drawn, &lines);
     defer gpa.free(loops);
     // Each drawn device's point: the lattice's.
@@ -260,7 +341,15 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(at);
     @memset(at, .{ 0, 0 });
     var placed_all = true;
-    {
+    var block_reserved = false;
+    const fresh = along == null and for (ats) |fixed| {
+        if (fixed != null) break false;
+    } else true;
+    if (fresh and (block_loads.groups.items.len > 0 or block_inputs.groups.items.len > 0)) {
+        block_reserved = try block_rooms.lattice(gpa, s, nl, sk, len, at, &block_loads, &block_inputs, &tanks.pairs);
+        placed_all = false;
+    } else {
+        block_inputs.groups.items.len = 0;
         const geo = try lattice.coordinates(gpa, s, nl, sk, len);
         defer gpa.free(geo.xs);
         defer gpa.free(geo.ys);
@@ -278,6 +367,17 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         if (along == null and stays) placed_all = try relay.place(gpa, s, sk, geo.xs, geo.ys, ats, at);
     }
     bias_neighbors.place(s, nl, sk, ats, len, at, &bias_pairs.pairs);
+    if (!block_reserved) block_tanks.place(s, nl, sk, ats, len, at, &block_loads.groups, &tanks.pairs);
+    coil_tanks.place(s, nl, sk, ats, len, at, &tanks.pairs);
+    coil_bank_place.place(s, nl, sk, ats, len, at, &banks.pairs);
+    coil_chain_place.place(s, nl, sk, ats, len, at, banks.pairs.items, &chains.owners);
+    coil_bridges.place(s, nl, sk, ats, len, at, banks.pairs.items, &bridges.owners);
+    clamp_anchors.place(s, sk, ats, len, at, &clamps.groups);
+    ct_feedback_stage.place(s, nl, sk, ats, len, at, &feedback.groups);
+    ct_four_place.place(s, nl, sk, ats, len, at, &four_sides.groups);
+    const four_wires = ct_four_wires.qualify(nl, four_sides.groups.items, scratch, &lines);
+    resistor_load_place.place(s, nl, sk, ats, len, at, &resistor_stages);
+    const load_parts = resistor_downstream.qualify(nl, s.roles, resistor_stages.pairs.items, sk.verdicts, st.verdicts, scratch, &lines);
     var xy: std.ArrayList([2]f32) = .empty;
     // Closed up: the drawing as the engine alone makes it (the deck's `at`,
     // `route` and `via` lines are in the finished drawing's coordinates, so
@@ -289,14 +389,22 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
         defer gpa.free(no_ats);
         @memset(no_ats, null);
         var own = lines;
-        own.routes = &.{};
-        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, loops, .{}, &xy, false);
-        try power_compact.squeeze(gpa, s, nl, sk, ats, len, try drawnAxis2(gpa, s, sk), bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates));
-        const boxes = try deviceBoxes(gpa, s, nl, sk);
-        defer gpa.free(boxes);
-        const clear = clear: for (boxes, 0..) |a, i| {
-            for (boxes[i + 1 ..]) |b| if (a.intersects(b)) break :clear false;
-        } else true;
+        own.routes = &.{}; // Absolute paths wait; lines.routes still protects caller intent.
+        try wireUp(gpa, s, nl, sk, st, len, at, no_ats, &own, .{ .routes = lines.routes, .ats = ats }, loops, .{}, resistor_stages.singles.items, resistor_stages.pairs.items, load_parts, four_wires, &xy, false);
+        try power_compact.squeeze(gpa, s, nl, sk, ats, len, coil_bank_place.axis(s, banks.pairs.items) orelse ct_four_place.axis(s, four_sides.groups.items) orelse try power_compact.drawnAxis2(gpa, s, sk), &.{
+            bias_neighbors.orders(s, bias_pairs.pairs.items, bias_pairs.coordinates),
+            block_tanks.orders(s, block_loads.groups.items, block_loads.coordinates),
+            block_input_place.orders(s, nl, &block_inputs),
+            coil_tanks.orders(s, tanks.pairs.items, tanks.coordinates),
+            coil_bank_place.orders(s, banks.pairs.items, banks.coordinates),
+            coil_chain_place.orders(s, banks.pairs.items, chains.owners.items, chains.coordinates),
+            coil_bridges.orders(s, banks.pairs.items, bridges.owners.items, bridges.coordinates),
+            clamp_anchors.orders(s, clamps.groups.items, clamps.coordinates),
+            ct_feedback_stage.orders(s, nl, feedback.groups.items, feedback.coordinates),
+            ct_four_place.orders(s, nl, four_sides.groups.items, four_sides.coordinates),
+            resistor_load_place.orders(s, nl, sk, &resistor_stages),
+        });
+        const clear = try power_compact.clear(gpa, s, nl, sk);
         // ponytail: an overlap after the squeeze keeps the lattice's places.
         if (clear) for (at, 0..) |*p, d| if (sk.drawn[d]) {
             p.* = s.xy[s.deviceNode(@intCast(d)).?];
@@ -312,7 +420,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     }
     accepted.* = available.items.len > 0 and try parent_stages.arrange(gpa, s, sk, at, available.items);
     if (panels) accepted.* = accepted.* and @import("comparator_panels.zig").arrange(nl, s, sk, at, available.items, pairs, states, parent_verdicts);
-    if (bridge) |request| accepted.* = source_bridge.arrange(nl, s, sk, at, request, parent_verdicts);
+    if (bridge) |request| accepted.* = @import("source_layout.zig").arrange(request, nl, s, sk, at, parent_verdicts);
     trial.holdPlaces(s, requested_places, ats, at);
     // Wired; then a net crossing too many wires is named and the drawing
     // wired again without it, which may free a path for another.
@@ -337,7 +445,7 @@ fn drawValid(gpa: Allocator, s: *Schematic, nl: *const Netlist, layout: config.L
     defer gpa.free(initial);
     restart: for (0..pairs.len + 1) |_| {
         for (0..thin_rounds + 1) |round| {
-            try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, loops, trial, &xy, true);
+            try wireUp(gpa, s, nl, sk, st, len, at, ats, &thinned, .{ .routes = lines.routes, .ats = ats }, loops, trial, resistor_stages.singles.items, resistor_stages.pairs.items, load_parts, four_wires, &xy, true);
             const mirror = drawnMirror(s, sk, st);
             const changed = round != thin_rounds and try thin.name(gpa, s.routes.items, s.roles, st.net_rank, if (mirror) |m| m.net_mate else null, layout.cross_max, style);
             if (trial.withdraw(style)) {
@@ -371,14 +479,14 @@ fn wipe(s: *Schematic, xy: *std.ArrayList([2]f32)) void {
 }
 
 /// The devices at `at` (an `at` line's place first), then every net wired.
-fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, loops: []const power_loops.Group, trial: parent_parts.Trial, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
+fn wireUp(gpa: Allocator, s: *Schematic, nl: *const Netlist, sk: *const Skeleton, st: *const Structure, len: Lengths, at: []const [2]f32, ats: []const ?pinned.At, lines: *const netlines.NetLines, requests: Requests, loops: []const power_loops.Group, trial: parent_parts.Trial, load_singles: []const resistor_loads.Group, load_pairs: []const resistor_loads.Pair, downstream: []const resistor_loads.Pair, four_groups: []const ct_four_sides.Group, xy: *std.ArrayList([2]f32), final_routes: bool) !void {
     try placeDevices(s, nl, sk, at, ats, xy);
     s.xy = xy.items;
-    const boxes = try deviceBoxes(gpa, s, nl, sk);
+    const boxes = try power_compact.deviceBoxes(gpa, s, nl, sk);
     defer gpa.free(boxes);
     const hidden = try hiddenPins(gpa, s, nl, sk);
     defer gpa.free(hidden);
-    try wires.wire(gpa, s, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, loops, trial, sk.bridged_t, final_routes);
+    try wires.wire(gpa, s, nl, xy, len, boxes, hidden, drawnMirror(s, sk, st), st.net_rank, lines, requests, loops, trial, sk.bridged_t, final_routes, load_singles, load_pairs, downstream, four_groups);
     s.xy = xy.items;
 }
 
@@ -455,9 +563,13 @@ fn orientAll(s: *Schematic, nl: *const Netlist, sk: *const Skeleton, ats: []cons
         if (!sk.drawn[d]) continue;
         const class = s.lib.at(info.items(.class)[d]);
         const base = sch.form(info.items(.orientation)[d]);
-        const gate_side = if (vertical) null else controlSide(nl, s.roles, sk, @intCast(d));
+        const clamp = if (vertical) null else if (antiparallel.placedMate(s, nl, sk, ats, EdgeId.from(d))) |m| m.index() else null;
+        const gate_side = if (vertical) null else if (clamp) |m|
+            (if (sk.y[d] < sk.y[m]) Side.up else Side.down)
+        else
+            controlSide(nl, s.roles, sk, @intCast(d));
         for (flips) |f| {
-            if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical, gate_side)) continue;
+            if (!fits(nl, sk, class, @intCast(d), Orient.flipped(base, f[0], f[1]), vertical, gate_side, clamp)) continue;
             info.items(.flip_x)[d] = f[0];
             info.items(.flip_y)[d] = f[1];
             break;
@@ -532,7 +644,7 @@ fn controlSide(nl: *const Netlist, roles: []const Role, sk: *const Skeleton, d: 
 /// orders have it. Upright, the rows': its end on the skeleton's upper net
 /// faces up, and its gate the skeleton's side. Flat, the columns': its
 /// path's first pin faces left when it is the left end (`firstLeft`).
-fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool, gate_side: ?Side) bool {
+fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o: Orient, vertical: bool, gate_side: ?Side, clamp: ?u32) bool {
     assert(sk.drawn[d]);
     const pins = nl.graph.members(EdgeId.from(d));
     if (vertical) {
@@ -558,7 +670,9 @@ fn fits(nl: *const Netlist, sk: *const Skeleton, class: library.Class, d: u32, o
     // the nearest device on their nets (98.0%).
     const path: [2]u8 = device.of(nl.graph.edges.items(.kind)[d]).path orelse if (pins.len == 2) .{ 0, 1 } else return true;
     const s0 = class.side(path[0], o) orelse return true;
-    return (s0 == .left) == (firstLeft(nl, sk, d, path) orelse return true);
+    const anchor = if (clamp) |m| (if (sk.y[d] < sk.y[m]) d else m) else d;
+    const left = firstLeft(nl, sk, anchor, path) orelse return true;
+    return (s0 == .left) == (if (anchor == d) left else !left);
 }
 
 /// Whether the first of flat device `d`'s two ends, card pins `path`, is
@@ -666,24 +780,6 @@ fn drawnMirror(s: *const Schematic, sk: *const Skeleton, st: *const structure.St
     return if (axis2) |a| .{ .axis2 = a, .net_mate = st.net_mate } else null;
 }
 
-/// Twice the x the skeleton's mirrored columns stand about in the drawing,
-/// when every pair of them agrees (an `at` line may move one off it); else
-/// null. The skeleton mirrors a pair's columns even where the circuit has
-/// no symmetry of its own (a mirror load), which `drawnMirror` asks for.
-fn drawnAxis2(gpa: Allocator, s: *const Schematic, sk: *const Skeleton) !?i32 {
-    const a2 = sk.axis2 orelse return null;
-    const x = try gpa.alloc(?i32, sk.drawn.len);
-    defer gpa.free(x);
-    for (x, 0..) |*v, d| v.* = if (sk.drawn[d]) toPt(s.xy[s.deviceNode(@intCast(d)).?]).x else null;
-    var axis2: ?i32 = null;
-    for (x, 0..) |xd, d| for (x[d..], d..) |xe, e| {
-        if (xd == null or xe == null or sk.x[d] + sk.x[e] != a2) continue;
-        if (axis2 != null and axis2.? != xd.? + xe.?) return null;
-        axis2 = xd.? + xe.?;
-    };
-    return axis2;
-}
-
 /// The points of pins `Placed` draws on their symbol with no wire (a MOS
 /// body, an op-amp's reference, a card pin its class lacks): no other net's
 /// wire may touch them.
@@ -704,19 +800,6 @@ fn hiddenPins(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *cons
         }
     }
     for (out.items) |m| assert(m.net < nl.graph.vertexCount());
-    return out.toOwnedSlice(gpa);
-}
-
-fn deviceBoxes(gpa: Allocator, s: *const Schematic, nl: *const Netlist, sk: *const Skeleton) ![]Rect {
-    var out: std.ArrayList(Rect) = .empty;
-    errdefer out.deinit(gpa);
-    for (0..nl.graph.edgeCount()) |d| {
-        if (!sk.drawn[d]) continue;
-        const r = boxAt(s, d, toPt(s.xy[s.deviceNode(@intCast(d)).?]));
-        assert(r.min.x <= r.max.x and r.min.y <= r.max.y);
-        try out.append(gpa, r);
-    }
-    assert(out.items.len <= nl.graph.edgeCount());
     return out.toOwnedSlice(gpa);
 }
 

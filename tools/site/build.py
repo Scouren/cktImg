@@ -70,10 +70,12 @@ def measure(segs, pins, unit):
 
 
 def human_metrics(h):
+    """An unresolved label binding makes the distinct-net count unknown."""
     pins = {(n, tuple(d["terminals"][t])) for d in h["devices"] for t, n in d["nets"].items() if n and t in d["terminals"]}
     pins |= {(m["net"], tuple(m["at"])) for m in h["markers"]}
     c, b, length = measure(segments(h), pins, h["unit"] or 40.0)
-    return dict(crossings=c, corners=b, wire_len=length, names=len({l["net"] for l in h["labels"]}))
+    names = {label["net"] for label in h["labels"]}
+    return dict(crossings=c, corners=b, wire_len=length, names=None if None in names else len(names))
 
 
 def our_metrics(j, report):
@@ -127,8 +129,8 @@ def page(title, body, root=""):
 
 
 def metrics_table(h, o):
-    rows = [("crossings", "crossings"), ("corners", "corners"), ("wire length (units)", "wire_len"), ("written net names", "names")]
-    cell = lambda m, k: "&ndash;" if m is None else html.escape(str(m[k]))  # noqa: E731
+    rows = [("crossings", "crossings"), ("corners", "corners"), ("wire length (units)", "wire_len"), ("nets with wire labels", "names")]
+    cell = lambda m, k: "&ndash;" if m is None else "unknown" if m[k] is None else html.escape(str(m[k]))  # noqa: E731
     return "<table><tr><th></th><th>person</th><th>cktImg</th></tr>%s</table>" % "".join(
         "<tr><td>%s</td><td>%s</td><td>%s</td></tr>" % (label, cell(h, k), cell(o, k)) for label, k in rows)
 
@@ -146,7 +148,8 @@ def circuit_page(e, row, h, o, err):
             '<div class="pair"><figure><figcaption>Drawn by a person (Analog Canvas preview)</figcaption>%s</figure>'
             '<figure><figcaption>Drawn by cktImg from the netlist</figcaption>%s</figure></div>%s'
             '<p class="muted">Corners and crossings are counted the way <code>src/report.zig</code> counts them, on both drawings; '
-            'wire length is in symbol lengths. The person&rsquo;s drawing is &copy; its author as credited above, shown from the '
+            'wire length is in symbol lengths. Label counts exclude port names; unknown means source labels could not be associated with nets. '
+            'The person&rsquo;s drawing is &copy; its author as credited above, shown from the '
             'Analog Canvas gallery.</p>') % (
         esc(e.get("name") or cid), esc(e.get("description") or ""), esc(e.get("author") or ""), esc(row["source"]),
         esc(CLASSES[row["class"]]), SITE, esc(cid), esc(cid), human, ours, metrics_table(h, o))

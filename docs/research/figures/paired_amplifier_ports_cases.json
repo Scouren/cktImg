@@ -1,0 +1,630 @@
+{
+  "corpus_counts": {
+    "amsnet": 734,
+    "analoggenie": 2202
+  },
+  "corpus_sha256": {
+    "amsnet": "4d9e2ff15cc8a8ea814cfe8a6762ef90f3631cd63ca7f64c4035c6a824033b6c",
+    "analoggenie": "b882223f01fef03f98ef636783c6ad0db5d4ea7086a917ad6d7647cb864a95bd"
+  },
+  "method_checks": [
+    "twenty_literal_named_actual_endpoints",
+    "horizontal_reflection_keeps_named_input_identity",
+    "unknown_family_rejected",
+    "missing_vss_not_synthesized_rejected",
+    "triangle_not_a_box_rejected",
+    "unmatched_terminal_rejected",
+    "wrong_declared_binding_rejected",
+    "missing_own_lead_rejected",
+    "two_named_ports_cannot_share_a_lead_rejected",
+    "detached_body_attachment_rejected",
+    "disconnected_lead_path_rejected"
+  ],
+  "names": [
+    "ag-1103:x1",
+    "ag-1103:x2",
+    "ag-1103:x3"
+  ],
+  "rows": [
+    {
+      "bindings": [
+        "vss",
+        "vb_da",
+        "net10",
+        "net22",
+        "net9",
+        "net8",
+        "net11"
+      ],
+      "body": [
+        [
+          350.0,
+          -10.0
+        ],
+        [
+          450.0,
+          -10.0
+        ],
+        [
+          450.0,
+          110.0
+        ],
+        [
+          350.0,
+          110.0
+        ]
+      ],
+      "card": "x1",
+      "family": "da",
+      "id": "ag-1103",
+      "missing_geometry": [
+        "vss"
+      ],
+      "ports": [
+        "vss",
+        "vb",
+        "inp",
+        "inn",
+        "outp",
+        "outn",
+        "src"
+      ],
+      "source_object": "instance-ae4be71d-0189-4220-88f0-84130a682ee1",
+      "source_sha256": {
+        ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+        ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+        ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+      },
+      "visible_port_mapping": {
+        "inn": {
+          "attachment": [
+            350.0,
+            70.0
+          ],
+          "endpoint": [
+            340.0,
+            70.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net22",
+          "path": [
+            [
+              350.0,
+              70.0
+            ],
+            [
+              340.0,
+              70.0
+            ]
+          ]
+        },
+        "inp": {
+          "attachment": [
+            350.0,
+            30.0
+          ],
+          "endpoint": [
+            340.0,
+            30.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net10",
+          "path": [
+            [
+              350.0,
+              30.0
+            ],
+            [
+              340.0,
+              30.0
+            ]
+          ]
+        },
+        "outn": {
+          "attachment": [
+            450.0,
+            70.0
+          ],
+          "endpoint": [
+            460.0,
+            70.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net8",
+          "path": [
+            [
+              450.0,
+              70.0
+            ],
+            [
+              460.0,
+              70.0
+            ]
+          ]
+        },
+        "outp": {
+          "attachment": [
+            450.0,
+            30.0
+          ],
+          "endpoint": [
+            460.0,
+            30.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net9",
+          "path": [
+            [
+              450.0,
+              30.0
+            ],
+            [
+              460.0,
+              30.0
+            ]
+          ]
+        },
+        "src": {
+          "attachment": [
+            400.0,
+            110.0
+          ],
+          "endpoint": [
+            400.0,
+            120.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net11",
+          "path": [
+            [
+              400.0,
+              110.0
+            ],
+            [
+              400.0,
+              120.0
+            ]
+          ]
+        },
+        "vb": {
+          "attachment": [
+            400.0,
+            -10.0
+          ],
+          "endpoint": [
+            400.0,
+            -20.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "vb_da",
+          "path": [
+            [
+              400.0,
+              -10.0
+            ],
+            [
+              400.0,
+              -20.0
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb_pa",
+        "net14",
+        "net19",
+        "net20",
+        "net25",
+        "net7"
+      ],
+      "body": [
+        [
+          100.0,
+          230.0
+        ],
+        [
+          200.0,
+          230.0
+        ],
+        [
+          200.0,
+          350.0
+        ],
+        [
+          100.0,
+          350.0
+        ]
+      ],
+      "card": "x2",
+      "family": "pa",
+      "id": "ag-1103",
+      "missing_geometry": [
+        "vss"
+      ],
+      "ports": [
+        "vdd",
+        "vss",
+        "vb",
+        "inp",
+        "inn",
+        "outp",
+        "outn",
+        "src"
+      ],
+      "source_object": "instance-e11e3ef6-c2b8-4651-a34a-266ab8737e2f",
+      "source_sha256": {
+        ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+        ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+        ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+      },
+      "visible_port_mapping": {
+        "inn": {
+          "attachment": [
+            100.0,
+            310.0
+          ],
+          "endpoint": [
+            90.0,
+            310.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net19",
+          "path": [
+            [
+              100.0,
+              310.0
+            ],
+            [
+              90.0,
+              310.0
+            ]
+          ]
+        },
+        "inp": {
+          "attachment": [
+            100.0,
+            270.0
+          ],
+          "endpoint": [
+            90.0,
+            270.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net14",
+          "path": [
+            [
+              100.0,
+              270.0
+            ],
+            [
+              90.0,
+              270.0
+            ]
+          ]
+        },
+        "outn": {
+          "attachment": [
+            200.0,
+            310.0
+          ],
+          "endpoint": [
+            210.0,
+            310.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net25",
+          "path": [
+            [
+              200.0,
+              310.0
+            ],
+            [
+              210.0,
+              310.0
+            ]
+          ]
+        },
+        "outp": {
+          "attachment": [
+            200.0,
+            270.0
+          ],
+          "endpoint": [
+            210.0,
+            270.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net20",
+          "path": [
+            [
+              200.0,
+              270.0
+            ],
+            [
+              210.0,
+              270.0
+            ]
+          ]
+        },
+        "src": {
+          "attachment": [
+            150.0,
+            350.0
+          ],
+          "endpoint": [
+            150.0,
+            360.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net7",
+          "path": [
+            [
+              150.0,
+              350.0
+            ],
+            [
+              150.0,
+              360.0
+            ]
+          ]
+        },
+        "vb": {
+          "attachment": [
+            170.0,
+            230.0
+          ],
+          "endpoint": [
+            170.0,
+            220.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "vb_pa",
+          "path": [
+            [
+              170.0,
+              230.0
+            ],
+            [
+              170.0,
+              220.0
+            ]
+          ]
+        },
+        "vdd": {
+          "attachment": [
+            130.0,
+            230.0
+          ],
+          "endpoint": [
+            130.0,
+            220.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "vdd",
+          "path": [
+            [
+              130.0,
+              230.0
+            ],
+            [
+              130.0,
+              220.0
+            ]
+          ]
+        }
+      }
+    },
+    {
+      "bindings": [
+        "vdd",
+        "vss",
+        "vb_pa2",
+        "net6",
+        "net0",
+        "net4",
+        "net2",
+        "nc0001"
+      ],
+      "body": [
+        [
+          570.0,
+          230.0
+        ],
+        [
+          470.0,
+          230.0
+        ],
+        [
+          470.0,
+          350.0
+        ],
+        [
+          570.0,
+          350.0
+        ]
+      ],
+      "card": "x3",
+      "family": "pa",
+      "id": "ag-1103",
+      "missing_geometry": [
+        "vss"
+      ],
+      "ports": [
+        "vdd",
+        "vss",
+        "vb",
+        "inp",
+        "inn",
+        "outp",
+        "outn",
+        "src"
+      ],
+      "source_object": "instance-81926c08-cf4b-4c3f-8ff7-f2b157f68c89",
+      "source_sha256": {
+        ".cir": "c018efc3cd447427533f224722b506cc2291c14c4432c9e899c661a79ef8d095",
+        ".human.json": "ad567fedd864c185fde819ceba4bce9ffddd132bc4a889153cba06f7d4a5ada7",
+        ".svg": "db7ed0fcf1c6e547d345433d5245db6b1947773c4d0dd9f74da9934b614e0042"
+      },
+      "visible_port_mapping": {
+        "inn": {
+          "attachment": [
+            570.0,
+            310.0
+          ],
+          "endpoint": [
+            580.0,
+            310.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net0",
+          "path": [
+            [
+              570.0,
+              310.0
+            ],
+            [
+              580.0,
+              310.0
+            ]
+          ]
+        },
+        "inp": {
+          "attachment": [
+            570.0,
+            270.0
+          ],
+          "endpoint": [
+            580.0,
+            270.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net6",
+          "path": [
+            [
+              570.0,
+              270.0
+            ],
+            [
+              580.0,
+              270.0
+            ]
+          ]
+        },
+        "outn": {
+          "attachment": [
+            470.0,
+            310.0
+          ],
+          "endpoint": [
+            460.0,
+            310.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net2",
+          "path": [
+            [
+              470.0,
+              310.0
+            ],
+            [
+              460.0,
+              310.0
+            ]
+          ]
+        },
+        "outp": {
+          "attachment": [
+            470.0,
+            270.0
+          ],
+          "endpoint": [
+            460.0,
+            270.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "net4",
+          "path": [
+            [
+              470.0,
+              270.0
+            ],
+            [
+              460.0,
+              270.0
+            ]
+          ]
+        },
+        "src": {
+          "attachment": [
+            520.0,
+            350.0
+          ],
+          "endpoint": [
+            520.0,
+            360.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "nc0001",
+          "path": [
+            [
+              520.0,
+              350.0
+            ],
+            [
+              520.0,
+              360.0
+            ]
+          ]
+        },
+        "vb": {
+          "attachment": [
+            500.0,
+            230.0
+          ],
+          "endpoint": [
+            500.0,
+            220.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "vb_pa2",
+          "path": [
+            [
+              500.0,
+              230.0
+            ],
+            [
+              500.0,
+              220.0
+            ]
+          ]
+        },
+        "vdd": {
+          "attachment": [
+            540.0,
+            230.0
+          ],
+          "endpoint": [
+            540.0,
+            220.0
+          ],
+          "method": "declared named port matches its own attached SVG lead",
+          "net": "vdd",
+          "path": [
+            [
+              540.0,
+              230.0
+            ],
+            [
+              540.0,
+              220.0
+            ]
+          ]
+        }
+      }
+    }
+  ]
+}

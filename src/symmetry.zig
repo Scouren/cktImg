@@ -348,7 +348,8 @@ fn refine(gpa: Allocator, g: Graph, colour: []u32) !void {
         }
         for (order, 0..) |*o, v| o.* = @intCast(v);
         const ctx: SigOrder = .{ .g = g, .colour = colour, .sig = sig };
-        std.mem.sort(u32, order, ctx, SigOrder.lessThan);
+        // Equal signatures receive the same next colour, regardless of order.
+        std.sort.heap(u32, order, ctx, SigOrder.lessThan);
         var c: u32 = 0;
         for (order, 0..) |v, i| {
             if (i > 0 and ctx.lessThan(order[i - 1], v)) c += 1;

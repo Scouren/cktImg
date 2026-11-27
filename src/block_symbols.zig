@@ -58,6 +58,12 @@
 //!   source banks face that output; contextual VEA belongs only to the
 //!   complete reference shape. Digital, differential and opaque contracts
 //!   supply no such certificate. docs/research/driven-banks.md; `analogOutput`
+//! - block_symbols.11 (choice) Exact CT_INDUCTOR with N1/N2/N3 retains
+//!   two open windings, a filled midpoint and the N3 tap: 19 source glyphs
+//!   and 57 bindings. All three pins are passive; rule 2's input/output
+//!   sides concern active glyphs. Unknown, duplicate or extra ports remain
+//!   boxed. Canonical orientation does not predict source world facing.
+//!   docs/research/center-tap-symbols.md; `identify`, `draw`
 //!
 //! - block_symbols.11 (choice) Three four-bias amplifier contracts and
 //!   four clocked comparator contracts retain a signed triangle. All
@@ -90,7 +96,7 @@ const Pt = lib.Pt;
 const DrawOp = lib.DrawOp;
 
 /// Appearance only; every recognized symbol remains an electrical subcircuit.
-pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier, regulator_amplifier, four_bias_amplifier, clocked_comparator };
+pub const Shape = enum(u8) { box, amplifier, comparator, buffer, inverter, and_gate, nand_gate, or_gate, nor_gate, xor_gate, xnor_gate, differential_amplifier, reference_amplifier, regulator_amplifier, four_bias_amplifier, clocked_comparator, center_tap };
 
 /// Terminals and strokes allocated in `arena`, which the caller releases
 /// together. `ports` and its strings must outlive the returned drawing.
@@ -153,6 +159,17 @@ pub fn orderBoxPorts(def: *const netlist.Subckt, slots: ?[4]u8, order: []usize) 
 /// controls. No truth table is inferred from a subcircuit's implementation.
 pub fn identify(name: []const u8, ports: []const []const u8) Shape {
     if (ports.len < 2 or ports.len > ports_max) return .box;
+    if (oneOf(name, "ct_inductor")) {
+        if (ports.len != 3) return .box;
+        var seen: u3 = 0;
+        for (ports) |port| {
+            const bit: u3 = if (oneOf(port, "n1")) 1 else if (oneOf(port, "n2")) 2 else if (oneOf(port, "n3")) 4 else return .box;
+            if (seen & bit != 0) return .box;
+            seen |= bit;
+        }
+        assert(seen == 7);
+        return .center_tap;
+    }
     const aliases = [_]struct { names: []const u8, shape: Shape }{
         .{ .names = "opamp icm_opamp_vdd_vss voltage_amplifier amp amp1 ea cmp comp comparator a1 ea1 aea", .shape = .amplifier },
         .{ .names = "opamp_differential", .shape = .differential_amplifier },
@@ -238,6 +255,12 @@ pub fn draw(arena: Allocator, selected: Shape, ports: []const []const u8, pitch:
     assert(pitch <= 1_000_000);
     assert(ports.len >= 2);
     assert(ports.len <= ports_max);
+    if (shape == .center_tap) {
+        const terminals = try arena.alloc(lib.Terminal, ports.len);
+        var ops: std.ArrayList(DrawOp) = .empty;
+        try @import("center_tap.zig").draw(arena, ports, pitch, terminals, &ops);
+        return .{ .terminals = terminals, .ops = ops.items };
+    }
     const differential = shape == .differential_amplifier;
     const triangle = differential or shape == .amplifier or shape == .comparator or shape == .buffer or shape == .inverter or shape == .reference_amplifier;
     const rounded = shape == .or_gate or shape == .nor_gate or shape == .xor_gate or shape == .xnor_gate;

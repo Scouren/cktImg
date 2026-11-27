@@ -296,6 +296,7 @@ fn writeDevice(p: *const Placed, lib: *const Library, d: usize, w: *Writer) Writ
         .line => |l| try writePath(w, "cktsym", o, base, &.{ l.a, l.b }),
         .polyline => |ps| try writePath(w, "cktsym", o, base, ps),
         .circle => |c| try writeCircle(w, "draw[cktsym,fill=white]", geom.placePoint(o, base, c.c), c.r),
+        .filled_circle => |c| try writeCircle(w, "fill[black]", geom.placePoint(o, base, c.c), c.r),
         .text => |t| {
             try w.print("  \\node[cktsymlbl,font=\\fontsize{{{d}}}{{{d}}}\\selectfont] at ", .{ t.size, t.size });
             try writePoint(w, geom.placePoint(o, base, t.at));

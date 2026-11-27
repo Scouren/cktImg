@@ -19,13 +19,17 @@
 //!   `draw`
 //!
 //! Contents:
-//! - `pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!void`
+//! - `pub fn draw(c: *Canvas, nl: *const Netlist, net: u32, pins: []const u32, lines: *const NetLines, requests: Requests) Allocator.Error!void`
 
 const std = @import("std");
 const Allocator = std.mem.Allocator;
 const assert = std.debug.assert;
 const canvas = @import("canvas.zig");
 const trunk = @import("trunk.zig");
+const ct_controls = @import("ct_controls.zig");
+const Netlist = @import("netlist.zig").Netlist;
+const NetLines = @import("netlines.zig").NetLines;
+const Requests = @import("wire_requests.zig").Requests;
 
 const Canvas = canvas.Canvas;
 const pinAt = canvas.pinAt;
@@ -39,13 +43,14 @@ const cut = [3]u32{ 15, 11, 6 };
 /// A net joined by name between its parts: the pins standing near each
 /// other (each within `cut` of another of its part) on one trunk with one
 /// name; a pin on its own, or a part no trunk fits, a name at each pin.
-pub fn draw(c: *Canvas, net: u32, pins: []const u32) Allocator.Error!void {
+pub fn draw(c: *Canvas, nl: *const Netlist, net: u32, pins: []const u32, lines: *const NetLines, requests: Requests) Allocator.Error!void {
     assert(pins.len >= 1);
     const gpa = c.gpa;
     // Each pin's part: the least index of a pin in it.
     const part = try gpa.alloc(u32, pins.len);
     defer gpa.free(part);
     for (part, 0..) |*g, i| g.* = @intCast(i);
+    if (ct_controls.adjacent(c, nl, net, pins, lines, requests)) |pair| part[pair[1]] = pair[0];
     var merged = true;
     var rounds: usize = 0;
     while (merged) : (rounds += 1) {
