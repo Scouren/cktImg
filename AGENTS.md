@@ -28,7 +28,7 @@ Language:
 
 | Skill | Use it for here |
 |---|---|
-| `zig` | Everything: Zig 0.17 idioms and the zero-cost probe; the plugin runs as a wasm guest, so size counts (550 KB cap) |
+| `zig` | Everything: Zig 0.17 idioms and the zero-cost probe; the plugin runs as a wasm guest, so size counts (1 MiB cap) |
 
 Project-specific:
 
@@ -148,7 +148,7 @@ same commit.
   `netlist-import.wasm` is byte-reproducible under.
 - `zig build -Dschemify_plugin=true` rebuilds `netlist-import.wasm`, which is
   committed. Commit it with any change to `src/` or `tools/schemify/`: CI fails
-  when the committed module differs from its rebuild, or reaches 550 KB.
+  when the committed module differs from its rebuild, or reaches 1 MiB.
 - `zig build test` with `-Dlatex_renderer=false` and `=true` (the option gates
   code, both must pass), `zig fmt --check`, and `zig build gallery -- --svgs out/`
   to eyeball a layout change.

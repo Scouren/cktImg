@@ -17,6 +17,8 @@ Each merge into `main` since 2026-11-26, why it was taken, and what it measured 
 tree. Corpus numbers are `corpus_score.py` against the cached hand drawings (AnalogGenie 2,202,
 AMS-Net 734) and `compare_corpus.py` over all 5,274 decks, `main` before -> after.
 
+- CI's `netlist-import.wasm` size cap is raised from 550 KiB (563,200 bytes) to 1 MiB (1,048,576 bytes), at the owner's decision: the merged layout work puts the guest at 736,096 bytes on 4c409314.
+
 - Human layout patterns, 33 commits (#22): taken because it moves the drawings toward the hand
   layouts with no new gate findings. Decks matching every scored relation: AnalogGenie 290 -> 293,
   AMS-Net 243 -> 246; gate directions, gates, orientations and x/y positions each gain, none

@@ -42,7 +42,7 @@ and their metadata as one collection unit.
 | Random netlists | `nix develop -c zig build fuzz` | 4,000 deterministic cases checking electrical connectivity, shorts, dots, honoured hints and reversed-card determinism. Both honoured and physically refused stack requests are checked independently against emitted device rows and primary terminal coordinates. |
 | Gallery | `nix develop -c zig build gallery -- --svgs out/` | Exact example names, reviewed SVG changes and the corresponding source figures. |
 | Gallery measurements | `python3 -I -B tests/site_metrics.py` | Literal complete, absent, and unresolved label bindings; missing evidence is displayed as unknown. Runs in CI and before site publication. |
-| Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `netlist-import.wasm`; size is strictly below 563,200 bytes. |
+| Plugin | `nix develop -c zig build -Dschemify_plugin=true` | Rebuild matches committed `netlist-import.wasm`; size is strictly below 1,048,576 bytes (1 MiB). |
 | Real editor round trip | `python3 tests/roundtrip.py <schemify-bin-dir> [deck ...]` | Schemify imports, netlists back and compares with `spicecmp`; omitted decks mean the complete fixture list. |
 | Production comparison | [Implementation checkpoints and reproduction command](docs/research/production-patterns/checkpoints.md) | Compare the full native placement and SVG for both binaries and retain named changes and findings. |
 | Full source corpus | [corpus-scorecard.md](docs/research/corpus-scorecard.md) | Exact source names and hashes, independently measured wire metrics and named structural relations. |

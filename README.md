@@ -537,7 +537,7 @@ python3 tests/roundtrip.py <dir>      # every fixture imported, netlisted back a
 
 Run them inside `nix develop`, which pins Zig 0.17.0 and the Binaryen optimizer
 used for the Schemify plugin. The module is byte-reproducible there. CI fails when it differs from
-its rebuild or reaches 550 KB. `tests/roundtrip.py` needs `schemify` and
+its rebuild or reaches 1 MiB. `tests/roundtrip.py` needs `schemify` and
 `spicecmp` from a Schemify development build (`dev-cli`) in `<dir>`:
 
 ```sh
