@@ -1,0 +1,58 @@
+"""The four statements: text in, a `Controls` table out.
+
+    net <nets> : supply | ground | bias | clock | signal
+    stage <name> : <devices>
+    match <a> <b> [<c> ...]        devices, or stages
+    flow <e> -> <e> -> ...         e = one or more devices or stages; the two ends may be nets
+
+One statement per line, `#` starts a comment, names as in the deck, case-insensitive. A line
+may also carry the `*@` prefix a SPICE deck needs to hide it from a simulator.
+"""
+import collections
+
+ROLES = ("supply", "ground", "bias", "clock", "signal")
+
+
+class Controls:
+    def __init__(self):
+        self.roles, self.stages, self.matches, self.flows, self.errors = {}, collections.OrderedDict(), [], [], []
+
+
+def parse(text):
+    k = Controls()
+    for raw in text.splitlines():
+        line = raw.split("#", 1)[0].strip().lower()
+        if line.startswith("*@"):
+            line = line[2:].strip()
+        if not line:
+            continue
+        verb, _, rest = line.partition(" ")
+        rest = rest.strip()
+        if verb == "net":
+            toks = rest.replace(":", " ").replace(",", " ").split()
+            if len(toks) < 2 or toks[-1] not in ROLES:
+                k.errors.append("refused `%s`: a net line ends with one of %s" % (raw.strip(), ", ".join(ROLES)))
+                continue
+            for n in toks[:-1]:
+                k.roles[n] = toks[-1]
+        elif verb == "stage":
+            toks = rest.replace(":", " ").replace(",", " ").split()
+            if len(toks) < 2:
+                k.errors.append("refused `%s`: a stage needs a name and its devices" % raw.strip())
+                continue
+            k.stages[toks[0]] = toks[1:]
+        elif verb == "match":
+            toks = rest.replace(",", " ").replace(":", " ").split()
+            if len(toks) < 2:
+                k.errors.append("refused `%s`: match needs two names or more" % raw.strip())
+                continue
+            k.matches.append(toks)
+        elif verb == "flow":
+            chain = [e.replace(",", " ").split() for e in rest.split("->")]
+            if len(chain) < 2 or any(not e for e in chain):
+                k.errors.append("refused `%s`: flow needs a -> b" % raw.strip())
+                continue
+            k.flows.append(chain)
+        else:
+            k.errors.append("refused `%s`: unknown statement" % raw.strip())
+    return k
