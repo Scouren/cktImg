@@ -35,7 +35,7 @@ def draw(deck_text, statements_text=""):
     k = derive(c, parse(text))
     placement, groups, more = place(c, k)
     stamp(schema, c, placement)
-    notes = notes + more + route(c, k, schema)
+    notes = notes + more + route(c, k, schema, groups)
     schema["net_pieces"] = gates.pieces(schema)
     r = Result()
     r.schema, r.contract, r.statements = schema, k, text

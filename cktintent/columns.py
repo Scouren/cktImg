@@ -128,16 +128,19 @@ def _topo(items, before, key):
     return out, cut
 
 
-def _distance(c, k, start):
-    """Fewest shared off-rail nets from device `start` to every other device."""
+def _distance(c, k, start, branch=False):
+    """Fewest shared off-rail nets from device `start` to every other device; with `branch`,
+    counted through channels and two-pin parts only (a gate carries no current)."""
+    def pins(v):
+        return [n for p, n in v.nets.items() if n and not (branch and v.kind == "t" and p not in ("d", "s"))]
     dist, todo = {start: 0}, collections.deque([start])
     while todo:
         x = todo.popleft()
-        for p, net in c.by[x].nets.items():
-            if net is None or net in k.view.rails:
+        for net in pins(c.by[x]):
+            if net in k.view.rails:
                 continue
             for v, q in c.net_pins.get(net, ()):
-                if v.name not in dist:
+                if v.name not in dist and net in pins(v):
                     dist[v.name] = dist[x] + 1
                     todo.append(v.name)
     return dist
@@ -229,6 +232,8 @@ def assign_columns(c, k):
     # ---- axis groups: a matched pair, its images, what stands on the axis
     side, axis_of, groups = {}, {}, []
     inward = {frozenset((p[0].name, p[1].name)) for r, kind, p, t in k.relations if kind == "gates" and p[2] == "inward"}
+    inward |= {frozenset(p) for p in k.cross}
+    mirrors = [(p[0].name, p[1].name, p[2].name, p[3].name) for r, kind, p, t in k.relations if kind == "mirrored"]
     for a, b in k.axes:
         if a not in unit_of or b not in unit_of:
             continue
@@ -237,22 +242,23 @@ def assign_columns(c, k):
             continue
         if order[a] > order[b]:
             a, b, ua, ub = b, a, ub, ua
-        g = {"pair": (a, b), "left": [ua], "right": [ub], "on": [], "half0": PAIR_IN if frozenset((a, b)) in inward else PAIR_OUT}
+        tight = any(frozenset((m, n)) in inward for m in members[ua] for n in members[ub])   # gates between the two columns
+        g = {"pair": (a, b), "left": [ua], "right": [ub], "on": [], "half0": PAIR_IN if tight else PAIR_OUT}
         axis_of[ua] = axis_of[ub] = len(groups)
-        da, db = _distance(c, k, a), _distance(c, k, b)
+        near = [(_distance(c, k, n, True), _distance(c, k, n)) for n in (a, b)]
         images = []
-        for rule, kind, p, text in k.relations:
-            if kind == "mirrored" and {p[2].name, p[3].name} == {a, b}:
-                u, w = p[0].name, p[1].name
-                if u not in unit_of or w not in unit_of:
-                    continue
-                uu, uw = unit_of[u], unit_of[w]
-                if uu == uw or uu in axis_of or uw in axis_of or cluster[uu] != cluster[ua] or cluster[uw] != cluster[ua]:
-                    continue
-                near_a = (da.get(u, 99), order[u]) < (db.get(u, 99), order[w])
-                l, r = (uu, uw) if near_a else (uw, uu)
-                images.append((min(da.get(u, 99), db.get(u, 99)), order[u], l, r))
-                axis_of[uu] = axis_of[uw] = len(groups)
+        for u, w, pa, pb in mirrors + k.images:        # the contract's mirrors, then every other image in the cluster
+            if {pa, pb} != {a, b} or u not in unit_of or w not in unit_of:
+                continue
+            uu, uw = unit_of[u], unit_of[w]
+            if uu == uw or uu in axis_of or uw in axis_of or cluster[uu] != cluster[ua] or cluster[uw] != cluster[ua]:
+                continue
+            if uu in lane_units or uw in lane_units:
+                continue
+            da, db = [tuple(d.get(u, 99) for d in side) + (o,) for side, o in zip(near, (order[u], order[w]))]
+            l, r = (uu, uw) if da < db else (uw, uu)
+            images.append((min(da[:2], db[:2]), order[u], l, r))
+            axis_of[uu] = axis_of[uw] = len(groups)
         for dist, o, l, r in sorted(images):
             g["left"].append(l)
             g["right"].append(r)
@@ -334,7 +340,8 @@ def assign_columns(c, k):
                 edge_of[u] = ends[None]
             out.groups.append({"axis": axis, "pair": g["pair"],
                                "left": [m for u in g["left"] for m in members[u]],
-                               "right": [m for u in g["right"] for m in members[u]]})
+                               "right": [m for u in g["right"] for m in members[u]],
+                               "cols": [(members[l], members[r]) for l, r in zip(g["left"], g["right"])]})
         if any(u not in lane_units for u in members if cluster[u] == cname):
             wall = max(ends.values(), default=0) + 40  # air after a cluster that holds a column
             for ln in list(ends) + [None]:

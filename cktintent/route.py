@@ -94,12 +94,29 @@ def _flow_ends(k):
     return ins, outs
 
 
-def _port(c, schema, maze, net, direction, pins, devs):
+def _half(groups, pins):
+    """'L' or 'R' when every pin of the net stands in that half of one axis group, else None."""
+    names = {t[4].name for t in pins if t[5] != "g"}      # a gate does not say which half a net is in
+    for g in groups:
+        if names & set(g["left"]) and not names & set(g["right"]):
+            return "L"
+        if names & set(g["right"]) and not names & set(g["left"]):
+            return "R"
+    return None
+
+
+def _port(c, schema, maze, net, direction, pins, devs, groups):
     """Place one port for `net` and register it as a terminal. -> its point."""
     mine = [t for t in pins if devs and t[4] in devs] or pins
-    if direction == "output":
-        x, y, ex, ey, v, p = max(mine, key=lambda t: (t[0], -t[1]))
-        want = (max(t[0] for t in pins) + 40, y + ey * STUB if ey else y)
+    half = _half(groups, pins)
+    branch = [t for t in mine if t[5] != "g"] or mine
+    if direction != "input" and half == "L":           # a mirrored left half: the port leaves to the left
+        x, y, ex, ey, v, p = min(branch, key=lambda t: (t[0], t[1]))
+        want = (min(t[0] for t in branch) - 60, y + ey * STUB if ey else y)
+        step, face = (-CELL, 0), (1, 0)
+    elif direction == "output" or (direction != "input" and half == "R"):
+        x, y, ex, ey, v, p = max(branch, key=lambda t: (t[0], -t[1]))
+        want = (max(t[0] for t in (branch if half else pins)) + 60, y + ey * STUB if ey else y)
         step, face = (CELL, 0), (-1, 0)
     else:
         gates = [t for t in mine if t[2]] or mine
@@ -126,7 +143,46 @@ def _port(c, schema, maze, net, direction, pins, devs):
     return (px, py)
 
 
-def route(c, k, schema):
+def _cross_pairs(c, k, schema, maze, terms):
+    """W4: a cross-coupled pair's two gate wires swap sides as a 45-degree X, drawn between
+    the gates and the level 60 px toward the drains. Two pairs facing each other (a latch of
+    two inverters) share that level, and their two Xs meet on it. -> how many Xs were drawn"""
+    at = {(t[4].name, t[5]): t for pins in terms.values() for t in pins}
+    corners = collections.Counter()
+    for a, b in k.cross:
+        ga, gb = at.get((a, "g")), at.get((b, "g"))
+        if ga is None or gb is None:
+            continue
+        if ga[0] > gb[0]:
+            a, b, ga, gb = b, a, gb, ga
+        da, db = at[(a, "d")], at[(b, "d")]
+        if ga[1] != gb[1] or gb[0] - ga[0] != 60 or ga[2] != 1 or gb[2] != -1 or da[3] != db[3] or not da[3]:
+            continue
+        up = da[3]                                     # -1: drains on top, the X stands above the gates
+        y, yx = ga[1], ga[1] + up * 60
+        inner = [(ga[0] + 10 * i, y + up * 10 * i) for i in range(1, 6)] + [(gb[0] - 10 * i, y + up * 10 * i) for i in range(1, 6)]
+        legs = []                                      # (gate, net, the wire from the drain to the X's corner)
+        for gate, drain, corner in ((ga, db, gb[0]), (gb, da, ga[0])):
+            legs.append((gate, drain[4].net("d"), [(drain[0], drain[1]), (drain[0], yx), (corner, yx)]))
+        clear = all(maze.free(x, yy) for x, yy in inner)
+        for gate, net, (p0, p1, p2) in legs:
+            cells = [(p0[0], yy) for yy in range(min(p0[1], yx), max(p0[1], yx) + 1, CELL)]
+            cells += [(x, yx) for x in range(min(p1[0], p2[0]), max(p1[0], p2[0]) + 1, CELL)]
+            clear = clear and all(maze.open(net, x, yy) for x, yy in cells)
+        if not clear:
+            continue
+        for gate, net, path in legs:
+            maze.lay(net, path)
+            maze.claim(net, gate[0], gate[1])
+            schema["wires"].append({"net": net, "segments": [[[gate[0], gate[1]], list(path[-1])]]})
+            corners[path[-1]] += 1
+        for x, yy in inner:
+            maze.block(x, yy, x, yy)
+    schema["junctions"] += [list(p) for p, n in sorted(corners.items()) if n > 1]   # two Xs meet a wire
+    return sum(corners.values()) // 2
+
+
+def route(c, k, schema, groups=()):
     """Fill the stamped `schema` with wires, markers, labels and junctions. -> notes"""
     maze, notes = Maze(), []
     terms = _terminals(c, schema)
@@ -137,6 +193,7 @@ def route(c, k, schema):
         for x, y, ex, ey, v, p in pins:
             maze.pin(net, x, y, ex, ey)
     _rails(c, k, schema, maze, terms)
+    drawn = _cross_pairs(c, k, schema, maze, terms)   # each X is one crossing the maze does not see
     named = {n for n, r in k.view.k.roles.items() if r in ("bias", "clock")}
     for net in sorted(named):
         for x, y, ex, ey, v, p in terms.get(net, ()):
@@ -148,7 +205,7 @@ def route(c, k, schema):
         points[net] = [(t[0], t[1]) for t in terms[net]]
         if net in ins or net in outs or net in c.port_nets:
             direction = "input" if net in ins else "output" if net in outs else "passive"
-            points[net].append(_port(c, schema, maze, net, direction, terms[net], ins.get(net) or outs.get(net)))
+            points[net].append(_port(c, schema, maze, net, direction, terms[net], ins.get(net) or outs.get(net), groups))
 
     def span(net):
         xs, ys = [p[0] for p in points[net]], [p[1] for p in points[net]]
@@ -172,5 +229,5 @@ def route(c, k, schema):
                     _name_at(c, schema, maze, net, x, y, t[2], t[3])
                 else:
                     schema["labels"].append({"net": net, "name": net, "at": [x, y], "side": [0, -1]})
-    schema["crossings"] = maze.crossings()
+    schema["crossings"] = maze.crossings() + drawn
     return notes

@@ -17,21 +17,29 @@ NEAR = 20          # px of wire between an attached part and the pin it serves
 LANE = 120         # px between two lanes
 
 
-def orient_gates(c, k, X, groups):
-    """{transistor name: 'left'|'right'} for the upright transistors, from M2, B6 and the axes."""
+def orient_gates(c, k, X, groups, rows):
+    """{transistor name: 'left'|'right'} for the upright transistors: M2, then a cross-coupled
+    pair looks inward, B6, and two devices mirrored about an axis look opposite ways."""
     gate, twins = {}, []
+    by_x = lambda a, b: (a, b) if X[a] <= X[b] else (b, a)
     for rule, kind, p, text in k.relations:
         if kind == "gates" and p[0].name in X and p[1].name in X:
-            l, r = (p[0], p[1]) if X[p[0].name] <= X[p[1].name] else (p[1], p[0])
+            l, r = by_x(p[0].name, p[1].name)
             if p[2] == "inward":
-                gate[l.name], gate[r.name] = "right", "left"
+                gate[l], gate[r] = "right", "left"
             elif p[2] == "outward":
-                gate[l.name], gate[r.name] = "left", "right"
+                gate[l], gate[r] = "left", "right"
             else:
-                twins.append((l.name, r.name))
+                twins.append((l, r))
         elif kind == "mirrored" and p[0].name in X and p[1].name in X and p[0].kind == "t":
-            l, r = (p[0], p[1]) if X[p[0].name] <= X[p[1].name] else (p[1], p[0])
-            twins.append((l.name, r.name))
+            twins.append(by_x(p[0].name, p[1].name))
+    for a, b in k.cross:
+        if a in X and b in X and rows[a] == rows[b] and a not in gate and b not in gate and X[a] != X[b]:
+            l, r = by_x(a, b)
+            gate[l], gate[r] = "right", "left"
+    for g in groups:                                # the same row of two mirrored columns
+        twins += [(l, r) for L, R in g["cols"] for l in L for r in R
+                  if rows[l] == rows[r] and c.by[l].kind == "t" and c.by[r].kind == "t"]
     for rule, kind, p, text in k.relations:
         if kind == "gate_toward_pins" and p[0].name in X and p[0].name not in gate:
             xs = [X[d.name] for d, q in p[1] if d.name in X]
@@ -268,19 +276,57 @@ def _lanes(c, k, board, lay):
         level[ln] = board.at[name][1]
 
 
+def _row_y(k, rows, height):
+    """y of each row: 80 px apart, with 40 more where a cross-coupled pair draws its X."""
+    extra = [0] * (height + 1)                        # extra[r]: added above row r
+    for a, b in k.cross:
+        if a in rows and rows[a] == rows.get(b):
+            extra[rows[a] + (0 if k.view.c.by[a].pol == "n" else 1)] = 40
+    ys, y = [], 0
+    for r in range(height):
+        y += extra[r]
+        ys.append(y)
+        y += ROW
+    return ys
+
+
+def _bridges(c, k, board, lay):
+    """M4: a part bridging the two halves of a matched pair lies flat on the axis, clear of an X."""
+    axis = {g["pair"]: g["axis"] for g in lay.groups}
+    for rule, kind, p, text in k.relations:
+        if kind != "on_axis" or p[0].name in board.at or p[0].kind in ("t", "blk"):
+            continue
+        v = p[0]
+        ax = axis.get((p[1].name, p[2].name), axis.get((p[2].name, p[1].name)))
+        A, B = board.anchors(v, "a"), board.anchors(v, "b")
+        if ax is None or not A or not B:
+            continue
+        far = [a for a in A + B if a[3] > 0]          # a pin of the row beyond: stand just past it
+        near = [a for a in A + B if a[3] < 0]
+        if far:
+            y = max(a[1] for a in far) + NEAR
+        elif near:
+            y = min(a[1] for a in near) - 60 - NEAR
+        else:
+            y = min(a[1] for a in A + B)
+        left = "a" if sum(a[0] for a in A) / len(A) <= sum(b[0] for b in B) / len(B) else "b"
+        board.settle(v, ax, y, _flat(v, left, near_left=True), (0, -20))
+
+
 def place(c, k):
     """-> (placement {name: (x, y, o)}, axis groups, notes). See the module header."""
     rows, height, notes = assign_rows(c, k)
     lay = assign_columns(c, k)
     X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
     notes += lay.notes
-    gate = orient_gates(c, k, X, groups)
+    gate = orient_gates(c, k, X, groups, rows)
+    row_y = _row_y(k, rows, height)
     board = Board(c, k)
     spans = collections.defaultdict(list)
     for v in c.devs:
         if v.name not in X:
             continue
-        y = rows[v.name] * ROW
+        y = row_y[rows[v.name]]
         if v.kind == "t":
             x = X[v.name] - 10 if gate[v.name] == "left" else X[v.name] + 10
             o = {"upright": True, "gate": gate[v.name]}
@@ -291,6 +337,12 @@ def place(c, k):
     for x, ys in spans.items():                       # the wire of a column: nothing may be laid across it
         if max(ys) - min(ys) > ROW:
             board.keep_out((x - 5, min(ys), x + 5, max(ys)))
+    for a, b in k.cross:                              # where an X will be drawn: keep parts out of it
+        if a in X and b in X and board.at[a][1] == board.at[b][1]:
+            xa, xb = sorted((X[a], X[b]))
+            y = board.at[a][1]
+            board.keep_out((xa + 15, y - 65, xb - 15, y - 5) if c.by[a].pol == "n" else (xa + 15, y + 5, xb - 15, y + 65))
+    _bridges(c, k, board, lay)
     _lanes(c, k, board, lay)
     _attach(c, k, board)
     placement = dict(board.at)

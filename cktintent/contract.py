@@ -114,7 +114,7 @@ class View:
 
 class Contract:
     """What `derive` returns. A relation is (rule id, kind, payload, sentence)."""
-    __slots__ = ("relations", "notes", "view", "upright", "flat", "top", "bot", "around", "axes")
+    __slots__ = ("relations", "notes", "view", "upright", "flat", "top", "bot", "around", "axes", "images", "cross")
 
     def __iter__(self):                    # (relations, notes) = derive(...) still unpacks
         return iter((self.relations, self.notes))
@@ -381,6 +381,7 @@ def derive(c, k):
             R.append(("N1", "wired", n, "net %s is a signal: one wire" % n))
     # ---------------------------------------------------------------- match
     axes = []   # (a, b) matched device pairs, for port sides
+    images = []   # (u, w, a, b) names: u and w swap when the matched pair a, b does
     image_axis = {}   # device name -> the matched pair whose swap moves it
     for names in k.matches:
         groups = [V.devs_of(n) for n in names]
@@ -470,6 +471,7 @@ def derive(c, k):
             if x < y and {x, y} != {a.name, b.name}:
                 if SCOPE != "stage" and u.name in upright and w.name in upright:
                     # the row is promised for upright images only: flat twins follow the pins they feed
+                    images.append((u.name, w.name, a.name, b.name))
                     R.append(("M3", "same_row", [u, w], "%s and %s are images under %s<->%s: one row" % (u.name, w.name, a.name, b.name)))
                 if shared and u.name in upright and w.name in upright:
                     R.append(("M3x", "mirrored", (u, w, a, b), "%s and %s are images under %s<->%s%s: mirrored about that axis" % (u.name, w.name, a.name, b.name, " in its columns" if in_cols else " in stage " + str(st))))
@@ -518,4 +520,11 @@ def derive(c, k):
     out.upright, out.flat, out.top, out.bot = upright, flat, top, bot
     out.around = {name: (v.name, d.name) for name, (v, d, why) in around.items()}
     out.axes = [(a.name, b.name) for a, b in axes]
+    out.images = images
+    by_gd = collections.defaultdict(list)             # cross-coupled: each one's gate on the other's drain
+    for v in c.devs:
+        if v.kind == "t" and v.name in upright and v.net("g") and v.net("d") and v.net("g") != v.net("d"):
+            by_gd[(v.pol, v.net("g"), v.net("d"))].append(v.name)
+    out.cross = sorted((a, b) for (pol, g, d), names in by_gd.items() for a in names
+                       for b in by_gd.get((pol, d, g), ()) if a < b)
     return out

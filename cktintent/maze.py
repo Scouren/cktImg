@@ -51,6 +51,13 @@ class Maze:
         cell = (x // CELL, y // CELL)
         return cell not in self.blocked and cell not in self.pins and cell not in self.h and cell not in self.v
 
+    def open(self, net, x, y):
+        """True when a wire of `net` may be laid at (x, y) px: free, or its own pin or wire."""
+        cell = (x // CELL, y // CELL)
+        if cell in self.pins:
+            return self.pins[cell][0] == net
+        return cell not in self.blocked and self.h.get(cell, net) == net and self.v.get(cell, net) == net
+
     # ---------------------------------------------------------------- one connection
     def _enter(self, net, cell, d):
         """Cost of stepping into `cell` along d for `net`, or None when it may not."""
@@ -154,8 +161,10 @@ class Maze:
             assert c in self.pins and self.pins[c][0] == net, (net, x, y)
             if c not in cells:
                 cells.append(c)
-        groups = []                                # [set of cells], each one wired piece
+        groups = [set(self.tree[net])] if self.tree.get(net) else []   # a piece laid before (`lay`) counts
         for cell in sorted(cells):
+            if groups and cell in groups[0]:
+                continue
             for g in sorted(groups, key=len, reverse=True):
                 path = self._link(net, cell, g)
                 if path is not None:
@@ -185,6 +194,26 @@ class Maze:
         self.tree[net] = groups[0] if groups else set()
         mine = set(cells)
         return [[(c[0] * CELL, c[1] * CELL) for c in sorted(g & mine)] for g in groups]
+
+    def lay(self, net, points):
+        """Lay a wire of `net` along the given px points (each step straight, on the grid),
+        outside the search. The points become part of the net's tree."""
+        path = []
+        for (x0, y0), (x1, y1) in zip(points, points[1:]):
+            a, b = (x0 // CELL, y0 // CELL), (x1 // CELL, y1 // CELL)
+            assert a[0] == b[0] or a[1] == b[1], (net, points)
+            d = ((b[0] > a[0]) - (b[0] < a[0]), (b[1] > a[1]) - (b[1] < a[1]))
+            cell = a
+            while cell != b:
+                if not path or path[-1] != cell:
+                    path.append(cell)
+                cell = (cell[0] + d[0], cell[1] + d[1])
+            path.append(b)
+        self._commit(net, path)
+
+    def claim(self, net, x, y):
+        """Count the pin at (x, y) px as already joined to the net's tree (a slanted wire reaches it)."""
+        self.tree.setdefault(net, set()).add((x // CELL, y // CELL))
 
     # ---------------------------------------------------------------- reading the result
     def segments(self, net):
