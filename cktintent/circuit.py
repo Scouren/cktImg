@@ -215,6 +215,10 @@ def mates_from(c, a, b):
                                 if w is u and not swap and u.net("a") != u.net("b") and not (nm.get(u.net("a")) == u.net("a") and nm.get(u.net("b"), u.net("b")) == u.net("b")):
                                     continue
                                 cands.setdefault(w.name, (w, swap))
+                if len(cands) > 1 and u.kind == "t" and u.net("g") is not None:
+                    # twins in parallel branches: the one on the same control line, or on its image
+                    told = {n: t for n, t in cands.items() if t[0].net("g") in (u.net("g"), nm.get(u.net("g")))}
+                    cands = told if len(told) == 1 else cands
                 if len(cands) == 1:
                     w, swap = next(iter(cands.values()))
                     bind(u, w, swap)

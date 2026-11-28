@@ -17,6 +17,8 @@ def _same_row_sets(k):
             yield [d.name for d in p], text
         elif kind == "mirrored":
             yield [p[0].name, p[1].name], text
+    for a, b in k.cross:
+        yield [a, b], "%s and %s are cross-coupled: one row" % (a, b)
 
 
 def assign_rows(c, k):

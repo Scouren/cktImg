@@ -1,11 +1,14 @@
 """Sweep the hand-drawn corpus: draw every deck, gate it, and compare with the person's drawing.
 
 usage: python3 -I tools/corpus.py <examples-dir> [--statements DIR | --stand-in] [--split train|test|all]
-                                   [--limit N] [--svg DIR] [--ids id,id,...] [-v]
+                                   [--limit N] [--svg DIR] [--ids id,id,...] [-v] [--people]
 
   (default)       no statement: the baseline alone
   --statements    <DIR>/<id>.ctl for the circuits that have one (tools/statements: the 48 blind files)
   --stand-in      statements derived from each drawing's structure (the corpus study's stand-in)
+
+  --people        judge the people's drawings instead of the tool's: how often each rule of the
+                  contract holds in what people drew (the contract's own evidence)
 
 The corpus is third-party data and is not on this branch: pass its path. Reports, over the
 circuits drawn: crashes, illegal drawings (by gate), relations shown, terminals joined by
@@ -15,7 +18,7 @@ import collections, os, sys, time, traceback
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 from corpus_lib import load_all, find_structs, signal_depth, pct
-from cktintent import draw, render_svg
+from cktintent import draw, render_svg, judge
 
 
 def human_crossings(c):
@@ -80,6 +83,22 @@ def stand_in(c):
     return "\n".join(L)
 
 
+def people(circuits, statements):
+    """Print how often each rule of the contract holds in the people's drawings."""
+    shown, total = collections.Counter(), collections.Counter()
+    for c in circuits:
+        for rule, ok, text in judge.check(c, statements(c))[0]:
+            if ok is not None:
+                total[rule] += 1
+                shown[rule] += ok
+    for rule in sorted(total):
+        print("  %-4s %s" % (rule, pct(shown[rule], total[rule])))
+    base = [r for r in total if r[0] == "B"]
+    print("  baseline %s; all relations %s" % (pct(sum(shown[r] for r in base), sum(total[r] for r in base)),
+                                               pct(sum(shown.values()), sum(total.values()))))
+    return 0
+
+
 def main(argv):
     root = argv[0]
     opt = {"split": "test", "limit": 0, "svg": None, "statements": None, "ids": None}
@@ -93,21 +112,22 @@ def main(argv):
     T = collections.Counter()
     gates_hit, crashes, slow, missed = collections.Counter(), [], [], collections.Counter()
     src = {"ag": "analoggenie", "amsnet": "amsnet", "ar": "analogretriever", "ct": "circuitthink"}
-    for c in load_all(root, None if (ids or opt["split"] == "all") else opt["split"], ids=ids):
-        if not c.clean():
-            continue
+
+    def statements(c):
+        path = os.path.join(opt["statements"] or "", c.id + ".ctl")
+        if opt["statements"] and os.path.exists(path):
+            with open(path) as f:
+                return f.read()
+        return stand_in(c) if stand else ""
+    circuits = (c for c in load_all(root, None if (ids or opt["split"] == "all") else opt["split"], ids=ids) if c.clean())
+    if "--people" in argv:
+        return people(circuits, statements)
+    for c in circuits:
         if opt["limit"] and T["circuits"] >= int(opt["limit"]):
             break
         with open(os.path.join(root, src[c.id.split("-")[0]], c.id + ".cir")) as f:
             deck = f.read()
-        text = ""
-        if opt["statements"]:
-            path = os.path.join(opt["statements"], c.id + ".ctl")
-            if os.path.exists(path):
-                with open(path) as f:
-                    text = f.read()
-        elif stand:
-            text = stand_in(c)
+        text = statements(c)
         T["circuits"] += 1
         t0 = time.time()
         try:

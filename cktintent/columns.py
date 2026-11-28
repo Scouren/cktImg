@@ -3,20 +3,20 @@
     assign_columns(c, k) -> Layout
 
 Reads the contract only. A *unit* is what moves as one thing along x:
-    a column   upright devices the contract puts in one column (B3), plus two joints people
+    a column   upright devices the contract puts in one column (B3), plus the joints people
                draw as a column and the contract does not promise: the same-polarity pair
-               at a fold node, and an inverter's two devices
+               at a fold node, an inverter's two devices, a string on a rail, and a load
+               on a rail over one of the devices it loads
     a lane     a part that lies flat (a lead, a switch, a part named on a flow), or a block
 Units gather into clusters: a declared stage, what is joined to it by branch current, or
 each joined group on its own. Clusters stand in flow order (F1); inside one, a matched pair
 and its images stand mirrored about one axis (M3x), with what the contract puts on the axis
-(M4). A part hanging on a rail goes next to the unit that holds its other end. Lane parts on
+(M4): see `axes`. A part hanging on a rail goes next to the unit that holds its other end. Lane parts on
 different flow lines may share x: each line is a lane of its own.
 """
 import collections
 from . import symbols
-
-PAIR_OUT, PAIR_IN, PITCH, MARGIN = 40, 60, 120, 60     # half pitch of a pair (gates out / in), unit pitch, edge
+from .axes import Axes, MARGIN
 
 
 class Layout:
@@ -36,6 +36,7 @@ def _units(c, k, flow_devs):
             parent[x] = parent[parent[x]]
             x = parent[x]
         return x
+    stage = k.view.stage_of
     used = set()                                       # (device, 'top'|'bot'): that end already continues a column
     for rule, kind, p, text in k.relations:
         if kind == "same_col" and p[0].name in k.upright and p[2].name in k.upright:
@@ -51,16 +52,37 @@ def _units(c, k, flow_devs):
         ts = [v for v, p in pins if v.kind == "t" and p in ("d", "s") and v.name in k.upright]
         tops = [v for v in ts if k.top.get(v.name) == net]
         bots = [v for v in ts if k.bot.get(v.name) == net]
-        if len(tops) + len(bots) < 3:
+        if not tops or not bots:
             continue
-        same = [(b, t) for b in bots for t in tops if b.pol == t.pol and b is not t]
-        gate = [(b, t) for b in bots for t in tops if b.pol != t.pol and b.net("g") == t.net("g") and b.net("g") != net]
-        for cands in (same, gate):
+        mates = lambda b, t: b is not t and stage.get(b.name) == stage.get(t.name)   # never across two stages
+        same = [(b, t) for b in bots for t in tops if b.pol == t.pol and mates(b, t)]
+        gate = [(b, t) for b in bots for t in tops if b.pol != t.pol and b.net("g") == t.net("g") and b.net("g") != net and mates(b, t)]
+        for cands in (gate, same):                     # an inverter first: a pass device on its output stands aside
             if len(cands) == 1:
                 b, t = cands[0]
                 if (b.name, "bot") not in used and (t.name, "top") not in used and find(b.name) != find(t.name):
                     parent[find(b.name)] = find(t.name)
                     used.update(((b.name, "bot"), (t.name, "top")))
+    image, stands = {}, {}                             # a part on a rail stands in the column of a device it loads
+    for u, w, a, b in k.images:
+        image.setdefault(u, w)
+        image.setdefault(w, u)
+    for v in c.devs:
+        if v.kind not in ("r", "l", "i", "d") or v.name not in k.upright:
+            continue
+        t, b = k.top[v.name], k.bot[v.name]
+        if (t in k.view.rails) == (b in k.view.rails):
+            continue
+        net, mine, theirs, ends = (b, "bot", "top", k.top) if t in k.view.rails else (t, "top", "bot", k.bot)
+        cands = [d.name for d, p in c.net_pins.get(net, ()) if d.kind == "t" and d.name in k.upright
+                 and ends.get(d.name) == net and (d.name, theirs) not in used and stage.get(d.name) == stage.get(v.name)]
+        if (v.name, mine) in used or not cands or sum(c.by[n].net("s") == net for n in cands) > 1:
+            continue                                   # under two sources it is a tail: it stands between them
+        twin = image.get(stands.get(image.get(v.name)))            # where its image stands, mirrored
+        pick = twin if twin in cands else cands[0]
+        parent[find(v.name)] = find(pick)
+        used.update(((v.name, mine), (pick, theirs)))
+        stands[v.name] = pick
     members = collections.defaultdict(list)
     for v in c.devs:
         if v.name in parent:
@@ -129,24 +151,6 @@ def _topo(items, before, key):
             if b in inside and b != pick:
                 indeg[b] -= 1
     return out, cut
-
-
-def _distance(c, k, start, branch=False):
-    """Fewest shared off-rail nets from device `start` to every other device; with `branch`,
-    counted through channels and two-pin parts only (a gate carries no current)."""
-    def pins(v):
-        return [n for p, n in v.nets.items() if n and not (branch and v.kind == "t" and p not in ("d", "s"))]
-    dist, todo = {start: 0}, collections.deque([start])
-    while todo:
-        x = todo.popleft()
-        for net in pins(c.by[x]):
-            if net in k.view.rails:
-                continue
-            for v, q in c.net_pins.get(net, ()):
-                if v.name not in dist and net in pins(v):
-                    dist[v.name] = dist[x] + 1
-                    todo.append(v.name)
-    return dist
 
 
 def _flow(c, k):
@@ -235,46 +239,7 @@ def assign_columns(c, k, room=None):
     names = sorted(set(cluster.values()), key=lambda n: min(first(u) for u in members if cluster[u] == n))
     c_order, cut = _topo(names, c_before, key=names.index)
     notes += ["flow order of stage %s could not be kept: the stages form a loop" % x for x in cut]
-    # ---- axis groups: a matched pair, its images, what stands on the axis
-    side, axis_of, groups = {}, {}, []
-    inward = {frozenset((p[0].name, p[1].name)) for r, kind, p, t in k.relations if kind == "gates" and p[2] == "inward"}
-    inward |= {frozenset(p) for p in k.cross}
-    mirrors = [(p[0].name, p[1].name, p[2].name, p[3].name) for r, kind, p, t in k.relations if kind == "mirrored"]
-    for a, b in k.axes:
-        if a not in unit_of or b not in unit_of:
-            continue
-        ua, ub = unit_of[a], unit_of[b]
-        if ua == ub or ua in axis_of or ub in axis_of or cluster[ua] != cluster[ub] or ua in lane_units or ub in lane_units:
-            continue
-        if order[a] > order[b]:
-            a, b, ua, ub = b, a, ub, ua
-        tight = any(frozenset((m, n)) in inward for m in members[ua] for n in members[ub])   # gates between the two columns
-        g = {"pair": (a, b), "left": [ua], "right": [ub], "on": [], "half0": PAIR_IN if tight else PAIR_OUT}
-        axis_of[ua] = axis_of[ub] = len(groups)
-        near = [(_distance(c, k, n, True), _distance(c, k, n)) for n in (a, b)]
-        images = []
-        for u, w, pa, pb in mirrors + k.images:        # the contract's mirrors, then every other image in the cluster
-            if {pa, pb} != {a, b} or u not in unit_of or w not in unit_of:
-                continue
-            uu, uw = unit_of[u], unit_of[w]
-            if uu == uw or uu in axis_of or uw in axis_of or cluster[uu] != cluster[ua] or cluster[uw] != cluster[ua]:
-                continue
-            if uu in lane_units or uw in lane_units:
-                continue
-            da, db = [tuple(d.get(u, 99) for d in side) + (o,) for side, o in zip(near, (order[u], order[w]))]
-            l, r = (uu, uw) if da < db else (uw, uu)
-            images.append((min(da[:2], db[:2]), order[u], l, r))
-            axis_of[uu] = axis_of[uw] = len(groups)
-        for dist, o, l, r in sorted(images):
-            g["left"].append(l)
-            g["right"].append(r)
-        for rule, kind, p, text in k.relations:
-            if kind == "on_axis" and {p[1].name, p[2].name} == {a, b} and p[0].name in unit_of:
-                u = unit_of[p[0].name]
-                if u not in axis_of:
-                    axis_of[u] = len(groups)
-                    g["on"].append(u)
-        groups.append(g)
+    ax = Axes(c, k, unit_of, members, cluster, lane_units, room)
     # ---- order the blocks of each cluster, then lay everything out left to right
     out = Layout()
     out.x, out.lane, out.groups, out.notes = {}, {}, [], notes
@@ -286,20 +251,44 @@ def assign_columns(c, k, room=None):
             for b in B:
                 if a in unit_of and b in unit_of and unit_of[a] != unit_of[b]:
                     preds[unit_of[b]].add(unit_of[a])
-    def more(units, side):                             # the most room any member of these units asks for on `side`
-        return max([room.get(m, (0, 0))[side] for u in units for m in members[u]] + [0])
+    twin, stage = {}, k.view.stage_of                  # `match stage stage`: a device -> its copy in the other stage
+    for r, kind, p, t in k.relations:
+        if kind == "mirrored" and stage.get(p[0].name) != stage.get(p[1].name):
+            for u, w in ((p[0].name, p[1].name), (p[2].name, p[3].name)):
+                twin[u], twin[w] = w, u
+    placed = set()
     for cname in c_order:
-        blocks, seen = [], set()
+        blocks, rep = [], {}
         for u in sorted((u for u in members if cluster[u] == cname), key=first):
-            gi = axis_of.get(u)
-            key = ("g", gi) if gi is not None else ("u", u)
-            if key not in seen:
-                seen.add(key)
+            key = ("g", ax.root(ax.of[u])) if u in ax.of else ("u", u)
+            if key not in blocks and key not in placed:
                 blocks.append(key)
-        rep = {}
         for key in blocks:
-            for u in ([key[1]] if key[0] == "u" else groups[key[1]]["left"] + groups[key[1]]["right"] + groups[key[1]]["on"]):
+            for u in ([key[1]] if key[0] == "u" else ax.units(key[1])):
                 rep[u] = key
+        copies = [key for key in blocks if all(twin.get(members[u][0]) in out.x for u in rep if rep[u] == key)]
+        if copies:                                     # the other stage stands already: this one is its mirror image
+            us = [u for key in copies for u in rep if rep[u] == key]
+            xs = [out.x[twin[members[u][0]]] for u in us]
+            axis = -(-(max(ends.values(), default=0) + MARGIN + max(xs)) // 20) * 10
+            for u in us:
+                t = twin[members[u][0]]
+                out.x.update((m, 2 * axis - out.x[t]) for m in members[u])
+                if t in out.lane:
+                    out.lane[members[u][0]] = out.lane[t]
+            for ln in list(ends) + [None]:
+                ends[ln] = 2 * axis - min(xs) + MARGIN
+            for u in us:
+                edge_of[u] = ends[None]
+            for key in copies:
+                if key[0] == "g":
+                    ax.record(key[1], out.x, out.groups)
+            mine = [m for u in us for m in members[u]]
+            a0 = min(mine, key=lambda m: order[twin[m]] if m in twin else len(order))
+            out.groups.append({"axis": axis, "pair": (twin[a0], a0), "left": [twin[m] for m in mine if m in twin],
+                               "right": mine, "cols": []})
+            placed.update(copies)
+            blocks = [key for key in blocks if key not in copies]
         b_before = collections.defaultdict(set)
         for ua, ubs in u_before.items():
             for ub in ubs:
@@ -312,6 +301,7 @@ def assign_columns(c, k, room=None):
                 return (blocks.index(h), 1, blocks.index(key))
             return (blocks.index(key), 0, 0)
         b_order, cut = _topo(blocks, b_before, key=key_of)
+        placed.update(b_order)
         for key in b_order:
             wall = max(ends.values(), default=0)
             if key[0] == "u":
@@ -324,39 +314,20 @@ def assign_columns(c, k, room=None):
                     ends[ln] = x + half
                     out.lane[members[u][0]] = ln
                 else:
-                    x = wall + half + more([u], 0)
+                    more = [max(room.get(m, (0, 0))[side] for m in members[u]) for side in (0, 1)]
+                    x = wall + half + more[0]
                     for ln in list(ends) + [None]:
-                        ends[ln] = x + half + more([u], 1)
+                        ends[ln] = x + half + more[1]
                 for m in members[u]:
                     out.x[m] = x
                 edge_of[u] = max(ends[None], x + half)
                 continue
-            g = groups[key[1]]
-            halves = []                                # column i of each half stands halves[i] from the axis
-            for i, (l, r) in enumerate(zip(g["left"], g["right"])):
-                inner = max(more([l], 1), more([r], 0))
-                if i == 0:
-                    halves.append(g["half0"] + inner)
-                else:
-                    halves.append(halves[-1] + PITCH + inner + max(more([g["left"][i - 1]], 0), more([g["right"][i - 1]], 1)))
-            edge = halves[-1] + MARGIN + max(more([g["left"][-1]], 0), more([g["right"][-1]], 1))
-            axis = wall + edge
-            for h, l, r in zip(halves, g["left"], g["right"]):
-                for m in members[l]:
-                    out.x[m] = axis - h
-                for m in members[r]:
-                    out.x[m] = axis + h
-            for u in g["on"]:
-                for m in members[u]:
-                    out.x[m] = axis
+            axis = wall + ax.width(key[1])             # a matched pair with all that mirrors about it
+            ax.lay(key[1], axis, out.x, out.groups)
             for ln in list(ends) + [None]:
-                ends[ln] = axis + edge
-            for u in g["left"] + g["right"] + g["on"]:
+                ends[ln] = axis + ax.width(key[1])
+            for u in ax.units(key[1]):
                 edge_of[u] = ends[None]
-            out.groups.append({"axis": axis, "pair": g["pair"],
-                               "left": [m for u in g["left"] for m in members[u]],
-                               "right": [m for u in g["right"] for m in members[u]],
-                               "cols": [(members[l], members[r]) for l, r in zip(g["left"], g["right"])]})
         if any(u not in lane_units for u in members if cluster[u] == cname):
             wall = max(ends.values(), default=0) + 40  # air after a cluster that holds a column
             for ln in list(ends) + [None]:

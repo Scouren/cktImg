@@ -4,7 +4,8 @@ The contract (`contract.derive`) holds what a drawing must show and is judged. A
 choice people make often enough to follow but not often enough to promise; the judge never
 checks one. Counts are from the corpus's training drawings.
 
-    D1  a cross-coupled pair looks inward and swaps its gate wires as an X
+    D1  a cross-coupled pair shares a row, looks inward and swaps its gate wires as an X; what
+        joins its two sources stands on its axis, declared or not
         (its two branch lines stand 3.0 units apart at the median; 476 of 546 slanted wires are in an X)
     D2  every upright image of a matched pair mirrors about the pair's axis when it hangs on
         the pair's own cluster (the contract promises this only in the pair's columns or stage)
@@ -16,8 +17,9 @@ checks one. Counts are from the corpus's training drawings.
     D5  a two-pin part between a supply and a ground stands upright, the supply's end up
         (7 of 12: rare in the corpus, and the only way both rail symbols fit)
 
-`add` writes them onto the Contract as facts for the placer: `cross`, `loops`, `joints`, and
-the stance (`upright`, `top`, `bot`) of string parts. `images` (D2) is collected by `derive`.
+`add` writes them onto the Contract as facts for the placer: `cross`, `tails`, `loops`,
+`joints`, the stance (`upright`, `top`, `bot`) of string parts, and the undeclared cross
+pairs appended to `axes`. `images` (D2) is collected by `derive`.
 """
 import collections
 from .circuit import BLOCK_OUT
@@ -94,6 +96,16 @@ def add(c, k):
         if v.kind not in ("t", "blk") and v.name not in k.upright and {a, b} & supply and {a, b} & k.view.ground:
             k.upright.add(v.name)
             k.top[v.name], k.bot[v.name] = (a, b) if a in supply else (b, a)
+    paired, k.tails = {n for pair in k.axes for n in pair}, []
+    for a, b in k.cross:                              # D1: an undeclared cross pair still stands about an axis
+        if a in paired or b in paired:
+            continue
+        k.axes.append((a, b))
+        paired.update((a, b))
+        s = c.by[a].net("s")
+        under = k.view.branch_pins(s, skip=(c.by[a], c.by[b])) if s == c.by[b].net("s") and s not in rails else []
+        if len(under) == 1:                           # what joins its two sources stands on that axis
+            k.tails.append((under[0][0].name, a, b))
     k.loops = [(host, [part]) for part, (_, host) in k.around.items()]
     k.joints = []
     on_flow = {r[2].name for r in k.relations if r[0] == "F3"}

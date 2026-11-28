@@ -40,10 +40,10 @@ class Contract:
     upright, flat      names of the parts that stand upright / lie flat
     top, bot           {upright part: the net at its upper / lower end}
     around             {part: (part, device)}: it runs from that device's output back to its input
-    axes, images       matched pairs (a, b); (u, w, a, b): u and w swap when a and b do
-    cross, loops, joints   the placer's defaults, see `defaults`"""
+    axes, images       pairs (a, b) that stand about an axis; (u, w, a, b): u and w swap when a and b do
+    cross, tails, loops, joints   the placer's defaults, see `defaults`"""
     __slots__ = ("relations", "notes", "view", "upright", "flat", "top", "bot", "around", "axes", "images",
-                 "cross", "loops", "joints")
+                 "cross", "tails", "loops", "joints")
 
     def __iter__(self):                    # (relations, notes) = derive(...) still unpacks
         return iter((self.relations, self.notes))
