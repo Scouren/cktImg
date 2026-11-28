@@ -34,13 +34,16 @@ def main(argv):
     except (OSError, ValueError) as e:
         print("cktintent: %s" % e, file=sys.stderr)
         return 2
-    svg = render_svg(r.schema, r.circuit)
-    if out:
-        with open(out, "w") as f:
-            f.write(svg)
-    if js:
-        with open(js, "w") as f:
-            json.dump(r.schema, f, indent=1)
+    try:
+        if out:
+            with open(out, "w") as f:
+                f.write(render_svg(r.schema, r.circuit))
+        if js:
+            with open(js, "w") as f:
+                json.dump(r.schema, f, indent=1)
+    except OSError as e:
+        print("cktintent: %s" % e, file=sys.stderr)
+        return 2
     if not quiet:
         sys.stdout.write(read_back(r))
     return 1 if r.findings else 0

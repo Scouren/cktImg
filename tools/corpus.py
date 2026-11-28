@@ -12,7 +12,7 @@ usage: python3 -I tools/corpus.py <examples-dir> [--statements DIR | --stand-in]
 
 The corpus is third-party data and is not on this branch: pass its path. Reports, over the
 circuits drawn: crashes, illegal drawings (by gate), relations shown, terminals joined by
-name for want of a path, and wire crossings beside the person's.
+name for want of a path, and wire crossings and corners beside the person's.
 """
 import collections, os, sys, time, traceback
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))

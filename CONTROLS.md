@@ -40,6 +40,11 @@ they connect to.
 A stage is also how far a mirror reaches (next statement): images in the pair's stage share
 its axis.
 
+A stage that stands alone is drawn in a dashed box with its name under it, spelled as you
+wrote it (`stage Bias : mb ib` is labelled `Bias`). It stands alone when only names, ports
+and rails join it to the rest: say `net vb : bias` for the line that leaves a bias generator
+and the generator becomes a boxed island. A stage that a wire joins to the rest gets no box.
+
 ## 3. `match <a> <b> [<c> ...]` (what is drawn as copies)
 
 Two devices (a differential pair, a mirror, a cross-coupled pair, matched loads):
@@ -108,7 +113,7 @@ and `cktintent/route.py`):
 | W1 | ground is a symbol at each pin |
 | W2 | a supply of up to four pins is one bar; a symbol at each pin beyond |
 | W3 | any other net is one wire while its pins stand near; a net that spans far is cut where its pins stand apart, the pieces joined by name. `net x : signal` keeps it one wire |
-| W4 | wires run level and upright; a 45-degree stroke is used only in the X where a cross-coupled pair swaps its two gate wires |
+| W4 | wires run level and upright, and straight where they can: a rail runs past its pins so each taps it, a part hanging on a net taps the wire that passes it. A 45-degree stroke is used only in the X where a cross-coupled pair swaps its two gate wires |
 | W5 | with no `flow`, devices stand left to right in the order the deck first names them |
 | D1 | a cross-coupled pair shares a row, looks inward and draws its X, with its tail on the axis, whether or not you match it |
 | D2 | every image of a matched pair mirrors about the pair's axis unless a stage separates them |
@@ -123,19 +128,30 @@ to another are joined by name.
 ## What comes back
 
 The exit status (0: a legal drawing; 1: the drawing breaks a gate; 2: no device in the
-deck, or a file that cannot be read) and this, in circuit terms:
+deck, or a file that cannot be read) and this, in circuit terms (the two-stage op-amp below,
+with one line too many, `flow vout -> in`):
 
-    11 devices, 8 statement lines
+    11 devices, 9 statement lines
       note      flow vout -> in: refused, an earlier flow line already puts in before vout
+      B5   Rz has an end that feeds only gates, ports or capacitors: it lies flat, in line with the signal
       M1   M1 M2 are matched: one row
       M2   M1 and M2 are a pair on one source node with their own gate nets: gates face outward
       M4   M5 is the one part under both M1 and M2: on their axis
+      M1   M3 M4 are matched: one row
+      M2   M3 and M4 share a gate line: gates face each other
+      M1   M8 M5 M7 are matched: one row
       S1   stages in and out do not interleave
+      S1   stages in and ref do not interleave
+      S1   stages out and ref do not interleave
+      F1   flow ref -> in: in is not left of ref
       F1   flow in -> out: out is not left of in
+      F2   input vinn enters from the left or on its own half
+      F2   input vinp enters from the left or on its own half
       F2   output vout leaves to the right
     outcome: 29 of 29 relations shown
     drawn by name or symbol: vb vss
-    wire crossings: 0
+    in a box of its own: ref
+    wire crossings: 0, corners: 6
 
 - A `note` for every line that was refused or adjusted, with the reason; for every terminal
   the router had to join by name for want of a clear path (`net n2: 1 of its 4 terminals
@@ -145,7 +161,8 @@ deck, or a file that cannot be read) and this, in circuit terms:
   drawing: a `match` that found no images, or a stage that swallowed a device you meant
   elsewhere, shows here.
 - The outcome: how many relations the drawing shows, which nets are drawn by name or by
-  symbol, how many times two wires cross.
+  symbol, which stages stand in a box of their own, how many times two wires cross and how
+  many corners the wires make (fewer is straighter).
 - `ILLEGAL <gate> <sentence>` lines, if any. A legal drawing has none: every net is joined
   by wire or by name and nothing else is (`lvs`), no two symbols overlap (`overlap`), no
   wire enters a symbol (`pierce`).
