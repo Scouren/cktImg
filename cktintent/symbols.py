@@ -122,10 +122,10 @@ def _side(dx, dy):
     return "down" if dy > 0 else "up"
 
 
-def stamp(schema, c, placement):
+def stamp(schema, c, placement, bands=None):
     """Write `placement` {device name: (x, y, o)} into the schema's devices, in place.
     Pins take page coordinates; gate_side and source_dir are read off them the way the
-    corpus's converter reads a hand drawing."""
+    corpus's converter reads a hand drawing. `bands` {name: band of the page} is kept too."""
     names = {"d": "D", "g": "G", "s": "S"}
     for d, v in zip(schema["devices"], c.devs):
         x, y, o = placement[v.name]
@@ -145,5 +145,5 @@ def stamp(schema, c, placement):
             ka, kb = list(d["nets"])[:2]
             d["terminals"] = {ka: list(at["a"]), kb: list(at["b"])}
         d["x"], d["y"] = x, y
-        d["orient"] = dict(o)
+        d["orient"], d["band"] = dict(o), (bands or {}).get(v.name, 0)
     return schema

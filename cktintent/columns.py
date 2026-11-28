@@ -19,10 +19,47 @@ from . import symbols
 from .axes import Axes, MARGIN
 
 
+ASPECT = 1.6       # the width over height of a page that folding a long drawing aims for
+
+
 class Layout:
     """x: {device: px} (a column's branch line, a lane part's centre); lane: {device: lane index}
-    for lane parts; groups: the axis groups; notes."""
-    __slots__ = ("x", "lane", "groups", "notes")
+    for lane parts; band: {device: which band of the page it stands in, 0 the top one};
+    groups: the axis groups; notes."""
+    __slots__ = ("x", "lane", "band", "groups", "notes")
+
+
+def _fold(out, cluster, unit_of, ties, tall):
+    """Fold a long row of clusters into bands, like lines of text, so the page comes near
+    ASPECT. A band never splits a cluster, two clusters whose columns interleave, or two that
+    `ties` names (a flow or a stage match runs between them). `tall` is one band's height in
+    px. Writes out.band and shifts out.x and the groups' axes so every band starts at x = 0."""
+    # ponytail: greedy, in order, no balancing of the bands. Packing out of order (first fit) was
+    # measured and lost: 130 terminals named instead of 116 on 120 held-out circuits.
+    spans = {}
+    for name, x in out.x.items():
+        lo, hi = spans.get(cluster[unit_of[name]], (x, x))
+        spans[cluster[unit_of[name]]] = (min(lo, x), max(hi, x))
+    pieces = sorted(list(spans.values()) + [(min(spans[a][0], spans[b][0]), max(spans[a][1], spans[b][1]))
+                                            for a, b in ties if a in spans and b in spans])
+    segs = []                                          # what must stay together, left to right
+    for lo, hi in pieces:
+        if segs and lo <= segs[-1][1]:
+            segs[-1][1] = max(segs[-1][1], hi)
+        else:
+            segs.append([lo, hi])
+    total = segs[-1][1] - segs[0][0]
+    limit = max(total / max(1.0, round((total / (ASPECT * tall)) ** 0.5)) * 1.15, max(hi - lo for lo, hi in segs))
+    start, band, cuts = segs[0][0], 0, []              # (x a segment starts at, its band, the x its band starts at)
+    for lo, hi in segs:                                # in order, like words on a line
+        if hi - start > limit and lo > start:
+            band, start = band + 1, lo
+        cuts.append((lo, band, start))
+    for g in out.groups:
+        g["axis"] -= max(cut for cut in cuts if cut[0] <= g["axis"])[2]
+    for name, x in out.x.items():
+        lo, out.band[name], start = max(cut for cut in cuts if cut[0] <= x)
+        out.x[name] = x - start
 
 
 def _units(c, k, flow_devs):
@@ -181,9 +218,10 @@ def _half(c, u, members, lane_units):
     return (symbols.block_size(v)[0] if v.kind == "blk" else 20) + 30
 
 
-def assign_columns(c, k, room=None):
+def assign_columns(c, k, room=None, tall=None):
     """-> Layout. See the module header. `room` {device: (px, px)} asks for that much more
-    clear space on the left and on the right of the device's column."""
+    clear space on the left and on the right of the device's column. With `tall`, the height
+    of one band in px, a row much wider than the page is tall is folded into bands."""
     room = room or {}
     flow_devs, lane_of, arrows, inputs = _flow(c, k)
     unit_of, members, lane_units = _units(c, k, flow_devs)
@@ -243,7 +281,7 @@ def assign_columns(c, k, room=None):
     ax = Axes(c, k, unit_of, members, cluster, lane_units, room)
     # ---- order the blocks of each cluster, then lay everything out left to right
     out = Layout()
-    out.x, out.lane, out.groups, out.notes = {}, {}, [], notes
+    out.x, out.lane, out.band, out.groups, out.notes = {}, {}, {}, [], notes
     ends = collections.defaultdict(int)                # lane index (None: every column) -> right edge so far
     edge_of = {}                                       # unit -> its right edge, for flow predecessors
     preds = collections.defaultdict(set)
@@ -334,4 +372,13 @@ def assign_columns(c, k, room=None):
             for ln in list(ends) + [None]:
                 ends[ln] = wall
     assert set(out.x) == set(unit_of), sorted(set(unit_of) - set(out.x))
+    ties = [(a, b) for a, bs in c_before.items() for b in bs]
+    for rule, kind, p, text in k.relations:            # what the contract holds to one row or one axis stays in one band
+        devs = p if kind in ("same_row", "mirrored", "on_axis") else p[:2] if kind == "gates" else ()
+        names = [d.name for d in devs if d.name in unit_of]
+        ties += [(cluster[unit_of[names[0]]], cluster[unit_of[n]]) for n in names[1:]]
+    if tall and out.x:
+        _fold(out, cluster, unit_of, ties, tall)
+    else:
+        out.band = dict.fromkeys(out.x, 0)
     return out

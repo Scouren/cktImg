@@ -41,9 +41,10 @@ def _terminals(c, schema):
     return out
 
 
-def _split(c, k, terms, named):
-    """W3: cut a net whose pins stand far apart into the groups a wire joins.
-    -> ({piece key: terminals}, {piece key: net}); a net in one piece keeps its name as key."""
+def _split(c, k, terms, named, band):
+    """W3: cut a net whose pins stand far apart, or in different bands of the page, into the
+    groups a wire joins. -> ({piece key: terminals}, {piece key: net}); a net in one piece
+    keeps its name as key."""
     roles, pieces, net_of = k.view.k.roles, {}, {}
     whole = {n for n, r in roles.items() if r == "signal"}
     for rule, kind, p, text in k.relations:            # a flow through single parts is a wire: what one hands the next
@@ -53,17 +54,21 @@ def _split(c, k, terms, named):
     for net in sorted(terms):
         groups = [terms[net]]
         if net not in k.view.rails and net not in named and net not in whole and len(terms[net]) > 1:
-            pins = sorted(terms[net], key=lambda t: (t[0], t[1], t[4].name, t[5]))
-            span = pins[-1][0] - pins[0][0]
-            if all(t[4].kind == "t" and t[5] == "g" for t in pins):
-                if span > NEAR:                        # a line that only feeds gates: a name at each
-                    groups = [[t] for t in pins]
-            elif span > FAR:
-                groups = [[pins[0]]]
-                for a, b in zip(pins, pins[1:]):
-                    if b[0] - a[0] > NEAR:
-                        groups.append([])
-                    groups[-1].append(b)
+            gates_only = all(t[4].kind == "t" and t[5] == "g" for t in terms[net])
+            groups = []
+            for b in sorted({band[t[4].name] for t in terms[net]}):       # never a wire from one band to another
+                pins = sorted((t for t in terms[net] if band[t[4].name] == b), key=lambda t: (t[0], t[1], t[4].name, t[5]))
+                span = pins[-1][0] - pins[0][0]
+                if gates_only and span > NEAR:         # a line that only feeds gates: a name at each
+                    groups += [[t] for t in pins]
+                elif not gates_only and span > FAR:
+                    groups.append([pins[0]])
+                    for a, t in zip(pins, pins[1:]):
+                        if t[0] - a[0] > NEAR:
+                            groups.append([])
+                        groups[-1].append(t)
+                else:
+                    groups.append(pins)
         for i, g in enumerate(groups):
             key = net if i == 0 else "%s%s%d" % (net, SEP, i)
             pieces[key], net_of[key] = g, net
@@ -121,13 +126,14 @@ def _bar(schema, maze, net, pins):
     return ups
 
 
-def _rails(c, k, schema, maze, terms):
-    """W1, W2: a supply of up to four pins is one bar; every other rail pin gets its own symbol
-    on a short stub."""
+def _rails(c, k, schema, maze, terms, band):
+    """W1, W2: a supply of up to four pins, all in one band of the page, is one bar; every
+    other rail pin gets its own symbol on a short stub."""
     for net in sorted(k.view.rails):
         ground = net in k.view.ground
         pins = list(terms.get(net, ()))
-        done = _bar(schema, maze, net, pins) if not ground and 2 <= len(pins) <= 4 else []
+        one = len({band[t[4].name] for t in pins}) == 1
+        done = _bar(schema, maze, net, pins) if not ground and one and 2 <= len(pins) <= 4 else []
         for x, y, ex, ey, v, p in pins:
             if (x, y, ex, ey, v, p) in done:
                 continue
@@ -292,12 +298,13 @@ def route(c, k, schema, groups=()):
             maze.text(-(-(d["x"] + t[0]) // CELL) * CELL, -(-(d["y"] + t[1]) // CELL) * CELL,
                       (d["x"] + t[2]) // CELL * CELL, (d["y"] + t[3]) // CELL * CELL, OVER_TEXT)
     named = {n for n, r in k.view.k.roles.items() if r in ("bias", "clock")}
-    pieces, net_of = _split(c, k, terms, named)
+    band = {d["name"]: d.get("band", 0) for d in schema["devices"]}
+    pieces, net_of = _split(c, k, terms, named, band)
     for key, pins in pieces.items():
         for x, y, ex, ey, v, p in pins:
             maze.pin(key, x, y, ex, ey)
     key_at = {(t[4].name, t[5]): key for key, pins in pieces.items() for t in pins}
-    _rails(c, k, schema, maze, terms)
+    _rails(c, k, schema, maze, terms, band)
     drawn = _cross_pairs(c, k, schema, maze, terms, key_at)   # each X is one crossing the maze does not see
     for net in sorted(named):
         for x, y, ex, ey, v, p in terms.get(net, ()):

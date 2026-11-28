@@ -135,6 +135,26 @@ class Shape(unittest.TestCase):
         self.assertEqual([r.schema["net_pieces"][n] for n in ("va", "n1")], [1, 1])       # the path is wire
         self.assertTrue(all(shown is not False for rule, shown, text in r.outcome), r.outcome)
 
+    def test_a_long_row_of_unrelated_stages_is_folded_into_bands(self):
+        stages = "".join("M%d o%d i%d vss vss nch\nR%d vdd o%d 1k\n" % (i, i, i, i, i) for i in range(1, 17))
+        r = draw("* sixteen stages that share only their rails\n.model nch nmos\n" + stages)
+        self.assertEqual(r.findings, [])
+        at = {d["name"]: d for d in r.schema["devices"]}
+        self.assertGreater(len({d["band"] for d in at.values()}), 1)
+        for i in range(1, 17):                        # a stage is never split between two bands
+            self.assertEqual(at["M%d" % i]["band"], at["R%d" % i]["band"])
+            self.assertEqual(at["M%d" % i]["terminals"]["D"][0], at["R%d" % i]["x"])
+        xs, ys = [d["x"] for d in at.values()], [d["y"] for d in at.values()]
+        self.assertLess((max(xs) - min(xs)) / float(max(ys) - min(ys)), 4)
+        self.assertTrue(all(shown is not False for rule, shown, text in r.outcome))
+
+    def test_what_the_contract_holds_to_one_row_is_never_folded_apart(self):
+        stages = "".join("M%d o%d i%d vss vss nch\nR%d vdd o%d 1k\n" % (i, i, i, i, i) for i in range(1, 17))
+        r = draw("* the same sixteen, declared one bank\n.model nch nmos\n" + stages,
+                 "match " + " ".join("m%d" % i for i in range(1, 17)))
+        self.assertEqual(len({d["band"] for d in r.schema["devices"]}), 1)
+        self.assertTrue(all(shown is not False for rule, shown, text in r.outcome))
+
     def test_with_no_statement_a_lead_part_stands_where_the_deck_names_it(self):
         r = draw(deck("csamp"))                       # source, coupling capacitor, bias divider, transistor
         d = {v["name"]: v["x"] for v in r.schema["devices"]}

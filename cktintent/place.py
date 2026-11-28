@@ -1,6 +1,6 @@
 """Placement: every device gets a position and an orientation.
 
-    place(c, k) -> ({device name: (x, y, o)}, axis groups, notes)        px, on the 10 px grid
+    place(c, k) -> ({device name: (x, y, o)}, axis groups, notes, bands)   px, on the 10 px grid
 
 The spine: rows and columns for the upright devices (`rows`, `columns`), which way each gate
 looks, then every other device (a part that lies flat, a block, a part with no rule of its
@@ -15,6 +15,8 @@ from . import symbols
 ROW = 80           # px between two rows
 NEAR = 20          # px of wire between an attached part and the pin it serves
 LANE = 120         # px between two lanes
+GAP = 320          # px from the last row of one band of the page to the first row of the next
+REACH = 240        # px above a band's first row that still belong to that band
 
 
 def orient_gates(c, k, X, groups, rows):
@@ -73,8 +75,12 @@ def orient_gates(c, k, X, groups, rows):
 class Board:
     """The devices placed so far, for the parts still to attach."""
 
-    def __init__(self, c, k):
-        self.c, self.k, self.at, self.boxes = c, k, {}, []
+    def __init__(self, c, k, pitch=10 ** 9):
+        self.c, self.k, self.at, self.boxes, self.pitch = c, k, {}, [], pitch
+
+    def band(self, y):
+        """Which band of the page the height y is in (`pitch` px from one band to the next)."""
+        return (y + REACH) // self.pitch
 
     def add(self, v, x, y, o):
         """Place v at (x, y) with orientation o; the caller has checked it is clear."""
@@ -101,8 +107,9 @@ class Board:
             x, y = x + step[0], y + step[1]
         self.add(v, x, y, o)
 
-    def anchors(self, v, pin):
-        """Placed pins on the net of v's `pin`: [(x, y, ex, ey, device)], rails excluded."""
+    def anchors(self, v, pin, band=None):
+        """Placed pins on the net of v's `pin`: [(x, y, ex, ey, device)], rails excluded; with
+        `band`, only those in that band of the page."""
         net = v.net(pin)
         if net is None or net in self.k.view.rails:
             return []
@@ -111,7 +118,8 @@ class Board:
             if d is not v and d.name in self.at:
                 x, y, o = self.at[d.name]
                 dx, dy, ex, ey = symbols.pins(d, o)[q]
-                out.append((x + dx, y + dy, ex, ey, d))
+                if band is None or self.band(y) == band:
+                    out.append((x + dx, y + dy, ex, ey, d))
         return out
 
 
@@ -247,7 +255,7 @@ def _lanes(c, k, board, lay):
     """Put each lane part at its x, on the level of the pin it serves; in flow order."""
     deck = {v.name: i for i, v in enumerate(c.devs)}
     todo = sorted((n for n in lay.lane if n not in board.at), key=lambda n: (lay.x[n], deck[n]))
-    level = {}                                        # lane index -> y of the last part put on it
+    level = {}                                        # (band, lane index) -> y of the last part put on it
     ins = {p[0] for rule, kind, p, text in k.relations if kind == "port_in"}
     outs = {p[0] for rule, kind, p, text in k.relations if kind == "port_out"}
 
@@ -257,11 +265,12 @@ def _lanes(c, k, board, lay):
         xs = [lay.x[w.name] for w, q in c.net_pins.get(net, ()) if w is not v and w.name in lay.x]
         return sum(xs) / float(len(xs)) if xs else -1e9 if net in ins else 1e9 if net in outs else None
     for name in todo:
-        v, x, ln = c.by[name], lay.x[name], lay.lane[name]
+        v, x, ln, band = c.by[name], lay.x[name], lay.lane[name], lay.band[name]
+        rest = band * board.pitch - ln * LANE if board.pitch < 10 ** 9 else -ln * LANE   # with nothing to stand level with
         if v.kind == "blk":
             o, pins = {}, symbols.pins(v, {})
-            feed = [(q, a) for q in v.nets if pins[q][2] < 0 for a in board.anchors(v, q) if a[2] > 0 and a[0] < x]
-            drive = [(q, a) for q in v.nets if pins[q][2] > 0 for a in board.anchors(v, q) if a[2] < 0 and a[0] > x]
+            feed = [(q, a) for q in v.nets if pins[q][2] < 0 for a in board.anchors(v, q, band) if a[2] > 0 and a[0] < x]
+            drive = [(q, a) for q in v.nets if pins[q][2] > 0 for a in board.anchors(v, q, band) if a[2] < 0 and a[0] > x]
             if feed:                                  # an input pin level with what feeds it
                 q, a = max(feed, key=lambda t: t[1][0])
                 y = a[1] - pins[q][1]
@@ -269,12 +278,12 @@ def _lanes(c, k, board, lay):
                 q, a = min(drive, key=lambda t: t[1][0])
                 y = a[1] - pins[q][1]
             else:
-                y = level.get(ln, -ln * LANE)
+                y = level.get((band, ln), rest)
             board.settle(v, x, y, o, (0, -20))
-            level[ln] = board.at[name][1]
+            level[(band, ln)] = board.at[name][1]
             continue
         p, q = _ends(v)
-        A, B = board.anchors(v, p), board.anchors(v, q)
+        A, B = board.anchors(v, p, band), board.anchors(v, q, band)
         sp, sq = toward(v, v.net(p)), toward(v, v.net(q))
         left = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] <= x]
         right = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] > x]
@@ -291,7 +300,7 @@ def _lanes(c, k, board, lay):
             a, n = min(right, key=lambda t: t[0][0])
             y, near, near_left = (a[1] if a[2] else a[1] + a[3] * NEAR), n, False
         if y is None:
-            y, near = level.get(ln, -ln * LANE), p
+            y, near = level.get((band, ln), rest), p
             near_left = True
             if v.net(q) is not None and v.net(p) is not None:      # the end toward the next flow part goes right
                 after = {m for w in c.devs if w.name in lay.x and lay.x[w.name] > x for m in w.nets.values() if m}
@@ -302,7 +311,7 @@ def _lanes(c, k, board, lay):
         if sp is not None and sq is not None and sp != sq:         # the end whose net stands further left looks left
             near, near_left = (p if sp < sq else q), True
         board.settle(v, x, y, _flat(v, near, near_left), (0, -20))
-        level[ln] = board.at[name][1]
+        level[(band, ln)] = board.at[name][1]
 
 
 def _row_y(k, rows, height):
@@ -368,23 +377,25 @@ def _room(c, k, gate):
 
 
 def place(c, k):
-    """-> (placement {name: (x, y, o)}, axis groups, notes). See the module header."""
+    """-> (placement {name: (x, y, o)}, axis groups, notes, {name: band}). See the module
+    header. A drawing much wider than it is tall is folded into bands, like lines of text."""
     rows, height, notes = assign_rows(c, k)
-    lay = assign_columns(c, k)
+    row_y = _row_y(k, rows, height)
+    pitch = (row_y[-1] if row_y else 0) + GAP          # from one band of the page to the next
+    lay = assign_columns(c, k, None, pitch)
     X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
     notes += lay.notes
     gate = orient_gates(c, k, X, groups, rows)
     room = _room(c, k, gate)
     if room:                                          # the same order, wider where something needs it
-        lay = assign_columns(c, k, room)
+        lay = assign_columns(c, k, room, pitch)
         X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
-    row_y = _row_y(k, rows, height)
-    board = Board(c, k)
+    board = Board(c, k, pitch)
     spans = collections.defaultdict(list)
     for v in c.devs:
         if v.name not in X:
             continue
-        y = row_y[rows[v.name]]
+        y = row_y[rows[v.name]] + lay.band[v.name] * pitch
         if v.kind == "t":
             x = X[v.name] - 10 if gate[v.name] == "left" else X[v.name] + 10
             o = {"upright": True, "gate": gate[v.name]}
@@ -395,8 +406,8 @@ def place(c, k):
         else:                                         # never one symbol on another, whatever the rows said
             board.settle(v, x, y, o, (0, 20))
             notes.append("%s moved down: its row and column were taken" % v.name)
-        spans[X[v.name]].append(board.at[v.name][1])
-    for x, ys in spans.items():                       # the wire of a column: nothing may be laid across it
+        spans[(lay.band[v.name], X[v.name])].append(board.at[v.name][1])
+    for (band, x), ys in spans.items():                       # the wire of a column: nothing may be laid across it
         if max(ys) - min(ys) > ROW:
             board.keep_out((x - 5, min(ys), x + 5, max(ys)))
     for a, b in k.cross:                              # where an X will be drawn: keep parts out of it
@@ -408,6 +419,7 @@ def place(c, k):
     _lanes(c, k, board, lay)
     _attach(c, k, board)
     placement = dict(board.at)
+    bands = {n: board.band(y) for n, (x, y, o) in placement.items()}
     x0 = min(x + symbols.body(c.by[n], o)[0] for n, (x, y, o) in placement.items())
     y0 = min(y + symbols.body(c.by[n], o)[1] for n, (x, y, o) in placement.items())
     dx, dy = 80 - x0, 80 - y0
@@ -415,4 +427,4 @@ def place(c, k):
     for g in groups:
         g["axis"] += dx
     assert len(placement) == len(c.devs)
-    return placement, groups, notes
+    return placement, groups, notes, bands
