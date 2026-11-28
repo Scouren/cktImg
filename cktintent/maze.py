@@ -258,6 +258,14 @@ class Maze:
         self.tree.setdefault(net, set()).update((a, b))
         self.links.setdefault(net, []).append((a, b))
 
+    def corners(self, net, x, y):
+        """The bends, branches and ends (px) of the wire of `net` that reaches (x, y) px, the
+        nearest first: where a name can hang on the wire."""
+        at = (x // CELL, y // CELL)
+        piece = next((g for g in self._laid(net) if at in g), set())
+        near = sorted((c for c in piece if self.node.get(c) == net), key=lambda c: (abs(c[0] - at[0]) + abs(c[1] - at[1]), c))
+        return [(c[0] * CELL, c[1] * CELL) for c in near]
+
     # ---------------------------------------------------------------- reading the result
     def segments(self, net):
         """The net's wires as maximal straight runs [[x0, y0], [x1, y1]] in px, split at its branches."""

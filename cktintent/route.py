@@ -181,6 +181,12 @@ def _port(c, schema, maze, key, net, direction, pins, devs, groups):
     branch = [t for t in mine if t[5] != "g"] or mine
     at = {d["name"]: d["x"] for d in schema["devices"]}
     beyond = max([at[d.name] for d in devs or ()] + [t[0] for t in pins])     # F2: right of all it leaves
+
+    def spot(at, face):
+        """True when the port, the cell its wire leaves through and its name are all clear."""
+        b = _snap(_text_box(at[0], at[1], -face[0], -face[1], net))
+        return (maze.free(*at) and maze.free(at[0] + face[0] * CELL, at[1] + face[1] * CELL)
+                and all(maze.free(i, j) for i in range(b[0], b[2] + 1, CELL) for j in range(b[1], b[3] + 1, CELL)))
     if direction != "input" and half == "L":           # a mirrored left half: the port leaves to the left
         x, y, ex, ey, v, p = min(branch, key=lambda t: (t[0], t[1]))
         want = (min(t[0] for t in branch) - 60, y + ey * STUB if ey else y)
@@ -189,26 +195,21 @@ def _port(c, schema, maze, key, net, direction, pins, devs, groups):
         x, y, ex, ey, v, p = max(branch, key=lambda t: (t[0], -t[1]))
         want = ((max(t[0] for t in branch) if half else beyond) + 60, y + ey * STUB if ey else y)
         step, face = (CELL, 0), (-1, 0)
-    else:
-        gates = [t for t in mine if t[2]] or mine
-        x, y, ex, ey, v, p = min(gates, key=lambda t: (0 if t[5] == "g" else 1, t[0], t[1]))
-        if ex > 0 and direction == "input":            # a gate that looks right: the input stays on its half
-            want, step, face = (x + 40, y), (CELL, 0), (-1, 0)
-        elif ex:
-            want, step, face = (x + ex * 40, y), (ex * CELL, 0), (-ex, 0)
-        else:
-            want, step, face = (x - 40, y + ey * STUB), (-CELL, 0), (1, 0)
+    else:                                              # beside a pin: a gate first, the leftmost
+        gates = sorted([t for t in mine if t[2]] or mine, key=lambda t: (0 if t[5] == "g" else 1, t[0], t[1]))
+        tries = [((x + ex * 40, y), (ex * CELL, 0), (-ex, 0)) if ex else ((x - 40, y + ey * STUB), (-CELL, 0), (1, 0))
+                 for x, y, ex, ey, v, p in (gates if direction == "passive" else gates[:1])]
+        if direction == "passive" and gates[0][2]:     # no side is promised: under or over the pin when beside is taken
+            x, y, ex = gates[0][:3]
+            tries += [((x + ex * 20, y + 40), (0, CELL), (0, -1)), ((x + ex * 20, y - 40), (0, -CELL), (0, 1))]
+        want, step, face = next((t for t in tries if spot(t[0], t[2])), tries[0])
     px, py = want
-    box = lambda: _snap(_text_box(px, py, -face[0], -face[1], net))
     for _ in range(200):
-        b = box()
-        clear = maze.free(px, py) and maze.free(px + face[0] * CELL, py) and all(
-            maze.free(i, j) for i in range(b[0], b[2] + 1, CELL) for j in range(b[1], b[3] + 1, CELL))
-        if clear:
+        if spot((px, py), face):
             break
         px, py = px + step[0], py + step[1]
     maze.pin(key, px, py, face[0], face[1])
-    maze.block(*box())
+    maze.block(*_snap(_text_box(px, py, -face[0], -face[1], net)))
     schema["markers"].append({"kind": "port", "type": "port", "name": net, "direction": direction,
                               "at": [px, py], "net": net, "side": [-face[0], -face[1]]})
     return (px, py)
@@ -257,12 +258,27 @@ def _cross_pairs(c, k, schema, maze, terms, key_at):
     return sum(corners.values()) // 2
 
 
-def _name_piece(c, schema, maze, net, points, by_point):
-    """Write `net`'s name on one terminal of a wired piece: a gate first, where a stub is clear."""
+def _name_piece(c, schema, maze, key, net, points, by_point):
+    """Write `net`'s name on a wired piece: on a stub at one of its terminals (a gate first)
+    when the stub and the name are clear there, else on a stub off a corner of its wire."""
     ts = sorted((by_point[p] for p in points if p in by_point), key=lambda t: (t[5] != "g", t[0], t[1]))
-    if ts:
-        x, y, ex, ey, v, p = next((t for t in ts if maze.free(t[0] + t[2] * CELL, t[1] + t[3] * CELL)), ts[0])
-        _name_at(c, schema, maze, net, x, y, ex, ey)
+
+    def clear(x, y, ex, ey):
+        b = _snap(_text_box(x + ex * STUB, y + ey * STUB, ex, ey, net))
+        return (all(maze.free(x + ex * d, y + ey * d) for d in range(CELL, STUB + 1, CELL))
+                and all(maze.free(i, j) for i in range(b[0], b[2] + 1, CELL) for j in range(b[1], b[3] + 1, CELL)))
+    if not ts:
+        return
+    spot = next((t[:4] for t in ts if clear(*t[:4])), None)
+    if spot is None:
+        pins = {(t[0], t[1]) for t in ts}
+        for x, y in maze.corners(key, ts[0][0], ts[0][1]):
+            ways = [d for d in ((1, 0), (-1, 0), (0, 1), (0, -1)) if (x, y) not in pins and clear(x, y, *d)]
+            if ways:
+                spot = (x, y) + ways[0]
+                schema["junctions"].append([x, y])
+                break
+    _name_at(c, schema, maze, net, *(spot or ts[0][:4]))
 
 
 def route(c, k, schema, groups=()):
@@ -325,6 +341,6 @@ def route(c, k, schema, groups=()):
         if len(parts) > 1 or cut[net] > 1:
             for g in parts:
                 if port_at.get(key) not in g:          # the port already names its piece
-                    _name_piece(c, schema, maze, net, g, by_point)
+                    _name_piece(c, schema, maze, key, net, g, by_point)
     schema["crossings"] = maze.crossings() + drawn
     return notes

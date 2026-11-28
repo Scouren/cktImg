@@ -2,7 +2,9 @@
 
 Oracles: the exit status the usage text promises (0 legal, 2 bad input); two processes with
 different hash seeds give the same bytes (determinism that a single process cannot show,
-since Python's set order changes between processes); `tools/check.py` finds nothing.
+since Python's set order changes between processes); `tools/check.py` finds nothing; the
+gallery kept in docs/gallery is byte for byte what the tool draws now (a golden: it shows a
+change, it does not judge one).
 """
 import glob, json, os, subprocess, sys, tempfile, unittest
 
@@ -61,6 +63,10 @@ class CommandLine(unittest.TestCase):
 class HouseRules(unittest.TestCase):
     def test_the_source_passes_the_checker(self):
         p = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "check.py")], capture_output=True, text=True)
+        self.assertEqual(p.returncode, 0, p.stdout)
+
+    def test_the_kept_gallery_is_what_the_tool_draws_now(self):
+        p = subprocess.run([sys.executable, os.path.join(ROOT, "tools", "gallery.py"), "--check"], capture_output=True, text=True)
         self.assertEqual(p.returncode, 0, p.stdout)
 
 
