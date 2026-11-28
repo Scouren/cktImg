@@ -86,10 +86,32 @@ is **legal** when the nets read back from its geometry are the deck's nets, no t
 overlap, and no wire enters a symbol; three gates check that on every drawing, from the
 finished picture alone.
 
-## How well it draws
+## Status
 
-Measured on the hand-drawn corpus this was designed from (5,232 usable drawings; 1,025 of
-them held out). Commands are in [`TESTING.md`](TESTING.md).
+Built and measured; not finished. The tool draws every one of the 5,232 decks of the corpus
+legally, with no crash. Small textbook circuits read like hand drawings; large ones do not
+yet. 43 tests pass in about 3 seconds. The corpus sweep found two real bugs along the way
+(an open net and a crash); both are fixed and each left a regression fixture in
+`tests/decks/`.
+
+### Two steers taken during the build
+
+- **A box and a label around an isolated piece.** A `stage` that only names, ports and
+  rails join to the rest is drawn in a dashed box, labelled with the stage's name as it was
+  written. On the 48 blind circuits, 20 of 78 declared stages stand alone and get one. A
+  stage that a wire joins to the rest gets no box: that is this tree's reading of
+  "isolated", and boxing every stage is a small change in `cktintent/boxes.py`.
+- **Straight wires before cornered ones.** Corners fell from 674 to 573 on the blind set,
+  against 457 in the hand drawings, so it is still short of people. Supply rails run past
+  their end pins so each pin taps with a T; a part hanging on a net taps the wire that
+  passes it; the router joins the straightest connection first. Raising the router's cost
+  of a bend alone barely moved the count (674 to 655 at three times the cost): most corners
+  come from pins standing off-level in placement.
+
+### Measured on the corpus
+
+5,232 usable hand drawings, 1,025 of them held out. The people's own figures are in
+brackets. Commands are in [`TESTING.md`](TESTING.md).
 
 | circuits | statements | legal | relations the drawing shows | every relation shown | terminals joined by name for want of a path | crossings (people's) | corners (people's) |
 |---|---|---|---|---|---|---|---|
@@ -109,18 +131,29 @@ was looked at on the fixtures, the 48 blind circuits and the first 300 held-out 
 only, so the first three rows say where the tool stands on circuits it was tuned near. The
 other 4,900 or so were drawn once, at the end: their legality is untouched evidence.
 
-What the numbers say, plainly:
+### Where it falls short
 
-- **Every drawing is legal**, on every deck of the corpus.
-- **With an agent's statements the drawing shows what was asked** (1,431 of 1,452
-  relations), and crosses wires less often than the people's drawings of the same circuits
-  (69 against 87).
-- **It still turns more corners than people do**, and it gives up on about 3 net terminals
-  in a hundred (36 of 1,295 on the blind set), joining each by name where a person found a
-  path for a wire.
-- **With no statement it is tidy but not clever**: it does not guess pairs, stages or the
+- **Small textbook circuits look right; large ones do not yet.** The 14 fixtures read like
+  hand drawings. Circuits of 30 or more devices are legal and ordered but spread out, even
+  after folding into bands: placement is constructive (rows, columns, mirrored groups,
+  bands), not a search.
+- **Dense nets crowd.** A net of many flat two-pin parts, such as an RF tank with its
+  varactors, piles into one level.
+- **Some wires are given up on.** About 3 terminals in 100 (36 of 1,295 on the blind set)
+  are joined by a name because the router found no path where a person did.
+- **It turns more corners than people do**: 573 against 457 with an agent's statements,
+  10,291 against 6,390 with none.
+- **With no statement it is tidy but not clever.** It does not guess pairs, stages or the
   direction of flow, and its crossings are about one and a half times the people's (988
-  against 650).
+  against 650). With an agent's statements it crosses less than they do (69 against 87).
+- **Not every conflict rule of the study is implemented.** A `match` whose gate line ends
+  up a name keeps its row; a `flow` between two mirror images is not refused. The read-back
+  still marks any relation the drawing fails to show.
+- **Two things the four statements cannot say**, both found in the study: that two flat
+  chains are parallel lanes of one differential path, and that one particular transistor is
+  a switch when its gate line also drives something else.
+- **A subcircuit instance is one block**, not expanded, and **SVG and the schema JSON are
+  the only outputs.**
 
 `docs/gallery/` holds what it draws for each deck in `tests/decks/`.
 
@@ -130,21 +163,6 @@ What the numbers say, plainly:
 | StrongARM latch | Gilbert cell | LC oscillator |
 | ![](docs/gallery/telescopic.svg) | ![](docs/gallery/sampler.svg) | ![](docs/gallery/ldo.svg) |
 | telescopic cascode | switched-capacitor sampler | LDO |
-
-## What it does not do
-
-- **Large circuits read worse than small ones.** Placement is constructive (rows, columns,
-  mirrored groups, bands), not a search: thirty devices come out legal and ordered but
-  spread out, and a net of many flat two-pin parts (an RF tank with its varactors) crowds
-  into one level.
-- **Two things the four statements cannot say**, both found in the study: that two flat
-  chains are parallel lanes of one differential path, and that one particular transistor is
-  a switch when its gate line also drives something else.
-- **Some conflicts in the study's table are reported, not resolved**: a `match` whose gate
-  line ends up a name keeps its row; a `flow` between two mirror images is not refused.
-  The read-back marks any relation the drawing fails to show either way.
-- **A subcircuit instance is one block**, not expanded.
-- **SVG and the schema JSON are the only outputs.**
 
 ## Layout of this tree
 
@@ -170,3 +188,6 @@ Two things in this tree differ from the study's contract, both measured before t
 kept: the symmetry finder tells parallel twins apart by their gate net (it finds 69 more
 image pairs in the training drawings, of which people drew 65 in one row; all 9 new ones in
 the held-out drawings hold), and a flow line that is refused no longer claims its end ports.
+
+The study's report is not part of this branch. Every count it rests on can be printed again
+from here with `tools/corpus.py --people`, given the corpus.
