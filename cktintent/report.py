@@ -11,7 +11,8 @@ def read_back(result):
     for n in result.notes:
         out.append("  note      %s" % n)
     for n, role in sorted(result.contract.view.k.roles.items()):
-        out.append("  N    net %s is %s" % (n, "a bias line" if role == "bias" else "a " + role))
+        if n in result.circuit.net_pins:                  # a role for a net the deck does not have is a note above
+            out.append("  N    net %s is %s" % (n, "a bias line" if role == "bias" else "a " + role))
     for rule, shown, text in result.outcome:
         if rule[0] in "MSFN" or rule in ("B1s", "B4", "B5"):
             out.append("  %-4s %s%s" % (rule, text, "" if shown is not False else "   [NOT SHOWN]"))
@@ -24,7 +25,7 @@ def read_back(result):
     named = sorted(n for n, k in result.schema["net_pieces"].items() if k > 1)
     if named:
         out.append("drawn by name or symbol: %s" % " ".join(named))
-    out.append("wire crossings: %d" % result.schema.get("crossings", 0))
+    out.append("wire crossings: %d, corners: %d" % (result.schema.get("crossings", 0), result.schema.get("bends", 0)))
     for gate, text in result.findings:
         out.append("ILLEGAL %-8s %s" % (gate, text))
     return "\n".join(out) + "\n"

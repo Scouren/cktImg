@@ -88,6 +88,13 @@ class Board:
         b = symbols.body(v, o)
         self.boxes.append((x + b[0], y + b[1], x + b[2], y + b[3]))
 
+    def lift(self, v):
+        """Take v off the board again. -> where it stood (x, y, o)."""
+        x, y, o = self.at.pop(v.name)
+        b = symbols.body(v, o)
+        self.boxes.remove((x + b[0], y + b[1], x + b[2], y + b[3]))
+        return x, y, o
+
     def keep_out(self, box):
         """Reserve the box (x0, y0, x1, y1) px: no part attached later may stand in it."""
         self.boxes.append(box)
@@ -314,6 +321,33 @@ def _lanes(c, k, board, lay):
         level[(band, ln)] = board.at[name][1]
 
 
+def _hang(c, k, board, X, bands, gates_only):
+    """A lone part hanging from a net onto a rail stands with its free pin one short stub off
+    the level of a pin that looks sideways on that net (a gate; with `gates_only` false also a
+    flat part's end, a block's pin), so the wire runs straight past it and it taps with a T."""
+    rails = k.view.rails
+    column = collections.Counter((bands[n], x) for n, x in X.items())
+    held = {d.name for rule, kind, p, text in k.relations if kind in ("same_row", "mirrored") for d in p}
+    for v in c.devs:
+        if v.kind in ("t", "blk") or v.name not in X or v.name in held or column[(bands[v.name], X[v.name])] > 1:
+            continue
+        on_rail = [p for p in ("a", "b") if v.net(p) in rails]
+        if len(on_rail) != 1:
+            continue
+        pin = "b" if on_rail[0] == "a" else "a"
+        x, y, o = board.at[v.name]
+        dx, dy, ex, ey = symbols.pins(v, o)[pin]
+        at = y + dy
+        levels = sorted({a[1] - ey * NEAR for a in board.anchors(v, pin, board.band(y))
+                         if a[2] and (a[4].kind == "t" or not gates_only)})
+        if not levels:
+            continue
+        to = min(levels, key=lambda level: (abs(level - at), level))
+        if to != at and (abs(to - at) <= ROW or not gates_only):
+            board.lift(v)
+            board.add(v, x, y + to - at if board.free(v, x, y + to - at, o) else y, o)
+
+
 def _row_y(k, rows, height):
     """y of each row: 80 px apart, with 40 more where a cross-coupled pair draws its X."""
     extra = [0] * (height + 1)                        # extra[r]: added above row r
@@ -407,6 +441,7 @@ def place(c, k):
             board.settle(v, x, y, o, (0, 20))
             notes.append("%s moved down: its row and column were taken" % v.name)
         spans[(lay.band[v.name], X[v.name])].append(board.at[v.name][1])
+    _hang(c, k, board, X, lay.band, True)
     for (band, x), ys in spans.items():                       # the wire of a column: nothing may be laid across it
         if max(ys) - min(ys) > ROW:
             board.keep_out((x - 5, min(ys), x + 5, max(ys)))
@@ -418,6 +453,7 @@ def place(c, k):
     _bridges(c, k, board, lay)
     _lanes(c, k, board, lay)
     _attach(c, k, board)
+    _hang(c, k, board, X, lay.band, False)            # again, now that the flat parts and blocks stand
     placement = dict(board.at)
     bands = {n: board.band(y) for n, (x, y, o) in placement.items()}
     x0 = min(x + symbols.body(c.by[n], o)[0] for n, (x, y, o) in placement.items())

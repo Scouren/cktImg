@@ -81,10 +81,12 @@ def derive(c, k):
                 if w not in seen:
                     seen.add(w); todo.append(w)
         return False
-    for row in chains:
+    refused = set()                                    # index of each flow line with a refused arrow: it asks for nothing more
+    for i, row in enumerate(chains):
         for a, b in zip(row, row[1:]):
             if a[0] == b[0] or reaches(b[0], a[0]):
                 V.notes.append("flow %s -> %s: refused, an earlier flow line already puts %s before %s" % (a[0], b[0], b[0], a[0]))
+                refused.add(i)
                 continue
             succ[a[0]].add(b[0])
             arrows.append((a, b))
@@ -432,7 +434,9 @@ def derive(c, k):
     for a, b in arrows:
         if a[1] and b[1]:
             R.append(("F1", "not_left", (a[1], b[1]), "flow %s -> %s: %s is not left of %s" % (a[0], b[0], b[0], a[0])))
-    for row in chains:
+    for i, row in enumerate(chains):
+        if i in refused:
+            continue
         first, last = row[0], row[-1]
         if first[2] and not first[1]:
             nxt = next((e[1] for e in row[1:] if e[1]), None)

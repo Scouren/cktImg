@@ -119,10 +119,12 @@ def _bar(schema, maze, net, pins):
         return []
     for x, y, ex, ey, v, p in ups:
         maze.lay(net, [(x, y), (x, top)])
-    maze.lay(net, [(xs[0], top), (xs[-1], top)])
+    left = xs[0] - STUB if all(maze.free(x, top) for x in (xs[0] - CELL, xs[0] - STUB)) else xs[0]
+    right = xs[-1] + STUB if all(maze.free(x, top) for x in (xs[-1] + CELL, xs[-1] + STUB)) else xs[-1]
+    maze.lay(net, [(left, top), (right, top)])         # a rail runs past its last pin: no corner at either end
     schema["wires"].append({"net": net, "segments": maze.segments(net)})
     schema["junctions"] += maze.junctions(net)
-    _symbol(schema, maze, net, False, xs[-1], top)
+    _symbol(schema, maze, net, False, right, top)
     return ups
 
 
@@ -349,5 +351,5 @@ def route(c, k, schema, groups=()):
             for g in parts:
                 if port_at.get(key) not in g:          # the port already names its piece
                     _name_piece(c, schema, maze, key, net, g, by_point)
-    schema["crossings"] = maze.crossings() + drawn
+    schema["crossings"], schema["bends"] = maze.crossings() + drawn, maze.bends()
     return notes

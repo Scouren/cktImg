@@ -12,7 +12,8 @@ another net's pin. Under those rules two nets cannot be joined by accident, whic
 import heapq
 
 CELL = 10
-BEND, CROSS, LIMIT = 3, 12, 40000
+BEND, CROSS, LIMIT = 6, 12, 40000
+MANY = 8           # terminals: up to this many are joined cheapest first, more in page order
 
 
 class Maze:
@@ -102,7 +103,7 @@ class Maze:
         return across.get(cell, net) != net
 
     def _path(self, net, start, targets):
-        """Cheapest legal path from pin cell `start` to any cell of `targets`, or None."""
+        """Cheapest legal path from pin cell `start` to any cell of `targets`: (cost, path), or None."""
         s_net, e = self.pins[start]
         tx = [t for t in targets]
         if not tx:
@@ -128,7 +129,7 @@ class Maze:
                 while key in came:
                     key = came[key]
                     path.append(key[0])
-                return path[::-1]
+                return g, path[::-1]
             if cell == start:
                 moves = [e]
             elif self._crossing(net, cell, d):
@@ -162,14 +163,15 @@ class Maze:
             tree.add(cell)
 
     def _link(self, net, cell, group):
-        """A path joining pin `cell` to `group` (a set of cells), searched from either side."""
-        path = self._path(net, cell, group)
-        if path is None:                          # the group may be reachable only from its own side
+        """The cheapest path joining pin `cell` to `group` (a set of cells), searched from
+        either side: (cost, path), or None."""
+        found = self._path(net, cell, group)
+        if found is None:                         # the group may be reachable only from its own side
             for t in sorted(group & set(self.pins), key=lambda t: abs(t[0] - cell[0]) + abs(t[1] - cell[1]))[:4]:
-                path = self._path(net, t, {cell})
-                if path is not None:
+                found = self._path(net, t, {cell})
+                if found is not None:
                     break
-        return path
+        return found
 
     def _laid(self, net):
         """The pieces already laid for `net`, as sets of cells: what `lay` and `claim` drew."""
@@ -202,26 +204,36 @@ class Maze:
             if c not in cells:
                 cells.append(c)
         groups = self._laid(net)                   # pieces laid before count, each on its own
-        for cell in sorted(cells):
-            if any(cell in g for g in groups):
+        todo = [c for c in sorted(cells) if not any(c in g for g in groups)]
+        while todo:                                # the cheapest join first: a straight run becomes the trunk the rest tap
+            best = None
+            for cell in (todo if len(todo) <= MANY else todo[:1]):
+                goals = sorted(groups, key=len, reverse=True) or [set(todo) - {cell}]
+                for g in goals:
+                    found = self._link(net, cell, g) if g else None
+                    if found is not None:
+                        if best is None or found[0] < best[0]:
+                            best = (found[0], found[1], cell, g)
+                        break
+            if best is None:                       # nothing left reaches anything: the next stands alone
+                groups.append({todo.pop(0)})
                 continue
-            for g in sorted(groups, key=len, reverse=True):
-                path = self._link(net, cell, g)
-                if path is not None:
-                    self._commit(net, path)
-                    g.update(path)
-                    break
+            cost, path, cell, g = best
+            self._commit(net, path)
+            if groups:
+                g.update(path)
             else:
-                groups.append({cell})
+                groups.append(set(path))
+            todo = [c for c in todo if not any(c in piece for piece in groups)]
         for _ in range(len(groups)):               # pieces that can now reach each other
             merged = False
             groups.sort(key=len, reverse=True)
             for g in groups[1:]:
                 for cell in sorted(g & set(self.pins)):
-                    path = self._link(net, cell, groups[0])
-                    if path is not None:
-                        self._commit(net, path)
-                        groups[0].update(path)
+                    found = self._link(net, cell, groups[0])
+                    if found is not None:
+                        self._commit(net, found[1])
+                        groups[0].update(found[1])
                         groups[0].update(g)
                         groups.remove(g)
                         merged = True
@@ -297,6 +309,17 @@ class Maze:
             deg[a] = deg.get(a, 0) + 1
             deg[b] = deg.get(b, 0) + 1
         return [[c[0] * CELL, c[1] * CELL] for c, n in sorted(deg.items()) if n >= 3]
+
+    def bends(self):
+        """How many corners the wires make: where a wire turns without branching."""
+        n = 0
+        for edges in self.edges.values():
+            arms = {}
+            for a, b in edges:
+                arms.setdefault(a, []).append(a[1] == b[1])
+                arms.setdefault(b, []).append(a[1] == b[1])
+            n += sum(1 for level in arms.values() if len(level) == 2 and level[0] != level[1])
+        return n
 
     def crossings(self):
         """How many times two different nets' wires cross."""

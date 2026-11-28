@@ -41,6 +41,19 @@ def human_crossings(c):
     return n
 
 
+def human_bends(c):
+    """Corners in a person's drawing: points where two ends of one net's wire meet at an angle."""
+    n = 0
+    for w in c.wires:
+        ends = collections.defaultdict(list)
+        for (x0, y0), (x1, y1) in w["segments"]:
+            d = (x1 - x0, y1 - y0)
+            ends[(round(x0, 1), round(y0, 1))].append(d)
+            ends[(round(x1, 1), round(y1, 1))].append(d)
+        n += sum(1 for ds in ends.values() if len(ds) == 2 and abs(ds[0][0] * ds[1][1] - ds[0][1] * ds[1][0]) > 1e-6)
+    return n
+
+
 def stand_in(c):
     """Statements derived from the drawing's structure: rails and ports from its markers,
     match for each pair, cross pair and two-device mirror, flow along the signal path."""
@@ -159,6 +172,8 @@ def main(argv):
         T["circuits with such a terminal"] += lost > 0
         T["crossings"] += r.schema.get("crossings", 0)
         T["crossings in the person's drawing"] += human_crossings(c)
+        T["corners"] += r.schema.get("bends", 0)
+        T["corners in the person's drawing"] += human_bends(c)
         if verbose and (r.findings or lost):
             print("%-11s %2d devices  %s  %s" % (c.id, len(r.schema["devices"]), "; ".join(t for g, t in r.findings)[:110], "lost %d" % lost if lost else ""))
         if opt["svg"]:
@@ -172,6 +187,7 @@ def main(argv):
     print("  not shown, by rule: %s" % (dict(sorted(missed.items())) or "none"))
     print("  terminals joined by name for want of a path: %d, in %s" % (T["terminals joined by name for want of a path"], pct(T["circuits with such a terminal"], T["drawn"])))
     print("  wire crossings: %d (the people's drawings: %d)" % (T["crossings"], T["crossings in the person's drawing"]))
+    print("  wire corners: %d (the people's drawings: %d)" % (T["corners"], T["corners in the person's drawing"]))
     print("  %.1f s in all, %.2f s per circuit; slower than 5 s: %s" % (T["seconds"], T["seconds"] / max(T["drawn"], 1), slow[:5]))
     for cid, err, where in crashes[:12]:
         print("  CRASH %-11s %s   [%s]" % (cid, err[:90], where[:70]))
