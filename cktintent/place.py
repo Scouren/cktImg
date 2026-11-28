@@ -14,6 +14,7 @@ from . import symbols
 
 ROW = 80           # px between two rows
 NEAR = 20          # px of wire between an attached part and the pin it serves
+LANE = 120         # px between two lanes
 
 
 def orient_gates(c, k, X, groups):
@@ -216,11 +217,63 @@ def _attach(c, k, board):
     assert not pending
 
 
+def _lanes(c, k, board, lay):
+    """Put each lane part at its x, on the level of the pin it serves; in flow order."""
+    deck = {v.name: i for i, v in enumerate(c.devs)}
+    todo = sorted((n for n in lay.lane if n not in board.at), key=lambda n: (lay.x[n], deck[n]))
+    level = {}                                        # lane index -> y of the last part put on it
+    for name in todo:
+        v, x, ln = c.by[name], lay.x[name], lay.lane[name]
+        if v.kind == "blk":
+            o, pins = {}, symbols.pins(v, {})
+            feed = [(q, a) for q in v.nets if pins[q][2] < 0 for a in board.anchors(v, q) if a[2] > 0 and a[0] < x]
+            drive = [(q, a) for q in v.nets if pins[q][2] > 0 for a in board.anchors(v, q) if a[2] < 0 and a[0] > x]
+            if feed:                                  # an input pin level with what feeds it
+                q, a = max(feed, key=lambda t: t[1][0])
+                y = a[1] - pins[q][1]
+            elif drive:
+                q, a = min(drive, key=lambda t: t[1][0])
+                y = a[1] - pins[q][1]
+            else:
+                y = level.get(ln, -ln * LANE)
+            board.settle(v, x, y, o, (0, -20))
+            level[ln] = board.at[name][1]
+            continue
+        p, q = _ends(v)
+        A, B = board.anchors(v, p), board.anchors(v, q)
+        left = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] <= x]
+        right = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] > x]
+        y, near, near_left = None, None, True
+        for a, n in sorted(right, key=lambda t: t[0][0]):          # the gate or input it leads into
+            if a[2] < 0:
+                y, near, near_left = a[1], n, False
+                break
+        if y is None:
+            for a, n in sorted(left, key=lambda t: -t[0][0]):      # carry on from what came before
+                y, near, near_left = (a[1] if a[2] else a[1] + a[3] * NEAR), n, True
+                break
+        if y is None and right:
+            a, n = min(right, key=lambda t: t[0][0])
+            y, near, near_left = (a[1] if a[2] else a[1] + a[3] * NEAR), n, False
+        if y is None:
+            y, near = level.get(ln, -ln * LANE), p
+            near_left = True
+            if v.net(q) is not None and v.net(p) is not None:      # the end toward the next flow part goes right
+                after = {m for w in c.devs if w.name in lay.x and lay.x[w.name] > x for m in w.nets.values() if m}
+                if v.net(p) in after and v.net(q) not in after:
+                    near, near_left = p, False
+                elif v.net(q) in after:
+                    near, near_left = q, False
+        board.settle(v, x, y, _flat(v, near, near_left), (0, -20))
+        level[ln] = board.at[name][1]
+
+
 def place(c, k):
     """-> (placement {name: (x, y, o)}, axis groups, notes). See the module header."""
     rows, height, notes = assign_rows(c, k)
-    X, groups, more = assign_columns(c, k)
-    notes += more
+    lay = assign_columns(c, k)
+    X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
+    notes += lay.notes
     gate = orient_gates(c, k, X, groups)
     board = Board(c, k)
     spans = collections.defaultdict(list)
@@ -238,6 +291,7 @@ def place(c, k):
     for x, ys in spans.items():                       # the wire of a column: nothing may be laid across it
         if max(ys) - min(ys) > ROW:
             board.keep_out((x - 5, min(ys), x + 5, max(ys)))
+    _lanes(c, k, board, lay)
     _attach(c, k, board)
     placement = dict(board.at)
     x0 = min(x + symbols.body(c.by[n], o)[0] for n, (x, y, o) in placement.items())

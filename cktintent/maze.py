@@ -6,7 +6,7 @@ another net's pin. Under those rules two nets cannot be joined by accident, whic
 `gates.extract` then checks from the finished geometry alone.
 
     m = Maze(); m.block(x0, y0, x1, y1); m.pin(net, x, y, ex, ey)
-    m.connect(net, [(x, y), ...]) -> the terminals it could not reach
+    m.connect(net, [(x, y), ...]) -> the wired pieces, as groups of terminals
     m.segments(net), m.junctions(net)
 """
 import heapq
@@ -134,33 +134,57 @@ class Maze:
                 self.node[cell] = net
             tree.add(cell)
 
+    def _link(self, net, cell, group):
+        """A path joining pin `cell` to `group` (a set of cells), searched from either side."""
+        path = self._path(net, cell, group)
+        if path is None:                          # the group may be reachable only from its own side
+            for t in sorted(group & set(self.pins), key=lambda t: abs(t[0] - cell[0]) + abs(t[1] - cell[1]))[:4]:
+                path = self._path(net, t, {cell})
+                if path is not None:
+                    break
+        return path
+
     def connect(self, net, points):
-        """Wire the terminals of `net` (px points, each registered with `pin`) into one tree.
-        -> the points that could not be reached; they stay unwired."""
-        cells = [(x // CELL, y // CELL) for x, y in points]
-        assert all(c in self.pins and self.pins[c][0] == net for c in cells), net
-        if not cells:
-            return []
-        tree = self.tree.setdefault(net, set())
-        if not tree:
-            tree.add(min(cells))
-        todo = [c for c in cells if c not in tree]
-        lost = []
-        for _ in range(len(todo)):
-            cell = min(todo, key=lambda c: min(abs(c[0] - t[0]) + abs(c[1] - t[1]) for t in tree))
-            todo.remove(cell)
-            path = self._path(net, cell, tree)
-            if path is None:                      # the tree may be reachable only from its own side
-                for t in sorted(tree & set(self.pins), key=lambda t: abs(t[0] - cell[0]) + abs(t[1] - cell[1])):
-                    back = self._path(net, t, {cell})
-                    if back is not None:
-                        path = back
-                        break
-            if path is None:
-                lost.append((cell[0] * CELL, cell[1] * CELL))
+        """Wire the terminals of `net` (px points, each registered with `pin`).
+        -> groups of points, the largest first: one group when the net is one wire; each
+        further group is a piece the maze could not join and that a name must."""
+        cells = []
+        for x, y in points:
+            c = (x // CELL, y // CELL)
+            assert c in self.pins and self.pins[c][0] == net, (net, x, y)
+            if c not in cells:
+                cells.append(c)
+        groups = []                                # [set of cells], each one wired piece
+        for cell in sorted(cells):
+            for g in sorted(groups, key=len, reverse=True):
+                path = self._link(net, cell, g)
+                if path is not None:
+                    self._commit(net, path)
+                    g.update(path)
+                    break
             else:
-                self._commit(net, path)
-        return lost
+                groups.append({cell})
+        for _ in range(len(groups)):               # pieces that can now reach each other
+            merged = False
+            groups.sort(key=len, reverse=True)
+            for g in groups[1:]:
+                for cell in sorted(g & set(self.pins)):
+                    path = self._link(net, cell, groups[0])
+                    if path is not None:
+                        self._commit(net, path)
+                        groups[0].update(path)
+                        groups[0].update(g)
+                        groups.remove(g)
+                        merged = True
+                        break
+                if merged:
+                    break
+            if not merged:
+                break
+        groups.sort(key=len, reverse=True)
+        self.tree[net] = groups[0] if groups else set()
+        mine = set(cells)
+        return [[(c[0] * CELL, c[1] * CELL) for c in sorted(g & mine)] for g in groups]
 
     # ---------------------------------------------------------------- reading the result
     def segments(self, net):

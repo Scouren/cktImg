@@ -156,16 +156,17 @@ def route(c, k, schema):
     for net in sorted(wired, key=lambda n: (span(n), n)):
         if len(points[net]) < 2:
             continue
-        lost = maze.connect(net, points[net])
+        groups = maze.connect(net, points[net])
         segs = maze.segments(net)
         if segs:
             schema["wires"].append({"net": net, "segments": segs})
         schema["junctions"] += maze.junctions(net)
-        if lost:                                       # W3's last resort: join what is left by name
-            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire" % (net, len(lost), len(points[net])))
+        if len(groups) > 1:                            # W3's last resort: join the pieces by name
+            lost = sum(len(g) for g in groups[1:])
+            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire" % (net, lost, len(points[net])))
             by_point = {(t[0], t[1]): t for t in terms[net]}
-            anchor = next(p for p in points[net] if p not in lost)
-            for x, y in lost + [anchor]:
+            for g in groups:
+                x, y = next((p for p in g if p in by_point), g[0])
                 t = by_point.get((x, y))
                 if t is not None:
                     _name_at(c, schema, maze, net, x, y, t[2], t[3])
