@@ -1,13 +1,22 @@
-"""Wiring: every net becomes rail symbols, a name at each pin, or one wire.
+"""Wiring: every net becomes rail symbols, a name at each pin, or wire.
 
-    route(c, k, schema) -> notes        fills schema's wires, markers, labels, junctions
+    route(c, k, schema, groups) -> notes     fills schema's wires, markers, labels, junctions
 
-How a net is drawn (the wiring defaults W1 to W3, and the `net` roles):
-    ground, supply   a symbol at each pin
+How a net is drawn (the `net` roles, then the wiring defaults W1 to W4):
+    ground           a symbol at each pin (W1)
+    supply           one bar over up to four pins, a symbol at each pin beyond (W2)
     bias, clock      its name at each pin
-    anything else    one wire; a terminal the maze cannot reach falls back to the name
+    signal           one wire
+    anything else    one wire while its pins stand near each other; a net that spans far is
+                     cut where its pins stand apart, each group wired, the groups joined by
+                     name (W3). A terminal the maze cannot reach falls back to the name too.
+A cross-coupled pair's two gate wires swap sides as a 45-degree X (W4).
 A net that is a port of the cell gets one port: where the flow enters or leaves (F2), else
 beside one of its pins.
+
+W3's distances are people's, from the corpus (x-span of a net's pins, in MOS lengths):
+wired in 98% of nets spanning 4 or less, 67% from 4 to 8, 22% from 8 to 16; a net that only
+feeds gates is wired in 59% up to 4 and 11% beyond.
 """
 import collections
 from . import symbols
@@ -15,6 +24,10 @@ from .maze import Maze, CELL
 
 STUB = 20          # px from a pin to its name or port
 TEXT = 7           # px of width a character of a name takes
+BEHIND = 3         # extra cost per cell of a wire that runs just behind a rail symbol
+OVER_TEXT = 4      # extra cost per cell of a wire that runs through a device's name
+NEAR, FAR = 190, 380   # px: 4 and 8 MOS lengths at this tool's column pitch (people's is 2.5 lengths, ours 3)
+SEP = "\x1f"       # joins a net's name and a piece number into a piece key
 
 
 def _terminals(c, schema):
@@ -26,6 +39,30 @@ def _terminals(c, schema):
             if net is not None:
                 out[net].append((d["x"] + dx, d["y"] + dy, ex, ey, v, p))
     return out
+
+
+def _split(c, k, terms, named):
+    """W3: cut a net whose pins stand far apart into the groups a wire joins.
+    -> ({piece key: terminals}, {piece key: net}); a net in one piece keeps its name as key."""
+    roles, pieces, net_of = k.view.k.roles, {}, {}
+    for net in sorted(terms):
+        groups = [terms[net]]
+        if net not in k.view.rails and net not in named and roles.get(net) != "signal" and len(terms[net]) > 1:
+            pins = sorted(terms[net], key=lambda t: (t[0], t[1], t[4].name, t[5]))
+            span = pins[-1][0] - pins[0][0]
+            if all(t[4].kind == "t" and t[5] == "g" for t in pins):
+                if span > NEAR:                        # a line that only feeds gates: a name at each
+                    groups = [[t] for t in pins]
+            elif span > FAR:
+                groups = [[pins[0]]]
+                for a, b in zip(pins, pins[1:]):
+                    if b[0] - a[0] > NEAR:
+                        groups.append([])
+                    groups[-1].append(b)
+        for i, g in enumerate(groups):
+            key = net if i == 0 else "%s%s%d" % (net, SEP, i)
+            pieces[key], net_of[key] = g, net
+    return pieces, net_of
 
 
 def _text_box(x, y, ex, ey, name):
@@ -54,20 +91,47 @@ def _reach(maze, x, y, ex, ey, want):
     return px, py
 
 
+def _symbol(schema, maze, net, ground, x, y):
+    """A ground or supply symbol at (x, y); nothing is wired just behind it."""
+    box = (x - CELL, y, x + CELL, y + 20) if ground else (x - CELL, y - 20, x + CELL, y)
+    maze.block(*_snap(box))
+    maze.discourage(x - 30, y + 30, x + 30, y + 60, BEHIND) if ground else maze.discourage(x - 30, y - 60, x + 30, y - 30, BEHIND)
+    schema["markers"].append({"kind": "ground" if ground else "supply", "type": "ground" if ground else "vdd-port",
+                              "name": net, "direction": None, "at": [x, y], "net": net})
+
+
+def _bar(schema, maze, net, pins):
+    """W2: join the supply pins that can rise to one level above them all by one bar. -> the pins joined"""
+    top = min(t[1] for t in pins) - 30
+    ups = [t for t in pins if t[3] == -1 and all(maze.free(t[0], y) for y in range(top, t[1], CELL))]
+    xs = sorted({t[0] for t in ups})
+    if len(xs) < 2 or not all(maze.free(x, top) for x in range(xs[0], xs[-1] + 1, CELL)):
+        return []
+    for x, y, ex, ey, v, p in ups:
+        maze.lay(net, [(x, y), (x, top)])
+    maze.lay(net, [(xs[0], top), (xs[-1], top)])
+    schema["wires"].append({"net": net, "segments": maze.segments(net)})
+    schema["junctions"] += maze.junctions(net)
+    _symbol(schema, maze, net, False, xs[-1], top)
+    return ups
+
+
 def _rails(c, k, schema, maze, terms):
-    """W1/W2: a ground or supply symbol on a short stub at each rail pin."""
+    """W1, W2: a supply of up to four pins is one bar; every other rail pin gets its own symbol
+    on a short stub."""
     for net in sorted(k.view.rails):
         ground = net in k.view.ground
-        for x, y, ex, ey, v, p in terms.get(net, ()):
+        pins = list(terms.get(net, ()))
+        done = _bar(schema, maze, net, pins) if not ground and 2 <= len(pins) <= 4 else []
+        for x, y, ex, ey, v, p in pins:
+            if (x, y, ex, ey, v, p) in done:
+                continue
             natural = (ey == 1) if ground else (ey == -1)
             px, py = _reach(maze, x, y, ex, ey, CELL if natural else STUB)
-            box = (px - CELL, py, px + CELL, py + 20) if ground else (px - CELL, py - 20, px + CELL, py)
             if (px, py) != (x, y):
                 schema["wires"].append({"net": net, "segments": [[[x, y], [px, py]]]})
                 maze.block(min(x + ex * CELL, px), min(y + ey * CELL, py), max(x + ex * CELL, px), max(y + ey * CELL, py))
-            maze.block(*_snap(box))
-            schema["markers"].append({"kind": "ground" if ground else "supply", "type": "ground" if ground else "vdd-port",
-                                      "name": net, "direction": None, "at": [px, py], "net": net})
+            _symbol(schema, maze, net, ground, px, py)
 
 
 def _name_at(c, schema, maze, net, x, y, ex, ey):
@@ -105,8 +169,8 @@ def _half(groups, pins):
     return None
 
 
-def _port(c, schema, maze, net, direction, pins, devs, groups):
-    """Place one port for `net` and register it as a terminal. -> its point."""
+def _port(c, schema, maze, key, net, direction, pins, devs, groups):
+    """Place one port for `net` on its piece `key` and register it as a terminal. -> its point."""
     mine = [t for t in pins if devs and t[4] in devs] or pins
     half = _half(groups, pins)
     branch = [t for t in mine if t[5] != "g"] or mine
@@ -136,14 +200,14 @@ def _port(c, schema, maze, net, direction, pins, devs, groups):
         if clear:
             break
         px, py = px + step[0], py + step[1]
-    maze.pin(net, px, py, face[0], face[1])
+    maze.pin(key, px, py, face[0], face[1])
     maze.block(*box())
     schema["markers"].append({"kind": "port", "type": "port", "name": net, "direction": direction,
                               "at": [px, py], "net": net, "side": [-face[0], -face[1]]})
     return (px, py)
 
 
-def _cross_pairs(c, k, schema, maze, terms):
+def _cross_pairs(c, k, schema, maze, terms, key_at):
     """W4: a cross-coupled pair's two gate wires swap sides as a 45-degree X, drawn between
     the gates and the level 60 px toward the drains. Two pairs facing each other (a latch of
     two inverters) share that level, and their two Xs meet on it. -> how many Xs were drawn"""
@@ -161,9 +225,13 @@ def _cross_pairs(c, k, schema, maze, terms):
         up = da[3]                                     # -1: drains on top, the X stands above the gates
         y, yx = ga[1], ga[1] + up * 60
         inner = [(ga[0] + 10 * i, y + up * 10 * i) for i in range(1, 6)] + [(gb[0] - 10 * i, y + up * 10 * i) for i in range(1, 6)]
-        legs = []                                      # (gate, net, the wire from the drain to the X's corner)
+        legs = []                                      # (gate, piece key, the wire from the drain to the X's corner)
         for gate, drain, corner in ((ga, db, gb[0]), (gb, da, ga[0])):
-            legs.append((gate, drain[4].net("d"), [(drain[0], drain[1]), (drain[0], yx), (corner, yx)]))
+            if key_at[(gate[4].name, "g")] != key_at[(drain[4].name, "d")]:
+                break                                  # W3 cut the net between this gate and that drain
+            legs.append((gate, key_at[(drain[4].name, "d")], [(drain[0], drain[1]), (drain[0], yx), (corner, yx)]))
+        if len(legs) != 2:
+            continue
         clear = all(maze.free(x, yy) for x, yy in inner)
         for gate, net, (p0, p1, p2) in legs:
             cells = [(p0[0], yy) for yy in range(min(p0[1], yx), max(p0[1], yx) + 1, CELL)]
@@ -173,8 +241,8 @@ def _cross_pairs(c, k, schema, maze, terms):
             continue
         for gate, net, path in legs:
             maze.lay(net, path)
-            maze.claim(net, gate[0], gate[1])
-            schema["wires"].append({"net": net, "segments": [[[gate[0], gate[1]], list(path[-1])]]})
+            maze.claim(net, gate[0], gate[1], path[-1])
+            schema["wires"].append({"net": net.split(SEP)[0], "segments": [[[gate[0], gate[1]], list(path[-1])]]})
             corners[path[-1]] += 1
         for x, yy in inner:
             maze.block(x, yy, x, yy)
@@ -182,52 +250,72 @@ def _cross_pairs(c, k, schema, maze, terms):
     return sum(corners.values()) // 2
 
 
+def _name_piece(c, schema, maze, net, points, by_point):
+    """Write `net`'s name on one terminal of a wired piece: a gate first, where a stub is clear."""
+    ts = sorted((by_point[p] for p in points if p in by_point), key=lambda t: (t[5] != "g", t[0], t[1]))
+    if ts:
+        x, y, ex, ey, v, p = next((t for t in ts if maze.free(t[0] + t[2] * CELL, t[1] + t[3] * CELL)), ts[0])
+        _name_at(c, schema, maze, net, x, y, ex, ey)
+
+
 def route(c, k, schema, groups=()):
     """Fill the stamped `schema` with wires, markers, labels and junctions. -> notes"""
     maze, notes = Maze(), []
     terms = _terminals(c, schema)
     for d, v in zip(schema["devices"], c.devs):
-        b = symbols.body(v, d["orient"])
+        b, t = symbols.body(v, d["orient"]), symbols.label_box(v, d["orient"], TEXT)
         maze.block(d["x"] + b[0], d["y"] + b[1], d["x"] + b[2], d["y"] + b[3])
-    for net, pins in terms.items():
-        for x, y, ex, ey, v, p in pins:
-            maze.pin(net, x, y, ex, ey)
-    _rails(c, k, schema, maze, terms)
-    drawn = _cross_pairs(c, k, schema, maze, terms)   # each X is one crossing the maze does not see
+        if t:                                          # round inward: a name does not close the track beside it
+            maze.text(-(-(d["x"] + t[0]) // CELL) * CELL, -(-(d["y"] + t[1]) // CELL) * CELL,
+                      (d["x"] + t[2]) // CELL * CELL, (d["y"] + t[3]) // CELL * CELL, OVER_TEXT)
     named = {n for n, r in k.view.k.roles.items() if r in ("bias", "clock")}
+    pieces, net_of = _split(c, k, terms, named)
+    for key, pins in pieces.items():
+        for x, y, ex, ey, v, p in pins:
+            maze.pin(key, x, y, ex, ey)
+    key_at = {(t[4].name, t[5]): key for key, pins in pieces.items() for t in pins}
+    _rails(c, k, schema, maze, terms)
+    drawn = _cross_pairs(c, k, schema, maze, terms, key_at)   # each X is one crossing the maze does not see
     for net in sorted(named):
         for x, y, ex, ey, v, p in terms.get(net, ()):
             _name_at(c, schema, maze, net, x, y, ex, ey)
     ins, outs = _flow_ends(k)
-    points = {}
-    wired = sorted(n for n in terms if n not in k.view.rails and n not in named)
-    for net in wired:                                  # ports first: they are terminals of their nets
-        points[net] = [(t[0], t[1]) for t in terms[net]]
+    wired = sorted(key for key in pieces if net_of[key] not in k.view.rails and net_of[key] not in named)
+    cut = collections.Counter(net_of[key] for key in wired)
+    ported = {}                                        # net -> the piece its port goes on: the flow's devices, else the most pins
+    for key in wired:
+        net = net_of[key]
         if net in ins or net in outs or net in c.port_nets:
+            devs = ins.get(net) or outs.get(net) or ()
+            score = (sum(t[4] in devs for t in pieces[key]), len(pieces[key]))
+            if net not in ported or score > ported[net][0]:
+                ported[net] = (score, key)
+    points, port_at = {}, {}
+    for key in wired:                                  # ports first: they are terminals of their nets
+        net = net_of[key]
+        points[key] = [(t[0], t[1]) for t in pieces[key]]
+        if net in ported and ported[net][1] == key:
             direction = "input" if net in ins else "output" if net in outs else "passive"
-            points[net].append(_port(c, schema, maze, net, direction, terms[net], ins.get(net) or outs.get(net), groups))
+            port_at[key] = _port(c, schema, maze, key, net, direction, pieces[key], ins.get(net) or outs.get(net), groups)
+            points[key].append(port_at[key])
 
-    def span(net):
-        xs, ys = [p[0] for p in points[net]], [p[1] for p in points[net]]
+    def span(key):
+        xs, ys = [p[0] for p in points[key]], [p[1] for p in points[key]]
         return (max(xs) - min(xs)) + (max(ys) - min(ys))
-    for net in sorted(wired, key=lambda n: (span(n), n)):
-        if len(points[net]) < 2:
-            continue
-        groups = maze.connect(net, points[net])
-        segs = maze.segments(net)
+    for key in sorted(wired, key=lambda q: (span(q), q)):
+        net = net_of[key]
+        parts = maze.connect(key, points[key]) if len(points[key]) > 1 else [points[key]]
+        segs = maze.segments(key)
         if segs:
             schema["wires"].append({"net": net, "segments": segs})
-        schema["junctions"] += maze.junctions(net)
-        if len(groups) > 1:                            # W3's last resort: join the pieces by name
-            lost = sum(len(g) for g in groups[1:])
-            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire" % (net, lost, len(points[net])))
-            by_point = {(t[0], t[1]): t for t in terms[net]}
-            for g in groups:
-                x, y = next((p for p in g if p in by_point), g[0])
-                t = by_point.get((x, y))
-                if t is not None:
-                    _name_at(c, schema, maze, net, x, y, t[2], t[3])
-                else:
-                    schema["labels"].append({"net": net, "name": net, "at": [x, y], "side": [0, -1]})
+        schema["junctions"] += maze.junctions(key)
+        if len(parts) > 1:                             # the maze's last resort: join the pieces by name
+            lost = sum(len(g) for g in parts[1:])
+            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire" % (net, lost, len(points[key])))
+        if len(parts) > 1 or cut[net] > 1:
+            by_point = {(t[0], t[1]): t for t in pieces[key]}
+            for g in parts:
+                if port_at.get(key) not in g:          # the port already names its piece
+                    _name_piece(c, schema, maze, net, g, by_point)
     schema["crossings"] = maze.crossings() + drawn
     return notes

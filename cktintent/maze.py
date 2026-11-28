@@ -18,11 +18,14 @@ BEND, CROSS, LIMIT = 3, 12, 40000
 class Maze:
     def __init__(self):
         self.blocked = set()       # cells no wire may enter
+        self.dear = {}             # cell -> extra cost of a wire through it
+        self.written = set()       # cells a device's name covers
         self.pins = {}             # cell -> (net, (ex, ey)): a pin and the way a wire leaves it
         self.h, self.v = {}, {}    # cell -> net of the wire running through it horizontally / vertically
         self.node = {}             # cell -> net: a bend, an end or a branch (no other wire may cross here)
         self.edges = {}            # net -> set of ((i, j), (i2, j2)) unit steps, ordered low to high
-        self.tree = {}             # net -> set of cells already joined
+        self.tree = {}             # net -> set of cells a wire of the net already reaches
+        self.links = {}            # net -> [(cell, cell)] joined by a wire drawn outside the grid (a slanted one)
         self.lo, self.hi = [0, 0], [0, 0]
 
     # ---------------------------------------------------------------- building
@@ -38,6 +41,18 @@ class Maze:
         self._grow(x0 // CELL, y0 // CELL)
         self._grow(x1 // CELL, y1 // CELL)
 
+    def text(self, x0, y0, x1, y1, cost):
+        """Writing stands in the closed box (px): no other writing or stub goes there (`free`
+        says no), and a wire through it pays `cost` more per cell."""
+        self.discourage(x0, y0, x1, y1, cost)
+        self.written.update((i, j) for i in range(x0 // CELL, x1 // CELL + 1) for j in range(y0 // CELL, y1 // CELL + 1))
+
+    def discourage(self, x0, y0, x1, y1, cost):
+        """A wire through the closed box (px) pays `cost` more per cell."""
+        for i in range(x0 // CELL, x1 // CELL + 1):
+            for j in range(y0 // CELL, y1 // CELL + 1):
+                self.dear[(i, j)] = max(self.dear.get((i, j), 0), cost)
+
     def pin(self, net, x, y, ex, ey):
         """A terminal of `net` at (x, y) px; a wire leaves it along (ex, ey)."""
         assert x % CELL == 0 and y % CELL == 0 and (abs(ex) + abs(ey) == 1), (net, x, y, ex, ey)
@@ -49,7 +64,8 @@ class Maze:
     def free(self, x, y):
         """True when nothing stands or runs at (x, y) px."""
         cell = (x // CELL, y // CELL)
-        return cell not in self.blocked and cell not in self.pins and cell not in self.h and cell not in self.v
+        return (cell not in self.blocked and cell not in self.pins and cell not in self.h and cell not in self.v
+                and cell not in self.written)
 
     def open(self, net, x, y):
         """True when a wire of `net` may be laid at (x, y) px: free, or its own pin or wire."""
@@ -75,7 +91,7 @@ class Maze:
             return None if cell in self.node else 1 + CROSS
         if self.node.get(cell, net) != net:
             return None
-        return 1
+        return 1 + self.dear.get(cell, 0)
 
     def _crossing(self, net, cell, d):
         across = self.v if d[0] else self.h
@@ -151,6 +167,26 @@ class Maze:
                     break
         return path
 
+    def _laid(self, net):
+        """The pieces already laid for `net`, as sets of cells: what `lay` and `claim` drew."""
+        adj = {}
+        for a, b in list(self.edges.get(net, ())) + self.links.get(net, []):
+            adj.setdefault(a, set()).add(b)
+            adj.setdefault(b, set()).add(a)
+        seen, out = set(), []
+        for cell in sorted(self.tree.get(net, ())):
+            if cell in seen:
+                continue
+            piece, todo = {cell}, [cell]
+            while todo:
+                for nxt in adj.get(todo.pop(), ()):
+                    if nxt not in piece:
+                        piece.add(nxt)
+                        todo.append(nxt)
+            seen |= piece
+            out.append(piece)
+        return out
+
     def connect(self, net, points):
         """Wire the terminals of `net` (px points, each registered with `pin`).
         -> groups of points, the largest first: one group when the net is one wire; each
@@ -161,9 +197,9 @@ class Maze:
             assert c in self.pins and self.pins[c][0] == net, (net, x, y)
             if c not in cells:
                 cells.append(c)
-        groups = [set(self.tree[net])] if self.tree.get(net) else []   # a piece laid before (`lay`) counts
+        groups = self._laid(net)                   # pieces laid before count, each on its own
         for cell in sorted(cells):
-            if groups and cell in groups[0]:
+            if any(cell in g for g in groups):
                 continue
             for g in sorted(groups, key=len, reverse=True):
                 path = self._link(net, cell, g)
@@ -191,9 +227,9 @@ class Maze:
             if not merged:
                 break
         groups.sort(key=len, reverse=True)
-        self.tree[net] = groups[0] if groups else set()
+        self.tree[net] = set().union(*groups) if groups else set()
         mine = set(cells)
-        return [[(c[0] * CELL, c[1] * CELL) for c in sorted(g & mine)] for g in groups]
+        return [[(c[0] * CELL, c[1] * CELL) for c in sorted(g & mine)] for g in groups if g & mine]
 
     def lay(self, net, points):
         """Lay a wire of `net` along the given px points (each step straight, on the grid),
@@ -211,9 +247,12 @@ class Maze:
             path.append(b)
         self._commit(net, path)
 
-    def claim(self, net, x, y):
-        """Count the pin at (x, y) px as already joined to the net's tree (a slanted wire reaches it)."""
-        self.tree.setdefault(net, set()).add((x // CELL, y // CELL))
+    def claim(self, net, x, y, to):
+        """Count the pin at (x, y) px as joined to the net's laid wire at `to` px: a slanted
+        wire, drawn outside the grid, runs between them."""
+        a, b = (x // CELL, y // CELL), (to[0] // CELL, to[1] // CELL)
+        self.tree.setdefault(net, set()).update((a, b))
+        self.links.setdefault(net, []).append((a, b))
 
     # ---------------------------------------------------------------- reading the result
     def segments(self, net):

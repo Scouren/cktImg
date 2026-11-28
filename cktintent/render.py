@@ -27,14 +27,18 @@ def _transistor(v, o):
             s.append(("P", [(7, -11), (2, -8), (7, -5)], True, True) if p else ("P", [(2, 5), (7, 8), (2, 11)], True, True))
         if o["gate"] == "right":
             s = _map(s, lambda x, y: (-x, y))
-        name = ("T", 15 if o["gate"] == "left" else -15, 4, v.name, "start" if o["gate"] == "left" else "end")
-        return s + [name]
+        return s + [_label(v, o)]
     s = [("L", -10, -12, 10, -12), ("L", -12, -7, 12, -7), ("L", -8, -7, -8, 0), ("L", -8, 0, -20, 0),
          ("L", 8, -7, 8, 0), ("L", 8, 0, 20, 0)]
     s += [("L", 0, -20, 0, -17.5), ("C", 0, -15, 2.5, False)] if p else [("L", 0, -20, 0, -12)]
     if o["gate"] == "down":
         s = _map(s, lambda x, y: (x, -y))
-    return s + [("T", 0, 14 if o["gate"] == "up" else -8, v.name, "middle")]
+    return s + [_label(v, o)]
+
+
+def _label(v, o):
+    dx, dy, anchor = symbols.label(v, o)
+    return ("T", dx, dy, v.name, anchor)
 
 
 def _two_pin(v, o):
@@ -65,8 +69,7 @@ def _two_pin(v, o):
         s = _map(s, lambda x, y: (x, -y))
     if not o["upright"]:
         s = _map(s, lambda x, y: (y, x))
-        return s + [("T", 0, -14, v.name, "middle")]
-    return s + [("T", 14, 4, v.name, "start")]
+    return s + [_label(v, o)]
 
 
 def _block(v, o):

@@ -19,7 +19,8 @@ LANE = 120         # px between two lanes
 
 def orient_gates(c, k, X, groups, rows):
     """{transistor name: 'left'|'right'} for the upright transistors: M2, then a cross-coupled
-    pair looks inward, B6, and two devices mirrored about an axis look opposite ways."""
+    pair looks inward, B6, a diode-connected device looks at the gates it feeds (97 of 97
+    bias rows in the corpus), and two devices mirrored about an axis look opposite ways."""
     gate, twins = {}, []
     by_x = lambda a, b: (a, b) if X[a] <= X[b] else (b, a)
     for rule, kind, p, text in k.relations:
@@ -45,6 +46,11 @@ def orient_gates(c, k, X, groups, rows):
             xs = [X[d.name] for d, q in p[1] if d.name in X]
             if xs and abs(sum(xs) / len(xs) - X[p[0].name]) > 20:
                 gate[p[0].name] = "left" if sum(xs) / len(xs) < X[p[0].name] else "right"
+    for v in c.devs:                                # a diode-connected device looks at the gates it feeds
+        if v.kind == "t" and v.name in X and v.name not in gate and v.net("g") == v.net("d"):
+            xs = [X[d.name] for d, q in c.net_pins.get(v.net("g"), ()) if q == "g" and d is not v and d.kind == "t" and d.name in X]
+            if xs and abs(sum(xs) / len(xs) - X[v.name]) > 20:
+                gate[v.name] = "left" if sum(xs) / len(xs) < X[v.name] else "right"
     other = {"left": "right", "right": "left"}
     for l, r in twins:                              # mirror images: opposite sides, outward unless one is set
         if l in gate and r not in gate:
@@ -126,23 +132,31 @@ def _beside(board, v, near, a):
         board.settle(v, x + NEAR + 20, y + ey * NEAR, _flat(v, near, near_left=True), (20, 0))
 
 
-def _attach_around(board, v, host):
-    """B4: a part from a device's output back to its input goes round the device."""
+def _attach_around(board, parts, host):
+    """B4 and D4: the parts from a device's output back to its input go round the device, in
+    one row, the output's end first."""
     x, y, o = board.at[host.name]
     if host.kind == "t":
         up = host.pol == "n"                          # the drain end: above an NMOS, below a PMOS
         side = -1 if o["gate"] == "left" else 1       # on the gate's side of the channel
-        near = "a" if v.net("a") == host.net("d") else "b"
-        channel = x + (10 if o["gate"] == "left" else -10)
-        board.settle(v, channel + side * 60, y + (-40 if up else 40), _flat(v, near, near_left=side > 0), (side * 20, 0))
+        channel, net = x + (10 if o["gate"] == "left" else -10), host.net("d")
+        for i, v in enumerate(parts):
+            near = "a" if v.net("a") == net else "b"
+            board.settle(v, channel + side * 60 * (i + 1), y + (-40 if up else 40), _flat(v, near, near_left=side > 0), (side * 20, 0))
+            net = v.net("b" if near == "a" else "a")
         return
     hw, hh = symbols.block_size(host)
     pins = symbols.pins(host, o)
-    outs = [q for q in host.nets if host.net(q) in (v.net("a"), v.net("b")) and pins[q][2] > 0]
-    ins = [q for q in host.nets if host.net(q) in (v.net("a"), v.net("b")) and q not in outs]
+    ends = {n for v in parts for n in (v.net("a"), v.net("b"))}
+    outs = [q for q in host.nets if host.net(q) in ends and pins[q][2] > 0]
+    ins = [q for q in host.nets if host.net(q) in ends and q not in outs]
     above = not ins or pins[ins[0]][1] <= 0           # on the side of the input pin it returns to
-    near = "a" if outs and v.net("a") == host.net(outs[0]) else "b"
-    board.settle(v, x, y + (-(hh + 30) if above else hh + 30), _flat(v, near, near_left=False), (0, -30 if above else 30))
+    net = host.net(outs[0]) if outs else None
+    for i, v in enumerate(parts):
+        near = "a" if v.net("a") == net else "b"
+        at = x + (len(parts) - 1 - 2 * i) * 30        # the output's end on the right, like the block's output
+        board.settle(v, at, y + (-(hh + 30) if above else hh + 30), _flat(v, near, near_left=False), (0, -30 if above else 30))
+        net = v.net("b" if near == "a" else "a")
 
 
 def _attach_block(board, v):
@@ -189,7 +203,7 @@ def _attach_part(board, v):
 
 def _attach(c, k, board):
     """Place every device the rows and columns did not."""
-    host_of = {part: c.by[dev] for part, (_, dev) in k.around.items()}
+    loop_of = {part: (c.by[host], [c.by[n] for n in parts]) for host, parts in k.loops for part in parts}
     flow_rank = {}
     for rule, kind, p, text in k.relations:
         if kind == "not_left":
@@ -202,26 +216,27 @@ def _attach(c, k, board):
             break
         done = None
         for v in pending:
-            host = host_of.get(v.name)
+            host, parts = loop_of.get(v.name, (None, ()))
             if host is not None and host.name in board.at:
-                _attach_around(board, v, host)
-                done = v
-            elif host is not None and host.name not in board.at and len(pending) > 1 and any(w is host for w in pending):
+                _attach_around(board, parts, host)
+                done = parts
+            elif host is not None and len(pending) > len(parts) and host in pending:
                 continue                              # wait for the device it goes round
             elif v.kind == "blk":
-                done = v if _attach_block(board, v) else None
+                done = [v] if _attach_block(board, v) else None
             else:
-                done = v if _attach_part(board, v) else None
+                done = [v] if _attach_part(board, v) else None
             if done is not None:
                 break
         if done is None:                              # nothing placed touches what is left: start a new lane
-            done = pending[0]
+            v = pending[0]
             x = max((b[2] for b in board.boxes), default=-120) + 120
             y = min((b[1] for b in board.boxes), default=0) + 40 if board.boxes else 0
             y = int(round(y / 10.0)) * 10
-            o = {} if done.kind == "blk" else {"upright": False, "flip": False} if done.kind != "t" else {"upright": False, "gate": "up", "flip": False}
-            board.settle(done, x, y, o, (20, 0))
-        pending.remove(done)
+            o = {} if v.kind == "blk" else {"upright": False, "flip": False} if v.kind != "t" else {"upright": False, "gate": "up", "flip": False}
+            board.settle(v, x, y, o, (20, 0))
+            done = [v]
+        pending = [v for v in pending if v not in done]
     assert not pending
 
 
@@ -313,6 +328,31 @@ def _bridges(c, k, board, lay):
         board.settle(v, ax, y, _flat(v, left, near_left=True), (0, -20))
 
 
+def _room(c, k, gate):
+    """{transistor: (px, px)}: how much more clear space its column needs on the left and on
+    the right: for a row of parts round it (B4, D4), and for a port or a net name at its gate."""
+    need = collections.defaultdict(int)
+    for host, parts in k.loops:
+        if host in gate and len(parts) > 1:           # one part fits beside any column
+            need[host] = max(need[host], 60 * len(parts) - 40)
+    roles = k.view.k.roles
+    for v in c.devs:
+        g = v.net("g") if v.name in gate else None
+        if g is None or g in k.view.rails:
+            continue
+        text = 7 * len(g)
+        if roles.get(g) in ("bias", "clock"):
+            need[v.name] = max(need[v.name], text - 20)             # a name on a 20 px stub
+        elif g in c.port_nets and all(d.kind == "t" and q == "g" for d, q in c.net_pins[g]):
+            need[v.name] = max(need[v.name], text + 10)             # a port on a 40 px wire
+    out = {}
+    for name, px in need.items():
+        px = -(-px // 10) * 10
+        if px > 0:
+            out[name] = (px, 0) if gate[name] == "left" else (0, px)
+    return out
+
+
 def place(c, k):
     """-> (placement {name: (x, y, o)}, axis groups, notes). See the module header."""
     rows, height, notes = assign_rows(c, k)
@@ -320,6 +360,10 @@ def place(c, k):
     X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
     notes += lay.notes
     gate = orient_gates(c, k, X, groups, rows)
+    room = _room(c, k, gate)
+    if room:                                          # the same order, wider where something needs it
+        lay = assign_columns(c, k, room)
+        X, groups = {n: x for n, x in lay.x.items() if n in k.upright}, lay.groups
     row_y = _row_y(k, rows, height)
     board = Board(c, k)
     spans = collections.defaultdict(list)

@@ -91,6 +91,29 @@ def body(dev, o):
     return (-10, -20, 10, 20) if o["upright"] else (-20, -10, 20, 10)
 
 
+def label(dev, o):
+    """Where a device's name is written: (dx, dy, anchor) of the text's baseline point, or None
+    for a block (its name is inside the box)."""
+    if dev.kind == "blk":
+        return None
+    if dev.kind == "t":
+        if o["upright"]:
+            return (15, 4, "start") if o["gate"] == "left" else (-15, 4, "end")
+        return (0, 14 if o["gate"] == "up" else -8, "middle")
+    return (14, 4, "start") if o["upright"] else (0, -14, "middle")
+
+
+def label_box(dev, o, width=7):
+    """(x0, y0, x1, y1): the box the name takes, as offsets from the device origin; None for a block."""
+    at = label(dev, o)
+    if at is None:
+        return None
+    dx, dy, anchor = at
+    w = width * len(dev.name)
+    x0 = dx if anchor == "start" else dx - w if anchor == "end" else dx - w // 2
+    return (x0, dy - 10, x0 + w, dy + 2)
+
+
 def _side(dx, dy):
     if dx == 0 and dy == 0:
         return None

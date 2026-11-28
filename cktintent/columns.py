@@ -6,7 +6,7 @@ Reads the contract only. A *unit* is what moves as one thing along x:
     a column   upright devices the contract puts in one column (B3), plus two joints people
                draw as a column and the contract does not promise: the same-polarity pair
                at a fold node, and an inverter's two devices
-    a lane     a part that lies flat on a flow, a switch, or a block
+    a lane     a part that lies flat (a lead, a switch, a part named on a flow), or a block
 Units gather into clusters: a declared stage, what is joined to it by branch current, or
 each joined group on its own. Clusters stand in flow order (F1); inside one, a matched pair
 and its images stand mirrored about one axis (M3x), with what the contract puts on the axis
@@ -27,7 +27,8 @@ class Layout:
 
 def _units(c, k, flow_devs):
     """-> ({name: unit root}, {root: [names in deck order]}, set of lane unit roots)"""
-    lane = {v.name for v in c.devs if v.name not in k.upright and (v.kind == "blk" or v.name in flow_devs) and v.name not in k.around}
+    lane = {v.name for v in c.devs if v.name not in k.upright and v.name not in k.around
+            and (v.kind == "blk" or v.name in flow_devs or v.name in k.flat)}
     parent = {v.name: v.name for v in c.devs if v.name in k.upright or v.name in lane}
 
     def find(x):
@@ -42,6 +43,8 @@ def _units(c, k, flow_devs):
             net = p[0].net(p[1])
             for d in (p[0], p[2]):
                 used.add((d.name, "top" if k.top.get(d.name) == net else "bot"))
+    for a, b in k.joints:                              # a series string on a rail is one column
+        parent[find(a)] = find(b)
     for net, pins in c.net_pins.items():               # a column people draw at a node of three or more
         if net in k.view.rails:
             continue
@@ -174,8 +177,10 @@ def _half(c, u, members, lane_units):
     return (symbols.block_size(v)[0] if v.kind == "blk" else 20) + 30
 
 
-def assign_columns(c, k):
-    """-> Layout. See the module header."""
+def assign_columns(c, k, room=None):
+    """-> Layout. See the module header. `room` {device: (px, px)} asks for that much more
+    clear space on the left and on the right of the device's column."""
+    room = room or {}
     flow_devs, lane_of, arrows, inputs = _flow(c, k)
     unit_of, members, lane_units = _units(c, k, flow_devs)
     cluster = _clusters(c, k, unit_of, members)
@@ -205,18 +210,19 @@ def assign_columns(c, k):
             rank.setdefault(n, len(rank))
     host = {}                                          # a hanging part's unit -> the unit it stands next to
     for u, ms in members.items():
-        v = c.by[ms[0]]
-        if len(ms) != 1 or u in lane_units or v.name in flow_devs:
+        if u in lane_units or any(c.by[m].kind in ("t", "blk") or m in flow_devs for m in ms):
             continue
-        nets = [n for n in (k.top.get(v.name), k.bot.get(v.name)) if n is not None and n not in k.view.rails]
-        if len(nets) != 1:
+        ends = collections.Counter(n for m in ms for n in (k.top.get(m), k.bot.get(m)) if n is not None and n not in k.view.rails)
+        free = [n for n, times in ends.items() if times == 1]    # a net two members share is inside the string
+        if len(free) != 1:
             continue
-        net = nets[0]
-        others = [w for w, p in c.net_pins.get(net, ()) if w is not v and w.name in unit_of]
+        net = free[0]
+        v = c.by[next(m for m in ms if net in (k.top.get(m), k.bot.get(m)))]
+        others = [w for w, p in c.net_pins.get(net, ()) if w.name not in ms and w.name in unit_of]
         if not others:
             continue
-        source = v.kind in ("v", "i") and net in inputs
-        if source:                                     # the source of an input stands before what it feeds
+        source = v.kind == "v" or (v.kind == "i" and net in inputs)
+        if source:                                     # a signal's source stands before what it feeds
             for w in others:
                 before(v.name, w.name)
             continue
@@ -280,6 +286,8 @@ def assign_columns(c, k):
             for b in B:
                 if a in unit_of and b in unit_of and unit_of[a] != unit_of[b]:
                     preds[unit_of[b]].add(unit_of[a])
+    def more(units, side):                             # the most room any member of these units asks for on `side`
+        return max([room.get(m, (0, 0))[side] for u in units for m in members[u]] + [0])
     for cname in c_order:
         blocks, seen = [], set()
         for u in sorted((u for u in members if cluster[u] == cname), key=first):
@@ -316,16 +324,23 @@ def assign_columns(c, k):
                     ends[ln] = x + half
                     out.lane[members[u][0]] = ln
                 else:
-                    x = wall + half
+                    x = wall + half + more([u], 0)
                     for ln in list(ends) + [None]:
-                        ends[ln] = x + half
+                        ends[ln] = x + half + more([u], 1)
                 for m in members[u]:
                     out.x[m] = x
-                edge_of[u] = x + half
+                edge_of[u] = max(ends[None], x + half)
                 continue
             g = groups[key[1]]
-            halves = [g["half0"] + i * PITCH for i in range(len(g["left"]))]
-            axis = wall + MARGIN + halves[-1]
+            halves = []                                # column i of each half stands halves[i] from the axis
+            for i, (l, r) in enumerate(zip(g["left"], g["right"])):
+                inner = max(more([l], 1), more([r], 0))
+                if i == 0:
+                    halves.append(g["half0"] + inner)
+                else:
+                    halves.append(halves[-1] + PITCH + inner + max(more([g["left"][i - 1]], 0), more([g["right"][i - 1]], 1)))
+            edge = halves[-1] + MARGIN + max(more([g["left"][-1]], 0), more([g["right"][-1]], 1))
+            axis = wall + edge
             for h, l, r in zip(halves, g["left"], g["right"]):
                 for m in members[l]:
                     out.x[m] = axis - h
@@ -335,7 +350,7 @@ def assign_columns(c, k):
                 for m in members[u]:
                     out.x[m] = axis
             for ln in list(ends) + [None]:
-                ends[ln] = axis + halves[-1] + MARGIN
+                ends[ln] = axis + edge
             for u in g["left"] + g["right"] + g["on"]:
                 edge_of[u] = ends[None]
             out.groups.append({"axis": axis, "pair": g["pair"],
