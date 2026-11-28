@@ -45,9 +45,14 @@ def _split(c, k, terms, named):
     """W3: cut a net whose pins stand far apart into the groups a wire joins.
     -> ({piece key: terminals}, {piece key: net}); a net in one piece keeps its name as key."""
     roles, pieces, net_of = k.view.k.roles, {}, {}
+    whole = {n for n, r in roles.items() if r == "signal"}
+    for rule, kind, p, text in k.relations:            # a flow through single parts is a wire: what one hands the next
+        if kind == "not_left" and 1 in (len(p[0]), len(p[1])):
+            out = {d.net(q) for d in p[0] for q in d.nets if not (d.kind == "t" and q in ("g", "b"))}
+            whole |= {d.net(q) for d in p[1] for q in d.nets if q != "b"} & out
     for net in sorted(terms):
         groups = [terms[net]]
-        if net not in k.view.rails and net not in named and roles.get(net) != "signal" and len(terms[net]) > 1:
+        if net not in k.view.rails and net not in named and net not in whole and len(terms[net]) > 1:
             pins = sorted(terms[net], key=lambda t: (t[0], t[1], t[4].name, t[5]))
             span = pins[-1][0] - pins[0][0]
             if all(t[4].kind == "t" and t[5] == "g" for t in pins):
@@ -174,13 +179,15 @@ def _port(c, schema, maze, key, net, direction, pins, devs, groups):
     mine = [t for t in pins if devs and t[4] in devs] or pins
     half = _half(groups, pins)
     branch = [t for t in mine if t[5] != "g"] or mine
+    at = {d["name"]: d["x"] for d in schema["devices"]}
+    beyond = max([at[d.name] for d in devs or ()] + [t[0] for t in pins])     # F2: right of all it leaves
     if direction != "input" and half == "L":           # a mirrored left half: the port leaves to the left
         x, y, ex, ey, v, p = min(branch, key=lambda t: (t[0], t[1]))
         want = (min(t[0] for t in branch) - 60, y + ey * STUB if ey else y)
         step, face = (-CELL, 0), (1, 0)
     elif direction == "output" or (direction != "input" and half == "R"):
         x, y, ex, ey, v, p = max(branch, key=lambda t: (t[0], -t[1]))
-        want = (max(t[0] for t in (branch if half else pins)) + 60, y + ey * STUB if ey else y)
+        want = ((max(t[0] for t in branch) if half else beyond) + 60, y + ey * STUB if ey else y)
         step, face = (CELL, 0), (-1, 0)
     else:
         gates = [t for t in mine if t[2]] or mine
@@ -309,11 +316,13 @@ def route(c, k, schema, groups=()):
         if segs:
             schema["wires"].append({"net": net, "segments": segs})
         schema["junctions"] += maze.junctions(key)
+        by_point = {(t[0], t[1]): t for t in pieces[key]}
         if len(parts) > 1:                             # the maze's last resort: join the pieces by name
-            lost = sum(len(g) for g in parts[1:])
-            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire" % (net, lost, len(points[key])))
+            lost = [by_point[p] for g in parts[1:] for p in g if p in by_point]
+            where = ", ".join("%s.%s" % (t[4].name, t[5]) for t in lost) or "its port"
+            notes.append("net %s: %d of its %d terminals joined by name, no clear path for a wire (%s)"
+                         % (net, sum(len(g) for g in parts[1:]), len(points[key]), where))
         if len(parts) > 1 or cut[net] > 1:
-            by_point = {(t[0], t[1]): t for t in pieces[key]}
             for g in parts:
                 if port_at.get(key) not in g:          # the port already names its piece
                     _name_piece(c, schema, maze, net, g, by_point)

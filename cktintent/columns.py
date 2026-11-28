@@ -212,9 +212,10 @@ def assign_columns(c, k, room=None):
             rank.setdefault(n, len(rank))
         for n in B:
             rank.setdefault(n, len(rank))
+    paired = {unit_of[n] for pair in k.axes for n in pair if n in unit_of}
     host = {}                                          # a hanging part's unit -> the unit it stands next to
     for u, ms in members.items():
-        if u in lane_units or any(c.by[m].kind in ("t", "blk") or m in flow_devs for m in ms):
+        if u in lane_units or u in paired or any(c.by[m].kind == "blk" or m in flow_devs for m in ms):
             continue
         ends = collections.Counter(n for m in ms for n in (k.top.get(m), k.bot.get(m)) if n is not None and n not in k.view.rails)
         free = [n for n, times in ends.items() if times == 1]    # a net two members share is inside the string

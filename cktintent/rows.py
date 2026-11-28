@@ -75,32 +75,43 @@ def assign_rows(c, k):
     for n in names:
         classes[find(n)].append(n)
     edges = collections.defaultdict(set)
-    indeg = collections.Counter()
     for n in names:
         for m in below[n]:
-            a, b = find(n), find(m)
-            if a != b and b not in edges[a]:
-                edges[a].add(b)
-                indeg[b] += 1
-    # longest path from the top (asap); a cycle of series parts is broken where it is met
-    asap = {r: 0 for r in classes}
-    order, ready, left = [], sorted(r for r in classes if indeg[r] == 0), dict(indeg)
-    while len(order) < len(classes):
-        if not ready:                               # a loop of parts in series: cut it at its first member
-            r = min(x for x in classes if x not in order)
-            notes.append("a loop of series parts through %s: its row order is cut there" % r)
-            ready = [r]
-        r = ready.pop(0)
-        if r in order:
+            if find(n) != find(m):
+                edges[find(n)].add(find(m))
+    # a loop of series parts (two diodes back to back) has no top: cut the edge that closes it
+    deck = {n: i for i, n in enumerate(names)}
+    first = lambda r: min(deck[m] for m in classes[r])
+    state = {}                                      # class -> 1 while its descendants are being walked, 2 after
+    for start in sorted(classes, key=first):
+        if start in state:
             continue
+        state[start], stack = 1, [(start, iter(sorted(edges[start], key=first)))]
+        while stack:
+            r, it = stack[-1]
+            s = next(it, None)
+            if s is None:
+                state[r] = 2
+                stack.pop()
+            elif state.get(s) == 1:
+                edges[r].discard(s)
+                notes.append("a loop of series parts through %s: its row order is cut there" % classes[s][0])
+            elif s not in state:
+                state[s] = 1
+                stack.append((s, iter(sorted(edges[s], key=first))))
+    indeg = collections.Counter(s for r in classes for s in edges[r])
+    # longest path from the top (asap)
+    asap = {r: 0 for r in classes}
+    order, ready, left = [], sorted((r for r in classes if indeg[r] == 0), key=first), dict(indeg)
+    while ready:
+        r = ready.pop(0)
         order.append(r)
-        for s in sorted(edges[r]):
-            if s in order:
-                continue
+        for s in sorted(edges[r], key=first):
             asap[s] = max(asap[s], asap[r] + 1)
             left[s] -= 1
-            if left[s] <= 0:
+            if left[s] == 0:
                 ready.append(s)
+    assert len(order) == len(classes), "the row order still holds a loop"
     rank = {r: i for i, r in enumerate(order)}
     height = max(asap.values(), default=0) + 1
     tail = {r: 0 for r in classes}                  # longest path down to a sink

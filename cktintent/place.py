@@ -245,6 +245,14 @@ def _lanes(c, k, board, lay):
     deck = {v.name: i for i, v in enumerate(c.devs)}
     todo = sorted((n for n in lay.lane if n not in board.at), key=lambda n: (lay.x[n], deck[n]))
     level = {}                                        # lane index -> y of the last part put on it
+    ins = {p[0] for rule, kind, p, text in k.relations if kind == "port_in"}
+    outs = {p[0] for rule, kind, p, text in k.relations if kind == "port_out"}
+
+    def toward(v, net):
+        """Where the rest of `net` stands along x: the mean of its other devices, the far left
+        for an input the flow starts at, the far right for its output; None when unknown."""
+        xs = [lay.x[w.name] for w, q in c.net_pins.get(net, ()) if w is not v and w.name in lay.x]
+        return sum(xs) / float(len(xs)) if xs else -1e9 if net in ins else 1e9 if net in outs else None
     for name in todo:
         v, x, ln = c.by[name], lay.x[name], lay.lane[name]
         if v.kind == "blk":
@@ -264,6 +272,7 @@ def _lanes(c, k, board, lay):
             continue
         p, q = _ends(v)
         A, B = board.anchors(v, p), board.anchors(v, q)
+        sp, sq = toward(v, v.net(p)), toward(v, v.net(q))
         left = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] <= x]
         right = [(a, n) for n, L in ((p, A), (q, B)) for a in L if a[0] > x]
         y, near, near_left = None, None, True
@@ -287,6 +296,8 @@ def _lanes(c, k, board, lay):
                     near, near_left = p, False
                 elif v.net(q) in after:
                     near, near_left = q, False
+        if sp is not None and sq is not None and sp != sq:         # the end whose net stands further left looks left
+            near, near_left = (p if sp < sq else q), True
         board.settle(v, x, y, _flat(v, near, near_left), (0, -20))
         level[ln] = board.at[name][1]
 
@@ -376,8 +387,12 @@ def place(c, k):
             o = {"upright": True, "gate": gate[v.name]}
         else:
             x, o = X[v.name], {"upright": True, "flip": k.top[v.name] == v.net("b")}
-        board.add(v, x, y, o)
-        spans[X[v.name]].append(y)
+        if board.free(v, x, y, o, pad=0):
+            board.add(v, x, y, o)
+        else:                                         # never one symbol on another, whatever the rows said
+            board.settle(v, x, y, o, (0, 20))
+            notes.append("%s moved down: its row and column were taken" % v.name)
+        spans[X[v.name]].append(board.at[v.name][1])
     for x, ys in spans.items():                       # the wire of a column: nothing may be laid across it
         if max(ys) - min(ys) > ROW:
             board.keep_out((x - 5, min(ys), x + 5, max(ys)))
