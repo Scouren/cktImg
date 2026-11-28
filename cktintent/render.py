@@ -147,7 +147,13 @@ def _name(name, x, y, side, out):
 
 def render_svg(schema, c):
     """-> the drawing as an SVG document."""
-    body = []
+    body, xs, ys = [], [], []
+    for b in schema.get("boxes", ()):                 # a stage that stands alone, in its labelled box
+        x0, y0, x1, y1 = b["box"]
+        body.append('<rect x="%g" y="%g" width="%g" height="%g" stroke-dasharray="6 4" stroke-width="1"/>' % (x0, y0, x1 - x0, y1 - y0))
+        _emit([("T", 2, 13, b["name"], "start")], x0, y1, body)     # under the box: the rails run over it
+        xs += [x0, x1]
+        ys += [y0, y1 + 16]
     for w in schema["wires"]:
         for (x0, y0), (x1, y1) in w["segments"]:
             body.append('<line x1="%g" y1="%g" x2="%g" y2="%g"/>' % (x0, y0, x1, y1))
@@ -161,8 +167,8 @@ def render_svg(schema, c):
         _marker(m, body)
     for l in schema["labels"]:
         _name(l["name"], l["at"][0], l["at"][1], l.get("side", [0, -1]), body)
-    xs = [p[0] for d in schema["devices"] for p in d["terminals"].values()] + [m["at"][0] for m in schema["markers"]] + [l["at"][0] for l in schema["labels"]]
-    ys = [p[1] for d in schema["devices"] for p in d["terminals"].values()] + [m["at"][1] for m in schema["markers"]] + [l["at"][1] for l in schema["labels"]]
+    xs += [p[0] for d in schema["devices"] for p in d["terminals"].values()] + [m["at"][0] for m in schema["markers"]] + [l["at"][0] for l in schema["labels"]]
+    ys += [p[1] for d in schema["devices"] for p in d["terminals"].values()] + [m["at"][1] for m in schema["markers"]] + [l["at"][1] for l in schema["labels"]]
     for w in schema["wires"]:
         for a, b in w["segments"]:
             xs += [a[0], b[0]]

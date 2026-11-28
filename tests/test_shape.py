@@ -23,6 +23,18 @@ C2 outb vss 1p
 .ends
 """
 
+BIASED = """* a bias generator beside the stage it biases
+*@ stage Bias : mb ib
+.model nch nmos
+.subckt biased vdd vss in out
+MB vb vb vss vss nch
+IB vdd vb 10u
+M1 out in s vss nch
+M2 s vb vss vss nch
+RL vdd out 1k
+.ends
+"""
+
 LANE = """* a shunt attenuator into an inverting amplifier
 *@ flow vin -> r5 -> r1 -> x1 -> vout
 .subckt amp inp inn out
@@ -134,6 +146,19 @@ class Shape(unittest.TestCase):
         self.assertLess(at["R5"]["terminals"]["1"][0], at["R5"]["terminals"]["2"][0])   # its input end looks left
         self.assertEqual([r.schema["net_pieces"][n] for n in ("va", "n1")], [1, 1])       # the path is wire
         self.assertTrue(all(shown is not False for rule, shown, text in r.outcome), r.outcome)
+
+    def test_a_stage_that_stands_alone_is_boxed_under_its_name_as_written(self):
+        r = draw(BIASED, "net vb : bias")             # the bias line is a name at each pin: nothing wires the stage out
+        self.assertEqual(r.findings, [])
+        self.assertEqual([b["name"] for b in r.schema["boxes"]], ["Bias"])
+        x0, y0, x1, y1 = r.schema["boxes"][0]["box"]
+        inside = {d["name"] for d in r.schema["devices"] if x0 < d["x"] < x1 and y0 < d["y"] < y1}
+        self.assertEqual(inside, {"MB", "IB"})
+
+    def test_a_stage_wired_to_the_rest_gets_no_box(self):
+        r = draw(BIASED, "net vb : signal")           # the same line as one wire: the stage is not alone
+        self.assertEqual(r.findings, [])
+        self.assertEqual(r.schema["boxes"], [])
 
     def test_a_long_row_of_unrelated_stages_is_folded_into_bands(self):
         stages = "".join("M%d o%d i%d vss vss nch\nR%d vdd o%d 1k\n" % (i, i, i, i, i) for i in range(1, 17))

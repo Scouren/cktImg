@@ -16,7 +16,7 @@ import collections
 from . import symbols
 
 
-def _on(p, s):
+def on(p, s):
     """True when point p lies on segment s (ends included); segments may be slanted."""
     (x0, y0), (x1, y1) = s
     cross = (x1 - x0) * (p[1] - y0) - (y1 - y0) * (p[0] - x0)
@@ -25,7 +25,7 @@ def _on(p, s):
     return min(x0, x1) <= p[0] <= max(x0, x1) and min(y0, y1) <= p[1] <= max(y0, y1)
 
 
-def _overlap(s, t):
+def overlap(s, t):
     """True when two collinear segments share more than a point."""
     (ax, ay), (bx, by) = s
     (cx, cy), (dx, dy) = t
@@ -55,7 +55,7 @@ def extract(schema):
     for i, s in enumerate(segs):
         for j in range(i + 1, len(segs)):
             t = segs[j]
-            if _on(s[0], t) or _on(s[1], t) or _on(t[0], s) or _on(t[1], s) or _overlap(s, t):
+            if on(s[0], t) or on(s[1], t) or on(t[0], s) or on(t[1], s) or overlap(s, t):
                 join(i, j)
     # every other thing is a point: a pin, a rail symbol, a port, a name
     points = []                                    # (point, key, name or None)
@@ -79,7 +79,7 @@ def extract(schema):
     for p, key, name in points:
         g = gid(key)
         for i, s in enumerate(segs):
-            if _on(p, s):
+            if on(p, s):
                 join(g, i)
         at_point[p].append(g)
         if name is not None:
@@ -149,7 +149,7 @@ def pieces(schema):
     for i, s in enumerate(segs):
         for j in range(i + 1, len(segs)):
             t = segs[j]
-            if _on(s[0], t) or _on(s[1], t) or _on(t[0], s) or _on(t[1], s) or _overlap(s, t):
+            if on(s[0], t) or on(s[1], t) or on(t[0], s) or on(t[1], s) or overlap(s, t):
                 parent[find(i)] = find(j)
     out = collections.defaultdict(set)
     for d in schema["devices"]:
@@ -157,6 +157,6 @@ def pieces(schema):
             net = d["nets"].get(pin)
             if net is None or (pin == "B" and "G" in d["terminals"]):
                 continue
-            hit = [find(i) for i, s in enumerate(segs) if _on(tuple(at), s)]
+            hit = [find(i) for i, s in enumerate(segs) if on(tuple(at), s)]
             out[net].add(("w", hit[0]) if hit else ("p", tuple(at)))
     return {net: len(ids) for net, ids in out.items()}

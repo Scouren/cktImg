@@ -11,6 +11,7 @@ from .contract import derive
 from .place import place
 from .symbols import stamp
 from .route import route
+from .boxes import boxes
 from . import gates, judge
 
 
@@ -37,6 +38,7 @@ def draw(deck_text, statements_text=""):
     stamp(schema, c, placement, bands)
     notes = notes + more + route(c, k, schema, groups)
     schema["net_pieces"] = gates.pieces(schema)
+    schema["boxes"] = boxes(schema, c, k)
     r = Result()
     r.schema, r.contract, r.statements = schema, k, text
     r.circuit = Ckt(schema)

@@ -16,10 +16,12 @@ ROLES = ("supply", "ground", "bias", "clock", "signal")
 class Controls:
     """The statements as tables. roles: {net: role}; stages: {name: [device names]} in the
     order stated; matches: [[names]]; flows: [[[names] per element]]; errors: sentences for
-    the lines that could not be read. Names are lower case."""
+    the lines that could not be read. Names are lower case; `labels` keeps each stage's name
+    as written, for the box drawn round it."""
 
     def __init__(self):
         self.roles, self.stages, self.matches, self.flows, self.errors = {}, collections.OrderedDict(), [], [], []
+        self.labels = {}                               # stage name -> the name as the user wrote it
 
 
 def parse(text):
@@ -46,6 +48,8 @@ def parse(text):
                 k.errors.append("refused `%s`: a stage needs a name and its devices" % raw.strip())
                 continue
             k.stages[toks[0]] = toks[1:]
+            written = raw.split("#", 1)[0].replace("*@", " ", 1).replace(":", " ").split()
+            k.labels[toks[0]] = written[1] if len(written) > 1 and written[1].lower() == toks[0] else toks[0]
         elif verb == "match":
             toks = rest.replace(",", " ").replace(":", " ").split()
             if len(toks) < 2:

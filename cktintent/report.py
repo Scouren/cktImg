@@ -25,6 +25,8 @@ def read_back(result):
     named = sorted(n for n, k in result.schema["net_pieces"].items() if k > 1)
     if named:
         out.append("drawn by name or symbol: %s" % " ".join(named))
+    if result.schema.get("boxes"):
+        out.append("in a box of its own: %s" % " ".join(b["name"] for b in result.schema["boxes"]))
     out.append("wire crossings: %d, corners: %d" % (result.schema.get("crossings", 0), result.schema.get("bends", 0)))
     for gate, text in result.findings:
         out.append("ILLEGAL %-8s %s" % (gate, text))

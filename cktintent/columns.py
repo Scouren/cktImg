@@ -368,7 +368,7 @@ def assign_columns(c, k, room=None, tall=None):
             for u in ax.units(key[1]):
                 edge_of[u] = ends[None]
         if any(u not in lane_units for u in members if cluster[u] == cname):
-            wall = max(ends.values(), default=0) + 40  # air after a cluster that holds a column
+            wall = max(ends.values(), default=0) + (80 if cname in k.view.k.stages else 40)   # air after a cluster that holds a column; a stage's box needs more
             for ln in list(ends) + [None]:
                 ends[ln] = wall
     assert set(out.x) == set(unit_of), sorted(set(unit_of) - set(out.x))

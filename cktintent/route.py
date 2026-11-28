@@ -23,7 +23,6 @@ from . import symbols
 from .maze import Maze, CELL
 
 STUB = 20          # px from a pin to its name or port
-TEXT = 7           # px of width a character of a name takes
 BEHIND = 3         # extra cost per cell of a wire that runs just behind a rail symbol
 OVER_TEXT = 4      # extra cost per cell of a wire that runs through a device's name
 NEAR, FAR = 190, 380   # px: 4 and 8 MOS lengths at this tool's column pitch (people's is 2.5 lengths, ours 3)
@@ -73,18 +72,6 @@ def _split(c, k, terms, named, band):
             key = net if i == 0 else "%s%s%d" % (net, SEP, i)
             pieces[key], net_of[key] = g, net
     return pieces, net_of
-
-
-def _text_box(x, y, ex, ey, name):
-    """The box a name takes when it is written beyond (x, y) along (ex, ey)."""
-    w = TEXT * len(name) + 6
-    if ex > 0:
-        return (x + CELL, y - CELL, x + w, y + CELL)
-    if ex < 0:
-        return (x - w, y - CELL, x - CELL, y + CELL)
-    if ey < 0:
-        return (x - w // 2, y - 20, x + w // 2, y - CELL)
-    return (x - w // 2, y + CELL, x + w // 2, y + 20)
 
 
 def _snap(box):
@@ -153,7 +140,7 @@ def _name_at(c, schema, maze, net, x, y, ex, ey):
     if (px, py) != (x, y):
         schema["wires"].append({"net": net, "segments": [[[x, y], [px, py]]]})
         maze.block(min(x + ex * CELL, px), min(y + ey * CELL, py), max(x + ex * CELL, px), max(y + ey * CELL, py))
-    maze.block(*_snap(_text_box(px, py, ex, ey, net)))
+    maze.block(*_snap(symbols.text_box(px, py, ex, ey, net)))
     if net in c.port_nets:
         schema["markers"].append({"kind": "port", "type": "port", "name": net, "direction": "passive", "at": [px, py], "net": net, "side": [ex, ey]})
     else:
@@ -192,7 +179,7 @@ def _port(c, schema, maze, key, net, direction, pins, devs, groups):
 
     def spot(at, face):
         """True when the port, the cell its wire leaves through and its name are all clear."""
-        b = _snap(_text_box(at[0], at[1], -face[0], -face[1], net))
+        b = _snap(symbols.text_box(at[0], at[1], -face[0], -face[1], net))
         return (maze.free(*at) and maze.free(at[0] + face[0] * CELL, at[1] + face[1] * CELL)
                 and all(maze.free(i, j) for i in range(b[0], b[2] + 1, CELL) for j in range(b[1], b[3] + 1, CELL)))
     if direction != "input" and half == "L":           # a mirrored left half: the port leaves to the left
@@ -217,7 +204,7 @@ def _port(c, schema, maze, key, net, direction, pins, devs, groups):
             break
         px, py = px + step[0], py + step[1]
     maze.pin(key, px, py, face[0], face[1])
-    maze.block(*_snap(_text_box(px, py, -face[0], -face[1], net)))
+    maze.block(*_snap(symbols.text_box(px, py, -face[0], -face[1], net)))
     schema["markers"].append({"kind": "port", "type": "port", "name": net, "direction": direction,
                               "at": [px, py], "net": net, "side": [-face[0], -face[1]]})
     return (px, py)
@@ -272,7 +259,7 @@ def _name_piece(c, schema, maze, key, net, points, by_point):
     ts = sorted((by_point[p] for p in points if p in by_point), key=lambda t: (t[5] != "g", t[0], t[1]))
 
     def clear(x, y, ex, ey):
-        b = _snap(_text_box(x + ex * STUB, y + ey * STUB, ex, ey, net))
+        b = _snap(symbols.text_box(x + ex * STUB, y + ey * STUB, ex, ey, net))
         return (all(maze.free(x + ex * d, y + ey * d) for d in range(CELL, STUB + 1, CELL))
                 and all(maze.free(i, j) for i in range(b[0], b[2] + 1, CELL) for j in range(b[1], b[3] + 1, CELL)))
     if not ts:
@@ -294,7 +281,7 @@ def route(c, k, schema, groups=()):
     maze, notes = Maze(), []
     terms = _terminals(c, schema)
     for d, v in zip(schema["devices"], c.devs):
-        b, t = symbols.body(v, d["orient"]), symbols.label_box(v, d["orient"], TEXT)
+        b, t = symbols.body(v, d["orient"]), symbols.label_box(v, d["orient"])
         maze.block(d["x"] + b[0], d["y"] + b[1], d["x"] + b[2], d["y"] + b[3])
         if t:                                          # round inward: a name does not close the track beside it
             maze.text(-(-(d["x"] + t[0]) // CELL) * CELL, -(-(d["y"] + t[1]) // CELL) * CELL,

@@ -15,6 +15,7 @@ import re
 from .circuit import BLOCK_OUT
 
 UNIT, GRID = 40, 10
+TEXT = 7           # px of width a character of a name takes
 SUPPLY_PIN = re.compile(r"^(vdd|vcc|avdd|dvdd|v\+|vp$|vpp)")
 GROUND_PIN = re.compile(r"^(vss|gnd|vee|agnd|dgnd|0$|v-)")
 BIAS_PIN = re.compile(r"^(vb|bias|ib|vcas|vcm|vc$|su$)")
@@ -103,7 +104,7 @@ def label(dev, o):
     return (14, 4, "start") if o["upright"] else (0, -14, "middle")
 
 
-def label_box(dev, o, width=7):
+def label_box(dev, o, width=TEXT):
     """(x0, y0, x1, y1): the box the name takes, as offsets from the device origin; None for a block."""
     at = label(dev, o)
     if at is None:
@@ -112,6 +113,18 @@ def label_box(dev, o, width=7):
     w = width * len(dev.name)
     x0 = dx if anchor == "start" else dx - w if anchor == "end" else dx - w // 2
     return (x0, dy - 10, x0 + w, dy + 2)
+
+
+def text_box(x, y, ex, ey, name):
+    """(x0, y0, x1, y1) px: the box a net's name takes when written beyond (x, y) along (ex, ey)."""
+    w = TEXT * len(name) + 6
+    if ex > 0:
+        return (x + GRID, y - GRID, x + w, y + GRID)
+    if ex < 0:
+        return (x - w, y - GRID, x - GRID, y + GRID)
+    if ey < 0:
+        return (x - w // 2, y - 20, x + w // 2, y - GRID)
+    return (x - w // 2, y + GRID, x + w // 2, y + 20)
 
 
 def _side(dx, dy):
