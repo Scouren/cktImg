@@ -52,15 +52,18 @@ class View:
                 self.adj[a].append((b, v)); self.adj[b].append((a, v))
 
     def devs_of(self, name):
+        """The devices a statement names with `name`: a stage's devices, or one device; [] when unknown."""
         if name in self.k.stages:
             return [self.card[d] for d in self.k.stages[name] if d in self.card]
         v = self.card.get(name)
         return [v] if v is not None else []
 
     def is_net(self, name):
+        """True when `name` is a net and neither a stage nor a device."""
         return name in self.c.net_pins and name not in self.k.stages and name not in self.card
 
     def branch_pins(self, net, skip=()):
+        """[(Dev, pin)] on `net` that carry branch current: channel ends and two-pin parts, not gates."""
         return [(v, p) for v, p in self.c.net_pins.get(net, []) if v not in skip and ((v.kind == "t" and p in ("d", "s")) or v.kind in BR)]
 
     def reach(self, start, without):

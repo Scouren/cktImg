@@ -91,6 +91,7 @@ def find_structs(c):
 
 
 def pct(k, n):
+    """'k of n (p%)' for a report line."""
     return "%d of %d (%.0f%%)" % (k, n, 100.0 * k / n) if n else "0 of 0"
 
 

@@ -77,14 +77,17 @@ class Board:
         self.c, self.k, self.at, self.boxes = c, k, {}, []
 
     def add(self, v, x, y, o):
+        """Place v at (x, y) with orientation o; the caller has checked it is clear."""
         self.at[v.name] = (x, y, o)
         b = symbols.body(v, o)
         self.boxes.append((x + b[0], y + b[1], x + b[2], y + b[3]))
 
     def keep_out(self, box):
+        """Reserve the box (x0, y0, x1, y1) px: no part attached later may stand in it."""
         self.boxes.append(box)
 
     def free(self, v, x, y, o, pad=10):
+        """True when v at (x, y) would stand `pad` px clear of everything placed and reserved."""
         b = symbols.body(v, o)
         x0, y0, x1, y1 = x + b[0] - pad, y + b[1] - pad, x + b[2] + pad, y + b[3] + pad
         return not any(x0 < bx1 and bx0 < x1 and y0 < by1 and by0 < y1 for bx0, by0, bx1, by1 in self.boxes)

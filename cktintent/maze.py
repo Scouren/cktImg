@@ -16,6 +16,10 @@ BEND, CROSS, LIMIT = 3, 12, 40000
 
 
 class Maze:
+    """One routing grid. Register what stands on it (`block`, `text`, `pin`), then wire nets
+    one at a time (`connect`, or `lay` for a wire drawn by rule) and read the result back.
+    A net is any hashable key; coordinates are px, multiples of CELL."""
+
     def __init__(self):
         self.blocked = set()       # cells no wire may enter
         self.dear = {}             # cell -> extra cost of a wire through it

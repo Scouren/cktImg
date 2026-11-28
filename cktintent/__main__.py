@@ -7,6 +7,7 @@ from . import draw, render_svg, read_back
 
 
 def main(argv):
+    """Run the command line on `argv` (without the program name). -> the exit status."""
     args, out, js, quiet = [], None, None, False
     it = iter(argv)
     for a in it:

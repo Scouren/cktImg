@@ -100,6 +100,7 @@ def people(circuits, statements):
 
 
 def main(argv):
+    """Run the sweep the arguments ask for. -> 1 when a deck crashed or a drawing is illegal, else 0."""
     root = argv[0]
     opt = {"split": "test", "limit": 0, "svg": None, "statements": None, "ids": None}
     stand, verbose = "--stand-in" in argv, "-v" in argv

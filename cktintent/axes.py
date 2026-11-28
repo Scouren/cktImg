@@ -34,6 +34,10 @@ def _distance(c, k, start, branch=False):
 
 
 class Axes:
+    """The axis groups of one circuit: `groups` (see the module header) and `of`, the group
+    index of every unit that stands in one. Built once; `room` is {device: (px, px)} of extra
+    clear space wanted left and right of its column."""
+
     def __init__(self, c, k, unit_of, members, cluster, lane_units, room):
         self.members, self.room, self.groups, self.of = members, room, [], {}
         order = {v.name: i for i, v in enumerate(c.devs)}

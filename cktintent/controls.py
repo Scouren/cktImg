@@ -14,11 +14,16 @@ ROLES = ("supply", "ground", "bias", "clock", "signal")
 
 
 class Controls:
+    """The statements as tables. roles: {net: role}; stages: {name: [device names]} in the
+    order stated; matches: [[names]]; flows: [[[names] per element]]; errors: sentences for
+    the lines that could not be read. Names are lower case."""
+
     def __init__(self):
         self.roles, self.stages, self.matches, self.flows, self.errors = {}, collections.OrderedDict(), [], [], []
 
 
 def parse(text):
+    """Read statements from `text`. Never raises: a line it cannot read becomes an entry in `errors`."""
     k = Controls()
     for raw in text.splitlines():
         line = raw.split("#", 1)[0].strip().lower()

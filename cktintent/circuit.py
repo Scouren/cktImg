@@ -23,13 +23,19 @@ GROUND_RE = re.compile(r"^(0|gnd|vss|agnd|dgnd|vee|v-|vssa|vssd|ground)$")
 
 
 class Dev:
+    """One device. kind: t (transistor), blk (block), or a two-pin kind (r c l d i v sw x);
+    pol: n or p for a transistor; nets and pins are keyed d g s (b) for a transistor, a b for
+    a two-pin part, the lower-cased pin names for a block. x, y, pins are in symbol units;
+    vertical says the channel or the part runs up and down (None: not drawn yet)."""
     __slots__ = ("name", "type", "card", "kind", "pol", "x", "y", "pins", "nets", "gate_side", "source_dir",
                  "rot", "mir", "vertical")
 
     def pin(self, p):
+        """Where pin `p` is drawn, or None."""
         return self.pins.get(p)
 
     def net(self, p):
+        """The net on pin `p`, or None for a pin the device does not have or that is open."""
         return self.nets.get(p)
 
     def __repr__(self):
@@ -37,6 +43,10 @@ class Dev:
 
 
 class Ckt:
+    """A circuit read from the drawing schema `h` (see the module header). devs in deck order;
+    by: name -> Dev; net_pins: net -> [(Dev, pin)]; rails, supply, ground: nets a marker or
+    their name says are rails; port_nets: the cell's ports; ports: net -> where a port is drawn."""
+
     def __init__(self, h):
         u = float(h.get("unit") or 40.0)
         self.id, self.unit, self.h = h["id"], u, h
@@ -114,15 +124,19 @@ class Ckt:
 
     # ---- connectivity helpers
     def ts(self):
+        """The transistors, in deck order."""
         return [v for v in self.devs if v.kind == "t"]
 
     def on(self, net, pin=None, kind=None):
+        """The devices with a pin on `net`, optionally only that pin name or that device kind."""
         return [v for v, p in self.net_pins.get(net, []) if (pin is None or p == pin) and (kind is None or v.kind == kind)]
 
     def degree(self, net):
+        """How many drawn pins the net has."""
         return len(self.net_pins.get(net, []))
 
     def is_rail(self, n):
+        """True for a supply or a ground net."""
         return n in self.rails
 
     def wired(self, net):
@@ -130,15 +144,18 @@ class Ckt:
         return self.pieces.get(net, 1) == 1
 
     def clean(self):
+        """True for a corpus drawing fit to measure: every device carded, no net conflict, two devices or more."""
         h = self.h
         return h.get("net_conflicts", 0) == 0 and not h.get("uncarded") and len(self.devs) >= 2
 
 
 def diode_connected(v):
+    """True for a transistor whose gate is on its own drain."""
     return v.kind == "t" and v.net("g") is not None and v.net("g") == v.net("d")
 
 
 def same(a, b, tol=0.26):
+    """True when two lengths (symbol units) differ by no more than `tol`: a quarter unit, the scatter of a hand drawing."""
     return abs(a - b) <= tol
 
 

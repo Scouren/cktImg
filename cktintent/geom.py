@@ -12,6 +12,7 @@ def col(v):
 
 
 def row(v):
+    """The y of the row a device stands in: its centre."""
     return v.y
 
 
